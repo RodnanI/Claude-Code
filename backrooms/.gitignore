@@ -1,0 +1,7 @@
+bk_render
+*.raw
+*.wav
+*.mp4
+events*.txt
+render.log
+ff.log
