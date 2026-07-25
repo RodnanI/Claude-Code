@@ -7,3 +7,4 @@ events*.txt
 render.log
 ff.log
 build.log
+x264pass*
