@@ -6,3 +6,4 @@ pk_render
 events*.txt
 render.log
 ff.log
+build.log
