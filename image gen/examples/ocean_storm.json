@@ -1,0 +1,80 @@
+{
+  "name": "ocean_storm",
+  "description": "Heavy sea under a low sun. Exercises the wave model, foam, volume absorption and refraction.",
+
+  "render": {
+    "resolution": "1080p",
+    "aspect_ratio": "21:9",
+    "samples": 192,
+    "denoise": true,
+    "ray_tracing": {
+      "transmission_bounces": 16,
+      "max_bounces": 16
+    },
+    "film": {
+      "view_transform": "agx",
+      "exposure": 0.2
+    }
+  },
+
+  "world": {
+    "sky": {
+      "type": "physical",
+      "sun_elevation_deg": 6,
+      "sun_rotation_deg": 200,
+      "dust_density": 2.4,
+      "air_density": 1.2
+    },
+    "fog": {
+      "enabled": true,
+      "density": 0.0035,
+      "color": "#9aa8b4",
+      "anisotropy": 0.55
+    }
+  },
+
+  "camera": {
+    "location": [0, -26, 3.4],
+    "look_at": [0, 30, 2.0],
+    "focal_length_mm": 40,
+    "roll_deg": -1.5
+  },
+
+  "objects": [
+    {
+      "type": "ocean",
+      "id": "sea",
+      "size": 1200,
+      "resolution": 14,
+      "wave_strength": 0.85,
+      "spectrum": "jonswap",
+      "fetch_km": 350,
+      "alignment": 0.75,
+      "direction_deg": 95,
+      "depth_m": 400,
+      "clarity_m": 4.0,
+      "time": 21.0,
+      "seed": 3
+    },
+    {
+      "type": "rock",
+      "id": "stack",
+      "style": "spire",
+      "size": 9.0,
+      "location": [11, 22, -1.5],
+      "rotation_deg": [0, 4, 30],
+      "erosion": 0.25,
+      "detail": 4,
+      "seed": 12
+    },
+    {
+      "type": "rock",
+      "style": "boulder",
+      "size": 4.5,
+      "location": [-14, 34, -1.0],
+      "erosion": 0.6,
+      "detail": 3,
+      "seed": 7
+    }
+  ]
+}

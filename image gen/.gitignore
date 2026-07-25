@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+renders/
+*.png
+*.jpg
+*.exr
+# Mantaflow bake caches
+cache_fluid/

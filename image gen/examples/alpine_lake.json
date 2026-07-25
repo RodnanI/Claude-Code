@@ -1,0 +1,126 @@
+{
+  "name": "alpine_lake",
+  "description": "Mountain terrain, a scattered pine forest and still water. Exercises terrain generation, scatter placement with slope and altitude limits, and calm-water refraction.",
+
+  "render": {
+    "resolution": "1080p",
+    "aspect_ratio": "16:9",
+    "samples": 160,
+    "denoise": true,
+    "ray_tracing": {
+      "transmission_bounces": 12
+    },
+    "film": {
+      "view_transform": "agx",
+      "look": "punchy"
+    }
+  },
+
+  "world": {
+    "sky": {
+      "type": "physical",
+      "sun_elevation_deg": 14,
+      "sun_rotation_deg": 62,
+      "dust_density": 1.6
+    },
+    "fog": {
+      "enabled": true,
+      "density": 0.0016,
+      "color": "#b6c6d4",
+      "anisotropy": 0.4
+    }
+  },
+
+  "camera": {
+    "location": [40, -330, 96],
+    "look_at": [0, 10, 16],
+    "focal_length_mm": 55,
+    "depth_of_field": {
+      "enabled": true,
+      "f_stop": 11,
+      "focus_distance": 350
+    }
+  },
+
+  "materials": {
+    "alpine_ground": {
+      "preset": "rock",
+      "color": "#4a4740",
+      "texture": {
+        "type": "noise",
+        "scale": 0.06,
+        "detail": 6,
+        "contrast": 1.4,
+        "color_a": "#3d4a2e",
+        "color_b": "#6b665c"
+      },
+      "bump": { "type": "noise", "scale": 0.5, "strength": 0.35 }
+    }
+  },
+
+  "objects": [
+    {
+      "type": "terrain",
+      "id": "valley",
+      "style": "mountains",
+      "size": 420,
+      "resolution": 300,
+      "height": 78,
+      "seed": 21,
+      "warp": 0.55,
+      "sea_level": 2.0,
+      "material": "alpine_ground"
+    },
+    {
+      "type": "ocean",
+      "id": "lake",
+      "size": 260,
+      "location": [0, 0, 3.2],
+      "resolution": 10,
+      "wave_strength": 0.14,
+      "spectrum": "pierson_moskowitz",
+      "clarity_m": 3.5,
+      "depth_m": 12,
+      "seed": 5
+    },
+    {
+      "type": "scatter",
+      "id": "forest",
+      "on": "valley",
+      "count": 320,
+      "seed": 4,
+      "area": 380,
+      "spacing": 6.5,
+      "max_slope_deg": 34,
+      "altitude_range": [5.0, 46.0],
+      "scale_range": [0.7, 1.4],
+      "align_to_normal": 0.15,
+      "generator": {
+        "type": "tree",
+        "style": "pine",
+        "height": 15,
+        "detail": "low",
+        "seed": 9
+      }
+    },
+    {
+      "type": "scatter",
+      "on": "valley",
+      "count": 90,
+      "seed": 17,
+      "area": 340,
+      "max_slope_deg": 50,
+      "altitude_range": [2.5, 60.0],
+      "scale_range": [0.5, 2.2],
+      "align_to_normal": 0.7,
+      "generator": {
+        "type": "rock",
+        "style": "boulder",
+        "size": 3.2,
+        "detail": 2,
+        "erosion": 0.7,
+        "seed": 31
+      }
+    }
+  ]
+}

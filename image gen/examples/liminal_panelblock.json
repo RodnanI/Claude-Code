@@ -1,0 +1,123 @@
+{
+  "name": "liminal_panelblock",
+  "description": "The inside of a post-Soviet apartment block that never ends. Two facades face each other across a shaft with no floor and no roof, extending past the frame in every direction. Flat sourceless light, a handful of lit windows, and enough haze that the repetition dissolves rather than terminates.",
+  "render": {
+    "resolution": "1080p",
+    "aspect_ratio": "4:3",
+    "samples": 220,
+    "denoise": true,
+    "ray_tracing": {
+      "max_bounces": 8,
+      "diffuse_bounces": 5,
+      "transmission_bounces": 4,
+      "clamp_indirect": 6.0
+    },
+    "film": {
+      "view_transform": "agx",
+      "look": "none",
+      "exposure": -0.1
+    }
+  },
+  "world": {
+    "sky": {
+      "type": "gradient",
+      "top": "#949aa0",
+      "bottom": "#71746b",
+      "strength": 6.5
+    },
+    "fog": {
+      "enabled": true,
+      "density": 0.009,
+      "color": "#a3a99f",
+      "anisotropy": 0.1
+    }
+  },
+  "camera": {
+    "location": [
+      -13,
+      -4,
+      1.5
+    ],
+    "look_at": [
+      22,
+      3.5,
+      -1.0
+    ],
+    "focal_length_mm": 26,
+    "shift": [
+      0,
+      0.04
+    ]
+  },
+  "materials": {
+    "stained_trim": {
+      "preset": "concrete",
+      "color": "#6b6f68",
+      "bump": {
+        "type": "noise",
+        "scale": 9.0,
+        "strength": 0.13
+      }
+    },
+    "dead_window": {
+      "preset": "glass",
+      "color": "#191d20",
+      "roughness": 0.05,
+      "transmission": 0.0,
+      "metallic": 0.2
+    }
+  },
+  "objects": [
+    {
+      "type": "facade",
+      "id": "near_wall",
+      "location": [
+        20,
+        0,
+        0
+      ],
+      "bays": 46,
+      "floors": 44,
+      "bay_width": 3.2,
+      "floor_height": 2.8,
+      "recess": 0.42,
+      "seam": 0.06,
+      "lit_fraction": 0.05,
+      "balcony_every": 3,
+      "seed": 11,
+      "trim_material": "stained_trim",
+      "glass_material": "dead_window",
+      "weathering": 0.85,
+      "panel_dark": "#4f5249",
+      "panel_light": "#c0bfb0"
+    },
+    {
+      "type": "facade",
+      "id": "far_wall",
+      "location": [
+        -34,
+        0,
+        0
+      ],
+      "rotation_deg": [
+        0,
+        0,
+        180
+      ],
+      "bays": 46,
+      "floors": 44,
+      "bay_width": 3.2,
+      "floor_height": 2.8,
+      "recess": 0.42,
+      "seam": 0.06,
+      "lit_fraction": 0.03,
+      "balcony_every": 3,
+      "seed": 27,
+      "trim_material": "stained_trim",
+      "glass_material": "dead_window",
+      "weathering": 0.85,
+      "panel_dark": "#4f5249",
+      "panel_light": "#c0bfb0"
+    }
+  ]
+}
