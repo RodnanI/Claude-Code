@@ -1,0 +1,8 @@
+hl_render
+*.raw
+*.o
+video.mp4
+master.mp4
+audio.wav
+events.txt
+ffmpeg2pass*
