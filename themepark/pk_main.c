@@ -310,12 +310,13 @@ static void shot_camera(float t, Cam *c)
 
         /* the things you look at, and cannot account for */
         glance(c, t,  26.0f,  31.0f, v3(-70.5f, 15.0f, -55.5f));   /* something in the fog */
-        glance(c, t,  40.0f,  45.0f, v3( 22.0f,  2.10f, -43.5f));  /* the row of booths    */
-        glance(c, t,  49.5f,  52.5f, v3( 13.5f,  1.55f, -37.0f));  /* behind a stall       */
+        glance(c, t,  33.0f,  37.0f, v3(  0.0f,  2.00f, -40.5f));  /* a counter, and what is on it */
+        glance(c, t,  42.5f,  46.0f, v3(  4.5f,  1.30f, -31.0f));  /* the gap behind the stalls */
+        glance(c, t,  49.5f,  53.0f, v3( 24.0f,  5.00f, -33.0f));  /* something turning, further off */
         glance(c, t,  56.0f,  63.5f, v3( 24.0f,  3.10f, -33.0f));  /* the carousel, reversed */
         glance(c, t,  66.5f,  69.0f, v3( -7.5f, 13.0f, -19.5f));   /* and a wheel, over the roofs */
         glance(c, t,  73.0f,  79.5f, v3(  2.2f,  2.70f, -12.5f));  /* the track, and the concrete */
-        glance(c, t,  88.5f,  91.5f, v3( 13.5f,  0.10f,   2.0f));  /* something on the ground */
+        glance(c, t,  88.0f,  92.0f, v3( 15.0f,  1.35f,  30.0f));  /* down the next one, which is the same */
         glance(c, t, 101.0f, 105.0f, v3( 55.5f, 12.0f,   4.5f));   /* a loop, out in the fog */
         glance(c, t, 110.0f, 116.5f, v3( 36.2f,  1.30f,  26.5f));  /* the popcorn cart     */
         glance(c, t, 122.0f, 126.0f, v3( 34.5f,  3.40f,  30.0f));  /* signs, all the same  */

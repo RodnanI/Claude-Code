@@ -1483,6 +1483,9 @@ static void build_park(void)
     carve_rect(&GM, 30, 26, 35, 34);
     /* the carousel's own circle */
     carve_rect(&GM, 37, 18, 43, 24);
+    /* two gaps one cell wide behind rows of stalls, open at both ends */
+    carve_rect(&GM, 33, 19, 33, 23);
+    carve_rect(&GM, 26, 36, 26, 40);
     /* the wide plaza at the end, and the arena beside it */
     carve_rect(&GM, 31, 46, 46, 58);
 
