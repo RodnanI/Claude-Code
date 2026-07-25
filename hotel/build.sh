@@ -5,8 +5,13 @@
 #
 # Stage 1 raymarches 7200 frames straight into x264 and writes a sidecar file of
 # footfall and event times. Stage 2 synthesises the sound against those times.
-# Stage 3 muxes. Stage 4 is a two-pass VBR encode onto a size target, because
-# grain this heavy will happily eat any bitrate you give it.
+# Stage 3 muxes. Stage 4 is a two-pass VBR encode onto a size target.
+#
+# The intermediate runs about 70 kB a frame, because grain this heavy is very
+# nearly incompressible, so hitting 95 MB is a 5.7:1 reduction -- about a third
+# of a bit per pixel. At that budget x264's default psy settings spend the
+# bitrate on smoothing the grain away, which is the one thing on this tape that
+# must survive, so the final pass is tuned for it.
 set -e
 cd "$(dirname "$0")"
 
@@ -32,20 +37,23 @@ echo "== muxing =="
   -movflags +faststart master.mp4 -loglevel error
 
 echo "== compressing to ~${TARGET_MB} MB =="
-# leave the audio 160k, give the rest of the budget to the picture
+# Decimal MB, not MiB: it is the base GitHub's 100 MB per-file limit uses, and
+# a 95 MiB file is 99.87 MB, which leaves 130 kB of headroom and no room to be
+# wrong about container overhead.
 VBR=$(python3 - "$TARGET_MB" <<'PY'
 import sys
 mb = float(sys.argv[1])
-total_kbps = mb*1024*1024*8/300.0/1000.0
+total_kbps = mb*1e6*8/300.0/1000.0
 print(int(total_kbps - 160 - 8))
 PY
 )
 echo "   video bitrate: ${VBR}k"
-"$FF" -y -i master.mp4 -c:v libx264 -preset slow -b:v ${VBR}k -pass 1 \
-    -pix_fmt yuv420p -an -f mp4 /dev/null -loglevel error
-"$FF" -y -i master.mp4 -c:v libx264 -preset slow -b:v ${VBR}k -pass 2 \
-    -pix_fmt yuv420p -c:a aac -b:a 160k -ac 2 \
-    -movflags +faststart "$OUT" -loglevel error
+for PASS in 1 2; do
+  if [ "$PASS" = 1 ]; then EXTRA="-an -f mp4 /dev/null"
+  else EXTRA="-c:a aac -b:a 160k -ac 2 -movflags +faststart $OUT"; fi
+  "$FF" -y -i master.mp4 -c:v libx264 -preset slow -tune grain \
+      -b:v ${VBR}k -pass $PASS -pix_fmt yuv420p $EXTRA -loglevel error
+done
 rm -f ffmpeg2pass-0.log ffmpeg2pass-0.log.mbtree
 
 echo "== done: $OUT =="
