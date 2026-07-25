@@ -6,3 +6,7 @@ pk_render
 events*.txt
 render.log
 ff.log
+segments/
+still_*.jpg
+concat.txt
+pk2pass*

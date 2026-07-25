@@ -126,10 +126,41 @@ keyed to the same frames the picture tears on.
     build.sh     render + synthesise + mux
     shot.sh      render a single frame at a given second, for inspection
 
+    themepark_colab.ipynb  render it on Google Colab and upload the result
+    make_colab.py          rebuild that notebook from these sources
+
 `./shot.sh 168 out` renders the frame at 2:48 to a PNG.
 `./pk_render -dump` audits the camera path without rendering anything.
 
 ## Requirements
 
 gcc with OpenMP, Python 3 with numpy and scipy, and an ffmpeg binary
-(`pip install imageio-ffmpeg` provides one). About half an hour on four cores.
+(`pip install imageio-ffmpeg` provides one). About an hour on four cores, and
+around 400 MB of H.264 at the default CRF 18.
+
+## Rendering it on Colab
+
+`themepark_colab.ipynb` does the whole thing on a free Colab CPU runtime and
+uploads the finished tape to a [Devved Drive](https://drive.devved.app). Upload
+the notebook, Runtime → Run all, paste the Drive token at the one prompt.
+
+The four sources are packed into the notebook itself — gzipped, base64'd, one
+cell — so it is the only file you need. `./make_colab.py` rebuilds it; run that
+after touching any of the sources or the notebook will render the old ones.
+
+It differs from `build.sh` in one way that matters. Colab drops runtimes, and
+this is a multi-hour render, so the notebook renders in 25 second chunks and
+keeps each finished one, and running the cell again skips what is already
+done. A chunk is only renamed into place once it has fully rendered, so a
+resume never inherits half a file.
+
+Chunking costs something. The monitor screens the previous finished frame, so
+its picture depends on the whole history of the tape, and a chunk that starts
+cold rebuilds that from a handful of warmup frames instead of inheriting it.
+The default boundaries fall well away from the two stretches where the monitor
+is on camera; `CHUNK_SECONDS = 300` gives a single continuous pass and no
+resume, which is exactly what `build.sh` does.
+
+The token is never written into the notebook. It is read from the Colab secret
+`DEVVED_DRIVE_TOKEN`, the environment, or a hidden prompt, in that order, and
+is only ever sent to the Drive host.
