@@ -26,9 +26,9 @@ class P1Markow(Scene):
 
         # Zustandsdiagramm
         s = Circle(radius=0.72, color=AMBER, stroke_width=3,
-                   fill_color=AMBER, fill_opacity=0.12).move_to([-2.6, 0.5, 0])
+                   fill_color=AMBER, fill_opacity=0.12).move_to([-2.6, -0.15, 0])
         r = Circle(radius=0.72, color=BLUE, stroke_width=3,
-                   fill_color=BLUE, fill_opacity=0.12).move_to([2.6, 0.5, 0])
+                   fill_color=BLUE, fill_opacity=0.12).move_to([2.6, -0.15, 0])
         sl = Text("Sonne", font=FONT, font_size=24, color=AMBER).move_to(s)
         rl = Text("Regen", font=FONT, font_size=24, color=BLUE).move_to(r)
 
@@ -55,7 +55,7 @@ class P1Markow(Scene):
 
         M = MathTex(r"M=" + pmat([["0{,}8", "0{,}4"], ["0{,}2", "0{,}6"]]),
                     font_size=44, color=PURPLE)
-        place(M, x=0, top=-1.15)
+        place(M, x=0, top=-1.75)
         self.play(Write(M), run_time=1.4)
         self.wait(1.6)
 
@@ -66,7 +66,7 @@ class P1Markow(Scene):
         self.wait(3.4)
 
         self.play(FadeOut(VGroup(story, diagram, hint)), run_time=0.7)
-        self.play(M.animate.move_to([-4.4, 2.0, 0]).scale(0.8), run_time=0.9)
+        self.play(M.animate.scale(0.75).move_to([-5.1, 2.15, 0]), run_time=0.9)
 
         # Iteration
         states = [(1.0, 0.0)]
@@ -98,7 +98,7 @@ class P1Markow(Scene):
 
         head = h3("Wie entwickelt sich das Wetter, wenn heute die Sonne scheint?",
                   size=28, color=FG)
-        place(head, x=0.6, top=TOP_Y - 0.2, w=8.6)
+        place(head, x=1.1, top=TOP_Y - 0.2, w=7.9)
         self.play(FadeIn(head), run_time=0.9)
 
         xs = [-4.6 + i * 1.78 for i in range(7)]
@@ -116,7 +116,7 @@ class P1Markow(Scene):
 
         conv = h3("Es pendelt sich ein — unabhängig vom Startwetter.",
                   size=29, color=GREEN)
-        place(conv, x=0.6, top=head.get_bottom()[1] - 0.45, w=9)
+        place(conv, x=1.1, top=head.get_bottom()[1] - 0.45, w=8.4)
         self.play(FadeIn(conv, shift=UP * 0.2), run_time=0.9)
         self.wait(3.0)
 

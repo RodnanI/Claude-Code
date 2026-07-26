@@ -51,19 +51,32 @@ render_one() {
   fi
 }
 
-if [[ "$SKIP_RENDER" == "0" ]]; then
-  echo ">>> Rendere Szenen ($DIR, $JOBS parallel)"
-  running=0
+render_pass() {
+  local jobs="$1" running=0
   while read -r mod scene; do
     [[ -z "${mod:-}" ]] && continue
+    if (( jobs <= 1 )); then
+      render_one "$mod" "$scene"
+      continue
+    fi
     render_one "$mod" "$scene" &
     running=$((running + 1))
-    if (( running >= JOBS )); then
+    if (( running >= jobs )); then
       wait -n
       running=$((running - 1))
     fi
   done < <(awk 'NF' "$HERE/scenes.txt")
   wait
+}
+
+if [[ "$SKIP_RENDER" == "0" ]]; then
+  # Erster Durchgang parallel. Dabei können sich zwei Prozesse beim
+  # gemeinsamen LaTeX-Cache in die Quere kommen; deshalb wird danach
+  # seriell nachgeholt, was fehlt (vorhandene Dateien werden übersprungen).
+  echo ">>> Rendere Szenen ($DIR, $JOBS parallel)"
+  render_pass "$JOBS"
+  echo ">>> Zweiter Durchgang (seriell) für fehlende Szenen"
+  render_pass 1
 fi
 
 # ---------------------------------------------------------------- prüfen

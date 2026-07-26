@@ -88,8 +88,8 @@ class G2Gauss(Scene):
         ]
 
         cur = board(stages[0][0])
-        place(cur, x=0, y=0.85, w=8)
-        self.play(FadeIn(cur), run_time=1.0)
+        place(cur, x=0, y=1.55, w=8.6)
+        self.play(FadeOut(intro), FadeIn(cur), run_time=1.0)
         self.wait(2.0)
 
         for rows, op in stages[1:]:
@@ -105,7 +105,7 @@ class G2Gauss(Scene):
 
         stufen = h3("Stufenform erreicht — jetzt von unten nach oben einsetzen.",
                     size=29, color=GREEN)
-        place(stufen, x=0, top=-0.9, w=12)
+        place(stufen, x=0, top=0.30, w=12)
         self.play(FadeIn(stufen, shift=UP * 0.2), run_time=0.9)
         self.wait(2.2)
 
@@ -118,7 +118,7 @@ class G2Gauss(Scene):
         shown = VGroup()
         for tex, why in back:
             m = MathTex(tex, font_size=38)
-            m.next_to(prev, DOWN, buff=0.42).set_x(-1.4)
+            m.next_to(prev, DOWN, buff=0.40).set_x(-1.4)
             note = small(why, size=20, color=DIM)
             note.next_to(m, RIGHT, buff=0.55).set_y(m.get_y())
             self.play(FadeIn(m, shift=UP * 0.15), FadeIn(note), run_time=0.8)
@@ -127,7 +127,7 @@ class G2Gauss(Scene):
             prev = m
 
         res = MathTex(r"L=\{(1\,|\,2\,|\,3)\}", font_size=44, color=GREEN)
-        res.next_to(prev, DOWN, buff=0.45).set_x(-1.4)
+        res.next_to(prev, DOWN, buff=0.42).set_x(-1.4)
         self.play(Write(res), run_time=1.0)
         self.play(Circumscribe(res, color=GREEN, buff=0.14), run_time=1.1)
         self.wait(3.2)
