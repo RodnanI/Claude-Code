@@ -28,7 +28,7 @@ bis zu Eigenwerten, Diagonalisierung und Anwendungen.
 | 10 | Übungsaufgaben | sechs Aufgaben mit vollem Lösungsweg und Pausen-Balken |
 | 11 | Zusammenfassung | rote Fäden, Formelsammlung, Ausblick |
 
-Insgesamt 78 Szenen, rund 45 Minuten Laufzeit.
+Insgesamt 78 Szenen, rund 42 Minuten Laufzeit.
 
 ---
 
@@ -130,3 +130,12 @@ keine Samples, keine externen Dateien, keine Lizenzfragen.
 * **Lesetempo statt Sprechtempo.** Weil es keine Tonspur mit Sprache gibt, sind
   die Standzeiten großzügig bemessen; die Übungsaufgaben haben einen sichtbaren
   Pausenbalken.
+
+Das Lesetempo lässt sich zentral steuern: `theme.py` streckt jedes `Scene.wait()`
+um den Faktor `MATRIZEN_PACE` (Standard 1,5). Die Einblend-Animationen bleiben
+davon unberührt, nur die Standzeiten wachsen.
+
+```bash
+MATRIZEN_PACE=1.0 ./build/render.sh -q l    # schnelle Kontrollfassung
+MATRIZEN_PACE=1.8 ./build/render.sh -q h    # noch gemächlicher
+```

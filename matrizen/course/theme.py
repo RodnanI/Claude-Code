@@ -4,7 +4,28 @@ Dunkles, ruhiges Farbschema, eine Schriftfamilie (Inter) für Fließtext,
 JetBrains Mono für Zahlen in Tabellen, Latin Modern (LaTeX) für Formeln.
 """
 
+import os
+
 from manim import *
+
+# --------------------------------------------------------------------------
+# Lesetempo
+# --------------------------------------------------------------------------
+# Der Kurs hat keine Sprachspur — alles muss gelesen werden. Deshalb werden
+# alle Standzeiten (Scene.wait) global gestreckt. Die Einblend-Animationen
+# selbst bleiben unverändert flott.
+#   MATRIZEN_PACE=1.0  -> Rohtempo (nur zum schnellen Prüfen)
+#   MATRIZEN_PACE=1.5  -> Standard: bequem mitlesbar
+PACE = float(os.environ.get("MATRIZEN_PACE", "1.5"))
+
+_manim_wait = Scene.wait
+
+
+def _paced_wait(self, duration=DEFAULT_WAIT_TIME, *args, **kwargs):
+    return _manim_wait(self, duration * PACE, *args, **kwargs)
+
+
+Scene.wait = _paced_wait
 
 # --------------------------------------------------------------------------
 # Farbpalette (Dark Mode)
