@@ -447,23 +447,23 @@ class A7Rechengesetze(Scene):
 
         def block(title, items, col):
             t = Text(title, font=FONT, font_size=27, color=col, weight=SEMIBOLD)
+            ln = Line(LEFT, RIGHT, color=col, stroke_width=2.5).set_width(1.0)
+            head = VGroup(t, ln).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
             rows = VGroup()
             for tex, desc in items:
-                m = MathTex(tex, font_size=31, color=FG)
+                m = MathTex(tex, font_size=32, color=FG)
+                fit(m, w=5.4)
                 d = Text(desc, font=FONT, font_size=19, color=DIM)
-                holder = Rectangle(width=4.4, height=0.62, stroke_opacity=0, fill_opacity=0)
-                fit(m, w=4.3)
-                m.move_to(holder).align_to(holder, LEFT)
-                d.next_to(holder, RIGHT, buff=0.25).set_y(holder.get_y())
-                rows.add(VGroup(holder, m, d))
-            rows.arrange(DOWN, aligned_edge=LEFT, buff=0.36)
-            g = VGroup(t, rows).arrange(DOWN, aligned_edge=LEFT, buff=0.45)
-            return g
+                fit(d, w=5.4)
+                r = VGroup(m, d).arrange(DOWN, aligned_edge=LEFT, buff=0.14)
+                rows.add(r)
+            rows.arrange(DOWN, aligned_edge=LEFT, buff=0.34)
+            return VGroup(head, rows).arrange(DOWN, aligned_edge=LEFT, buff=0.42)
 
         g1 = block("Das gilt immer", gilt, GREEN)
         g2 = block("Das gilt NICHT", nicht, RED)
-        both = VGroup(g1, g2).arrange(DOWN, aligned_edge=LEFT, buff=0.75)
-        place(both, x=0, top=hdr.get_bottom()[1] - 0.45, h=5.5, w=12.4)
+        both = VGroup(g1, g2).arrange(RIGHT, aligned_edge=UP, buff=1.5)
+        place(both, x=0, top=hdr.get_bottom()[1] - 0.5, h=5.3, w=12.4)
 
         self.play(FadeIn(g1[0], shift=RIGHT * 0.2), run_time=0.7)
         for r in g1[1]:

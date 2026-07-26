@@ -292,12 +292,13 @@ class E5Eigenraum(Scene):
         self.play(Write(pr), run_time=2.0)
         self.wait(2.6)
 
-        pl = grid(x_range=(-4, 4, 1), y_range=(-2.6, 2.6, 1), width=7.0, height=4.6)
-        pl.move_to([0, -1.35, 0])
+        pl = grid(x_range=(-3, 3, 1), y_range=(-2.4, 2.4, 1), width=6.0, height=4.4)
+        pl.move_to([-3.3, -1.15, 0])
         self.play(FadeIn(pl), run_time=0.8)
-        gerade = Line(pl.c2p(-2.4, 2.4), pl.c2p(2.4, -2.4), color=AMBER, stroke_width=4)
+        gerade = DashedLine(pl.c2p(-2.3, 2.3), pl.c2p(2.3, -2.3), color=DIM,
+                            stroke_width=3, dash_length=0.13)
         vs = VGroup(*[vec_arrow(pl, (k, -k), color=AMBER, width=5, tip_len=0.16)
-                      for k in [0.6, 1.2, 1.8, -0.8, -1.6]])
+                      for k in [0.7, 1.4, 2.1, -0.9, -1.8]])
         self.play(Create(gerade), run_time=0.9)
         self.play(LaggedStart(*[GrowArrow(v) for v in vs], lag_ratio=0.2), run_time=1.6)
         self.wait(1.4)
@@ -305,15 +306,13 @@ class E5Eigenraum(Scene):
         lab = MathTex(r"E_{\lambda=2} = \Big\{\,t\cdot" + cvec([1, -1])
                       + r"\;\Big|\; t\in\mathbb{R}\,\Big\}", font_size=36, color=AMBER)
         lp = panel(lab, pad=0.3, fill=SURFACE, opacity=0.94)
-        lp.move_to([3.6, -1.0, 0])
-        fit(lp, w=6.0)
-        lp.move_to([3.7, -1.0, 0])
+        place(lp, x=3.5, y=-1.0, w=6.4)
         self.play(FadeIn(lp), run_time=0.9)
         self.wait(3.4)
 
-        cap = small("Die ganze Gerade heißt Eigenraum zum Eigenwert 2.", size=23,
-                    color=MUTED)
-        place(cap, x=0, top=-3.5, w=12)
+        cap = body("Die ganze Gerade heißt Eigenraum\nzum Eigenwert 2.", size=24,
+                   color=MUTED)
+        place(cap, x=3.5, top=lp.get_bottom()[1] - 0.6, w=6.4)
         self.play(FadeIn(cap), run_time=0.8)
         self.wait(3.0)
         self.play(*[FadeOut(m) for m in self.mobjects[1:]], run_time=0.8)

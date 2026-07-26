@@ -317,27 +317,27 @@ class L4Drehmatrix(Scene):
 
         self.play(FadeOut(VGroup(step, r1, r2, pl, circ, e1, e2, f1, f2, arc, al)),
                   run_time=0.8)
-        self.play(res.animate.move_to([0, 2.6, 0]).scale(0.95), run_time=0.9)
+        self.play(res.animate.scale(0.9).move_to([0, 2.02, 0]), run_time=0.9)
 
         # Beispiel 90 Grad
         ex = MathTex(r"\alpha=90^\circ:\quad D_{90}=" + pmat([[r"\cos 90^\circ", r"-\sin 90^\circ"],
                                                               [r"\sin 90^\circ", r"\cos 90^\circ"]])
                      + "=" + pmat([[0, -1], [1, 0]]), font_size=40)
-        place(ex, x=0, y=1.0, w=12)
+        place(ex, x=0, y=0.62, w=12)
         self.play(Write(ex), run_time=2.2)
         self.wait(2.6)
 
         ex2 = MathTex(r"\alpha=180^\circ:\quad D_{180}=" + pmat([[-1, 0], [0, -1]])
                       + r"\qquad \alpha=360^\circ:\quad D_{360}=" + pmat([[1, 0], [0, 1]]) + "=E",
                       font_size=36)
-        place(ex2, x=0, y=-0.4, w=12.4)
+        place(ex2, x=0, y=-0.78, w=12.4)
         self.play(Write(ex2), run_time=2.0)
         self.wait(3.0)
 
-        nb = note_box(body("Zwei Drehungen nacheinander ergeben wieder eine Drehung:\n"
-                           "D_β · D_α = D_(α+β).  Das Matrixprodukt addiert die Winkel.",
+        nb = note_box(body("Zwei Drehungen nacheinander ergeben wieder eine Drehung —\n"
+                           "die beiden Winkel addieren sich dabei einfach.",
                            size=23, color=FG), color=PURPLE, label="Schön daran")
-        place(nb, x=0, top=-1.55, w=11)
+        place(nb, x=0, top=-1.65, w=11)
         self.play(FadeIn(nb), run_time=0.9)
         self.wait(3.6)
         self.play(*[FadeOut(m) for m in self.mobjects[1:]], run_time=0.8)

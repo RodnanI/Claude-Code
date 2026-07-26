@@ -219,26 +219,26 @@ class P2Verflechtung(Scene):
         gA = VGroup(A, capA).arrange(DOWN, buff=0.3)
         gB = VGroup(B, capB).arrange(DOWN, buff=0.3)
         row = VGroup(gA, gB).arrange(RIGHT, buff=1.6)
-        place(row, x=0, top=TOP_Y - 0.2, w=12)
+        place(row, x=0, top=TOP_Y - 0.05, w=12)
         self.play(FadeIn(gA), run_time=0.9)
         self.wait(1.8)
         self.play(FadeIn(gB), run_time=0.9)
         self.wait(2.2)
 
         q = h3("Wie viel Rohstoff steckt direkt in einem Endprodukt?", size=29, color=FG)
-        place(q, x=0, top=row.get_bottom()[1] - 0.6, w=12)
+        place(q, x=0, top=row.get_bottom()[1] - 0.45, w=12)
         self.play(FadeIn(q), run_time=0.9)
         self.wait(2.0)
 
         prod = MathTex("C = A\\cdot B =" + pmat(Av) + pmat(Bv) + "=" + pmat(Cv),
                        font_size=40, color=GREEN)
-        place(prod, x=0, top=q.get_bottom()[1] - 0.5, w=12.4)
+        place(prod, x=0, top=q.get_bottom()[1] - 0.45, w=12.4)
         self.play(Write(prod), run_time=2.4)
         self.wait(2.4)
 
         read = body("Beispiel: für ein Stück E₁ braucht man 11 Einheiten R₁ und 13 Einheiten R₂.",
                     size=25)
-        place(read, x=0, top=prod.get_bottom()[1] - 0.45, w=12.4)
+        place(read, x=0, top=prod.get_bottom()[1] - 0.40, w=12.4)
         self.play(FadeIn(read), run_time=0.9)
         self.wait(3.4)
 
