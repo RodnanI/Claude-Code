@@ -3,7 +3,8 @@ course/media/
 course/__pycache__/
 __pycache__/
 
-# Renderergebnisse (zu groß fürs Repo, bis auf das Endvideo)
+# Renderergebnisse: nur die Kompaktfassung liegt im Repo,
+# die 1080p-Fassung und die Musik-WAV sind zu groß.
 out/*
 !out/.gitkeep
-out/musik.wav
+!out/matrizen_kurs_720p_kompakt.mp4
