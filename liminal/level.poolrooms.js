@@ -53,21 +53,21 @@ function ceramic(c,S,rng,TX,n,rgb,groutRGB,drift,gloss){
 
 const MATS={
   wallTile:{tile:1.0,bump:0.5,specular:0.30,shininess:70,draw(c,S,rng,TX){
-    ceramic(c,S,rng,TX,6,[226,229,222],[176,180,172],0.06,1.0);
+    ceramic(c,S,rng,TX,6,[209,213,206],[161,165,158],0.06,1.0);
     TX.streaks(c,rng,12,TX.rgba(150,160,152),3,0.16);
   }},
   wallTrim:{tile:1.0,bump:0.45,specular:0.34,shininess:80,draw(c,S,rng,TX){
     ceramic(c,S,rng,TX,6,[122,166,163],[92,124,122],0.08,1.1);
   }},
   floorTile:{tile:0.75,bump:0.45,specular:0.42,shininess:96,draw(c,S,rng,TX){
-    ceramic(c,S,rng,TX,4,[214,219,213],[166,172,166],0.05,0.85);
+    ceramic(c,S,rng,TX,4,[184,190,185],[142,148,143],0.05,0.85);
     TX.stains(c,rng,5,TX.rgba(150,164,158),0.24,0.06,0.22);
   }},
   poolTile:{tile:1.0,bump:0.4,specular:0.5,shininess:110,draw(c,S,rng,TX){
     ceramic(c,S,rng,TX,8,[150,196,192],[104,142,140],0.08,1.2);
   }},
   poolEdge:{tile:1.0,bump:0.35,specular:0.4,shininess:90,draw(c,S,rng,TX){
-    ceramic(c,S,rng,TX,4,[236,238,232],[184,188,180],0.04,1.0);
+    ceramic(c,S,rng,TX,4,[219,222,216],[170,174,167],0.04,1.0);
   }},
   ceilTile:{tile:0.8,bump:0.3,specular:0.16,shininess:40,draw(c,S,rng,TX){
     ceramic(c,S,rng,TX,5,[218,222,218],[180,184,180],0.05,0.6);
@@ -295,9 +295,9 @@ LIMINAL.registerLevel({
         W.ceiling(mx-pw/2,mz-pw/2,mx+pw/2,mz+pw/2,h-0.06,M.skylight,{uvScale:0.5});
         W.box(mx-pw/2-0.1,h-0.10,mz-pw/2-0.1,pw+0.2,0.10,pw+0.2,M.wallTile,{solid:false,uvScale:1});
         W.light({x:mx,y:h-0.5,z:mz,r:0.94,g:1.0,b:0.99,
-                 radius:k==='hall'?22:17,intensity:k==='hall'?2.0:1.7,flicker:0});
+                 radius:k==='hall'?22:17,intensity:k==='hall'?1.45:1.20,flicker:0});
         // a weak bounce light near the floor keeps the underside of things readable
-        W.light({x:mx,y:0.9,z:mz,r:0.55,g:0.80,b:0.80,radius:9,intensity:0.24,shadow:false});
+        W.light({x:mx,y:0.9,z:mz,r:0.55,g:0.80,b:0.80,radius:9,intensity:0.16,shadow:false});
       }
 
       /* columns */
@@ -376,7 +376,7 @@ LIMINAL.registerLevel({
       fogColor:[0.185,0.285,0.295],
       fogDensity:0.020,
       ambient:[0.105,0.135,0.140],
-      exposure:1.0,
+      exposure:0.88,
       lift:[0.004,0.010,0.010],
       gain:[0.95,1.01,1.02],
       sat:1.06,
