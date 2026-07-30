@@ -267,7 +267,11 @@ select:focus{outline:none;border-color:var(--accent)}
       <div class="grow"></div>
       <button class="btn sm ghost" id="lvRescan">Rescan</button>
       <button class="btn sm ghost" id="lvLoad">Load file…</button>
-      <input type="file" id="lvFile" accept=".js" multiple hidden>
+      <!-- No accept filter. iOS maps the accept list to UTIs, and it has no UTI
+           for a bare ".js" extension, so on iPhone/iPad an accept=".js" input
+           greys out every file in the picker and the button does nothing. The
+           extension is checked in loadFromFile instead. -->
+      <input type="file" id="lvFile" multiple hidden>
     </div>
     <div class="lvbody">
       <div class="cards scroll" id="cards"></div>
@@ -2272,8 +2276,9 @@ const $=id=>document.getElementById(id);
 /* Filenames probed when there is no directory index and no manifest —
    this is what makes the whole thing work straight off file://          */
 const CANDIDATES=[
-  'level.backrooms.js','level.poolrooms.js','level.office.js','level.mall.js',
-  'level.hotel.js','level.carpark.js','level.school.js','level.pipes.js',
+  'level.backrooms.js','level.poolrooms.js','level.atrium.js','level.spillway.js',
+  'level.stacks.js','level.carpark.js','level.concourse.js','level.school.js',
+  'level.office.js','level.mall.js','level.hotel.js','level.pipes.js',
   'level.hospital.js','level.arcade.js','level.warehouse.js','level.stairs.js',
   'levels/backrooms.js','levels/poolrooms.js'
 ];
@@ -2378,11 +2383,21 @@ const UI={
   },
 
   loadFromFile(file){
+    if(!/\.(js|txt)$/i.test(file.name)){
+      alert('Not a level file: '+file.name+'\n\nLevels are .js files that call LIMINAL.registerLevel().');
+      return;
+    }
+    const before=LIMINAL.levels.length;
     const fr=new FileReader();
     fr.onload=()=>{
-      try{ (new Function(fr.result)).call(window); this.renderCards(); this.toast('loaded '+file.name); }
+      try{
+        (new Function(fr.result)).call(window);
+        this.renderCards();
+        this.toast(LIMINAL.levels.length>before?'loaded '+file.name:file.name+' registered no levels');
+      }
       catch(e){ alert('Could not load '+file.name+'\n\n'+e.message); }
     };
+    fr.onerror=()=>alert('Could not read '+file.name);
     fr.readAsText(file);
   },
 

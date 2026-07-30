@@ -14,10 +14,21 @@ single image or sound file in this project.
 ```
 liminal/
 ├── index.html            the main file — engine, UI, everything
-├── level.backrooms.js    Level 0 · The Lobby
+├── level.backrooms.js    Level 0  · The Lobby
+├── level.school.js       Level 5  · After Hours
+├── level.carpark.js      Level 12 · The Car Park
+├── level.concourse.js    Level 21 · The Concourse
 ├── level.poolrooms.js    Level 37 · The Poolrooms
+├── level.stacks.js       Level 76 · The Stacks
+├── level.spillway.js     Level 94 · The Spillway
+├── level.atrium.js       Level 188 · The Atrium
 └── levels.json           optional manifest (see "Discovery")
 ```
+
+The Stacks, the Spillway and the Atrium are the big ones — thirty-metre racking,
+a hundred-and-twenty-metre dam face, and twenty stacked galleries. They keep a
+human-scale object in shot at all times (a handrail, a ladder, a personnel door)
+because a huge thing with nothing next to it just looks like a wall.
 
 ## Running it
 
@@ -77,6 +88,10 @@ The level browser finds `level.*.js` files three ways, and merges the results:
 
 There is also **Load file…** in the level browser, which reads a `.js` level off your disk
 and registers it immediately. Handy while writing one.
+
+The file input deliberately carries no `accept` filter. iOS resolves `accept` through
+UTIs and has none for a bare `.js` extension, so `accept=".js"` greys out every file in
+the picker on iPhone and iPad. The extension is checked after you pick instead.
 
 ## Writing a level
 
@@ -140,7 +155,9 @@ W.solid(x,y,z, sx,sy,sz)              // collision and light occlusion, no geome
 ```
 
 `opt` takes `{uvScale, uvOffset:[u,v], uvMode:'world'|'local', tint:[r,g,b], tess, double,
-solid:false, skip:'+y-z'}`. `uvMode:'world'` (the default) projects UVs from world position
+solid:false, skip:'+y-z'}`. `tess` is the subdivision step in metres, defaulting to 1.1 —
+worth raising on anything large and flat, since every surface is capped at 32×32 subquads
+and a 100 m wall left on the default silently spends all of them. `uvMode:'world'` (the default) projects UVs from world position
 so tiling stays continuous across separate surfaces; `'local'` runs them along the quad.
 `tint` is per-vertex and ranges 0–2.
 

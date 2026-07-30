@@ -2,6 +2,12 @@
   "$comment": "Optional manifest. The main file also scrapes the directory index and probes known names, so this only needs updating if you use a server that hides its file listing.",
   "levels": [
     "level.backrooms.js",
-    "level.poolrooms.js"
+    "level.poolrooms.js",
+    "level.atrium.js",
+    "level.spillway.js",
+    "level.stacks.js",
+    "level.carpark.js",
+    "level.concourse.js",
+    "level.school.js"
   ]
 }
