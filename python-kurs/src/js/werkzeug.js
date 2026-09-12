@@ -74,5 +74,37 @@ const W = (() => {
     window.scrollTo({ top: ziel, behavior: sofort || wenigerBewegung() ? "auto" : "smooth" });
   }
 
-  return { q, qa, esc, ikon, el, bremse, melde, kopiere, zahl, dauerText, rollenZu, wenigerBewegung };
+  /* Zeigt waehrend eines Laufs an, was gerade passiert. Ohne das bliebe die
+     Anzeige beim ersten Laden minutenlang auf demselben Satz stehen. */
+  function laufAnzeige(feld, text = "Wird ausgefuehrt") {
+    feld.innerHTML = "";
+    const stand = el("span", { klasse: "laeuft" },
+      el("span", { klasse: "spinner" }),
+      el("span", { klasse: "laeuft-text", text }),
+      el("span", { klasse: "laeuft-uhr" }));
+    feld.append(stand);
+
+    const beschriftung = q(".laeuft-text", stand);
+    const uhr = q(".laeuft-uhr", stand);
+    const anfang = Date.now();
+
+    const takt = setInterval(() => {
+      const sekunden = Math.round((Date.now() - anfang) / 1000);
+      uhr.textContent = sekunden >= 3 ? ` ${sekunden} s` : "";
+    }, 500);
+
+    const abmelden = Laufzeit.beobachte((z) => {
+      if (z.phase === "laedt") beschriftung.textContent = z.text;
+      else if (z.phase === "bereit" && beschriftung.textContent !== text) beschriftung.textContent = text;
+    });
+
+    if (!Laufzeit.istBereit() && Laufzeit.zustand.phase === "laedt") {
+      beschriftung.textContent = Laufzeit.zustand.text;
+    }
+
+    return () => { clearInterval(takt); abmelden(); };
+  }
+
+  return { q, qa, esc, ikon, el, bremse, melde, kopiere, zahl, dauerText, rollenZu,
+    wenigerBewegung, laufAnzeige };
 })();

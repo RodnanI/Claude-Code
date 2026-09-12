@@ -297,7 +297,7 @@ const Ansichten = (() => {
     async function laufen() {
       sichere();
       ausgabeBox.classList.remove("hat-fehler");
-      feld.innerHTML = '<span class="laeuft"><span class="spinner"></span>Wird ausgefuehrt</span>';
+      const anzeigeBeenden = W.laufAnzeige(feld);
       laufTaste.disabled = true;
       try {
         const e = await Laufzeit.fuehreAus(schreiber.wert(), { pakete: paketeErkennen(schreiber.wert()) });
@@ -311,8 +311,15 @@ const Ansichten = (() => {
         }
       } catch (e) {
         ausgabeBox.classList.add("hat-fehler");
-        feld.textContent = String(e && e.message ? e.message : e);
+        const text = String(e && e.message ? e.message : e);
+        feld.textContent = text;
+        if (text.includes("Interpreter")) {
+          feld.append(el("div", { style: "margin-top:.6rem" },
+            el("a", { klasse: "taste taste-klein", href: "#/technik",
+              html: `${ikon("werkzeug")}<span>Technikpruefung oeffnen</span>` })));
+        }
       } finally {
+        anzeigeBeenden();
         laufTaste.disabled = false;
       }
     }
@@ -421,6 +428,175 @@ const Ansichten = (() => {
     return wurzel;
   }
 
+  /* ---------------------------- Technikpruefung ---------------------------- */
+  function befund(stand, titel, text, mehr) {
+    const farben = { gut: "gruen", warnung: "gold", schlecht: "rost", offen: "" };
+    return el("div", { klasse: "karte karte-kissen", style: "padding:.9rem 1.1rem" },
+      el("div", { klasse: "zeile-weit", style: "align-items:flex-start" },
+        el("div", { style: "flex:1;min-width:0" },
+          el("div", { style: "font-weight:600;margin-bottom:.2rem", text: titel }),
+          el("div", { klasse: "klein", style: "color:var(--text-2);line-height:1.6;white-space:pre-wrap",
+            text })),
+        el("span", { klasse: "abzeichen " + (farben[stand] || ""),
+          html: stand === "gut" ? `${ikon("check")}<span>in Ordnung</span>`
+              : stand === "schlecht" ? `${ikon("kreuz")}<span>Problem</span>`
+              : stand === "warnung" ? `${ikon("warn")}<span>Hinweis</span>`
+              : `${ikon("uhr")}<span>laeuft</span>` })),
+      mehr || null);
+  }
+
+  function technik() {
+    const wurzel = el("div", { klasse: "bahn seite-ein" });
+
+    wurzel.append(el("header", { klasse: "lek-kopf" },
+      el("div", { klasse: "weg" },
+        el("a", { klasse: "abzeichen", href: "#/", html: `${ikon("pfeil-l")}<span>Uebersicht</span>` }),
+        el("span", { klasse: "abzeichen kupfer", html: `${ikon("werkzeug")}<span>Technik</span>` })),
+      el("h1", { text: "Technikpruefung" }),
+      el("p", { klasse: "lek-vorspann",
+        text: "Wenn Code nicht ausgefuehrt wird, findest du hier heraus warum. "
+            + "Die Pruefung laeuft direkt in deinem Browser." })));
+
+    const liste = el("div", { klasse: "stapel" });
+    wurzel.append(liste);
+
+    // Herkunft der Seite
+    const protokoll = location.protocol;
+    liste.append(befund(
+      protokoll === "https:" ? "gut" : protokoll === "file:" ? "gut" : "warnung",
+      "Wie diese Seite geladen wurde",
+      `Protokoll: ${protokoll}\nHerkunft: ${location.origin === "null" ? "keine (oertliche Datei)" : location.origin}`
+        + (protokoll === "http:" && location.hostname !== "localhost"
+            ? "\n\nUeber unverschluesseltes http sperren manche Browser das Nachladen von https-Adressen."
+            : "")));
+
+    // WebAssembly
+    const wasm = typeof WebAssembly === "object" && typeof WebAssembly.instantiate === "function";
+    liste.append(befund(wasm ? "gut" : "schlecht", "WebAssembly",
+      wasm ? "Wird unterstuetzt. Python laeuft darueber."
+           : "Fehlt. Ohne WebAssembly kann der Interpreter nicht laufen. Nutze einen neueren Browser."));
+
+    // Abschottung durch COEP
+    const abgeschottet = typeof window.crossOriginIsolated === "boolean" ? window.crossOriginIsolated : null;
+    if (abgeschottet) {
+      liste.append(befund("warnung", "Abschottung ist aktiv",
+        "Diese Seite laeuft mit Cross-Origin-Isolation. Dabei blockiert der Browser jede "
+        + "fremde Ressource, die keinen passenden Freigabeheader mitschickt. Das ist eine "
+        + "haeufige Ursache dafuer, dass der Interpreter nicht geladen werden kann.\n\n"
+        + "Abhilfe: die Header Cross-Origin-Embedder-Policy und Cross-Origin-Opener-Policy "
+        + "auf dem Server weglassen, oder Pyodide selbst mit ausliefern."));
+    }
+
+    // Sicherheitsregeln der Seite
+    const cspMarke = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+    if (cspMarke) {
+      liste.append(befund("warnung", "Sicherheitsregeln in der Seite",
+        "Diese Seite traegt eine eigene Content-Security-Policy:\n"
+        + (cspMarke.getAttribute("content") || "").slice(0, 300)));
+    }
+
+    // Speicher
+    let speicher = "gut";
+    let speicherText = "Dein Fortschritt wird oertlich gespeichert.";
+    try {
+      window.localStorage.setItem("pykurs-probe", "1");
+      window.localStorage.removeItem("pykurs-probe");
+    } catch (_) {
+      speicher = "warnung";
+      speicherText = "Kein Zugriff auf den oertlichen Speicher. Der Fortschritt geht beim "
+        + "Neuladen verloren. Das passiert im privaten Modus oder bei gesperrten Seitendaten.";
+    }
+    liste.append(befund(speicher, "Fortschritt speichern", speicherText));
+
+    // Bezugsquellen
+    const quellenKarte = el("div", { klasse: "karte karte-kissen" },
+      el("div", { klasse: "zeile-weit", style: "margin-bottom:.8rem" },
+        el("div", { style: "font-weight:600", text: "Bezugsquellen fuer den Interpreter" }),
+        el("span", { klasse: "abzeichen", id: "quellenStand",
+          html: `${ikon("uhr")}<span>wird geprueft</span>` })));
+    const quellenListe = el("div", { klasse: "test-block" });
+    quellenKarte.append(quellenListe);
+    liste.append(quellenKarte);
+
+    let erreichbare = 0;
+    Laufzeit.quellenPruefen((eintrag) => {
+      const gut = eintrag.stand === "erreichbar";
+      if (gut) erreichbare++;
+      quellenListe.append(el("div", { klasse: "test-zeile " + (gut ? "ok" : "nein") },
+        el("span", { klasse: "test-marke", html: ikon(gut ? "check" : "kreuz") }),
+        el("span", { klasse: "t-name" },
+          el("span", { text: eintrag.name || eintrag.url }),
+          el("span", { klasse: "t-grund", style: gut ? "color:var(--text-3)" : "",
+            text: eintrag.stand + " nach " + eintrag.dauer + " ms" }))));
+    }).then(() => {
+      const marke = W.q("#quellenStand", quellenKarte);
+      if (erreichbare > 0) {
+        marke.className = "abzeichen gruen";
+        marke.innerHTML = `${ikon("check")}<span>${erreichbare} erreichbar</span>`;
+      } else {
+        marke.className = "abzeichen rost";
+        marke.innerHTML = `${ikon("kreuz")}<span>keine erreichbar</span>`;
+        quellenKarte.append(el("div", { klasse: "notiz warnung", style: "margin-top:1rem" },
+          el("div", { klasse: "n-kopf", html: `${ikon("warn")}<span>Das ist die Ursache</span>` }),
+          el("p", { text: "Keine der Quellen antwortet. Meist sperrt ein Werbe- oder "
+            + "Inhaltsblocker die Adressen, oder das Netz laesst sie nicht durch." }),
+          el("p", { html: "Wenn du die Seite selbst betreibst, ist der sicherste Weg, Pyodide "
+            + "mit auszuliefern: lade es von <code>pyodide.org</code>, entpacke es in einen "
+            + "Ordner namens <code>pyodide</code> neben dieser Datei, und die Seite findet es "
+            + "von allein." })));
+      }
+    });
+
+    // Echter Startversuch
+    const startKarte = el("div", { klasse: "karte karte-kissen" });
+    const startZeile = el("div", { klasse: "zeile-weit" },
+      el("div", { style: "flex:1;min-width:0" },
+        el("div", { style: "font-weight:600;margin-bottom:.2rem", text: "Interpreter wirklich starten" }),
+        el("div", { klasse: "klein", style: "color:var(--text-2)",
+          text: "Laedt Python und rechnet eine Aufgabe. Beim ersten Mal einige Sekunden." })),
+      el("button", { klasse: "taste taste-voll", type: "button",
+        html: `${ikon("play")}<span>Starten</span>` }));
+    const startAusgabe = el("div", { klasse: "ausgabe", style: "margin-top:1rem;border-radius:var(--r-s);border:1px solid var(--linie)" },
+      el("div", { klasse: "innen" },
+        el("div", { klasse: "a-kopf" }, el("span", { klasse: "punkt" }), "Ergebnis"),
+        el("pre")));
+    startKarte.append(startZeile, startAusgabe);
+    liste.append(startKarte);
+
+    const startKnopf = W.q("button", startZeile);
+    const startFeld = W.q("pre", startAusgabe);
+
+    startKnopf.addEventListener("click", async () => {
+      startKnopf.disabled = true;
+      startAusgabe.classList.add("sichtbar");
+      startAusgabe.classList.remove("hat-fehler");
+      const beenden = W.laufAnzeige(startFeld, "Wird gestartet");
+      try {
+        const e = await Laufzeit.fuehreAus('print("Python laeuft.")\nprint("2 hoch 10 ist", 2 ** 10)');
+        beenden();
+        startFeld.textContent = e.fehler ? e.fehler : e.ausgabe;
+        startAusgabe.classList.toggle("hat-fehler", !!e.fehler);
+      } catch (fehler) {
+        beenden();
+        startAusgabe.classList.add("hat-fehler");
+        const gruende = (Laufzeit.zustand.gruende || []).join("\n");
+        startFeld.textContent = String(fehler && fehler.message ? fehler.message : fehler)
+          + (gruende ? "\n\nIm Einzelnen:\n" + gruende : "");
+      } finally {
+        startKnopf.disabled = false;
+      }
+    });
+
+    wurzel.append(el("div", { klasse: "notiz tipp", style: "margin-top:1.6rem" },
+      el("div", { klasse: "n-kopf", html: `${ikon("gluehbirne")}<span>Selbst betrieben</span>` }),
+      el("p", { html: "Auf einem eigenen Server geht es ganz ohne fremde Adressen. Lade die "
+        + "vollstaendige Pyodide-Ausgabe von <code>github.com/pyodide/pyodide/releases</code>, "
+        + "entpacke sie in einen Ordner <code>pyodide</code> direkt neben dieser HTML-Datei, "
+        + "und die Seite nimmt sie von allein. Dann laeuft alles auch ohne Internet." })));
+
+    return wurzel;
+  }
+
   function fehlend() {
     return el("div", { klasse: "bahn seite-ein", style: "padding-top:4rem;text-align:center" },
       el("h1", { text: "Seite nicht gefunden" }),
@@ -430,5 +606,6 @@ const Ansichten = (() => {
         html: `${ikon("pfeil-l")}<span>Zur Uebersicht</span>` }));
   }
 
-  return { start, modul, lektion, spielplatz, glossar, spickzettel, fehlend, abschnitt, ring, balken, laufTaste };
+  return { start, modul, lektion, spielplatz, glossar, spickzettel, technik, fehlend,
+    abschnitt, ring, balken, laufTaste };
 })();

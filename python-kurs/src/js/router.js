@@ -12,6 +12,7 @@ const Router = (() => {
     { muster: /^\/spielplatz$/, bauen: () => Ansichten.spielplatz(), titel: () => "Uebungsplatz" },
     { muster: /^\/glossar$/, bauen: () => Ansichten.glossar(), titel: () => "Glossar" },
     { muster: /^\/spickzettel$/, bauen: () => Ansichten.spickzettel(), titel: () => "Spickzettel" },
+    { muster: /^\/technik$/, bauen: () => Ansichten.technik(), titel: () => "Technikpruefung" },
   ];
 
   let letzterWeg = null;

@@ -14,6 +14,7 @@ const Navigation = (() => {
       ["spick", "Spickzettel", "#/spickzettel", "liste"],
       ["glossar", "Glossar", "#/glossar", "buch"],
       ["abschluss", "Abschlusspruefung", "#/abschluss", "stern"],
+      ["technik", "Technikpruefung", "#/technik", "werkzeug"],
     ];
     const aktuell = Router.weg();
     eintraege.forEach(([, beschriftung, ziel, sinnbild]) => {

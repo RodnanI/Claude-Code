@@ -38,7 +38,7 @@
 }
 .kopf-fortschritt i {
   display: block; height: 100%; width: 0%;
-  background: linear-gradient(90deg, var(--moos), var(--akzent));
+  background: var(--akzent);
   transition: width var(--t-ruhig) var(--kurve-weich);
 }
 

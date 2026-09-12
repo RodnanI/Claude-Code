@@ -37,6 +37,42 @@ Textvergleich.
 
 Dazu Uebungsplatz, Spickzettel, Glossar, Modulpruefungen und eine Abschlusspruefung.
 
+## Wenn kein Code ausgefuehrt wird
+
+Der Interpreter wird beim ersten Klick einmalig geladen. Klappt das nicht,
+oeffne im Menue die **Technikpruefung**. Sie prueft im Browser, woran es liegt:
+Herkunft der Seite, WebAssembly, Abschottung durch COEP-Header, eigene
+Sicherheitsregeln der Seite und jede Bezugsquelle einzeln.
+
+Haeufige Ursachen sind ein Werbe- oder Inhaltsblocker, eine
+`Content-Security-Policy` auf dem Server oder gesetzte
+`Cross-Origin-Embedder-Policy`-Header.
+
+### Sicherer Weg: Pyodide selbst mitliefern
+
+Wer die Seite selbst betreibt, laedt Pyodide einmal herunter und legt es
+daneben. Dann braucht der Kurs ueberhaupt keine fremde Adresse mehr und
+laeuft auch offline.
+
+```
+sh pyodide-holen.sh
+```
+
+Das legt `dist/pyodide/` an. Lade diesen Ordner zusammen mit
+`python-kurs.html` auf den Server, sodass es so aussieht:
+
+```
+python-kurs.html
+pyodide/
+  pyodide.js
+  pyodide.asm.wasm
+  python_stdlib.zip
+  ...
+```
+
+Die Seite sucht dort von allein zuerst und startet dann in ein bis zwei
+Sekunden statt in fuenf bis zehn.
+
 ## Eigenschaften
 
 - Folgt automatisch dem hellen oder dunklen Schema des Systems, laesst sich aber umstellen
@@ -45,6 +81,8 @@ Dazu Uebungsplatz, Spickzettel, Glossar, Modulpruefungen und eine Abschlusspruef
 - Volltextsuche ueber alle Lektionen
 - Ruecksichtnahme auf `prefers-reduced-motion`
 - Keine Abfrage persoenlicher Daten, keine Anmeldung, keine Verfolgung
+- Findet Pyodide neben sich selbst, faellt sonst auf zwei Anbieter zurueck
+- Zeitgrenzen an jeder Stelle, die Anzeige bleibt nie stumm stehen
 
 ![Lektion im dunklen Schema](bilder/lektion-dunkel.png)
 

@@ -112,6 +112,7 @@ function pruefe(bedingung, text) {
     ["#/spielplatz", "Uebungsplatz"],
     ["#/pruefung/m1", "Pruefung"],
     ["#/abschluss", "Abschlusspruefung"],
+    ["#/technik", "Technikpruefung"],
     ["#/gibt-es-nicht", "nicht gefunden"],
   ]) {
     await seite.goto(DATEI + weg, { waitUntil: "load" });
@@ -119,6 +120,29 @@ function pruefe(bedingung, text) {
     const h1 = await seite.locator("h1").first().textContent();
     pruefe(h1.toLowerCase().includes(erwartet.toLowerCase()), `${weg} zeigt "${h1.trim()}"`);
   }
+
+  console.log("\n7b. Technikpruefung");
+  await seite.goto(DATEI + "#/technik", { waitUntil: "load" });
+  await seite.waitForTimeout(1200);
+  pruefe(await seite.locator(".karte").count() >= 4, "Befunde werden gezeigt");
+  pruefe((await seite.locator(".karte").allTextContents()).join(" ").includes("WebAssembly"),
+    "WebAssembly wird geprueft");
+  pruefe(await seite.locator('button:has-text("Starten")').count() === 1, "Startversuch anklickbar");
+  await seite.waitForTimeout(7000);
+  pruefe(await seite.locator(".test-zeile").count() >= 4,
+    `Alle Bezugsquellen einzeln aufgelistet: ${await seite.locator(".test-zeile").count()}`);
+
+  console.log("\n7c. Kein ablenkender Hintergrund");
+  await seite.goto(DATEI, { waitUntil: "load" });
+  await seite.waitForTimeout(300);
+  const hintergrund = await seite.evaluate(() => {
+    const koerper = getComputedStyle(document.body);
+    const davor = getComputedStyle(document.body, "::before");
+    return { bild: koerper.backgroundImage, davorInhalt: davor.content, davorBild: davor.backgroundImage };
+  });
+  pruefe(hintergrund.bild === "none", "Der Seitenhintergrund traegt kein Verlaufsbild");
+  pruefe(hintergrund.davorBild === "none" || hintergrund.davorInhalt === "none",
+    "Auch die Ebene davor ist frei von Verlaeufen");
 
   console.log("\n8. Pruefung ziehen");
   await seite.goto(DATEI + "#/abschluss", { waitUntil: "load" });

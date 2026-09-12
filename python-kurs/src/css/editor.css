@@ -147,6 +147,7 @@ pre.code code { font-size: inherit; background: none; border: 0; padding: 0; whi
 .test-zeile .t-grund { display: block; margin-top: .2rem; font-family: var(--mo-schrift); font-size: .76rem; color: var(--rost); white-space: pre-wrap; word-break: break-word; }
 
 .laeuft { display: inline-flex; align-items: center; gap: .5rem; font-size: .82rem; color: var(--text-3); }
+.laeuft-uhr { font-variant-numeric: tabular-nums; opacity: .7; }
 .spinner { width: .9rem; height: .9rem; border-radius: 50%; border: 2px solid var(--linie-stark); border-top-color: var(--akzent); animation: dreh .7s linear infinite; }
 
 /* ---------- Spielplatz ---------- */

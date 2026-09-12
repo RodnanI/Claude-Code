@@ -12,20 +12,6 @@ body {
   transition: background-color var(--t-mittel) var(--kurve), color var(--t-mittel) var(--kurve);
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  opacity: .5;
-  background-image:
-    radial-gradient(circle at 12% 8%, var(--akzent-weich) 0, transparent 38%),
-    radial-gradient(circle at 88% 92%, var(--moos-weich) 0, transparent 42%);
-  background-attachment: fixed;
-  transition: opacity var(--t-ruhig) var(--kurve);
-}
-
 h1, h2, h3, h4 {
   font-family: var(--se-schrift);
   font-weight: 600;

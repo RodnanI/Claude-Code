@@ -55,9 +55,9 @@ const TYPEN = {
   await seite.waitForFunction(
     () => {
       const t = document.querySelector(".code-karte .ausgabe pre");
-      return t && !t.textContent.includes("Wird ausgefuehrt") && t.textContent.trim().length > 0;
+      return t && !t.querySelector(".laeuft") && t.textContent.trim().length > 0;
     },
-    { timeout: 120000 }
+    { timeout: 180000 }
   );
   const ausgabe = await ersteKarte.locator(".ausgabe pre").textContent();
   console.log("  Ausgabe:", JSON.stringify(ausgabe.slice(0, 70)));
@@ -149,7 +149,7 @@ const TYPEN = {
   await seite.waitForFunction(
     () => {
       const t = document.querySelector(".code-karte[data-eingaben] .ausgabe pre");
-      return t && !t.textContent.includes("Wird ausgefuehrt") && t.textContent.trim().length > 0;
+      return t && !t.querySelector(".laeuft") && t.textContent.trim().length > 0;
     }, { timeout: 90000 });
   const eingabeAusgabe = await eingabeKarte.locator(".ausgabe pre").textContent();
   console.log("  Ausgabe:", JSON.stringify(eingabeAusgabe.replace(/\s+/g, " ").slice(0, 60)));

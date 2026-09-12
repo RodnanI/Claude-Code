@@ -90,7 +90,7 @@ const Aufgabe = (() => {
     async function laufenLassen() {
       ausgabeBox.classList.add("sichtbar");
       ausgabeBox.classList.remove("hat-fehler");
-      ausgabeFeld.innerHTML = '<span class="laeuft"><span class="spinner"></span>Wird ausgefuehrt</span>';
+      const anzeigeBeenden = W.laufAnzeige(ausgabeFeld);
       setzeLaufend(true);
       try {
         const e = await Laufzeit.fuehreAus(schreiber.wert(), {
@@ -108,6 +108,7 @@ const Aufgabe = (() => {
         ausgabeBox.classList.add("hat-fehler");
         ausgabeFeld.textContent = String(e && e.message ? e.message : e);
       } finally {
+        anzeigeBeenden();
         setzeLaufend(false);
       }
     }
@@ -115,8 +116,9 @@ const Aufgabe = (() => {
     async function pruefe() {
       testBox.hidden = false;
       testBox.innerHTML = "";
-      testBox.append(W.el("div", { klasse: "test-kopf" },
-        W.el("span", { klasse: "laeuft" }, W.el("span", { klasse: "spinner" }), "Pruefung laeuft")));
+      const kopf = W.el("div", { klasse: "test-kopf" }, W.el("span"));
+      testBox.append(kopf);
+      const anzeigeBeenden = W.laufAnzeige(W.q("span", kopf), "Pruefung laeuft");
       setzeLaufend(true);
 
       try {
@@ -182,8 +184,15 @@ const Aufgabe = (() => {
           W.el("span", { text: "Pruefung nicht moeglich" })));
         testBox.append(W.el("div", { klasse: "test-zeile nein" },
           W.el("span", { klasse: "test-marke", html: W.ikon("kreuz") }),
-          W.el("span", { klasse: "t-name", style: "white-space:pre-wrap", text })));
+          W.el("span", { klasse: "t-name", style: "white-space:pre-wrap" },
+            W.el("span", { text }),
+            text.includes("Interpreter")
+              ? W.el("div", { style: "margin-top:.6rem" },
+                  W.el("a", { klasse: "taste taste-klein", href: "#/technik",
+                    html: `${W.ikon("werkzeug")}<span>Technikpruefung oeffnen</span>` }))
+              : null)));
       } finally {
+        anzeigeBeenden();
         setzeLaufend(false);
       }
     }
