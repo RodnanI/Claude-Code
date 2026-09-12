@@ -1,0 +1,59 @@
+@keyframes seite-ein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes zeile-ein {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes melde-ein {
+  from { opacity: 0; transform: translateY(14px) scale(.96); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes melde-aus {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(10px) scale(.97); }
+}
+@keyframes dreh { to { transform: rotate(360deg); } }
+@keyframes puls-weich {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .45; }
+}
+@keyframes wackel {
+  0%, 100% { transform: translateX(0); }
+  22% { transform: translateX(-5px); }
+  44% { transform: translateX(4px); }
+  66% { transform: translateX(-2px); }
+}
+@keyframes haken-ein {
+  from { transform: scale(.4); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes steig {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.seite-ein { animation: seite-ein var(--t-mittel) var(--kurve-weich) both; }
+.wackelt { animation: wackel 420ms var(--kurve) both; }
+.pulst { animation: puls-weich 1.4s ease-in-out infinite; }
+
+.stufen > * { animation: steig var(--t-ruhig) var(--kurve-weich) both; }
+.stufen > *:nth-child(1) { animation-delay: 0ms; }
+.stufen > *:nth-child(2) { animation-delay: 45ms; }
+.stufen > *:nth-child(3) { animation-delay: 90ms; }
+.stufen > *:nth-child(4) { animation-delay: 135ms; }
+.stufen > *:nth-child(5) { animation-delay: 180ms; }
+.stufen > *:nth-child(6) { animation-delay: 225ms; }
+.stufen > *:nth-child(7) { animation-delay: 270ms; }
+.stufen > *:nth-child(8) { animation-delay: 315ms; }
+.stufen > *:nth-child(n+9) { animation-delay: 360ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

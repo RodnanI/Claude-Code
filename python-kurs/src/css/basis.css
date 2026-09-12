@@ -1,0 +1,77 @@
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  background: var(--papier);
+  color: var(--text);
+  font-family: var(--sy-schrift);
+  font-size: 1rem;
+  line-height: 1.65;
+  min-height: 100dvh;
+  overflow-wrap: break-word;
+  transition: background-color var(--t-mittel) var(--kurve), color var(--t-mittel) var(--kurve);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+  background-image:
+    radial-gradient(circle at 12% 8%, var(--akzent-weich) 0, transparent 38%),
+    radial-gradient(circle at 88% 92%, var(--moos-weich) 0, transparent 42%);
+  background-attachment: fixed;
+  transition: opacity var(--t-ruhig) var(--kurve);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--se-schrift);
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -.012em;
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(1.75rem, 1.35rem + 1.7vw, 2.6rem); }
+h2 { font-size: clamp(1.35rem, 1.15rem + .85vw, 1.75rem); }
+h3 { font-size: clamp(1.1rem, 1rem + .45vw, 1.3rem); }
+h4 { font-size: 1.02rem; }
+
+p { text-wrap: pretty; }
+
+code, kbd, samp, pre { font-family: var(--mo-schrift); font-size: .89em; font-variant-ligatures: none; }
+
+/* Unterstrichen wird nur im Fliesstext, nicht in Navigation und Karten. */
+a { text-decoration: none; color: inherit; }
+.text-block a, .auf-text a, .erklaerung a, .notiz a {
+  color: var(--akzent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--akzent) 45%, transparent);
+  text-underline-offset: .18em;
+  transition: text-decoration-color var(--t-schnell) var(--kurve);
+}
+.text-block a:hover, .auf-text a:hover, .erklaerung a:hover, .notiz a:hover {
+  text-decoration-color: var(--akzent);
+}
+
+hr { border: 0; height: 1px; background: var(--linie); margin: 2rem 0; }
+
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--linie-stark); border-radius: var(--r-voll); border: 3px solid var(--papier); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+.nur-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+
+.sprung {
+  position: fixed; top: .5rem; left: .5rem; z-index: 200;
+  background: var(--flaeche); color: var(--text); padding: .6rem 1rem;
+  border-radius: var(--r-s); box-shadow: var(--schatten-2);
+  transform: translateY(-160%); transition: transform var(--t-schnell) var(--kurve);
+}
+.sprung:focus { transform: translateY(0); }

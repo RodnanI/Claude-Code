@@ -1,0 +1,8 @@
+@media print {
+  body::before, .kopf, .seiten-nav, .nav-schleier, .lauf-nav, .melder, .editor-leiste, .code-leiste { display: none !important; }
+  .geruest { grid-template-columns: 1fr; }
+  .buehne { padding: 0; }
+  body { background: #fff; color: #000; }
+  .karte, .notiz, .code-karte, .frage { break-inside: avoid; border-color: #bbb; }
+  pre.code { white-space: pre-wrap; }
+}

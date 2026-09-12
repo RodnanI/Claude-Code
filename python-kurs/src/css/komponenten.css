@@ -1,0 +1,338 @@
+/* ---------- Tasten ---------- */
+.taste {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .55rem 1rem; border-radius: var(--r-s);
+  font-size: .9rem; font-weight: 550; letter-spacing: -.005em;
+  border: 1px solid var(--linie-stark);
+  background: var(--flaeche); color: var(--text);
+  box-shadow: var(--schatten-1);
+  transition: background-color var(--t-schnell) var(--kurve), border-color var(--t-schnell) var(--kurve),
+              transform var(--t-schnell) var(--kurve), box-shadow var(--t-schnell) var(--kurve), color var(--t-schnell) var(--kurve);
+  -webkit-tap-highlight-color: transparent;
+}
+.taste:hover { border-color: var(--linie-stark); background: var(--flaeche-2); transform: translateY(-1px); box-shadow: var(--schatten-2); }
+.taste:active { transform: translateY(0) scale(.985); box-shadow: var(--schatten-1); }
+.taste[disabled] { opacity: .45; pointer-events: none; }
+.taste svg { width: 1rem; height: 1rem; flex: none; }
+
+.taste-voll { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+:root[data-thema="dunkel"] .taste-voll { color: #1a120c; }
+@media (prefers-color-scheme: dark) { :root:not([data-thema="hell"]) .taste-voll { color: #1a120c; } }
+.taste-voll:hover { background: color-mix(in srgb, var(--akzent) 88%, var(--text)); border-color: color-mix(in srgb, var(--akzent) 88%, var(--text)); }
+
+.taste-still { border-color: transparent; background: transparent; box-shadow: none; color: var(--text-2); }
+.taste-still:hover { background: var(--flaeche-2); box-shadow: none; transform: none; color: var(--text); }
+
+.taste-klein { padding: .35rem .7rem; font-size: .8rem; border-radius: var(--r-xs); }
+.taste-gross { padding: .75rem 1.4rem; font-size: .97rem; border-radius: var(--r-m); }
+
+.ikontaste {
+  width: 2.15rem; height: 2.15rem; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--r-s); color: var(--text-2);
+  border: 1px solid transparent;
+  transition: background-color var(--t-schnell) var(--kurve), color var(--t-schnell) var(--kurve),
+              border-color var(--t-schnell) var(--kurve), transform var(--t-schnell) var(--kurve-feder);
+  -webkit-tap-highlight-color: transparent;
+}
+.ikontaste:hover { background: var(--flaeche-2); color: var(--text); border-color: var(--linie); }
+.ikontaste:active { transform: scale(.92); }
+.ikontaste svg { width: 1.15rem; height: 1.15rem; }
+
+/* ---------- Seitennavigation ---------- */
+.nav-kopf { display: flex; align-items: center; justify-content: space-between; padding: .2rem .45rem 1rem; }
+.nav-kopf .titel { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); font-weight: 600; }
+@media (min-width: 60.01rem) { .nav-schliessen { display: none; } }
+
+.nav-suche { position: relative; margin: 0 .3rem 1rem; }
+.nav-suche input {
+  width: 100%; padding: .5rem .7rem .5rem 2.05rem;
+  border-radius: var(--r-s); border: 1px solid var(--linie);
+  background: var(--flaeche); color: var(--text); font-size: .85rem;
+  transition: border-color var(--t-schnell) var(--kurve), box-shadow var(--t-schnell) var(--kurve);
+}
+.nav-suche input::placeholder { color: var(--text-3); }
+.nav-suche input:focus { outline: none; border-color: var(--akzent); box-shadow: 0 0 0 3px var(--akzent-weich); }
+.nav-suche svg { position: absolute; left: .62rem; top: 50%; transform: translateY(-50%); width: .95rem; height: .95rem; color: var(--text-3); pointer-events: none; }
+
+.nav-schnell { display: flex; flex-direction: column; gap: .12rem; margin: 0 .3rem 1rem; }
+
+.modul-block { margin-bottom: .35rem; }
+.modul-kopf {
+  display: flex; align-items: center; gap: .55rem; width: 100%;
+  padding: .5rem .55rem; border-radius: var(--r-s);
+  text-align: left; color: var(--text-2);
+  transition: background-color var(--t-schnell) var(--kurve), color var(--t-schnell) var(--kurve);
+}
+.modul-kopf:hover { background: var(--flaeche-2); color: var(--text); }
+.modul-nr {
+  width: 1.5rem; height: 1.5rem; flex: none; border-radius: var(--r-xs);
+  display: grid; place-items: center;
+  font-size: .7rem; font-weight: 650; font-variant-numeric: tabular-nums;
+  background: var(--flaeche-2); color: var(--text-3);
+  border: 1px solid var(--linie);
+  transition: all var(--t-mittel) var(--kurve);
+}
+.modul-block.fertig .modul-nr { background: var(--moos-weich); color: var(--moos); border-color: color-mix(in srgb, var(--moos) 35%, transparent); }
+.modul-block.aktiv .modul-nr { background: var(--akzent); color: var(--flaeche); border-color: var(--akzent); }
+.modul-name { flex: 1; font-size: .85rem; font-weight: 550; line-height: 1.3; min-width: 0; }
+.modul-pfeil { width: .85rem; height: .85rem; flex: none; color: var(--text-3); transition: transform var(--t-mittel) var(--kurve-weich); }
+.modul-block.offen .modul-pfeil { transform: rotate(90deg); }
+
+.modul-liste {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows var(--t-mittel) var(--kurve-weich);
+}
+.modul-block.offen .modul-liste { grid-template-rows: 1fr; }
+.modul-liste > div { overflow: hidden; min-height: 0; }
+.modul-liste ul { padding: .15rem 0 .4rem 1.4rem; border-left: 1px solid var(--linie); margin-left: 1.25rem; }
+
+.lek-link {
+  display: flex; align-items: center; gap: .5rem; width: 100%;
+  padding: .36rem .5rem; border-radius: var(--r-xs);
+  text-align: left; font-size: .83rem; color: var(--text-2); line-height: 1.35;
+  transition: background-color var(--t-schnell) var(--kurve), color var(--t-schnell) var(--kurve), padding-left var(--t-schnell) var(--kurve);
+}
+.lek-link:hover { background: var(--flaeche-2); color: var(--text); padding-left: .72rem; }
+.lek-link.aktiv { background: var(--akzent-weich); color: var(--akzent); font-weight: 600; }
+.lek-link svg { width: .95rem; height: .95rem; flex: none; }
+.lek-punkt { width: .46rem; height: .46rem; flex: none; border-radius: 50%; border: 1.5px solid var(--linie-stark); transition: all var(--t-mittel) var(--kurve-feder); }
+.lek-link.fertig .lek-punkt { background: var(--moos); border-color: var(--moos); }
+.lek-link.aktiv .lek-punkt { background: var(--akzent); border-color: var(--akzent); transform: scale(1.25); }
+.lek-titel { flex: 1; min-width: 0; }
+
+/* ---------- Karten ---------- */
+.karte {
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--r-l);
+  box-shadow: var(--schatten-1);
+  transition: border-color var(--t-mittel) var(--kurve), box-shadow var(--t-mittel) var(--kurve),
+              transform var(--t-mittel) var(--kurve), background-color var(--t-mittel) var(--kurve);
+}
+.karte-kissen { padding: clamp(1.1rem, 3vw, 1.7rem); }
+a.karte:hover, button.karte:hover { border-color: var(--linie-stark); box-shadow: var(--schatten-2); transform: translateY(-2px); }
+
+/* ---------- Marken / Abzeichen ---------- */
+.abzeichen {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .18rem .55rem; border-radius: var(--r-voll);
+  font-size: .7rem; font-weight: 600; letter-spacing: .015em;
+  background: var(--flaeche-2); color: var(--text-3);
+  border: 1px solid var(--linie);
+  white-space: nowrap;
+}
+.abzeichen svg { width: .75rem; height: .75rem; }
+.abzeichen.gruen { background: var(--moos-weich); color: var(--moos); border-color: color-mix(in srgb, var(--moos) 30%, transparent); }
+.abzeichen.kupfer { background: var(--kupfer-weich); color: var(--kupfer); border-color: color-mix(in srgb, var(--kupfer) 30%, transparent); }
+.abzeichen.tinte { background: var(--tinte-weich); color: var(--tinte); border-color: color-mix(in srgb, var(--tinte) 30%, transparent); }
+.abzeichen.gold { background: var(--gold-weich); color: var(--gold); border-color: color-mix(in srgb, var(--gold) 30%, transparent); }
+.abzeichen.rost { background: var(--rost-weich); color: var(--rost); border-color: color-mix(in srgb, var(--rost) 30%, transparent); }
+
+/* ---------- Lektionstext ---------- */
+.lek-kopf { margin-bottom: 2rem; padding-top: clamp(1.6rem, 4vw, 2.6rem); }
+.lek-kopf .weg { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .7rem; }
+.lek-kopf h1 { margin-bottom: .6rem; }
+.lek-vorspann { font-size: 1.06rem; color: var(--text-2); line-height: 1.62; max-width: 44rem; }
+
+.ziel-karte { margin: 1.6rem 0 2.2rem; padding: 1.1rem 1.3rem; border-radius: var(--r-m);
+  background: var(--flaeche); border: 1px solid var(--linie); border-left: 3px solid var(--moos); }
+.ziel-karte h2 { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--moos); font-family: var(--sy-schrift); font-weight: 650; margin-bottom: .6rem; }
+.ziel-karte ul { display: grid; gap: .38rem; }
+.ziel-karte li { position: relative; padding-left: 1.15rem; font-size: .92rem; color: var(--text-2); }
+.ziel-karte li::before { content: ""; position: absolute; left: 0; top: .62em; width: .38rem; height: .38rem; border-radius: 50%; background: var(--moos); }
+
+.text-block > * + * { margin-top: 1.15rem; }
+.text-block p { color: var(--text-2); }
+.text-block h2 { margin-top: 2.6rem; padding-top: .2rem; }
+.text-block h3 { margin-top: 2rem; color: var(--text); }
+.text-block h2 + p, .text-block h3 + p { margin-top: .7rem; }
+.text-block strong { color: var(--text); font-weight: 650; }
+.text-block em { font-style: italic; color: var(--text); }
+
+.text-block :not(pre) > code {
+  background: var(--flaeche-2); border: 1px solid var(--linie);
+  padding: .08em .36em; border-radius: var(--r-xs);
+  color: var(--kupfer); font-size: .86em; white-space: nowrap;
+}
+
+.liste-block { display: grid; gap: .55rem; }
+.liste-block li { position: relative; padding-left: 1.45rem; color: var(--text-2); }
+.liste-block li::before {
+  content: ""; position: absolute; left: .28rem; top: .66em;
+  width: .4rem; height: .4rem; border-radius: 1px; background: var(--akzent); transform: rotate(45deg);
+}
+ol.liste-block { counter-reset: p; }
+ol.liste-block li::before {
+  counter-increment: p; content: counter(p); background: none; transform: none;
+  left: 0; top: 0; width: 1.05rem; text-align: right;
+  font-size: .8rem; font-weight: 650; color: var(--akzent); font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Notizboxen ---------- */
+.notiz {
+  border-radius: var(--r-m); padding: 1rem 1.15rem;
+  background: var(--flaeche); border: 1px solid var(--linie);
+  border-left: 3px solid var(--tinte);
+  display: grid; gap: .3rem;
+}
+.notiz .n-kopf { display: flex; align-items: center; gap: .45rem; font-size: .74rem; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; color: var(--tinte); }
+.notiz .n-kopf svg { width: .95rem; height: .95rem; }
+.notiz p { font-size: .93rem; color: var(--text-2); margin: 0 !important; }
+.notiz.warnung { border-left-color: var(--rost); }
+.notiz.warnung .n-kopf { color: var(--rost); }
+.notiz.tipp { border-left-color: var(--moos); }
+.notiz.tipp .n-kopf { color: var(--moos); }
+.notiz.merke { border-left-color: var(--gold); }
+.notiz.merke .n-kopf { color: var(--gold); }
+
+/* ---------- Tabellen ---------- */
+.tab-huelle { overflow-x: auto; border: 1px solid var(--linie); border-radius: var(--r-m); background: var(--flaeche); -webkit-overflow-scrolling: touch; }
+.tab-huelle table { width: 100%; font-size: .88rem; min-width: 22rem; }
+.tab-huelle th, .tab-huelle td { padding: .6rem .85rem; text-align: left; vertical-align: top; }
+.tab-huelle thead th { background: var(--flaeche-2); font-size: .74rem; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); font-weight: 650; white-space: nowrap; }
+.tab-huelle tbody tr { border-top: 1px solid var(--linie); }
+.tab-huelle tbody tr:hover { background: var(--flaeche-2); }
+.tab-huelle td { color: var(--text-2); }
+.tab-huelle code { background: var(--flaeche-2); padding: .08em .34em; border-radius: var(--r-xs); color: var(--kupfer); font-size: .88em; }
+.tab-huelle tbody tr:hover code { background: var(--flaeche-3); }
+
+/* ---------- Quiz ---------- */
+.quiz-block { margin-top: 3rem; }
+.abschnitt-kopf { display: flex; align-items: center; gap: .7rem; margin-bottom: 1.2rem; }
+.abschnitt-kopf h2 { margin: 0 !important; font-size: 1.3rem; }
+.abschnitt-strich { flex: 1; height: 1px; background: var(--linie); }
+
+.frage {
+  border: 1px solid var(--linie); border-radius: var(--r-m);
+  background: var(--flaeche); padding: 1.15rem 1.25rem; margin-bottom: .9rem;
+  transition: border-color var(--t-mittel) var(--kurve), box-shadow var(--t-mittel) var(--kurve);
+}
+.frage.beantwortet.richtig { border-color: color-mix(in srgb, var(--moos) 45%, transparent); }
+.frage.beantwortet.falsch { border-color: color-mix(in srgb, var(--rost) 45%, transparent); }
+.frage-kopf { display: flex; gap: .7rem; margin-bottom: .95rem; }
+.frage-nr {
+  width: 1.55rem; height: 1.55rem; flex: none; border-radius: var(--r-xs);
+  display: grid; place-items: center; font-size: .74rem; font-weight: 650;
+  background: var(--flaeche-2); color: var(--text-3); border: 1px solid var(--linie);
+  font-variant-numeric: tabular-nums;
+}
+.frage-text { font-weight: 550; color: var(--text); padding-top: .1rem; }
+.frage-text code { background: var(--flaeche-2); padding: .08em .34em; border-radius: var(--r-xs); color: var(--kupfer); }
+.frage pre.f-code {
+  margin: .2rem 0 .95rem; padding: .7rem .9rem; border-radius: var(--r-s);
+  background: var(--papier-tief); border: 1px solid var(--linie);
+  overflow-x: auto; font-size: .82rem; line-height: 1.6;
+}
+
+.opt-liste { display: grid; gap: .45rem; }
+.opt {
+  display: flex; align-items: flex-start; gap: .65rem; width: 100%;
+  padding: .62rem .8rem; border-radius: var(--r-s); text-align: left;
+  border: 1px solid var(--linie); background: var(--flaeche);
+  font-size: .91rem; color: var(--text-2); line-height: 1.5;
+  transition: background-color var(--t-schnell) var(--kurve), border-color var(--t-schnell) var(--kurve),
+              transform var(--t-schnell) var(--kurve), color var(--t-schnell) var(--kurve);
+  -webkit-tap-highlight-color: transparent;
+}
+.opt:hover:not(:disabled) { border-color: var(--linie-stark); background: var(--flaeche-2); transform: translateX(2px); }
+.opt:active:not(:disabled) { transform: translateX(2px) scale(.995); }
+.opt-marke {
+  width: 1.3rem; height: 1.3rem; flex: none; border-radius: var(--r-xs);
+  border: 1px solid var(--linie-stark); display: grid; place-items: center;
+  font-size: .7rem; font-weight: 650; color: var(--text-3); margin-top: .06rem;
+  transition: all var(--t-mittel) var(--kurve-feder);
+}
+.opt-text { flex: 1; min-width: 0; }
+.opt-text code { background: var(--flaeche-2); padding: .06em .3em; border-radius: 3px; color: var(--kupfer); font-size: .89em; }
+.opt.ist-richtig { border-color: var(--moos); background: var(--moos-weich); color: var(--text); }
+.opt.ist-richtig .opt-marke { background: var(--moos); border-color: var(--moos); color: var(--flaeche); }
+.opt.ist-falsch { border-color: var(--rost); background: var(--rost-weich); color: var(--text); }
+.opt.ist-falsch .opt-marke { background: var(--rost); border-color: var(--rost); color: var(--flaeche); }
+.opt:disabled { cursor: default; opacity: 1; }
+.opt.gedimmt { opacity: .5; }
+
+.erklaerung {
+  margin-top: .85rem; padding: .75rem .9rem; border-radius: var(--r-s);
+  background: var(--flaeche-2); border: 1px solid var(--linie);
+  font-size: .88rem; color: var(--text-2); line-height: 1.6;
+}
+.erklaerung code { background: var(--flaeche-3); padding: .06em .3em; border-radius: 3px; color: var(--kupfer); }
+.erklaerung b { color: var(--text); }
+
+.quiz-fuss {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  flex-wrap: wrap; margin-top: 1.1rem; padding: .85rem 1.1rem;
+  border-radius: var(--r-m); background: var(--flaeche-2); border: 1px solid var(--linie);
+}
+.quiz-stand { font-size: .88rem; color: var(--text-2); }
+.quiz-stand b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---------- Fortschrittsringe und Balken ---------- */
+.balken { height: .4rem; border-radius: var(--r-voll); background: var(--flaeche-3); overflow: hidden; }
+.balken i { display: block; height: 100%; width: 0; border-radius: var(--r-voll); background: var(--akzent);
+  transition: width var(--t-ruhig) var(--kurve-weich), background-color var(--t-mittel) var(--kurve); }
+.balken.gruen i { background: var(--moos); }
+
+.ring { --wert: 0; width: 3.6rem; height: 3.6rem; flex: none; position: relative; display: grid; place-items: center; }
+.ring::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(var(--akzent) calc(var(--wert) * 1%), var(--flaeche-3) 0);
+  transition: background var(--t-ruhig) var(--kurve-weich);
+}
+.ring::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--flaeche); }
+.ring span { position: relative; z-index: 1; font-size: .8rem; font-weight: 650; font-variant-numeric: tabular-nums; }
+
+/* ---------- Startseite ---------- */
+.held { padding: clamp(2.2rem, 7vw, 4.5rem) 0 2.5rem; }
+.held h1 { max-width: 24ch; }
+.held-marke { display: inline-flex; align-items: center; gap: .5rem; margin-bottom: 1.4rem; }
+.held h1 { max-width: 20ch; margin-bottom: 1rem; }
+.held-text { font-size: clamp(1rem, .95rem + .3vw, 1.14rem); color: var(--text-2); max-width: 46ch; line-height: 1.6; }
+.held-tasten { display: flex; gap: .7rem; flex-wrap: wrap; margin-top: 2rem; }
+
+.kennzahlen { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .8rem; margin-top: 3rem; }
+.kennzahl { padding: 1rem 1.1rem; border-radius: var(--r-m); background: var(--flaeche); border: 1px solid var(--linie); }
+.kennzahl .zahl { font-family: var(--se-schrift); font-size: 1.75rem; font-weight: 600; line-height: 1; color: var(--akzent); font-variant-numeric: tabular-nums; }
+.kennzahl .bez { font-size: .78rem; color: var(--text-3); margin-top: .35rem; letter-spacing: .02em; }
+
+.modul-gitter { display: grid; grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr)); gap: .9rem; }
+.modul-karte { display: flex; flex-direction: column; gap: .6rem; padding: 1.15rem 1.25rem; text-align: left; height: 100%; }
+.modul-karte .kopfzeile { display: flex; align-items: center; justify-content: space-between; gap: .7rem; }
+.modul-karte h3 { font-size: 1.02rem; line-height: 1.3; }
+.modul-karte p { font-size: .87rem; color: var(--text-3); line-height: 1.55; flex: 1; }
+.modul-karte .fuss { display: flex; align-items: center; gap: .6rem; font-size: .76rem; color: var(--text-3); }
+.modul-karte .fuss .balken { flex: 1; }
+
+/* ---------- Leiste / Werkzeugzeile ---------- */
+.werkleiste { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; }
+.zeile { display: flex; align-items: center; gap: .6rem; }
+.zeile-weit { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.stapel { display: grid; gap: 1rem; }
+.klein { font-size: .84rem; color: var(--text-3); }
+.mittig { text-align: center; }
+
+/* ---------- Meldung / Toast ---------- */
+.melder { position: fixed; left: 50%; bottom: 1.4rem; z-index: 150; transform: translateX(-50%); display: grid; gap: .5rem; width: min(26rem, calc(100vw - 2rem)); pointer-events: none; }
+.melde {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .7rem 1rem; border-radius: var(--r-m);
+  background: var(--flaeche); border: 1px solid var(--linie-stark);
+  box-shadow: var(--schatten-3); font-size: .88rem; color: var(--text);
+  animation: melde-ein var(--t-mittel) var(--kurve-feder) both;
+}
+.melde svg { width: 1.05rem; height: 1.05rem; flex: none; color: var(--akzent); }
+.melde.weg { animation: melde-aus var(--t-mittel) var(--kurve) both; }
+
+/* ---------- Suchergebnisse ---------- */
+.treffer-liste { display: grid; gap: .3rem; margin: 0 .3rem 1rem; }
+.treffer {
+  display: block; width: 100%; text-align: left; padding: .5rem .6rem;
+  border-radius: var(--r-s); border: 1px solid transparent;
+  transition: background-color var(--t-schnell) var(--kurve), border-color var(--t-schnell) var(--kurve);
+}
+.treffer:hover { background: var(--flaeche-2); border-color: var(--linie); }
+.treffer .t-titel { font-size: .84rem; font-weight: 550; color: var(--text); line-height: 1.35; }
+.treffer .t-weg { font-size: .72rem; color: var(--text-3); margin-top: .1rem; }
+.treffer mark { background: var(--akzent-weich); color: var(--akzent); border-radius: 3px; padding: 0 .12em; }
+.leer-hinweis { padding: 1.5rem .8rem; text-align: center; font-size: .84rem; color: var(--text-3); }

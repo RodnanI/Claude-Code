@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de" data-thema="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Vollstaendiger Python-Kurs auf Deutsch: von den ersten Zeilen bis zu Python fuer kuenstliche Intelligenz. Mit lauffaehigen Beispielen, Tests und Pruefungen.">
+<title>Python von Grund auf</title>
+<style>
+/*STIL*/
+</style>
+</head>
+<body>
+
+<a class="sprung" href="#inhalt">Zum Inhalt springen</a>
+
+<svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-schlange" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M8 4h4a3 3 0 0 1 3 3v3H9a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3h3"/>
+      <path d="M16 20h-4a3 3 0 0 1-3-3v-3h6a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-3"/>
+    </symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-sonne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-mond" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pfeil-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-pfeil-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H6M11 18l-6-6 6-6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-chevron-u" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l7 7 7-7"/></symbol>
+    <symbol id="i-suche" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 5.2c0-.8.9-1.3 1.6-.9l9 6.8c.6.4.6 1.4 0 1.8l-9 6.8c-.7.4-1.6-.1-1.6-.9z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5 10-11"/></symbol>
+    <symbol id="i-kreuz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-kopie" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5.5 15H5a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 5 3.5h8.5A1.5 1.5 0 0 1 15 5v.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.7"/><path d="M12 11v5.2"/><circle cx="12" cy="7.9" r=".95" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.6L21.2 19.4a1 1 0 0 1-.87 1.5H3.67a1 1 0 0 1-.87-1.5z"/><path d="M12 9.6v4.6"/><circle cx="12" cy="17.4" r=".95" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-gluehbirne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.4 17.5h5.2M10.2 20.6h3.6"/><path d="M12 3.2a6 6 0 0 1 3.6 10.8c-.6.5-.9 1-.9 1.6H9.3c0-.6-.3-1.1-.9-1.6A6 6 0 0 1 12 3.2z"/></symbol>
+    <symbol id="i-stern" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5l2.6 5.6 6 .8-4.4 4.2 1.1 6.1-5.3-2.9-5.3 2.9 1.1-6.1L3.4 9.9l6-.8z"/></symbol>
+    <symbol id="i-buch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.2A1.7 1.7 0 0 1 5.7 3.5H11a1.5 1.5 0 0 1 1.5 1.5v14A1.2 1.2 0 0 0 11.3 18H5.7A1.7 1.7 0 0 1 4 16.3z"/><path d="M20 5.2a1.7 1.7 0 0 0-1.7-1.7H13a1.5 1.5 0 0 0-1.5 1.5v14A1.2 1.2 0 0 1 12.7 18h5.6a1.7 1.7 0 0 0 1.7-1.7z"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="15" rx="2.2"/><path d="M7.5 9.8l2.8 2.7-2.8 2.7M13.2 15.2h3.4"/></symbol>
+    <symbol id="i-liste" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.6" cy="6.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.6" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="4.6" cy="17.5" r="1.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-ziel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.6"/><circle cx="12" cy="12" r="4.8"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-zurueck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5v5h5"/><path d="M4.1 10.5a8.5 8.5 0 1 1 .7 5.6"/></symbol>
+    <symbol id="i-uhr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M12 7.2V12l3.2 2"/></symbol>
+    <symbol id="i-schluessel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8.4" r="4.4"/><path d="M11.2 11.6L20 20.4M17 17.4l-2 2M14.2 14.6l-2 2"/></symbol>
+    <symbol id="i-karte" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.2L3.5 6.6v13.2L9 17.4l6 2.4 5.5-2.4V4.2L15 6.6z"/><path d="M9 4.2v13.2M15 6.6v13.2"/></symbol>
+    <symbol id="i-blitz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 2.5L4.5 13.4h6.3l-.9 8.1 8.7-10.9h-6.3z"/></symbol>
+    <symbol id="i-gehirn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5.2a3 3 0 0 0-5.6-1.1A2.8 2.8 0 0 0 3.9 8a3 3 0 0 0 .6 4.4A3 3 0 0 0 6.3 17a2.9 2.9 0 0 0 5.7.7z"/><path d="M12 5.2a3 3 0 0 1 5.6-1.1A2.8 2.8 0 0 1 20.1 8a3 3 0 0 1-.6 4.4 3 3 0 0 1-1.8 4.6 2.9 2.9 0 0 1-5.7.7z"/></symbol>
+    <symbol id="i-baustein" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="3.4" width="7.4" height="7.4" rx="1.6"/><rect x="13.2" y="3.4" width="7.4" height="7.4" rx="1.6"/><rect x="3.4" y="13.2" width="7.4" height="7.4" rx="1.6"/><rect x="13.2" y="13.2" width="7.4" height="7.4" rx="1.6"/></symbol>
+    <symbol id="i-werkzeug" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 6.6a4 4 0 0 1 5.3-5.1l-3 3 2.2 2.2 3-3a4 4 0 0 1-5.1 5.3L6.8 18.8a2.1 2.1 0 1 1-3-3z"/></symbol>
+    <symbol id="i-fluss" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="8.4" y="2.8" width="7.2" height="4.4" rx="1.2"/><rect x="2.6" y="16.8" width="7.2" height="4.4" rx="1.2"/><rect x="14.2" y="16.8" width="7.2" height="4.4" rx="1.2"/><path d="M12 7.2v4.4M6.2 16.8v-3a2.2 2.2 0 0 1 2.2-2.2h7.2a2.2 2.2 0 0 1 2.2 2.2v3"/></symbol>
+    <symbol id="i-neu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+    <symbol id="i-druck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8.5V3.6h10v4.9"/><rect x="3.4" y="8.5" width="17.2" height="7.6" rx="2"/><path d="M7 13.6h10v6.8H7z"/></symbol>
+  </defs>
+</svg>
+
+<div class="huelle">
+  <header class="kopf">
+    <button class="ikontaste nav-schalter" id="navSchalter" aria-label="Navigation oeffnen" aria-expanded="false" aria-controls="seitenNav">
+      <svg aria-hidden="true"><use href="#i-menu"></use></svg>
+    </button>
+    <a class="marke" href="#/" aria-label="Zur Startseite">
+      <span class="marke-zeichen"><svg aria-hidden="true" style="color:var(--akzent)"><use href="#i-schlange"></use></svg></span>
+      <span class="marke-text">
+        <span class="marke-titel">Python von Grund auf</span>
+        <span class="marke-unter">Kurs mit Pruefungen</span>
+      </span>
+    </a>
+    <span class="kopf-luecke"></span>
+    <div class="kopf-werkzeuge">
+      <button class="ikontaste" id="spielSchalter" aria-label="Uebungsplatz oeffnen" title="Uebungsplatz">
+        <svg aria-hidden="true"><use href="#i-terminal"></use></svg>
+      </button>
+      <button class="ikontaste" id="themaSchalter" aria-label="Farbschema wechseln" title="Farbschema">
+        <svg aria-hidden="true"><use href="#i-auto"></use></svg>
+      </button>
+    </div>
+    <div class="kopf-fortschritt"><i id="kopfBalken"></i></div>
+  </header>
+
+  <div class="geruest">
+    <nav class="seiten-nav" id="seitenNav" aria-label="Kursnavigation">
+      <div class="nav-kopf">
+        <span class="titel">Lehrplan</span>
+        <button class="ikontaste nav-schliessen" id="navSchliessen" aria-label="Navigation schliessen">
+          <svg aria-hidden="true"><use href="#i-x"></use></svg>
+        </button>
+      </div>
+      <div class="nav-suche">
+        <svg aria-hidden="true"><use href="#i-suche"></use></svg>
+        <input type="search" id="sucheFeld" placeholder="Thema suchen" aria-label="Kurs durchsuchen" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="trefferListe" class="treffer-liste" hidden></div>
+      <div id="navSchnell" class="nav-schnell"></div>
+      <div id="navBaum"></div>
+    </nav>
+
+    <main class="buehne" id="inhalt" tabindex="-1">
+      <div id="ansicht"></div>
+    </main>
+  </div>
+
+  <div class="nav-schleier" id="navSchleier" aria-hidden="true"></div>
+  <div class="melder" id="melder" role="status" aria-live="polite"></div>
+</div>
+
+<script>
+/*SKRIPT*/
+</script>
+</body>
+</html>
