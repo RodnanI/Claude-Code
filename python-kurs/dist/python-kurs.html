@@ -1566,10 +1566,11 @@ const Laufzeit = (() => {
     // einfach in einen Unterordner und braucht dann gar kein Netz.
     { url: nebenan("pyodide/"), pakete: true, name: "Ordner pyodide neben der Seite" },
     { url: nebenan("python-kurs-pyodide/"), pakete: true, name: "Ordner python-kurs-pyodide" },
+    { url: "https://cdn.jsdelivr.net/pyodide/v314.0.6/full/", pakete: true, name: "jsDelivr 314.0.6" },
     { url: "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/", pakete: true, name: "jsDelivr 0.28.3" },
     { url: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/", pakete: true, name: "jsDelivr 0.27.7" },
-    { url: "https://unpkg.com/pyodide@0.28.3/", pakete: false, name: "unpkg 0.28.3" },
-    { url: "https://cdn.jsdelivr.net/npm/pyodide@0.28.3/", pakete: false, name: "jsDelivr npm 0.28.3" },
+    { url: "https://unpkg.com/pyodide@314.0.6/", pakete: false, name: "unpkg 314.0.6" },
+    { url: "https://cdn.jsdelivr.net/npm/pyodide@314.0.6/", pakete: false, name: "jsDelivr npm 314.0.6" },
   ].filter((q) => q.url);
 
   const ZEIT_PROBE = 6000;
