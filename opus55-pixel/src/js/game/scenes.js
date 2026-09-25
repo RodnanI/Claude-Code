@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 const G = {
   time: 0, hitstop: 0, slow: 0, map: null, ents: [], props: [], fronts: [], player: null, cam: null,
-  script: null, seen: new Set(), fade: 1, fadeTo: 0, fadeV: 0.04, fxOn: true, carry: null, moonRage: 0,
+  script: null, seen: new Set(), platforms: [], fade: 1, fadeTo: 0, fadeV: 0.04, fxOn: true, carry: null, moonRage: 0,
   stats: { kills: 0, maxCombo: 0, parries: 0, deaths: 0, hurt: 0, start: 0, frames: 0 },
   dbg: [], debugBoxes: false,
   resetStats() { this.stats = { kills: 0, maxCombo: 0, parries: 0, deaths: 0, hurt: 0, frames: 0 }; },
@@ -47,6 +47,8 @@ class TitleScene {
     const save = SAVE.get();
     this.unlocked = save.chapter || 1;
     this.items = ['Begin the Journey', 'Chapters', 'Controls'];
+    this.hero = new Actor('hero', 0, 0, -1); this.hero.shadow = false;
+    this.cliff = cachedArt('titleCliff', genTitleCliff);
     if (AudioSys.ready) Music.play('title');
   }
   update() {
@@ -82,6 +84,13 @@ class TitleScene {
       c.x += c.s; if (c.x > VW + 30) { c.x = -30; c.y = rnd(30, 110); }
       drawCrane(ctx, c.x, c.y + Math.sin(this.t * 0.02 + c.ph) * 4, this.t + c.ph * 20);
     }
+    // the hero on a cliff, facing the sunrise
+    ctx.drawImage(this.cliff, VW - this.cliff.width, VH - this.cliff.height);
+    const h = this.hero, hc = { x: 0, y: 0 };
+    h.at++; h.x = VW - 96; h.y = VH - 58; h.facing = -1;
+    h.frame = frameFor(h.C, 'look', Math.floor(h.at));
+    const m = G.map; G.map = null; G.wind = -0.35 + Math.sin(this.t * 0.02) * 0.15; h.updateRibbons(); G.map = m;
+    h.draw(ctx, hc);
     FX.draw(ctx, { x: 0, y: 0 }, 1);
     // title block
     inkStroke(ctx, VW / 2, 78, 330, 46, 3, 0.9);
@@ -109,6 +118,24 @@ class TitleScene {
 }
 Input.onKey(() => { if (Scenes.cur instanceof TitleScene && Scenes.cur.mode === 'press') Scenes.cur.anyKey = true; });
 
+function genTitleCliff() {
+  const W = 170, H = 96, P = new Paint(W, H);
+  const top = x => 38 + Math.max(0, (x - 120) * 0.9) + (pfbm(x / 9, 40, 3, 5) - 0.5) * 8 - (x > 60 && x < 110 ? 4 : 0);
+  const T = x => Math.round(top(x) + (x < 40 ? (40 - x) * 1.4 : 0));
+  for (let x = 0; x < W; x++) {
+    const t = T(x), sunward = T(x + 1) < t || T(x - 1) > t + 1;
+    for (let y = Math.max(0, t); y < H; y++) {
+      const d = y - t, n = hash2(x >> 1, y >> 1, 7);
+      // sunrise rim on edges facing the sun, cooling into the silhouette
+      let c = d < 1 ? (sunward ? '#b07a4c' : '#6a4a34') : d < 2 ? (sunward ? '#5e4230' : '#3a2c24') : d < 4 ? '#241c19' : n > 0.93 ? '#2a211d' : '#161110';
+      if (d > 4 && Math.abs(Math.sin(x * 0.2 + y * 0.05)) < 0.04) c = '#231b18';
+      if (d > 5 && d < 30 && Math.abs(Math.sin(x * 0.2 + y * 0.05)) < 0.04 && bayer(x, y) < 0.3 - d / 100) c = '#3e2e24';
+      P.px(x, y, c);
+    }
+  }
+  pineTree(P, 38, 44, 0.95, { trunk: ['#120d0b', '#1c1512', '#2a201b'], leaf: ['#101a10', '#172415', '#20301b', '#2c3f23'] }, new RNG(4));
+  return P.done();
+}
 function drawCrane(ctx, x, y, t) {
   x = Math.round(x); y = Math.round(y);
   const f = Math.floor(t / 10) % 4, wing = [-3, -1, 2, -1][f];
@@ -160,7 +187,7 @@ class PrologueScene {
     G.map = new TileMap(B.rows());
     G.terrain = Terrain.build(G.map, 'peak');
     G.bd = Backdrop.make('burning', G.map);
-    G.ents = []; G.props = []; FX.clear();
+    G.ents = []; G.props = []; G.platforms = []; FX.clear();
     G.props.push(new Prop('hall', 16 * TS + 8, 18 * TS, { w: 190, h: 112, lit: true }));
     for (const x of [6, 12, 20, 27]) G.props.push(new Prop('fire', x * TS, 18 * TS - rnd(40, 90), { s: 10 }));
     for (const x of [3, 31]) G.props.push(new Prop('fire', x * TS, 18 * TS, { s: 8 }));
@@ -225,9 +252,9 @@ function drawFade(ctx) {
 
 // ---------------------------------------------------------------------------
 const THEME_FX = {
-  peak: { dark: null, water: ['#4a6a5a', '#8ab09a', '#d8e8d8'] },
-  bamboo: { dark: null, water: ['#3a5a42', '#6a9070', '#c8e0c0'] },
-  town: { dark: ['#1a0806', 0.32], water: ['#4a2a22', '#8a4a30', '#f0a060'] },
+  peak: { dark: null, water: ['#3e5a4c', '#8ab09a', '#d8e8d8'] },
+  bamboo: { dark: null, water: ['#34503b', '#6a9070', '#d8ecc8'] },
+  town: { dark: ['#1a0806', 0.32], water: ['#3a1e18', '#7a3a26', '#f8b060'] },
   fort: { dark: ['#050102', 0.55], water: ['#1a0808', '#3a1010', '#8a2a1a'] },
 };
 
@@ -271,6 +298,7 @@ class GameScene {
     else if (!Hud.card || Hud.card.t > 150) this.checkEvents();
     if (G.ult) { updateUltimate(); FX.update(); G.cam.update(G.player, G.map); return; }
     if (G.hitstop > 0) { G.hitstop--; FX.update(); return; }
+    for (const pl of G.platforms) pl.update();
     const E = G.ents;
     for (let i = 0; i < E.length; i++) E[i].update();
     G.ents = G.ents.filter(e => !e.remove);
@@ -286,6 +314,10 @@ class GameScene {
   }
   checkEvents() {
     const p = G.player;
+    if (!G.arena) for (const A of G.level.arenas || []) {
+      if (A.scripted || G.clearedArenas.has(A.id)) continue;
+      if (p.x > (A.x0 + 3) * TS && p.x < A.x1 * TS - 20 && p.grounded) { startArena(A); Hud.banner('AMBUSH', 70); return; }
+    }
     for (const [i, ev] of G.level.events.entries()) {
       const key = 'ev' + i;
       if (G.firedEvents.has(key) || p.x < ev.x * TS) continue;
@@ -323,6 +355,7 @@ class GameScene {
     for (const p of G.props) p.draw(ctx, cam);
     const sx = clamp(cam.x, 0, G.map.pw - VW), sy = clamp(cam.y, 0, G.map.ph - VH);
     ctx.drawImage(G.terrain, sx, sy, VW, VH, sx - cam.x, sy - cam.y, VW, VH);
+    for (const pl of G.platforms) pl.draw(ctx, cam);
     FX.draw(ctx, cam, 0);
     const list = G.ents.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
     for (const e of list) e.draw(ctx, cam);
@@ -342,19 +375,25 @@ class GameScene {
   drawWater(ctx, cam) {
     const m = G.map, T = THEME_FX[G.level.theme].water;
     const tx0 = Math.floor(cam.x / TS), tx1 = Math.ceil((cam.x + VW) / TS);
-    for (let tx = tx0; tx <= tx1; tx++) for (let ty = 0; ty < m.h; ty++) {
-      const t = m.get(tx, ty);
-      if (t !== T_WTOP && t !== T_WATER) continue;
-      const x = tx * TS - cam.x, y = ty * TS - cam.y;
-      ctx.save(); ctx.globalAlpha = 0.72; ctx.fillStyle = T[0];
-      if (t === T_WTOP) { ctx.fillRect(x, y + 4, TS, TS - 4); } else ctx.fillRect(x, y, TS, TS);
+    for (let tx = tx0; tx <= tx1; tx++) {
+      let top = -1;
+      for (let ty = 0; ty < m.h; ty++) { const t = m.get(tx, ty); if (t === T_WTOP) { top = ty; break; } }
+      if (top < 0) continue;
+      const x = tx * TS - cam.x, y0 = top * TS + 4 - cam.y, y1 = m.ph - cam.y;
+      ctx.save(); ctx.globalAlpha = 0.93;
+      ctx.fillStyle = T[1]; ctx.fillRect(x, y0, TS, 3);
+      ctx.fillStyle = T[0]; ctx.fillRect(x, y0 + 3, TS, y1 - y0 - 3);
       ctx.restore();
-      if (t === T_WTOP) {
-        for (let i = 0; i < TS; i++) {
-          const wx = tx * TS + i, wv = Math.round(Math.sin(wx * 0.18 + G.time * 0.06) * 1.2 + Math.sin(wx * 0.07 - G.time * 0.03));
-          ctx.fillStyle = T[1]; ctx.fillRect(x + i, y + 4 + wv, 1, 1);
-          if ((wx + (G.time >> 3)) % 11 === 0) { ctx.fillStyle = T[2]; ctx.fillRect(x + i, y + 4 + wv, 2, 1); }
-        }
+      // reflections: drifting horizontal glints
+      for (let r = 0; r < 6; r++) {
+        const ry = Math.round(y0 + 5 + r * 5 + (r * r) % 3);
+        const off = (G.time * (0.12 + r * 0.03) + r * 37 + tx * 11) % 24;
+        if (off < 9) { ctx.fillStyle = r < 2 ? T[2] : T[1]; ctx.fillRect(Math.round(x + off + (r % 2) * 5), ry, r < 2 ? 4 : 3, 1); }
+      }
+      for (let i = 0; i < TS; i++) {
+        const wx = tx * TS + i, wv = Math.round(Math.sin(wx * 0.18 + G.time * 0.06) * 1.2 + Math.sin(wx * 0.07 - G.time * 0.03));
+        ctx.fillStyle = T[1]; ctx.fillRect(x + i, y0 + wv, 1, 1);
+        if ((wx + (G.time >> 3)) % 11 === 0) { ctx.fillStyle = T[2]; ctx.fillRect(x + i, y0 + wv, 2, 1); }
       }
     }
   }
@@ -422,7 +461,7 @@ class EndingScene {
     G.map = new TileMap(B.rows());
     G.terrain = Terrain.build(G.map, 'peak');
     G.bd = Backdrop.make('peak', G.map);
-    G.ents = []; G.props = []; FX.clear(); G.level = L;
+    G.ents = []; G.props = []; G.platforms = []; FX.clear(); G.level = L;
     for (const [type, tx, ty, o = {}] of L.props) if (tx > 30 && tx < 76) G.props.push(new Prop(type, tx * TS + 8, ty * TS, o));
     G.player = new Actor('hero', 26 * TS, 18 * TS, 1);
     const bai = new Actor('bai', 50 * TS, 14 * TS, -1), qin = new Actor('qin', 46 * TS, 14 * TS, -1);

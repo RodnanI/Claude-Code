@@ -94,7 +94,7 @@ const ANIMS = {};
   const salute = { t: 6, a1: 32, a2: 112, b1: 36, b2: 106, wh: 'b', w: 200, ...LEGS.stand, hy: 1 };
 
   ANIMS.hero = {
-    idle: mkAnim(true, [idle, 36], [idle2, 36]),
+    idle: mkAnim(true, [idle, 36], [idle2, 36], [idle, 36], [idle2, 30], [P_(idle2, { h: 1 }), 6, 'step']),
     run: runCycle(run),
     walk: walkCycle({ t: 4, a1: 12, a2: 14, w: -20, b1: 0, b2: 20 }),
     jump: mkAnim(false, [rise, 10], [P_(rise, { t: 4, l1: 50, l2: -90, a1: -10, w: -150 }), 14]),

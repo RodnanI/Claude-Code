@@ -60,11 +60,12 @@ LEVELS.push({
     { x: 33, run: 'hint', text: 'Press JUMP again in mid-air: the Swallow Returns.' },
     { x: 44, run: 'ch1_qin' },
     { x: 80, run: 'ch1_scouts' },
+    { x: 114, run: 'hint', text: 'Fighting fills your QI. Press I or V for a Qi Wave. With full qi, O or B unleashes Thousand Swallows Return.' },
     { x: 150, run: 'hint', text: 'DASH through gaps and attacks. Holding DOWN + ATTACK in the air plunges.' },
     { x: 180, run: 'ch1_boss' },
   ],
   arenas: [
-    { id: 'a1', x0: 74, x1: 112, waves: [[['c', 84, 'drop'], ['c', 104, 'r']], [['c', 80, 'l'], ['c', 96, 'drop'], ['k', 108, 'r']]] },
+    { id: 'a1', scripted: true, x0: 74, x1: 112, waves: [[['c', 84, 'drop'], ['c', 104, 'r']], [['c', 80, 'l'], ['c', 96, 'drop'], ['k', 108, 'r']]] },
   ],
 });
 
@@ -97,7 +98,7 @@ LEVELS.push({
     B.m(130, 15, 'a').m(133, 15, 'r').m(146, 18, 'k').m(157, 18, 'a').m(152, 15, 'o');
   },
   props: [
-    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 13 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 11 }], ['fgbamboo', 130, 0, { front: true, f: 1.3, w: 14 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 12 }],
+    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 13 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 11 }], ['fgbamboo', 156, 0, { front: true, f: 1.3, w: 14 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 12 }],
     ['rock', 14, 19, { w: 28, h: 14 }], ['sign', 6, 19], ['rock', 44, 19], ['rock', 96, 19, { w: 34, h: 18 }],
     ['shrine', 114, 19], ['incense', 118, 19], ['rock', 145, 19], ['rock', 190, 19, { w: 40, h: 20 }], ['rock', 214, 19, { w: 26, h: 14 }],
   ],
@@ -120,8 +121,7 @@ LEVELS.push({
     B.rect(46, 15, 9, 4, '%').plat(45, 56, 14, '-');
     B.rect(62, 17, 7, 2, '%').plat(61, 70, 16, '-');
     B.water(102, 134, 20);
-    B.plat(105, 111, 19); B.plat(115, 121, 19); B.plat(125, 131, 19);
-    B.plat(108, 112, 15, '-'); B.plat(119, 123, 15, '-');
+    B.plat(105, 111, 19); B.plat(125, 131, 19);
     B.ground(134, 150, 19);
     B.water(150, 186, 20);
     B.plat(150, 186, 19);
@@ -136,6 +136,7 @@ LEVELS.push({
     B.m(137, 18, 'S');
     B.m(158, 18, 's').m(168, 18, 'a').m(176, 18, 'c').m(180, 12, 'r').m(157, 12, 'o').m(169, 12, 'x');
   },
+  movers: [['boat', 113.5, 19, 5, [9, 0], 300, 0]],
   props: [
     ['gate', 3, 19, { w: 120, h: 92, roof: 'char' }], ['lanterns', 16, 8, { w: 140, sag: 16 }], ['stall', 14, 19], ['stall', 24, 19, { awn: ['#2f6a5e', '#e8d8b8'] }],
     ['lantern', 36, 17], ['lantern', 50, 15], ['lantern', 66, 17], ['well', 58, 19],
@@ -166,7 +167,7 @@ LEVELS.push({
     B.up(50, 16, 3);
     B.ground(53, 64, 13);
     B.rect(64, 13, 38, 11, '%');
-    B.pit(70, 76); B.ground(70, 76, 22); B.spikes(70, 76, 22); B.plat(70, 76, 13);
+    B.pit(70, 76); B.ground(70, 76, 22); B.spikes(70, 76, 22);
     B.pit(86, 94); B.ground(86, 94, 22); B.spikes(86, 94, 22); B.plat(86, 90, 13); B.plat(91, 94, 11);
     B.down(102, 13, 6);
     B.ground(108, 146, 19);
@@ -179,6 +180,7 @@ LEVELS.push({
     B.m(47, 14, 'o').m(92, 10, 'O');
     B.m(148, 18, 'S');
   },
+  movers: [['grate', 71, 13, 2, [4, 0], 190, 0]],
   props: [
     ['brazier', 10, 19], ['brazier', 26, 19], ['banner', 18, 19, { h: 60, pal: ['#0a0404', '#2a0606', '#5a0c0a', '#c8321e'] }], ['rock', 36, 16, { w: 30, h: 16 }],
     ['brazier', 56, 13], ['banner', 64, 13, { h: 60, pal: ['#0a0404', '#2a0606', '#5a0c0a', '#c8321e'] }], ['brazier', 80, 13], ['brazier', 100, 13], ['banner', 96, 13, { h: 60, pal: ['#0a0404', '#2a0606', '#5a0c0a', '#c8321e'] }],
@@ -211,6 +213,7 @@ function loadLevel(idx, checkpoint) {
   G.terrain = Terrain.build(G.map, L.theme);
   G.bd = Backdrop.make(L.bg || L.theme, G.map);
   G.ents = []; G.props = []; G.fronts = []; G.arena = null; G.boss = null; G.lock = null;
+  G.platforms = (L.movers || []).map(([k, tx, ty, w, to, per, ph]) => new Platform(k, tx * TS, ty * TS, w * TS, [to[0] * TS, to[1] * TS], per, ph));
   FX.clear(); Combat.reset();
   G.firedEvents = new Set(); G.clearedArenas = new Set(G.persistArenas || []);
   G.wind = L.theme === 'bamboo' ? -0.05 : L.theme === 'fort' ? 0.08 : 0.03;

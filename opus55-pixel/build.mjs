@@ -17,7 +17,7 @@ export const MODULES = [
   'gfx/costumes.js', 'gfx/poses.js', 'gfx/fx.js', 'gfx/ribbon.js', 'gfx/light.js',
   'gfx/paint.js', 'gfx/tiles.js', 'gfx/backgrounds.js', 'gfx/props.js', 'gfx/portraits.js',
   'world/tilemap.js', 'world/camera.js', 'world/levels.js',
-  'entities/body.js', 'entities/fighter.js', 'entities/moves.js', 'entities/player.js',
+  'entities/body.js', 'entities/platforms.js', 'entities/fighter.js', 'entities/moves.js', 'entities/player.js',
   'entities/enemies.js', 'entities/bosses.js', 'entities/projectiles.js', 'entities/pickups.js',
   'game/combat.js', 'game/dialogue.js', 'game/hud.js', 'game/story.js', 'game/scenes.js',
   'game/debug.js', 'game/main.js',

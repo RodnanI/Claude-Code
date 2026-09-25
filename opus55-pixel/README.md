@@ -44,6 +44,8 @@ Gamepads work too (A jump, X attack, B/RB dash, Y qi wave, LB/LT guard, RT ultim
 - Dash through attacks; attacking out of a dash gives a lunge.
 - Air combos keep you aloft; the launcher starts juggles.
 - Shrines of Rest heal you and become your respawn point.
+- Ambush grounds seal the screen until every wave falls. Enemies vault low walls to reach you, so cover only buys a moment.
+- Sampans and hanging grates move; ride them across the ford and the spike pits.
 - The Iron Buddha's golden bell shrugs off sword cuts; qi waves crack it.
 
 ## How it is made
@@ -68,7 +70,7 @@ opus55-pixel/
                        backgrounds, props, portraits
   src/js/world/        tile map and physics, camera, level data
   src/js/entities/     bodies, fighters, move frame data, player, enemies,
-                       bosses, projectiles, pickups and breakables
+                       bosses, projectiles, pickups, breakables and moving platforms
   src/js/game/         combat, dialogue, HUD, story scripts, scenes, debug, main
   tools/               Playwright helpers used for screenshots and scripted playtests
 ```

@@ -77,6 +77,7 @@ const STORY = {
   *ch1_scouts() {
     const p = G.player;
     p.facing = 1;
+    if (G.waitDummies) { G.waitDummies = false; G.parryHintLate = true; }
     const a = Sc.actor('cultist', 96 * TS, -1), b = Sc.actor('cultist', 100 * TS, -1);
     yield* Sc.pan(98 * TS, p.y, 50);
     yield* Sc.say('cult', 'A disciple! He has seen the masks!');
@@ -87,6 +88,7 @@ const STORY = {
     const e1 = spawnEnemy('cultist', a.x, a.y, { aggro: true }), e2 = spawnEnemy('cultist', b.x, b.y, { aggro: true });
     const A = G.level.arenas[0];
     startArena({ ...A, waves: A.waves.slice(1) }, [e1, e2]);
+    if (G.parryHintLate) Hud.hint('GUARD with U or C. Tap GUARD as a blade flashes to PARRY and stagger the attacker.', 480);
   },
   *ch1_boss() {
     const p = G.player;

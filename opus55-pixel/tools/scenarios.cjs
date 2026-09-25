@@ -66,10 +66,6 @@ module.exports = {
     await a.shot('end');
   },
 };
-module.exports.probe = async (a) => {
-  for (let i = 0; i < 5; i++) { console.log(JSON.stringify(await a.state())); await a.wait(300); }
-  console.log(await a.ev(() => JSON.stringify(window.RS.G.checkpoint)));
-};
 module.exports.tour = async (a) => {
   await a.wait(1200);
   const t0 = Date.now();
@@ -87,33 +83,6 @@ module.exports.tour = async (a) => {
     else { await a.page.keyboard.down('KeyD'); await a.wait(250); if (Math.random() < 0.3) { await a.tap('Space', 200); await a.tap('Space', 60); } await a.page.keyboard.up('KeyD'); }
     if (Date.now() - t0 > k * 7000) { k++; await a.shot('t' + k); console.log(JSON.stringify(await a.state())); }
   }
-};
-module.exports.walk = async (a) => {
-  await a.wait(900);
-  for (let i = 0; i < 12; i++) {
-    await a.hold('KeyD', 250);
-    console.log(JSON.stringify(await a.ev(() => { const p = window.RS.G.player; return { x: Math.round(p.x), y: Math.round(p.y), tx: Math.floor(p.x / 16), ty: Math.floor(p.y / 16), st: p.st, g: p.grounded, vx: p.vx.toFixed(2), wallR: p.wallR, script: !!window.RS.G.script, ctl: p.ctl, autoX: p.autoX }; })));
-  }
-  await a.shot('walk');
-};
-module.exports.tiles = async (a) => {
-  await a.wait(600);
-  console.log(await a.ev(() => { const m = window.RS.G.map; let s = ''; for (let y = 10; y < 18; y++) { let r = y + ': '; for (let x = 46; x < 58; x++) r += '.#=/\\^ww'[m.get(x, y)]; s += r + '\n'; } return s; }));
-};
-module.exports.mb = async (a) => {
-  await a.wait(800);
-  console.log(await a.ev(() => {
-    const G = window.RS.G, m = G.map, out = [];
-    const b = { x: 820, y: 236, vx: 2, vy: 0.34, w: 12, h: 40, grounded: true, drop: 0 };
-    for (let i = 0; i < 8; i++) { window.RS.moveBody(b, m); out.push([b.x.toFixed(1), b.y.toFixed(1), b.grounded, b.wallR, b.onSlope].join(' ')); b.vx = 2; b.vy = 0.34; }
-    return out.join('\n');
-  }));
-};
-module.exports.hpwatch = async (a) => {
-  await a.ev(() => { const p = window.RS.G.player; let last = p.hp; window.__log = []; setInterval(() => { const q = window.RS.G.player; if (q.hp !== last) { window.__log.push([Math.round(last), Math.round(q.hp), q.st, q.anim, window.RS.G.ents.filter(e => e.proj).map(e => e.kind).join('/')]); last = q.hp; } }, 16); });
-  await a.wait(1500); await a.skipTalk(60); await a.hold('KeyD', 900); await a.skipTalk(60);
-  await autofight(a, 30000, {});
-  console.log(JSON.stringify(await a.ev(() => window.__log.slice(0, 40))));
 };
 module.exports.flow = async (a) => {
   await a.wait(1200);
@@ -178,46 +147,6 @@ module.exports.audio = async (a) => {
     const { AudioSys } = window.RS, ctx = AudioSys.ctx;
     const an = ctx.createAnalyser(); an.fftSize = 2048;
     AudioSys.master.connect(an);
-    window.__stats = { peak: 0, sumsq: 0, n: 0, nan: 0 };
-    const buf = new Float32Array(an.fftSize);
-    window.__iv = setInterval(() => { an.getFloatTimeDomainData(buf); let pk = 0, ss = 0; for (const v of buf) { if (Number.isNaN(v)) window.__stats.nan++; pk = Math.max(pk, Math.abs(v)); ss += v * v; } const S = window.__stats; S.peak = Math.max(S.peak, pk); S.sumsq += ss / buf.length; S.n++; }, 40);
-  });
-  const res = {};
-  for (const song of Object.keys(await a.ev(() => window.RS.SONGS))) {
-    await a.ev(s => { window.RS.Music.play(s); window.__stats = { peak: 0, sumsq: 0, n: 0, nan: 0 }; }, song);
-    await a.wait(3500);
-    res[song] = await a.ev(() => { const S = window.__stats; return { peak: +S.peak.toFixed(3), rms: +Math.sqrt(S.sumsq / Math.max(1, S.n)).toFixed(4), nan: S.nan }; });
-  }
-  await a.ev(() => window.RS.Music.stop(0.1));
-  await a.wait(400);
-  const sfx = {};
-  for (const name of Object.keys(await a.ev(() => window.RS.SOUNDS))) {
-    await a.ev(n => { window.__stats = { peak: 0, sumsq: 0, n: 0, nan: 0 }; window.RS.SFX.last = {}; window.RS.SFX.play(n); }, name);
-    await a.wait(220);
-    sfx[name] = await a.ev(() => +window.__stats.peak.toFixed(2));
-  }
-  console.log('music', JSON.stringify(res));
-  console.log('sfx', JSON.stringify(sfx));
-};
-module.exports.audio2 = async (a) => {
-  await a.wait(800);
-  await a.tap('KeyJ', 400);
-  for (let i = 0; i < 6; i++) {
-    console.log(JSON.stringify(await a.ev(() => { const A = window.RS.AudioSys; return { state: A.ctx.state, t: A.ctx.currentTime.toFixed(2), song: window.RS.Music.cur && window.RS.Music.cur.name, step: window.RS.Music.step, next: window.RS.Music.next && window.RS.Music.next.toFixed(2), bus: !!window.RS.Music.bus }; })));
-    await a.wait(1000);
-  }
-  const err = await a.ev(() => { try { window.RS.Music.tick(); return 'tick ok'; } catch (e) { return 'tick error: ' + e.message + ' ' + e.stack.split('\n')[1]; } });
-  console.log(err);
-  const e2 = await a.ev(() => { try { window.RS.SOUNDS.swing(window.RS.AudioSys, window.RS.AudioSys.ctx.currentTime); return 'sfx ok'; } catch (e) { return 'sfx error: ' + e.message; } });
-  console.log(e2);
-};
-module.exports.audio3 = async (a) => {
-  await a.wait(800);
-  await a.tap('KeyJ', 400);
-  await a.page.evaluate(() => {
-    const { AudioSys } = window.RS, ctx = AudioSys.ctx;
-    const an = ctx.createAnalyser(); an.fftSize = 2048;
-    AudioSys.master.connect(an);
     const buf = new Float32Array(an.fftSize);
     window.__pk = 0;
     setInterval(() => { an.getFloatTimeDomainData(buf); for (const v of buf) window.__pk = Math.max(window.__pk, Math.abs(v)); }, 30);
@@ -243,38 +172,60 @@ module.exports.perf = async (a) => {
 };
 
 module.exports.full = async (a) => {
-  // run all four chapters with god mode, pushing right, fighting, jumping when stuck
+  // run all four chapters with god mode: fight what is on the same level,
+  // otherwise push right, jumping pits and walls; nudge only when truly stuck
   const t0 = Date.now();
-  let lastX = 0, stuck = 0, lastLevel = -1, k = 0;
-  while (Date.now() - t0 < 540000) {
-    const s = await a.ev(() => {
-      const G = window.RS.G, p = G.player, sc = window.RS.Scenes.cur;
-      if (!p || !G.map) return { scene: sc.constructor.name };
-      const foes = G.ents.filter(e => (e.team === 2 || e.team === 3) && !e.dead && e.hittable && Math.abs(e.x - p.x) < 220 && Math.abs(e.y - p.y) < 90);
-      foes.sort((x, y) => Math.abs(x.x - p.x) - Math.abs(y.x - p.x));
-      if (p.dmgTaken !== 0) p.dmgTaken = 0;
-      if (p.hp < 30) p.hp = 100;
-      return { scene: sc.constructor.name, lvl: G.levelIdx, px: p.x, py: p.y, fx: foes[0] ? foes[0].x : null, script: !!G.script, lock: !!G.cam.lock, over: !!sc.over, boss: G.boss ? Math.round(G.boss.hp) : null, pw: G.map.pw };
-    });
+  let lastLevel = -1, k = 0, best = 0, bestT = Date.now();
+  const look = () => a.ev(() => {
+    const G = window.RS.G, p = G.player, sc = window.RS.Scenes.cur;
+    if (!p || !G.map) return { scene: sc.constructor.name };
+    const foes = G.arena ? G.arena.left.filter(e => !e.dead) : G.ents.filter(e => (e.team === 2 || e.team === 3) && !e.dead && e.hittable && Math.abs(e.x - p.x) < 200 && Math.abs(e.y - p.y) < 36);
+    foes.sort((x, y) => Math.abs(x.x - p.x) - Math.abs(y.x - p.x));
+    if (p.dmgTaken !== 0) p.dmgTaken = 0;
+    if (p.hp < 30) p.hp = 100;
+    const gap = d => { const x = p.x + d * 22; return G.map.surfaceBelow(x, p.y - 20) - p.y > 30 || !!G.map.hazard(x - 3, p.y - 4, x + 3, p.y + 40) || G.map.solidPx(x, p.y - 20); };
+    return { scene: sc.constructor.name, lvl: G.levelIdx, px: p.x, py: p.y, fx: foes[0] ? foes[0].x : null, script: !!G.script, over: !!sc.over, boss: G.boss ? Math.round(G.boss.hp) : null, gapR: gap(1), gapL: gap(-1), g: p.grounded, plats: G.platforms.map(q => [Math.round(q.x), Math.round(q.y), q.w]) };
+  });
+  while (Date.now() - t0 < 600000) {
+    const s = await look();
     if (s.scene === 'EndingScene') { console.log('REACHED ENDING in', Math.round((Date.now() - t0) / 1000), 's'); await a.shot('ending'); return; }
     if (s.scene !== 'GameScene') { await a.tap('Enter', 200); continue; }
-    if (s.lvl !== lastLevel) { lastLevel = s.lvl; console.log('level', s.lvl, 'at', Math.round((Date.now() - t0) / 1000), 's'); }
+    if (s.lvl !== lastLevel) { lastLevel = s.lvl; best = s.px; bestT = Date.now(); console.log('level', s.lvl, 'at', Math.round((Date.now() - t0) / 1000), 's'); await a.shot('level' + s.lvl); }
     if (s.over) { console.log('died?!'); await a.tap('Enter', 500); continue; }
     if (s.script) { await a.tap('Enter', 60); continue; }
+    if (s.px > best + 40) { best = s.px; bestT = Date.now(); }
+    if (Date.now() - bestT > 15000) { console.log('NUDGE at level', s.lvl, 'tile', Math.round(s.px / 16)); await a.ev(() => { const p = window.RS.G.player; p.x += 80; p.y -= 60; p.vy = 0; }); bestT = Date.now(); continue; }
     if (s.fx !== null) {
-      const dx = s.fx - s.px;
-      if (Math.abs(dx) > 30) await a.hold(dx > 0 ? 'KeyD' : 'KeyA', 140);
-      else { if (Math.random() < 0.1) await a.tap('KeyI', 80); for (let i = 0; i < 4; i++) await a.tap('KeyJ', 85); }
+      const dx = s.fx - s.px, dir = dx > 0 ? 1 : -1;
+      if (Math.abs(dx) > 30) {
+        if (dir > 0 ? s.gapR : s.gapL) { await a.page.keyboard.down(dir > 0 ? 'KeyD' : 'KeyA'); await a.tap('Space', 200); await a.tap('Space', 250); await a.page.keyboard.up(dir > 0 ? 'KeyD' : 'KeyA'); }
+        else await a.hold(dir > 0 ? 'KeyD' : 'KeyA', 140);
+      } else { await a.hold(dir > 0 ? 'KeyD' : 'KeyA', 20); if (Math.random() < 0.1) await a.tap('KeyI', 80); for (let i = 0; i < 4; i++) await a.tap('KeyJ', 85); }
+    } else if (s.gapR && s.g) {
+      // wait for a moving platform to come close, then leap
+      const near = s.plats.some(([x, y, w]) => x - w / 2 < s.px + 70 && x + w / 2 > s.px + 10 && Math.abs(y - s.py) < 40);
+      if (s.plats.length && !near && Math.random() < 0.85) { await a.wait(60); continue; }
+      await a.page.keyboard.down('KeyD'); await a.tap('Space', 230); await a.tap('Space', 300); await a.page.keyboard.up('KeyD');
     } else {
-      await a.page.keyboard.down('KeyD');
-      if (Math.abs(s.px - lastX) < 4) stuck++; else stuck = 0;
-      if (stuck > 2) { await a.tap('Space', 180); await a.tap('Space', 120); await a.page.keyboard.down('KeyL'); await a.wait(40); await a.page.keyboard.up('KeyL'); stuck = 0; }
-      await a.wait(220);
-      await a.page.keyboard.up('KeyD');
+      await a.hold('KeyD', 200);
     }
-    lastX = s.px;
-    if (++k % 60 === 0) console.log(JSON.stringify(s));
+    if (++k % 80 === 0) console.log(JSON.stringify({ lvl: s.lvl, tile: Math.round(s.px / 16), boss: s.boss }));
   }
   console.log('timeout');
   await a.shot('timeout');
+};
+module.exports.platform = async (a) => {
+  await a.wait(900);
+  for (let i = 0; i < 200; i++) { const plx = await a.ev(() => window.RS.G.platforms[0].x); if (plx < 1830) break; await a.wait(30); }
+  await a.page.keyboard.down('KeyD'); await a.tap('Space', 250); await a.page.keyboard.up('KeyD');
+  for (let i = 0; i < 12; i++) {
+    const s = await a.ev(() => { const p = window.RS.G.player, pl = window.RS.G.platforms[0]; return { x: Math.round(p.x), y: Math.round(p.y), on: !!p.onPlat, plx: Math.round(pl.x), hp: p.hp }; });
+    console.log(JSON.stringify(s));
+    if (i === 4) await a.shot('riding');
+    await a.wait(350);
+  }
+  await a.page.keyboard.down('KeyD'); await a.tap('Space', 500); await a.page.keyboard.up('KeyD');
+  await a.wait(600);
+  console.log(JSON.stringify(await a.state()));
+  await a.shot('landed');
 };

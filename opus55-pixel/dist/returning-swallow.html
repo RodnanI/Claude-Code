@@ -2082,7 +2082,7 @@ const ANIMS = {};
   const salute = { t: 6, a1: 32, a2: 112, b1: 36, b2: 106, wh: 'b', w: 200, ...LEGS.stand, hy: 1 };
 
   ANIMS.hero = {
-    idle: mkAnim(true, [idle, 36], [idle2, 36]),
+    idle: mkAnim(true, [idle, 36], [idle2, 36], [idle, 36], [idle2, 30], [P_(idle2, { h: 1 }), 6, 'step']),
     run: runCycle(run),
     walk: walkCycle({ t: 4, a1: 12, a2: 14, w: -20, b1: 0, b2: 20 }),
     jump: mkAnim(false, [rise, 10], [P_(rise, { t: 4, l1: 50, l2: -90, a1: -10, w: -150 }), 14]),
@@ -3549,10 +3549,36 @@ const Backdrop = {
       const x = ((c.x - cam.x * c.f + t * c.v) % (LW + 200) + LW + 200) % (LW + 200) - 100;
       if (x > -c.img.width && x < VW) ctx.drawImage(c.img, Math.round(x), Math.round(c.y + (refY - cam.y) * 0.02));
     }
+    if (bd.theme === 'town') {
+      // paper sky lanterns rising over the festival
+      for (let i = 0; i < 16; i++) {
+        const f = 0.03 + (i % 4) * 0.02, sp = 0.05 + (i % 5) * 0.012;
+        const x = ((i * 97 + Math.sin(t * 0.004 + i) * 12 - cam.x * f) % (VW + 40) + VW + 40) % (VW + 40) - 20;
+        const y = 190 - ((t * sp + i * 53) % 220);
+        if (y < -6) continue;
+        const big = i % 4 === 3;
+        ctx.fillStyle = 'rgba(255,190,90,0.25)'; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, big ? 5 : 4, big ? 6 : 5);
+        ctx.fillStyle = (t >> 3) % 7 === i % 7 ? '#fff0b0' : '#ffc060'; ctx.fillRect(Math.round(x), Math.round(y), big ? 3 : 2, big ? 4 : 3);
+        ctx.fillStyle = '#c85a24'; ctx.fillRect(Math.round(x), Math.round(y) + (big ? 3 : 2), big ? 3 : 2, 1);
+      }
+    }
     for (const L of bd.layers) {
       const ox = -(((cam.x * L.f) % LW) + LW) % LW;
       const y = Math.round(L.y + (refY - cam.y) * L.f * 0.6);
       for (let x = Math.round(ox); x < VW; x += LW) ctx.drawImage(L.c, x, y);
+    }
+    // a flock of swallows crossing the sky now and then
+    const FL = { peak: '#3a2c28', bamboo: '#3f5234', town: '#4a1a14' }[bd.theme];
+    const ft = t % 1500;
+    if (FL && ft < 700) {
+      for (let i = 0; i < 7; i++) {
+        const bx = Math.round(-30 + ft * 0.8 - i * 13 - (i % 2) * 6), by = Math.round(46 + Math.sin(ft * 0.02 + i) * 5 + (i % 3) * 7 + (bd.theme.length % 3) * 8);
+        const up = ((t >> 2) + i) & 1;
+        ctx.fillStyle = FL;
+        ctx.fillRect(bx, by, 1, 1); ctx.fillRect(bx - 1, by, 1, 1);
+        if (up) { ctx.fillRect(bx - 3, by - 1, 2, 1); ctx.fillRect(bx + 1, by - 1, 2, 1); } else { ctx.fillRect(bx - 3, by + 1, 2, 1); ctx.fillRect(bx + 1, by + 1, 2, 1); }
+        ctx.fillRect(bx - 3, by + (up ? 1 : 0), 1, 1);
+      }
     }
     if (T.shafts) {
       ctx.save();
@@ -4585,11 +4611,12 @@ LEVELS.push({
     { x: 33, run: 'hint', text: 'Press JUMP again in mid-air: the Swallow Returns.' },
     { x: 44, run: 'ch1_qin' },
     { x: 80, run: 'ch1_scouts' },
+    { x: 114, run: 'hint', text: 'Fighting fills your QI. Press I or V for a Qi Wave. With full qi, O or B unleashes Thousand Swallows Return.' },
     { x: 150, run: 'hint', text: 'DASH through gaps and attacks. Holding DOWN + ATTACK in the air plunges.' },
     { x: 180, run: 'ch1_boss' },
   ],
   arenas: [
-    { id: 'a1', x0: 74, x1: 112, waves: [[['c', 84, 'drop'], ['c', 104, 'r']], [['c', 80, 'l'], ['c', 96, 'drop'], ['k', 108, 'r']]] },
+    { id: 'a1', scripted: true, x0: 74, x1: 112, waves: [[['c', 84, 'drop'], ['c', 104, 'r']], [['c', 80, 'l'], ['c', 96, 'drop'], ['k', 108, 'r']]] },
   ],
 });
 
@@ -4622,7 +4649,7 @@ LEVELS.push({
     B.m(130, 15, 'a').m(133, 15, 'r').m(146, 18, 'k').m(157, 18, 'a').m(152, 15, 'o');
   },
   props: [
-    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 13 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 11 }], ['fgbamboo', 130, 0, { front: true, f: 1.3, w: 14 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 12 }],
+    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 13 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 11 }], ['fgbamboo', 156, 0, { front: true, f: 1.3, w: 14 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 12 }],
     ['rock', 14, 19, { w: 28, h: 14 }], ['sign', 6, 19], ['rock', 44, 19], ['rock', 96, 19, { w: 34, h: 18 }],
     ['shrine', 114, 19], ['incense', 118, 19], ['rock', 145, 19], ['rock', 190, 19, { w: 40, h: 20 }], ['rock', 214, 19, { w: 26, h: 14 }],
   ],
@@ -4645,8 +4672,7 @@ LEVELS.push({
     B.rect(46, 15, 9, 4, '%').plat(45, 56, 14, '-');
     B.rect(62, 17, 7, 2, '%').plat(61, 70, 16, '-');
     B.water(102, 134, 20);
-    B.plat(105, 111, 19); B.plat(115, 121, 19); B.plat(125, 131, 19);
-    B.plat(108, 112, 15, '-'); B.plat(119, 123, 15, '-');
+    B.plat(105, 111, 19); B.plat(125, 131, 19);
     B.ground(134, 150, 19);
     B.water(150, 186, 20);
     B.plat(150, 186, 19);
@@ -4661,6 +4687,7 @@ LEVELS.push({
     B.m(137, 18, 'S');
     B.m(158, 18, 's').m(168, 18, 'a').m(176, 18, 'c').m(180, 12, 'r').m(157, 12, 'o').m(169, 12, 'x');
   },
+  movers: [['boat', 113.5, 19, 5, [9, 0], 300, 0]],
   props: [
     ['gate', 3, 19, { w: 120, h: 92, roof: 'char' }], ['lanterns', 16, 8, { w: 140, sag: 16 }], ['stall', 14, 19], ['stall', 24, 19, { awn: ['#2f6a5e', '#e8d8b8'] }],
     ['lantern', 36, 17], ['lantern', 50, 15], ['lantern', 66, 17], ['well', 58, 19],
@@ -4691,7 +4718,7 @@ LEVELS.push({
     B.up(50, 16, 3);
     B.ground(53, 64, 13);
     B.rect(64, 13, 38, 11, '%');
-    B.pit(70, 76); B.ground(70, 76, 22); B.spikes(70, 76, 22); B.plat(70, 76, 13);
+    B.pit(70, 76); B.ground(70, 76, 22); B.spikes(70, 76, 22);
     B.pit(86, 94); B.ground(86, 94, 22); B.spikes(86, 94, 22); B.plat(86, 90, 13); B.plat(91, 94, 11);
     B.down(102, 13, 6);
     B.ground(108, 146, 19);
@@ -4704,6 +4731,7 @@ LEVELS.push({
     B.m(47, 14, 'o').m(92, 10, 'O');
     B.m(148, 18, 'S');
   },
+  movers: [['grate', 71, 13, 2, [4, 0], 190, 0]],
   props: [
     ['brazier', 10, 19], ['brazier', 26, 19], ['banner', 18, 19, { h: 60, pal: ['#0a0404', '#2a0606', '#5a0c0a', '#c8321e'] }], ['rock', 36, 16, { w: 30, h: 16 }],
     ['brazier', 56, 13], ['banner', 64, 13, { h: 60, pal: ['#0a0404', '#2a0606', '#5a0c0a', '#c8321e'] }], ['brazier', 80, 13], ['brazier', 100, 13], ['banner', 96, 13, { h: 60, pal: ['#0a0404', '#2a0606', '#5a0c0a', '#c8321e'] }],
@@ -4736,6 +4764,7 @@ function loadLevel(idx, checkpoint) {
   G.terrain = Terrain.build(G.map, L.theme);
   G.bd = Backdrop.make(L.bg || L.theme, G.map);
   G.ents = []; G.props = []; G.fronts = []; G.arena = null; G.boss = null; G.lock = null;
+  G.platforms = (L.movers || []).map(([k, tx, ty, w, to, per, ph]) => new Platform(k, tx * TS, ty * TS, w * TS, [to[0] * TS, to[1] * TS], per, ph));
   FX.clear(); Combat.reset();
   G.firedEvents = new Set(); G.clearedArenas = new Set(G.persistArenas || []);
   G.wind = L.theme === 'bamboo' ? -0.05 : L.theme === 'fort' ? 0.08 : 0.03;
@@ -4827,7 +4856,10 @@ class Body extends Ent {
   physics() {
     if (!this.noGrav) this.vy = Math.min(this.maxFall, this.vy + this.grav * this.gravMul);
     if (this.drop > 0) this.drop--;
+    const py = this.y;
+    if (this.onPlat) { this.x += this.onPlat.dx; this.y += this.onPlat.dy; }
     moveBody(this, G.map);
+    ridePlatforms(this, py);
   }
 }
 const overlap = (a, b) => a[0] < b[0] + b[2] && a[0] + a[2] > b[0] && a[1] < b[1] + b[3] && a[1] + a[3] > b[1];
@@ -4842,6 +4874,75 @@ function drawShadow(ctx, cam, x, y, w) {
   ctx.fillStyle = 'rgba(12,8,6,0.32)';
   ctx.fillRect(sx - hw, yy, hw * 2 + 1, 1);
   ctx.fillRect(sx - hw + 2, yy - 1, hw * 2 - 3, 1);
+}
+
+// ==== entities/platforms.js ====
+// ---------------------------------------------------------------------------
+// Moving platforms: one-way surfaces that travel between two points with an
+// eased back-and-forth and carry whatever stands on them. Riders are handled
+// in Body.physics (see ridePlatforms).
+// ---------------------------------------------------------------------------
+class Platform {
+  // x, y: top surface center (world px); to: [dx, dy] travel; period in ticks
+  constructor(kind, x, y, w, to, period, phase = 0) {
+    this.kind = kind; this.x0 = x; this.y0 = y; this.w = w; this.to = to; this.period = period; this.t = phase * period;
+    this.x = x; this.y = y; this.px = x; this.py = y; this.dx = 0; this.dy = 0;
+  }
+  update() {
+    this.t++;
+    const k = (1 - Math.cos((this.t / this.period) * TAU)) / 2;
+    this.px = this.x; this.py = this.y;
+    this.x = this.x0 + this.to[0] * k; this.y = this.y0 + this.to[1] * k;
+    this.dx = this.x - this.px; this.dy = this.y - this.py;
+  }
+  draw(ctx, cam) {
+    const x = Math.round(this.x - cam.x), y = Math.round(this.y - cam.y), hw = this.w / 2;
+    if (x + hw + 40 < 0 || x - hw - 40 > VW) return;
+    if (this.kind === 'boat') {
+      const img = cachedArt('pboat' + this.w, () => genSampan(this.w));
+      ctx.drawImage(img, x - (img.width >> 1), y - 16 + Math.round(Math.sin(this.t * 0.05)));
+    } else if (this.kind === 'raft') {
+      for (let i = -hw; i < hw; i++) for (let j = 0; j < 5; j++) { ctx.fillStyle = S_BAMBOO[j === 0 ? 5 : j === 4 ? 1 : (i + 40) % 7 === 0 ? 1 : 3]; ctx.fillRect(x + i, y + j, 1, 1); }
+    } else {
+      for (let i = -hw; i < hw; i++) for (let j = 0; j < 6; j++) {
+        const hole = j > 1 && j < 5 && (i + 40) % 4 !== 0;
+        if (!hole) { ctx.fillStyle = S_IRON[j === 0 ? 5 : j === 5 ? 0 : j === 1 ? 4 : 2]; ctx.fillRect(x + i, y + j, 1, 1); }
+      }
+      // chains up to the dark
+      ctx.fillStyle = S_IRON[3];
+      for (const cx of [x - hw + 3, x + hw - 4]) for (let j = -60; j < 0; j += 3) ctx.fillRect(cx, y + j, 1, 2);
+    }
+  }
+}
+
+function genSampan(w) {
+  const W = w + 16, P = new Paint(W, 34);
+  const cx = W / 2;
+  // arched mat canopy
+  for (let y = 0; y < 13; y++) {
+    const hw = (w * 0.3) * Math.sqrt(1 - Math.pow((13 - y) / 13.5, 2));
+    for (let x = Math.round(cx - hw); x <= Math.round(cx + hw); x++) P.px(x, y, (x % 3 === 0) ? '#5a4428' : y < 3 ? '#c4a86a' : y % 4 === 0 ? '#8a7042' : '#a88c52');
+  }
+  for (const px of [Math.round(cx - w * 0.3), Math.round(cx + w * 0.3)]) for (let y = 6; y < 16; y++) P.px(px, y, '#3a2614');
+  // hull, deck level at y = 16
+  for (let y = 16; y < 30; y++) {
+    const t = (y - 16) / 14, inset = Math.round(t * t * 10);
+    for (let x = inset; x < W - inset; x++) P.px(x, y, S_WOOD[y === 16 ? 5 : y === 17 ? 4 : (x + y * 3) % 13 === 0 ? 1 : y > 26 ? 1 : y === 20 ? 2 : 3]);
+  }
+  P.px(1, 15, S_WOOD[3]); P.px(0, 14, S_WOOD[3]); P.px(W - 2, 15, S_WOOD[3]); P.px(W - 1, 14, S_WOOD[3]);
+  P.outline('#140c06');
+  return P.done();
+}
+
+// called from Body.physics: carry riders, then land bodies on platform tops
+function ridePlatforms(b, prevY) {
+  b.onPlat = null;
+  if (b.vy < 0 || b.drop > 0 || !G.platforms || !G.platforms.length) return;
+  const hw = b.w / 2;
+  for (const pl of G.platforms) {
+    if (b.x + hw <= pl.x - pl.w / 2 || b.x - hw >= pl.x + pl.w / 2) continue;
+    if (prevY <= pl.py + 3 && b.y >= pl.y - 1) { b.y = pl.y; b.vy = 0; b.grounded = true; b.onPlat = pl; return; }
+  }
 }
 
 // ==== entities/fighter.js ====
@@ -5558,9 +5659,19 @@ class Enemy extends Fighter {
     if (T.ranged) { if (adx < T.pref - 50) want = -this.facing; else if (adx > T.pref + 60) want = this.facing; }
     else if (adx > T.pref + 6) want = this.facing;
     else if (adx < T.pref - 14) want = -this.facing * 0.6;
-    if (want && this.ledgeAhead(Math.sign(want))) want = 0;
+    if (want && this.ledgeAhead(Math.sign(want))) {
+      // a low wall (boulder, step) between us and the target: vault it instead of waiting at it forever
+      const d = Math.sign(want);
+      if (this.grounded && this.canVault(d) && Math.random() < 0.08) {
+        this.vy = -6.8; this.vx = this.vaultV = d * Math.max(1.4, T.speed); this.grounded = false; this.vaultT = 50;
+        this.setAnim(T.hopper ? 'hop' : 'jump', true); FX.dust(this.x, this.y, 4); SFX.play('jump');
+        return;
+      }
+      want = 0;
+    }
     // don't crowd other enemies
     for (const o of G.ents) if (o !== this && o.team === 2 && !o.dead && Math.abs(o.x - this.x) < 14 && Math.abs(o.y - this.y) < 20) this.vx += Math.sign(this.x - o.x || 1) * 0.12;
+    if (this.vaultT > 0) { this.vaultT = this.grounded ? 0 : this.vaultT - 1; if (this.vaultT) { this.vx = this.vaultV; if (!T.hopper) this.setAnim(this.vy < 0 ? 'jump' : 'fall'); return; } }
     if (T.hopper) return this.hop(want);
     this.vx = approach(this.vx, want * T.speed, 0.25);
     if (this.grounded && dy < -44 && adx < 70 && Math.random() < 0.02 && !T.ranged) { this.vy = -6.4; this.grounded = false; }
@@ -5582,6 +5693,14 @@ class Enemy extends Fighter {
     const want = this.pdir || 0;
     if (want && !this.ledgeAhead(want) && Math.abs(this.x - this.home) < 70) { this.vx = want * 0.5; this.facing = want; } else this.vx *= 0.8;
   }
+  // wall ahead no taller than ~3 tiles, with open air on top and above our head
+  canVault(dir) {
+    const px = this.x + dir * (this.w / 2 + 6);
+    if (!G.map.solidPx(px, this.y - 8) || G.map.solidPx(this.x, this.y - this.h - 16)) return false;
+    if (this.bounds && (px < this.bounds[0] + 4 || px > this.bounds[1] - 4)) return false;
+    for (let h = 12; h <= 44; h += 4) if (!G.map.solidPx(px, this.y - 8 - h) && !G.map.solidPx(px, this.y - 8 - h - this.h + 10)) return true;
+    return false;
+  }
   ledgeAhead(dir) {
     const px = this.x + dir * (this.w / 2 + 6);
     if (G.map.solidPx(px, this.y - 8)) return true;
@@ -5593,7 +5712,12 @@ class Enemy extends Fighter {
     return s - this.y > (below ? 120 : 22);
   }
   update() {
-    if (this.st === 'guard' && this.guardT <= 0 && !this.blockT) this.st = 'free';
+    if (this.st === 'guard') {
+      if (this.guardT > 0) this.guardT--;
+      if (G.player) this.face(G.player.x);
+      this.vx *= 0.8;
+      if (this.guardT <= 0 && !this.blockT) { this.st = 'free'; this.cd = Math.min(this.cd, 12); }
+    }
     if (this.blockT > 0) this.blockT--;
     const wasG = this.grounded;
     super.update();
@@ -6585,6 +6709,7 @@ const STORY = {
   *ch1_scouts() {
     const p = G.player;
     p.facing = 1;
+    if (G.waitDummies) { G.waitDummies = false; G.parryHintLate = true; }
     const a = Sc.actor('cultist', 96 * TS, -1), b = Sc.actor('cultist', 100 * TS, -1);
     yield* Sc.pan(98 * TS, p.y, 50);
     yield* Sc.say('cult', 'A disciple! He has seen the masks!');
@@ -6595,6 +6720,7 @@ const STORY = {
     const e1 = spawnEnemy('cultist', a.x, a.y, { aggro: true }), e2 = spawnEnemy('cultist', b.x, b.y, { aggro: true });
     const A = G.level.arenas[0];
     startArena({ ...A, waves: A.waves.slice(1) }, [e1, e2]);
+    if (G.parryHintLate) Hud.hint('GUARD with U or C. Tap GUARD as a blade flashes to PARRY and stagger the attacker.', 480);
   },
   *ch1_boss() {
     const p = G.player;
@@ -6802,7 +6928,7 @@ const STORY = {
 // ---------------------------------------------------------------------------
 const G = {
   time: 0, hitstop: 0, slow: 0, map: null, ents: [], props: [], fronts: [], player: null, cam: null,
-  script: null, seen: new Set(), fade: 1, fadeTo: 0, fadeV: 0.04, fxOn: true, carry: null, moonRage: 0,
+  script: null, seen: new Set(), platforms: [], fade: 1, fadeTo: 0, fadeV: 0.04, fxOn: true, carry: null, moonRage: 0,
   stats: { kills: 0, maxCombo: 0, parries: 0, deaths: 0, hurt: 0, start: 0, frames: 0 },
   dbg: [], debugBoxes: false,
   resetStats() { this.stats = { kills: 0, maxCombo: 0, parries: 0, deaths: 0, hurt: 0, frames: 0 }; },
@@ -6845,6 +6971,8 @@ class TitleScene {
     const save = SAVE.get();
     this.unlocked = save.chapter || 1;
     this.items = ['Begin the Journey', 'Chapters', 'Controls'];
+    this.hero = new Actor('hero', 0, 0, -1); this.hero.shadow = false;
+    this.cliff = cachedArt('titleCliff', genTitleCliff);
     if (AudioSys.ready) Music.play('title');
   }
   update() {
@@ -6880,6 +7008,13 @@ class TitleScene {
       c.x += c.s; if (c.x > VW + 30) { c.x = -30; c.y = rnd(30, 110); }
       drawCrane(ctx, c.x, c.y + Math.sin(this.t * 0.02 + c.ph) * 4, this.t + c.ph * 20);
     }
+    // the hero on a cliff, facing the sunrise
+    ctx.drawImage(this.cliff, VW - this.cliff.width, VH - this.cliff.height);
+    const h = this.hero, hc = { x: 0, y: 0 };
+    h.at++; h.x = VW - 96; h.y = VH - 58; h.facing = -1;
+    h.frame = frameFor(h.C, 'look', Math.floor(h.at));
+    const m = G.map; G.map = null; G.wind = -0.35 + Math.sin(this.t * 0.02) * 0.15; h.updateRibbons(); G.map = m;
+    h.draw(ctx, hc);
     FX.draw(ctx, { x: 0, y: 0 }, 1);
     // title block
     inkStroke(ctx, VW / 2, 78, 330, 46, 3, 0.9);
@@ -6907,6 +7042,24 @@ class TitleScene {
 }
 Input.onKey(() => { if (Scenes.cur instanceof TitleScene && Scenes.cur.mode === 'press') Scenes.cur.anyKey = true; });
 
+function genTitleCliff() {
+  const W = 170, H = 96, P = new Paint(W, H);
+  const top = x => 38 + Math.max(0, (x - 120) * 0.9) + (pfbm(x / 9, 40, 3, 5) - 0.5) * 8 - (x > 60 && x < 110 ? 4 : 0);
+  const T = x => Math.round(top(x) + (x < 40 ? (40 - x) * 1.4 : 0));
+  for (let x = 0; x < W; x++) {
+    const t = T(x), sunward = T(x + 1) < t || T(x - 1) > t + 1;
+    for (let y = Math.max(0, t); y < H; y++) {
+      const d = y - t, n = hash2(x >> 1, y >> 1, 7);
+      // sunrise rim on edges facing the sun, cooling into the silhouette
+      let c = d < 1 ? (sunward ? '#b07a4c' : '#6a4a34') : d < 2 ? (sunward ? '#5e4230' : '#3a2c24') : d < 4 ? '#241c19' : n > 0.93 ? '#2a211d' : '#161110';
+      if (d > 4 && Math.abs(Math.sin(x * 0.2 + y * 0.05)) < 0.04) c = '#231b18';
+      if (d > 5 && d < 30 && Math.abs(Math.sin(x * 0.2 + y * 0.05)) < 0.04 && bayer(x, y) < 0.3 - d / 100) c = '#3e2e24';
+      P.px(x, y, c);
+    }
+  }
+  pineTree(P, 38, 44, 0.95, { trunk: ['#120d0b', '#1c1512', '#2a201b'], leaf: ['#101a10', '#172415', '#20301b', '#2c3f23'] }, new RNG(4));
+  return P.done();
+}
 function drawCrane(ctx, x, y, t) {
   x = Math.round(x); y = Math.round(y);
   const f = Math.floor(t / 10) % 4, wing = [-3, -1, 2, -1][f];
@@ -6958,7 +7111,7 @@ class PrologueScene {
     G.map = new TileMap(B.rows());
     G.terrain = Terrain.build(G.map, 'peak');
     G.bd = Backdrop.make('burning', G.map);
-    G.ents = []; G.props = []; FX.clear();
+    G.ents = []; G.props = []; G.platforms = []; FX.clear();
     G.props.push(new Prop('hall', 16 * TS + 8, 18 * TS, { w: 190, h: 112, lit: true }));
     for (const x of [6, 12, 20, 27]) G.props.push(new Prop('fire', x * TS, 18 * TS - rnd(40, 90), { s: 10 }));
     for (const x of [3, 31]) G.props.push(new Prop('fire', x * TS, 18 * TS, { s: 8 }));
@@ -7023,9 +7176,9 @@ function drawFade(ctx) {
 
 // ---------------------------------------------------------------------------
 const THEME_FX = {
-  peak: { dark: null, water: ['#4a6a5a', '#8ab09a', '#d8e8d8'] },
-  bamboo: { dark: null, water: ['#3a5a42', '#6a9070', '#c8e0c0'] },
-  town: { dark: ['#1a0806', 0.32], water: ['#4a2a22', '#8a4a30', '#f0a060'] },
+  peak: { dark: null, water: ['#3e5a4c', '#8ab09a', '#d8e8d8'] },
+  bamboo: { dark: null, water: ['#34503b', '#6a9070', '#d8ecc8'] },
+  town: { dark: ['#1a0806', 0.32], water: ['#3a1e18', '#7a3a26', '#f8b060'] },
   fort: { dark: ['#050102', 0.55], water: ['#1a0808', '#3a1010', '#8a2a1a'] },
 };
 
@@ -7069,6 +7222,7 @@ class GameScene {
     else if (!Hud.card || Hud.card.t > 150) this.checkEvents();
     if (G.ult) { updateUltimate(); FX.update(); G.cam.update(G.player, G.map); return; }
     if (G.hitstop > 0) { G.hitstop--; FX.update(); return; }
+    for (const pl of G.platforms) pl.update();
     const E = G.ents;
     for (let i = 0; i < E.length; i++) E[i].update();
     G.ents = G.ents.filter(e => !e.remove);
@@ -7084,6 +7238,10 @@ class GameScene {
   }
   checkEvents() {
     const p = G.player;
+    if (!G.arena) for (const A of G.level.arenas || []) {
+      if (A.scripted || G.clearedArenas.has(A.id)) continue;
+      if (p.x > (A.x0 + 3) * TS && p.x < A.x1 * TS - 20 && p.grounded) { startArena(A); Hud.banner('AMBUSH', 70); return; }
+    }
     for (const [i, ev] of G.level.events.entries()) {
       const key = 'ev' + i;
       if (G.firedEvents.has(key) || p.x < ev.x * TS) continue;
@@ -7121,6 +7279,7 @@ class GameScene {
     for (const p of G.props) p.draw(ctx, cam);
     const sx = clamp(cam.x, 0, G.map.pw - VW), sy = clamp(cam.y, 0, G.map.ph - VH);
     ctx.drawImage(G.terrain, sx, sy, VW, VH, sx - cam.x, sy - cam.y, VW, VH);
+    for (const pl of G.platforms) pl.draw(ctx, cam);
     FX.draw(ctx, cam, 0);
     const list = G.ents.slice().sort((a, b) => (a.z || 0) - (b.z || 0));
     for (const e of list) e.draw(ctx, cam);
@@ -7140,19 +7299,25 @@ class GameScene {
   drawWater(ctx, cam) {
     const m = G.map, T = THEME_FX[G.level.theme].water;
     const tx0 = Math.floor(cam.x / TS), tx1 = Math.ceil((cam.x + VW) / TS);
-    for (let tx = tx0; tx <= tx1; tx++) for (let ty = 0; ty < m.h; ty++) {
-      const t = m.get(tx, ty);
-      if (t !== T_WTOP && t !== T_WATER) continue;
-      const x = tx * TS - cam.x, y = ty * TS - cam.y;
-      ctx.save(); ctx.globalAlpha = 0.72; ctx.fillStyle = T[0];
-      if (t === T_WTOP) { ctx.fillRect(x, y + 4, TS, TS - 4); } else ctx.fillRect(x, y, TS, TS);
+    for (let tx = tx0; tx <= tx1; tx++) {
+      let top = -1;
+      for (let ty = 0; ty < m.h; ty++) { const t = m.get(tx, ty); if (t === T_WTOP) { top = ty; break; } }
+      if (top < 0) continue;
+      const x = tx * TS - cam.x, y0 = top * TS + 4 - cam.y, y1 = m.ph - cam.y;
+      ctx.save(); ctx.globalAlpha = 0.93;
+      ctx.fillStyle = T[1]; ctx.fillRect(x, y0, TS, 3);
+      ctx.fillStyle = T[0]; ctx.fillRect(x, y0 + 3, TS, y1 - y0 - 3);
       ctx.restore();
-      if (t === T_WTOP) {
-        for (let i = 0; i < TS; i++) {
-          const wx = tx * TS + i, wv = Math.round(Math.sin(wx * 0.18 + G.time * 0.06) * 1.2 + Math.sin(wx * 0.07 - G.time * 0.03));
-          ctx.fillStyle = T[1]; ctx.fillRect(x + i, y + 4 + wv, 1, 1);
-          if ((wx + (G.time >> 3)) % 11 === 0) { ctx.fillStyle = T[2]; ctx.fillRect(x + i, y + 4 + wv, 2, 1); }
-        }
+      // reflections: drifting horizontal glints
+      for (let r = 0; r < 6; r++) {
+        const ry = Math.round(y0 + 5 + r * 5 + (r * r) % 3);
+        const off = (G.time * (0.12 + r * 0.03) + r * 37 + tx * 11) % 24;
+        if (off < 9) { ctx.fillStyle = r < 2 ? T[2] : T[1]; ctx.fillRect(Math.round(x + off + (r % 2) * 5), ry, r < 2 ? 4 : 3, 1); }
+      }
+      for (let i = 0; i < TS; i++) {
+        const wx = tx * TS + i, wv = Math.round(Math.sin(wx * 0.18 + G.time * 0.06) * 1.2 + Math.sin(wx * 0.07 - G.time * 0.03));
+        ctx.fillStyle = T[1]; ctx.fillRect(x + i, y0 + wv, 1, 1);
+        if ((wx + (G.time >> 3)) % 11 === 0) { ctx.fillStyle = T[2]; ctx.fillRect(x + i, y0 + wv, 2, 1); }
       }
     }
   }
@@ -7220,7 +7385,7 @@ class EndingScene {
     G.map = new TileMap(B.rows());
     G.terrain = Terrain.build(G.map, 'peak');
     G.bd = Backdrop.make('peak', G.map);
-    G.ents = []; G.props = []; FX.clear(); G.level = L;
+    G.ents = []; G.props = []; G.platforms = []; FX.clear(); G.level = L;
     for (const [type, tx, ty, o = {}] of L.props) if (tx > 30 && tx < 76) G.props.push(new Prop(type, tx * TS + 8, ty * TS, o));
     G.player = new Actor('hero', 26 * TS, 18 * TS, 1);
     const bai = new Actor('bai', 50 * TS, 14 * TS, -1), qin = new Actor('qin', 46 * TS, 14 * TS, -1);

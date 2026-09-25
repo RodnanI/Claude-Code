@@ -58,9 +58,19 @@ class Enemy extends Fighter {
     if (T.ranged) { if (adx < T.pref - 50) want = -this.facing; else if (adx > T.pref + 60) want = this.facing; }
     else if (adx > T.pref + 6) want = this.facing;
     else if (adx < T.pref - 14) want = -this.facing * 0.6;
-    if (want && this.ledgeAhead(Math.sign(want))) want = 0;
+    if (want && this.ledgeAhead(Math.sign(want))) {
+      // a low wall (boulder, step) between us and the target: vault it instead of waiting at it forever
+      const d = Math.sign(want);
+      if (this.grounded && this.canVault(d) && Math.random() < 0.08) {
+        this.vy = -6.8; this.vx = this.vaultV = d * Math.max(1.4, T.speed); this.grounded = false; this.vaultT = 50;
+        this.setAnim(T.hopper ? 'hop' : 'jump', true); FX.dust(this.x, this.y, 4); SFX.play('jump');
+        return;
+      }
+      want = 0;
+    }
     // don't crowd other enemies
     for (const o of G.ents) if (o !== this && o.team === 2 && !o.dead && Math.abs(o.x - this.x) < 14 && Math.abs(o.y - this.y) < 20) this.vx += Math.sign(this.x - o.x || 1) * 0.12;
+    if (this.vaultT > 0) { this.vaultT = this.grounded ? 0 : this.vaultT - 1; if (this.vaultT) { this.vx = this.vaultV; if (!T.hopper) this.setAnim(this.vy < 0 ? 'jump' : 'fall'); return; } }
     if (T.hopper) return this.hop(want);
     this.vx = approach(this.vx, want * T.speed, 0.25);
     if (this.grounded && dy < -44 && adx < 70 && Math.random() < 0.02 && !T.ranged) { this.vy = -6.4; this.grounded = false; }
@@ -82,6 +92,14 @@ class Enemy extends Fighter {
     const want = this.pdir || 0;
     if (want && !this.ledgeAhead(want) && Math.abs(this.x - this.home) < 70) { this.vx = want * 0.5; this.facing = want; } else this.vx *= 0.8;
   }
+  // wall ahead no taller than ~3 tiles, with open air on top and above our head
+  canVault(dir) {
+    const px = this.x + dir * (this.w / 2 + 6);
+    if (!G.map.solidPx(px, this.y - 8) || G.map.solidPx(this.x, this.y - this.h - 16)) return false;
+    if (this.bounds && (px < this.bounds[0] + 4 || px > this.bounds[1] - 4)) return false;
+    for (let h = 12; h <= 44; h += 4) if (!G.map.solidPx(px, this.y - 8 - h) && !G.map.solidPx(px, this.y - 8 - h - this.h + 10)) return true;
+    return false;
+  }
   ledgeAhead(dir) {
     const px = this.x + dir * (this.w / 2 + 6);
     if (G.map.solidPx(px, this.y - 8)) return true;
@@ -93,7 +111,12 @@ class Enemy extends Fighter {
     return s - this.y > (below ? 120 : 22);
   }
   update() {
-    if (this.st === 'guard' && this.guardT <= 0 && !this.blockT) this.st = 'free';
+    if (this.st === 'guard') {
+      if (this.guardT > 0) this.guardT--;
+      if (G.player) this.face(G.player.x);
+      this.vx *= 0.8;
+      if (this.guardT <= 0 && !this.blockT) { this.st = 'free'; this.cd = Math.min(this.cd, 12); }
+    }
     if (this.blockT > 0) this.blockT--;
     const wasG = this.grounded;
     super.update();

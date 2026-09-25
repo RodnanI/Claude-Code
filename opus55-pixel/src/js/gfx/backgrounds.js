@@ -332,10 +332,36 @@ const Backdrop = {
       const x = ((c.x - cam.x * c.f + t * c.v) % (LW + 200) + LW + 200) % (LW + 200) - 100;
       if (x > -c.img.width && x < VW) ctx.drawImage(c.img, Math.round(x), Math.round(c.y + (refY - cam.y) * 0.02));
     }
+    if (bd.theme === 'town') {
+      // paper sky lanterns rising over the festival
+      for (let i = 0; i < 16; i++) {
+        const f = 0.03 + (i % 4) * 0.02, sp = 0.05 + (i % 5) * 0.012;
+        const x = ((i * 97 + Math.sin(t * 0.004 + i) * 12 - cam.x * f) % (VW + 40) + VW + 40) % (VW + 40) - 20;
+        const y = 190 - ((t * sp + i * 53) % 220);
+        if (y < -6) continue;
+        const big = i % 4 === 3;
+        ctx.fillStyle = 'rgba(255,190,90,0.25)'; ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, big ? 5 : 4, big ? 6 : 5);
+        ctx.fillStyle = (t >> 3) % 7 === i % 7 ? '#fff0b0' : '#ffc060'; ctx.fillRect(Math.round(x), Math.round(y), big ? 3 : 2, big ? 4 : 3);
+        ctx.fillStyle = '#c85a24'; ctx.fillRect(Math.round(x), Math.round(y) + (big ? 3 : 2), big ? 3 : 2, 1);
+      }
+    }
     for (const L of bd.layers) {
       const ox = -(((cam.x * L.f) % LW) + LW) % LW;
       const y = Math.round(L.y + (refY - cam.y) * L.f * 0.6);
       for (let x = Math.round(ox); x < VW; x += LW) ctx.drawImage(L.c, x, y);
+    }
+    // a flock of swallows crossing the sky now and then
+    const FL = { peak: '#3a2c28', bamboo: '#3f5234', town: '#4a1a14' }[bd.theme];
+    const ft = t % 1500;
+    if (FL && ft < 700) {
+      for (let i = 0; i < 7; i++) {
+        const bx = Math.round(-30 + ft * 0.8 - i * 13 - (i % 2) * 6), by = Math.round(46 + Math.sin(ft * 0.02 + i) * 5 + (i % 3) * 7 + (bd.theme.length % 3) * 8);
+        const up = ((t >> 2) + i) & 1;
+        ctx.fillStyle = FL;
+        ctx.fillRect(bx, by, 1, 1); ctx.fillRect(bx - 1, by, 1, 1);
+        if (up) { ctx.fillRect(bx - 3, by - 1, 2, 1); ctx.fillRect(bx + 1, by - 1, 2, 1); } else { ctx.fillRect(bx - 3, by + 1, 2, 1); ctx.fillRect(bx + 1, by + 1, 2, 1); }
+        ctx.fillRect(bx - 3, by + (up ? 1 : 0), 1, 1);
+      }
     }
     if (T.shafts) {
       ctx.save();
