@@ -1,0 +1,21 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0c0908 radial-gradient(ellipse at 50% 45%, #1c1411 0%, #0c0908 62%, #050303 100%);
+}
+body {
+  display: grid;
+  place-items: center;
+}
+#stage {
+  position: relative;
+  line-height: 0;
+  box-shadow: 0 0 0 1px #2b201a, 0 0 0 4px #0a0706, 0 0 0 5px #3a2a1e, 0 18px 70px #000;
+}
+#screen {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  outline: none;
+}
