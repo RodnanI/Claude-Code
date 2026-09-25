@@ -43,6 +43,8 @@ line of the storm and, in D major, the last thing you hear.
 
 ## How it was made
 
+For a step-by-step playbook an AI agent can follow to rebuild this or compose a new piece with the same pipeline, see [`HOW_IT_WAS_MADE.md`](HOW_IT_WAS_MADE.md).
+
 1. **Composition** (`compose.py`). Every bar is written by hand as LilyPond
    notation: right hand, left hand, dynamics and pedalling. Small helpers
    generate repeated figurations (cross-staff arpeggios, waves, tremolos,
