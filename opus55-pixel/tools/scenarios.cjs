@@ -194,7 +194,15 @@ module.exports.full = async (a) => {
     if (s.over) { console.log('died?!'); await a.tap('Enter', 500); continue; }
     if (s.script) { await a.tap('Enter', 60); continue; }
     if (s.px > best + 40) { best = s.px; bestT = Date.now(); }
-    if (Date.now() - bestT > 15000) { console.log('NUDGE at level', s.lvl, 'tile', Math.round(s.px / 16)); await a.ev(() => { const p = window.RS.G.player; p.x += 80; p.y -= 60; p.vy = 0; }); bestT = Date.now(); continue; }
+    if (Date.now() - bestT > 15000) { console.log('NUDGE at level', s.lvl, 'tile', Math.round(s.px / 16)); await a.ev(() => {
+        // hop to the next safe footing ahead (never into a pit, spikes or a wall)
+        const G = window.RS.G, p = G.player, M = G.map;
+        for (let x = p.x + 64; x < p.x + 420; x += 8) {
+          const s = M.surfaceBelow(x, p.y - 100);
+          if (s < M.ph - 8 && !M.hazard(x - 5, s - 10, x + 5, s) && !M.solidPx(x, s - 24)) { p.x = x; p.y = s - 1; p.vy = 0; p.vx = 0; return; }
+        }
+        p.x += 80; p.y -= 60; p.vy = 0;
+      }); bestT = Date.now(); continue; }
     if (s.fx !== null) {
       const dx = s.fx - s.px, dir = dx > 0 ? 1 : -1;
       if (Math.abs(dx) > 30) {
