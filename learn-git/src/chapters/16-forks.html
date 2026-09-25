@@ -1,0 +1,84 @@
+<section class="chapter" data-id="forks" data-line="d" data-title="Forks and open source" data-short="Forks and open source">
+  <header class="ch-head">
+    <h1>Forks and open source</h1>
+    <p class="lede">You can read any public repository, but you cannot push to other people's projects. To contribute anyway, you fork: make your own copy on GitHub, change that, and send a pull request back to the original.</p>
+  </header>
+
+  <h2>Fork, clone, branch: not the same thing</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Word</th><th>Makes a copy where</th><th>Use it when</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Branch</strong></td><td>Inside the same repository</td><td>You can push there and want to work on something separately</td></tr>
+      <tr><td><strong>Clone</strong></td><td>On your computer</td><td>You want to work on any repository locally</td></tr>
+      <tr><td><strong>Fork</strong></td><td>On GitHub, under your account</td><td>You want to change a project you cannot push to</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>How the pieces connect</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 720 300" role="img" aria-label="The original repository is forked to your account on GitHub. You clone your fork, push to it, and open a pull request from your fork to the original. You fetch the original as upstream to stay in sync.">
+      <defs><marker id="ah5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-head"/></marker></defs>
+      <rect x="16" y="20" width="250" height="90" rx="14" class="dg-box" style="stroke: var(--line-d)"/>
+      <text x="36" y="50" class="dg-title">The original</text>
+      <text x="36" y="74" class="dg-mono">open-kitchen/cookbook</text>
+      <text x="36" y="95" class="dg-small">on GitHub; you cannot push here</text>
+      <rect x="454" y="20" width="250" height="90" rx="14" class="dg-box" style="stroke: var(--line-d)"/>
+      <text x="474" y="50" class="dg-title">Your fork</text>
+      <text x="474" y="74" class="dg-mono">you/cookbook</text>
+      <text x="474" y="95" class="dg-small">on GitHub; yours to push to</text>
+      <rect x="235" y="200" width="250" height="84" rx="14" class="dg-box"/>
+      <text x="255" y="230" class="dg-title">Your computer</text>
+      <text x="255" y="256" class="dg-mono">cookbook/</text>
+      <text x="255" y="274" class="dg-small">a clone of your fork</text>
+      <path d="M272 46 H446" class="dg-arrow" marker-end="url(#ah5)"/>
+      <text x="359" y="38" text-anchor="middle" class="dg-cmd">1. fork</text>
+      <path d="M446 84 H272" class="dg-arrow" style="stroke: var(--line-d)" marker-end="url(#ah5)"/>
+      <text x="359" y="104" text-anchor="middle" class="dg-cmd">5. pull request</text>
+      <path d="M548 114 L468 196" class="dg-arrow" marker-end="url(#ah5)"/>
+      <text x="530" y="170" class="dg-small">2. clone (origin)</text>
+      <path d="M430 196 L512 114" class="dg-arrow" style="stroke: var(--line-a)" marker-end="url(#ah5)"/>
+      <text x="486" y="140" text-anchor="end" class="dg-small">4. push</text>
+      <path d="M150 114 L270 196" class="dg-arrow" stroke-dasharray="6 5" marker-end="url(#ah5)"/>
+      <text x="36" y="164" class="dg-small">fetch upstream</text>
+      <text x="36" y="182" class="dg-small">(stay in sync)</text>
+    </svg>
+    <figcaption>Step 3, not drawn: branch and commit on your computer as usual.</figcaption>
+  </figure>
+  <ol class="steps">
+    <li><strong>Fork:</strong> click <em>Fork</em> on the project's GitHub page. You now own <code>you/cookbook</code>.</li>
+    <li><strong>Clone your fork:</strong> <code>git clone https://github.com/you/cookbook.git</code>. Your fork becomes <code>origin</code>.</li>
+    <li><strong>Branch and commit</strong> as usual.</li>
+    <li><strong>Push to your fork:</strong> <code>git push -u origin my-fix</code>.</li>
+    <li><strong>Open a pull request:</strong> GitHub offers to open it against the original project, and its maintainers review it like any other PR.</li>
+  </ol>
+
+  <h2>Staying in sync with the original</h2>
+  <p>While you work, the original project moves on, and your fork does not update itself. Add the original as a second remote, traditionally called <span data-g="upstream">upstream</span>, and bring its changes in:</p>
+  <pre class="term">$ git remote add upstream https://github.com/open-kitchen/cookbook.git
+$ git fetch upstream
+$ git switch main
+$ git merge upstream/main
+$ git push origin main</pre>
+  <p>Or click <em>Sync fork</em> on your fork's GitHub page, then <code>git pull</code> locally. Same result.</p>
+  <div data-widget="terminal" data-scenario="fork"></div>
+
+  <h2>Contributing without embarrassment</h2>
+  <ul>
+    <li><strong>Read CONTRIBUTING.md first.</strong> Most projects explain their rules, style and how to run the tests.</li>
+    <li><strong>Look for issues labeled</strong> <em>good first issue</em> or <em>help wanted</em>. They are picked for newcomers.</li>
+    <li><strong>Comment on the issue before big work</strong>, so two people do not solve the same thing.</li>
+    <li><strong>Keep the pull request focused</strong> on one thing. Do not reformat the whole project on the way.</li>
+    <li><strong>Be patient.</strong> Maintainers are often volunteers. A polite nudge after a week is fine.</li>
+    <li><strong>Documentation fixes count.</strong> Clarifying a confusing README is a perfect first contribution.</li>
+  </ul>
+
+  <div class="quiz">
+    <p class="quiz-q">You forked a project and cloned your fork. What is <code>origin</code>?</p>
+    <div class="quiz-choices">
+      <button>The original project</button>
+      <button data-correct>Your fork on GitHub</button>
+      <button>Your computer</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> origin is wherever you cloned from. The original project is the one you add as upstream.</p>
+  </div>
+</section>

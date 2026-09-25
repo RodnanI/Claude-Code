@@ -1,0 +1,75 @@
+<section class="chapter" data-id="auth" data-line="d" data-title="Logging in to GitHub" data-short="Logging in">
+  <header class="ch-head">
+    <h1>Logging in: the easy way, tokens and SSH</h1>
+    <p class="lede">The first time you push, git asks who you are, and your GitHub password will not work there (GitHub stopped accepting account passwords for git in 2021). Here are your options, easiest first.</p>
+  </header>
+
+  <h2>Pick a method</h2>
+  <div class="tabs">
+    <div class="tab-list"><button data-tab="gh">GitHub CLI (easiest)</button><button data-tab="gcm">Browser popup</button><button data-tab="ssh">SSH key</button><button data-tab="pat">Access token</button></div>
+    <div class="tab-panel" data-panel="gh">
+      <p>GitHub's own command-line tool, <span data-g="gh">gh</span>, logs you in through your browser and configures git for you. It is also great for pull requests later.</p>
+      <ol class="steps">
+        <li><strong>Install it</strong> from <a href="https://cli.github.com" target="_blank" rel="noopener">cli.github.com</a>: an installer on Windows, <code>brew install gh</code> on macOS, or your Linux package manager.</li>
+        <li><strong>Start the login</strong> and answer its questions: GitHub.com, HTTPS, Yes to authenticating git, and "Login with a web browser".
+          <pre class="term">$ gh auth login</pre></li>
+        <li><strong>Copy the one-time code</strong> it prints, press Enter, paste the code into the browser page that opens, and click Authorize.</li>
+        <li><strong>Done.</strong> <code>git push</code> now just works. Check any time with <code>gh auth status</code>.</li>
+      </ol>
+    </div>
+    <div class="tab-panel" data-panel="gcm">
+      <p>If you installed Git for Windows with the default options, you already have <strong>Git Credential Manager</strong>. The first time you push, a window opens asking you to sign in to GitHub in your browser. Approve it, and your login is stored securely for next time. Nothing else to do.</p>
+      <p>On macOS and Linux you can install Git Credential Manager as well (on macOS: <code>brew install --cask git-credential-manager</code>), or simply use the GitHub CLI option.</p>
+    </div>
+    <div class="tab-panel" data-panel="ssh">
+      <p>An <span data-g="ssh-key">SSH key</span> is a pair of files: a <strong>private key</strong> that never leaves your computer and a <strong>public key</strong> you hand to GitHub. Think padlock and key: GitHub gets the padlock (public), you keep the key (private), and only your computer can open it. Set it up once and never type a password again.</p>
+      <ol class="steps">
+        <li><strong>Generate a key.</strong> Press Enter to accept the default file name. Adding a passphrase is a good idea.
+          <pre class="term">$ ssh-keygen -t ed25519 -C "you@example.com"</pre></li>
+        <li><strong>Print the public key</strong>, the file ending in <code>.pub</code>. Never share the other one.
+          <pre class="term">$ cat ~/.ssh/id_ed25519.pub
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... you@example.com</pre></li>
+        <li><strong>Add it to GitHub:</strong> Settings, SSH and GPG keys, New SSH key. Paste it and save.</li>
+        <li><strong>Test it:</strong>
+          <pre class="term">$ ssh -T git@github.com
+Hi you! You've successfully authenticated, but GitHub does not provide shell access.</pre></li>
+        <li><strong>Use SSH URLs</strong> for your remotes: <code>git@github.com:you/recipes.git</code> instead of the https one.</li>
+      </ol>
+    </div>
+    <div class="tab-panel" data-panel="pat">
+      <p>A <span data-g="pat">personal access token</span> is a long random password that you create on GitHub just for git and other tools. It works with https URLs.</p>
+      <ol class="steps">
+        <li><strong>Create one:</strong> GitHub, Settings, Developer settings, Personal access tokens, Fine-grained tokens, Generate new token. Give it access to the repositories you need, with "Contents: Read and write".</li>
+        <li><strong>Copy it right away.</strong> GitHub shows it only once.</li>
+        <li><strong>When git asks for your password, paste the token.</strong> The username is still your GitHub username.</li>
+      </ol>
+      <p>Treat it exactly like a password: never commit it, never paste it into chats. Tokens expire, so set yourself a reminder.</p>
+    </div>
+  </div>
+
+  <h2>HTTPS or SSH URLs?</h2>
+  <div class="compare">
+    <div style="--cc: var(--line-b)"><h4>HTTPS</h4><p><code>https://github.com/you/recipes.git</code></p><p>Works everywhere, even behind strict company firewalls. Pairs with the GitHub CLI, the browser popup or a token.</p></div>
+    <div style="--cc: var(--line-e)"><h4>SSH</h4><p><code>git@github.com:you/recipes.git</code></p><p>Needs the key setup, then never asks again. Some networks block it.</p></div>
+  </div>
+  <p>You can switch an existing repository between them at any time:</p>
+  <pre class="term">$ git remote set-url origin git@github.com:you/recipes.git</pre>
+
+  <h2>Error messages, translated</h2>
+  <dl class="defs">
+    <dt>Authentication failed</dt><dd>You typed your account password. Use one of the methods above instead.</dd>
+    <dt>Permission denied (publickey)</dt><dd>The SSH key is missing, not added to GitHub, or not the right one. <code>ssh -T git@github.com</code> tests it.</dd>
+    <dt>Repository not found</dt><dd>A typo in the URL, a private repository you are not logged in for, or you are logged in as a different account. GitHub says "not found" instead of "forbidden" on purpose, so private repositories stay secret.</dd>
+    <dt>Permission to X denied to Y</dt><dd>You are logged in fine, but your account may not push there. Ask to be added as a collaborator, or <a href="#forks">fork</a> the project.</dd>
+  </dl>
+
+  <div class="quiz">
+    <p class="quiz-q">Which file of an SSH key pair do you give to GitHub?</p>
+    <div class="quiz-choices">
+      <button>The private key, id_ed25519</button>
+      <button data-correct>The public key, id_ed25519.pub</button>
+      <button>Both of them</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> The public key is the padlock; anyone may have it. The private key never leaves your computer.</p>
+  </div>
+</section>

@@ -1,0 +1,77 @@
+<section class="chapter" data-id="ignore" data-line="b" data-title="Ignoring files" data-short=".gitignore">
+  <header class="ch-head">
+    <h1>Ignoring files with .gitignore</h1>
+    <p class="lede">Some files should never end up in history: passwords, gigabytes of downloaded libraries, logs, your computer's junk files. A small text file called .gitignore keeps them out.</p>
+  </header>
+
+  <h2>What should never be committed</h2>
+  <div class="compare">
+    <div style="--cc: var(--bad)"><h4>Secrets</h4><p><code>.env</code> files, API keys, passwords, private keys. Once pushed to GitHub, assume they are stolen.</p></div>
+    <div style="--cc: var(--line-c)"><h4>Things you can regenerate</h4><p>Downloaded libraries (<code>node_modules/</code>, <code>venv/</code>), build output (<code>dist/</code>, <code>build/</code>), caches (<code>__pycache__/</code>).</p></div>
+    <div style="--cc: var(--line-f)"><h4>Personal junk</h4><p>macOS <code>.DS_Store</code>, Windows <code>Thumbs.db</code>, editor folders like <code>.idea/</code>, and <code>*.log</code> files.</p></div>
+    <div style="--cc: var(--line-e)"><h4>Huge files</h4><p>Videos, datasets, zip archives. They bloat history forever, even after you delete them.</p></div>
+  </div>
+
+  <h2>How it works</h2>
+  <p>Create a file named exactly <code>.gitignore</code> (with the leading dot, no extension) in the top folder of your repository. Each line is a pattern. Git then pretends matching <span data-g="untracked">untracked</span> files do not exist: they vanish from <code>git status</code>, and <code>git add .</code> skips them.</p>
+  <div class="file-block"><div class="file-name">.gitignore</div><pre class="file"># secrets
+.env
+
+# dependencies and build output
+node_modules/
+dist/
+
+# logs and OS junk
+*.log
+.DS_Store</pre></div>
+  <p>Commit the <code>.gitignore</code> file itself, so everyone working on the project gets the same rules.</p>
+
+  <h2>Pattern rules</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Pattern</th><th>Ignores</th></tr></thead>
+    <tbody>
+      <tr><td><code>secret.txt</code></td><td>Anything named secret.txt, in any folder</td></tr>
+      <tr><td><code>*.log</code></td><td>Every file ending in .log, anywhere. <code>*</code> matches any characters except a slash.</td></tr>
+      <tr><td><code>build/</code></td><td>Folders named build, and everything inside. The trailing slash means "folders only".</td></tr>
+      <tr><td><code>/build</code></td><td>Only the build at the top of the repository, not <code>src/build</code>. A leading slash anchors the pattern.</td></tr>
+      <tr><td><code>docs/*.pdf</code></td><td>PDFs directly inside the top-level docs folder. A slash in the middle also anchors the pattern.</td></tr>
+      <tr><td><code>**/temp</code></td><td>temp at any depth. <code>**</code> matches any number of folders.</td></tr>
+      <tr><td><code>!keep.log</code></td><td>An exception: do not ignore keep.log, even though <code>*.log</code> said so</td></tr>
+      <tr><td><code># note</code></td><td>Nothing. Lines starting with # are comments for humans.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>Test the rules</h2>
+  <p>Edit either box. The right column explains every decision, including files ignored only because a folder they sit in is ignored.</p>
+  <div data-widget="gitignore"></div>
+  <div class="callout warn" data-label="The exception gotcha">
+    <p>An exception cannot rescue a file inside a folder that is ignored as a whole. If <code>logs/</code> is ignored, <code>!logs/keep.log</code> does nothing, because git never even looks inside logs. Ignore <code>logs/*</code> instead (the contents, not the folder), and the exception works. Try both in the tester.</p>
+  </div>
+
+  <h2>Already committed? .gitignore will not help</h2>
+  <p><code>.gitignore</code> only affects files git is not tracking yet. If a file was already committed, adding it to .gitignore changes nothing: git keeps tracking it. Untrack it first:</p>
+  <pre class="term">$ echo ".env" &gt;&gt; .gitignore
+$ git rm --cached .env
+rm '.env'
+$ git commit -m "Stop tracking .env"</pre>
+  <p><code>--cached</code> means "remove it from git, but leave the real file on my disk".</p>
+  <div class="callout danger" data-label="Committed a secret and pushed it?">
+    <p>Removing it now does not remove it from history; anyone can still open the old commit. And bots scan GitHub for leaked keys within minutes. <strong>Revoke or rotate the key first</strong>: create a new one on that service and disable the old one. That is the actual fix. Scrubbing history is optional cleanup afterwards.</p>
+  </div>
+
+  <h2>Do not write it from scratch</h2>
+  <p>GitHub keeps ready-made templates for nearly every language and tool at <a href="https://github.com/github/gitignore" target="_blank" rel="noopener">github.com/github/gitignore</a>, and offers them in a dropdown when you create a repository on the website. Start from one of those and add your own lines.</p>
+
+  <h2>Practice</h2>
+  <div data-widget="terminal" data-scenario="ignore"></div>
+
+  <div class="quiz">
+    <p class="quiz-q">You add <code>passwords.txt</code> to .gitignore, but it was committed last week. What happens?</p>
+    <div class="quiz-choices">
+      <button>Git removes it from history</button>
+      <button data-correct>Nothing. Git keeps tracking it until you run git rm --cached</button>
+      <button>Git deletes it from your disk</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Ignore rules only apply to untracked files. And if that file was ever pushed, change those passwords.</p>
+  </div>
+</section>

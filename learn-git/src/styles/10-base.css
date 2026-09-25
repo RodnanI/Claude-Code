@@ -1,0 +1,158 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--topbar) + 20px);
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 18px/1.65 var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img, svg { display: block; max-width: 100%; }
+[hidden] { display: none !important; }
+
+a {
+  color: inherit;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--line, var(--line-a));
+}
+a:hover { text-decoration-color: currentColor; }
+
+:focus-visible {
+  outline: 3px solid var(--line-c);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection { background: color-mix(in srgb, var(--line-c) 45%, transparent); }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  line-height: 1.06;
+  margin: 0;
+  text-wrap: balance;
+}
+
+p { margin: 0 0 1em; }
+
+code, kbd, pre, samp { font-family: var(--font-mono); }
+code { font-size: .84em; }
+
+:not(pre) > code {
+  background: var(--card-2);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: .06em .36em .1em;
+  overflow-wrap: anywhere;
+}
+
+kbd {
+  display: inline-block;
+  font-size: .76em;
+  line-height: 1;
+  padding: .32em .5em .28em;
+  border: 1px solid var(--rule-2);
+  border-bottom-width: 3px;
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--ink);
+  white-space: nowrap;
+  vertical-align: .1em;
+}
+
+strong { font-weight: 700; }
+
+hr {
+  border: 0;
+  height: 2px;
+  background: var(--rule);
+  margin: 48px 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -60px;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+.skip-link:focus { top: 10px; }
+
+/* buttons */
+.btn {
+  font: 600 15px/1 var(--font-body);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45em;
+  padding: .66em 1.05em;
+  border-radius: 7px;
+  border: 2px solid var(--ink);
+  background: var(--card);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform .12s ease, background-color .12s ease, color .12s ease, border-color .12s ease;
+}
+.btn:hover { background: var(--ink); color: var(--paper); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--ink); color: var(--paper); }
+.btn.primary:hover { background: var(--line, var(--line-a)); border-color: var(--line, var(--line-a)); color: #fff; }
+.btn.small { font-size: 13px; padding: .5em .75em; border-width: 1.5px; border-radius: 6px; }
+.btn.ghost { border-color: var(--rule-2); background: transparent; }
+.btn.ghost:hover { border-color: var(--ink); }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: .42; cursor: not-allowed; pointer-events: none; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.icon-btn:hover { border-color: currentColor; }
+
+input, textarea, select, button { font: inherit; color: inherit; }
+
+input[type="text"], input[type="search"], input[type="email"], textarea, select {
+  background: var(--card);
+  border: 1.5px solid var(--rule-2);
+  border-radius: 7px;
+  padding: .55em .7em;
+  width: 100%;
+}
+input[type="text"]:focus, input[type="search"]:focus, input[type="email"]:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--line-c) 40%, transparent);
+}
+textarea { resize: vertical; font-family: var(--font-mono); font-size: 14px; line-height: 1.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

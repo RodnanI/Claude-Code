@@ -1,0 +1,124 @@
+<section class="chapter" data-id="terminal" data-line="a" data-title="The terminal" data-short="The terminal">
+  <header class="ch-head">
+    <h1>The terminal, without the panic</h1>
+    <p class="lede">Git lives in the terminal: the dark window where movie hackers type very fast. It looks intimidating, but it is just a very literal way of talking to your computer. Ten minutes here makes everything after it easy.</p>
+  </header>
+
+  <h2>What it is</h2>
+  <p>Normally you control your computer by pointing and clicking: double-click a folder to open it, drag a file to the trash. The <span data-g="terminal">terminal</span> does the same jobs with typed commands. You type a command, press <kbd>Enter</kbd>, the computer does it and prints a reply.</p>
+  <div class="compare">
+    <div style="--cc: var(--line-c)"><h4>Clicking</h4><p>Double-click "Documents".<br>Right-click, New Folder, type "recipes".</p></div>
+    <div style="--cc: var(--line-a)"><h4>Typing</h4><p><code>cd Documents</code><br><code>mkdir recipes</code></p></div>
+  </div>
+  <p>Why bother? Typing is exact, fast and repeatable, and git was built for it. Every git tutorial, error message and forum answer speaks in commands. Learn this language and all of that becomes readable.</p>
+  <div class="callout note" data-label="Words that mean roughly the same thing">
+    <p>Terminal, command line, console and shell get used interchangeably. Strictly speaking, the terminal is the window and the <span data-g="shell">shell</span> is the program inside it that understands your commands (bash, zsh, PowerShell). You can ignore the difference for now.</p>
+  </div>
+
+  <h2>Opening one</h2>
+  <div class="tabs" data-os>
+    <div class="tab-list"><button data-tab="windows">Windows</button><button data-tab="mac">macOS</button><button data-tab="linux">Linux</button></div>
+    <div class="tab-panel" data-panel="windows">
+      <p>Install git first (the <a href="#setup">Install and set up</a> stop shows how). It comes with <strong>Git Bash</strong>, a terminal that understands the same commands as Mac and Linux. Open the Start menu, type <em>Git Bash</em>, and open it. <strong>Use Git Bash for everything in this guide.</strong></p>
+      <p>Windows also has PowerShell and Command Prompt. Git works in them, but some basic commands differ (Command Prompt uses <code>dir</code> instead of <code>ls</code>, for example), which is confusing while you are learning.</p>
+      <p>Bonus: in VS Code, <em>Terminal, New Terminal</em> opens one inside your editor. Pick "Git Bash" from the small dropdown next to the plus button.</p>
+    </div>
+    <div class="tab-panel" data-panel="mac">
+      <p>Press <kbd>Cmd</kbd> + <kbd>Space</kbd>, type <em>Terminal</em>, press <kbd>Enter</kbd>. That is it. It runs a shell called zsh, which understands every command in this guide.</p>
+      <p>Bonus: in VS Code, <em>Terminal, New Terminal</em> opens one inside your editor.</p>
+    </div>
+    <div class="tab-panel" data-panel="linux">
+      <p>Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd> on most distributions, or search your apps for <em>Terminal</em>. You are most likely running bash, which understands everything here.</p>
+    </div>
+  </div>
+
+  <h2>Reading the prompt</h2>
+  <p>When the terminal is ready for you, it shows a <span data-g="prompt">prompt</span>. Here is a typical one. Hover or tap the colored parts.</p>
+  <div class="anatomy" data-widget="anatomy">
+    <div class="anatomy-code">
+      <span class="part" data-tone="1" data-name="you@laptop" data-desc="Who is logged in (you) and the name of the computer (laptop). Just information.">you@laptop</span>
+      <span class="part" data-tone="0" data-name="~/projects" data-desc="The folder you are in right now. ~ is short for your home folder, so this is the projects folder inside your home folder.">~/projects</span>
+      <span class="part" data-tone="2" data-name="(main)" data-desc="Git Bash and many setups show the current git branch here when you are inside a repository. Branches come later.">(main)</span>
+      <span class="part" data-tone="4" data-name="$" data-desc="The end of the prompt. It means: ready, type now. Your command goes after it. You never type the $ yourself.">$</span>
+    </div>
+    <p class="anatomy-desc"><span class="anatomy-hint">Hover or tap a part of the prompt.</span></p>
+  </div>
+  <div class="callout warn" data-label="The number one beginner mistake">
+    <p>Tutorials (this one included) write commands as <code>$ git status</code>. The <code>$</code> only marks "this is a command". Type just <code>git status</code>.</p>
+  </div>
+
+  <h2>Anatomy of a command</h2>
+  <p>Every command follows the same grammar: a program name, sometimes a subcommand, then options and arguments, separated by spaces.</p>
+  <div class="anatomy" data-widget="anatomy">
+    <div class="anatomy-code">
+      <span class="part" data-tone="0" data-name="Program" data-desc="Which program to run. Here: git. Others you will use: ls, cd, mkdir, gh.">git</span>
+      <span class="part" data-tone="1" data-name="Subcommand" data-desc="Git does many different jobs. The subcommand picks one: commit, status, push, and so on.">commit</span>
+      <span class="part" data-tone="2" data-name="Flag (option)" data-desc="Starts with a dash and changes how the command behaves. -m means: here comes the message. Long forms use two dashes, like --message.">-m</span>
+      <span class="part" data-tone="3" data-name="Argument (value)" data-desc="What the command or flag works on. It is wrapped in quotes because it contains spaces; without quotes the shell would treat every word as a separate argument.">"Fix typo in the menu"</span>
+    </div>
+    <p class="anatomy-desc"><span class="anatomy-hint">Hover or tap a part of the command.</span></p>
+  </div>
+  <p>A few more so the pattern sticks: <code>ls -a</code> is a program and a <span data-g="flag">flag</span>. <code>cd Documents</code> is a program and an <span data-g="argument">argument</span>. <code>git push -u origin main</code> is a program, a subcommand, a flag and two arguments.</p>
+
+  <h2>Folders and paths</h2>
+  <p>Files live in a tree of folders, which the terminal calls <span data-g="directory">directories</span>. A <span data-g="path">path</span> gives directions through that tree, with <code>/</code> between names: <code>~/projects/recipes/pancakes.txt</code> means "in my home folder, then projects, then recipes, the file pancakes.txt".</p>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Symbol</th><th>Means</th></tr></thead>
+    <tbody>
+      <tr><td><code>~</code></td><td>Your <span data-g="home">home folder</span>, like <code>/home/you</code> or <code>C:/Users/you</code></td></tr>
+      <tr><td><code>.</code></td><td>The folder you are in right now</td></tr>
+      <tr><td><code>..</code></td><td>The folder one level up (the parent)</td></tr>
+      <tr><td><code>/</code></td><td>At the start of a path, the very top of the drive. In the middle, a separator between names.</td></tr>
+    </tbody>
+  </table></div>
+  <p>A path starting with <code>/</code> or <code>~</code> is <strong>absolute</strong> and works from anywhere. Anything else is <strong>relative</strong> to your <span data-g="cwd">current directory</span>: <code>cd recipes</code> only works if a recipes folder exists right where you are standing.</p>
+
+  <h2>The commands you actually need</h2>
+  <dl class="defs">
+    <dt>pwd</dt><dd><strong>P</strong>rint <strong>w</strong>orking <strong>d</strong>irectory: which folder am I in?</dd>
+    <dt>ls</dt><dd><strong>L</strong>i<strong>s</strong>t the files and folders here. <code>ls -a</code> also shows hidden ones, whose names start with a dot (like <code>.git</code>).</dd>
+    <dt>cd folder</dt><dd><strong>C</strong>hange <strong>d</strong>irectory: walk into a folder. <code>cd ..</code> goes up a level, <code>cd ~</code> (or plain <code>cd</code>) goes home.</dd>
+    <dt>mkdir name</dt><dd><strong>M</strong>a<strong>k</strong>e a new <strong>dir</strong>ectory.</dd>
+    <dt>touch notes.txt</dt><dd>Create an empty file (Git Bash, macOS and Linux).</dd>
+    <dt>cat notes.txt</dt><dd>Print a file's contents on the screen.</dd>
+    <dt>echo "text"</dt><dd>Print some text. With <code>&gt;</code> the text goes into a file instead: <code>echo "hello" &gt; notes.txt</code> creates or overwrites notes.txt. <code>&gt;&gt;</code> adds to the end.</dd>
+    <dt>rm notes.txt</dt><dd>Delete a file. There is <strong>no recycle bin</strong>. <code>rm -r folder</code> deletes a folder and everything in it.</dd>
+    <dt>clear</dt><dd>Wipe the screen. Nothing is undone, it just clears the clutter. <kbd>Ctrl</kbd> + <kbd>L</kbd> does the same.</dd>
+  </dl>
+
+  <h2>Practice</h2>
+  <p>This terminal runs a pretend computer inside the page. The panel on the right shows its folders the way a file explorer would, so you can watch your commands take effect. Follow the mission.</p>
+  <div data-widget="terminal" data-scenario="shell"></div>
+
+  <h2>Keyboard tricks that save hours</h2>
+  <ul>
+    <li><kbd>Tab</kbd> finishes names for you. Type <code>cd Doc</code> and press <kbd>Tab</kbd>. If several names fit, it shows the options. This works in the practice terminal too.</li>
+    <li><kbd>Up</kbd> and <kbd>Down</kbd> bring back commands you already ran. No retyping.</li>
+    <li><kbd>Ctrl</kbd> + <kbd>C</kbd> cancels whatever is running, or the line you are typing. In most terminals it does <em>not</em> copy.</li>
+    <li>Copy and paste: in Git Bash, right-click (or <kbd>Ctrl</kbd> + <kbd>Insert</kbd> and <kbd>Shift</kbd> + <kbd>Insert</kbd>). On macOS, the usual <kbd>Cmd</kbd> + <kbd>C</kbd> and <kbd>Cmd</kbd> + <kbd>V</kbd>. On Linux, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>C</kbd> and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>.</li>
+    <li>Names with spaces need quotes: <code>cd "My Documents"</code>. Simpler: never put spaces in project names. Use dashes, like <code>my-project</code>.</li>
+  </ul>
+  <div class="callout tip" data-label="No news is good news">
+    <p>Many commands print nothing at all when they succeed. If you get the prompt back without an error, it worked.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">You are in ~/projects/recipes. Which command takes you to ~/projects?</p>
+    <div class="quiz-choices">
+      <button>cd projects</button>
+      <button data-correct>cd ..</button>
+      <button>pwd</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> <code>..</code> always means one level up. <code>cd projects</code> would look for a folder called projects <em>inside</em> recipes, and <code>pwd</code> only tells you where you are.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">A tutorial says: <code>$ git status</code>. What do you type?</p>
+    <div class="quiz-choices">
+      <button>$ git status</button>
+      <button data-correct>git status</button>
+      <button>status</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> The dollar sign is the prompt, printed by the terminal. You type what comes after it.</p>
+  </div>
+</section>

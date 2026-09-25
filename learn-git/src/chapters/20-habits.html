@@ -1,0 +1,84 @@
+<section class="chapter" data-id="habits" data-line="e" data-title="Good habits" data-short="Good habits">
+  <header class="ch-head">
+    <h1>Good habits and team workflows</h1>
+    <p class="lede">The commands are the easy part. What separates a painless project from a miserable one is a handful of habits. None of them are hard, and all of them pay off.</p>
+  </header>
+
+  <h2>Commit small, commit often</h2>
+  <p>A commit should be one logical change: "Add search box", not "Monday's work". Small commits are easy to review, easy to revert and easy to understand later. Committing often means you always have a recent save point, which makes <a href="#undo">undoing</a> cheap.</p>
+
+  <h2>Write messages future you can use</h2>
+  <p>Type a message and watch the signal. It checks the conventions most projects follow.</p>
+  <div data-widget="commitlint"></div>
+  <ul>
+    <li>First line: a short summary in the command form, about 50 characters, no period. Test it by reading "If applied, this commit will <em>fix crash when the cart is empty</em>".</li>
+    <li>Need more room? Leave a blank line and explain <em>why</em> in as much detail as you like. From the terminal: <code>git commit -m "Title" -m "Longer explanation"</code>.</li>
+    <li>Some teams use <strong>Conventional Commits</strong> prefixes: <code>feat: add search</code>, <code>fix: handle empty cart</code>, <code>docs: update README</code>. Copy whatever the project already does.</li>
+  </ul>
+
+  <h2>The GitHub flow</h2>
+  <p>The simple workflow most teams use, and what this whole guide has been building towards:</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 720 210" role="img" aria-label="main runs straight across. Short branches leave main, gain a few commits, and join again through pull requests.">
+      <path d="M20 105 H700" class="dg-line" style="stroke: var(--g0)"/>
+      <path d="M80 105 L125 50 H210 L250 105" class="dg-line" style="stroke: var(--g1)"/>
+      <path d="M290 105 L335 160 H430 L470 105" class="dg-line" style="stroke: var(--g2)"/>
+      <path d="M510 105 L550 50 H600 L640 105" class="dg-line" style="stroke: var(--g3)"/>
+      <circle cx="40" cy="105" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <circle cx="145" cy="50" r="10" class="dg-station" style="stroke: var(--g1)"/>
+      <circle cx="195" cy="50" r="10" class="dg-station" style="stroke: var(--g1)"/>
+      <rect x="236" y="95" width="28" height="20" rx="10" class="dg-station"/>
+      <circle cx="360" cy="160" r="10" class="dg-station" style="stroke: var(--g2)"/>
+      <circle cx="410" cy="160" r="10" class="dg-station" style="stroke: var(--g2)"/>
+      <rect x="456" y="95" width="28" height="20" rx="10" class="dg-station"/>
+      <circle cx="575" cy="50" r="10" class="dg-station" style="stroke: var(--g3)"/>
+      <rect x="626" y="95" width="28" height="20" rx="10" class="dg-station"/>
+      <text x="170" y="28" text-anchor="middle" class="dg-mono">fix-typo</text>
+      <text x="385" y="194" text-anchor="middle" class="dg-mono">add-search</text>
+      <text x="575" y="28" text-anchor="middle" class="dg-mono">dark-mode</text>
+      <text x="250" y="140" text-anchor="middle" class="dg-small">PR #12 merged</text>
+      <text x="470" y="85" text-anchor="middle" class="dg-small">PR #13 merged</text>
+      <text x="640" y="140" text-anchor="middle" class="dg-small">PR #14 merged</text>
+      <text x="40" y="140" text-anchor="middle" class="dg-small">main</text>
+    </svg>
+    <figcaption>main runs straight through and always works. Every change arrives on a short branch through a pull request.</figcaption>
+  </figure>
+  <ol class="steps">
+    <li><strong>main always works.</strong> Nobody commits half-finished work to it directly.</li>
+    <li><strong>Every task gets a branch</strong>, created from an up-to-date main.</li>
+    <li><strong>Push early</strong> and open a pull request (a draft is fine) to get feedback.</li>
+    <li><strong>Review, then merge</strong> once the checks are green.</li>
+    <li><strong>Delete the branch</strong> and start the next task from a fresh main.</li>
+  </ol>
+
+  <h2>Rules that prevent disasters</h2>
+  <ul>
+    <li><strong>Pull before you start working</strong>, and before you push. Fewer surprises, smaller conflicts.</li>
+    <li><strong>Look before you commit:</strong> <code>git status</code> and <code>git diff --staged</code> catch the stray debug file.</li>
+    <li><strong>Never commit secrets.</strong> Set up .gitignore on day one.</li>
+    <li><strong>Never force-push a shared branch.</strong> On your own branch, prefer <code>--force-with-lease</code>, which refuses if someone else pushed in the meantime.</li>
+    <li><strong>Read commands from the internet before running them</strong>, especially anything containing <code>--force</code>, <code>reset --hard</code> or <code>clean</code>.</li>
+    <li><strong>Keep branches short-lived.</strong> Days, not months.</li>
+  </ul>
+
+  <h2>Things that bite people eventually</h2>
+  <dl class="defs">
+    <dt>Line endings</dt><dd>Windows ends lines with two invisible characters, macOS and Linux with one. Mixed teams see whole files as "changed". Set <code>core.autocrlf</code> as shown in <a href="#setup">setup</a>, or add a <code>.gitattributes</code> file containing <code>* text=auto</code>.</dd>
+    <dt>Big files</dt><dd>GitHub rejects files over 100 MB and warns above 50 MB. For large assets use Git LFS (<code>git lfs track "*.psd"</code>), or keep them out of git altogether.</dd>
+    <dt>Case-only renames</dt><dd>Renaming <code>Readme.md</code> to <code>README.md</code> confuses git on Windows and macOS. Use <code>git mv Readme.md README.md</code>.</dd>
+    <dt>Empty folders</dt><dd>Git only tracks files, so an empty folder is invisible to it. Put a placeholder file inside (often named <code>.gitkeep</code>) if the folder must exist.</dd>
+  </dl>
+
+  <h2>Apps and buttons are fine</h2>
+  <p>VS Code's Source Control panel, GitHub Desktop, JetBrains IDEs, lazygit, Fork, Sublime Merge: all excellent, and many professionals live in them. Now that you know the commands, every button makes sense: Stage is <code>git add</code>, Sync is pull and then push, Discard is <code>git restore</code>. Use whatever is fastest, and drop to the terminal when something looks off.</p>
+
+  <div class="quiz">
+    <p class="quiz-q">Which is the best commit message?</p>
+    <div class="quiz-choices">
+      <button>fixed stuff</button>
+      <button data-correct>Fix crash when the cart is empty</button>
+      <button>Updated files.</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Specific, short, in the command form, no period. You could find this commit a year from now.</p>
+  </div>
+</section>

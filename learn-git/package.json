@@ -1,0 +1,10 @@
+{
+  "name": "learn-git",
+  "version": "1.0.0",
+  "private": true,
+  "description": "An interactive, visual guide to git and GitHub for complete beginners. Compiles to one standalone HTML file.",
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch"
+  }
+}

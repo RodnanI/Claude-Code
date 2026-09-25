@@ -1,0 +1,94 @@
+<section class="chapter" data-id="remotes" data-line="d" data-title="GitHub and remotes" data-short="GitHub and remotes">
+  <header class="ch-head">
+    <h1>GitHub and remotes</h1>
+    <p class="lede">So far everything lived on your computer. Now we connect it to GitHub, so your work is backed up online and other people can download it, add to it and send it back.</p>
+  </header>
+
+  <h2>What a remote is</h2>
+  <p>A <span data-g="remote">remote</span> is another copy of your repository somewhere else, usually on GitHub. It has its own commits and branches. Your git does not stay in constant contact with it. It only talks to the remote when you tell it to, using three commands:</p>
+  <div class="compare">
+    <div style="--cc: var(--line-a)"><h4>push</h4><p>Upload your new commits to the remote.</p></div>
+    <div style="--cc: var(--line-b)"><h4>fetch</h4><p>Download new commits from the remote, without touching your files or branches.</p></div>
+    <div style="--cc: var(--line-c)"><h4>pull</h4><p>Fetch, then merge what arrived into the branch you are on.</p></div>
+  </div>
+
+  <h2>Step 1: an account and an empty repository</h2>
+  <ol class="steps">
+    <li><strong>Sign up</strong> at <a href="https://github.com/signup" target="_blank" rel="noopener">github.com</a>. Your username becomes part of every repository URL, so pick one you will still like in five years.</li>
+    <li><strong>Click the + at the top right, then "New repository".</strong></li>
+    <li><strong>Name it</strong>, for example <code>recipes</code>, and choose Public or Private.</li>
+    <li><strong>Leave "Add a README", .gitignore and license unticked</strong> if you are about to upload an existing project. Otherwise GitHub makes a first commit your project does not have, and your first push gets rejected.</li>
+    <li><strong>Click "Create repository".</strong> GitHub shows a page of setup commands including your repository's URL, like <code>https://github.com/you/recipes.git</code>.</li>
+  </ol>
+
+  <h2>Step 2: connect and push</h2>
+  <pre class="term">$ git remote add origin https://github.com/you/recipes.git
+$ git push -u origin main</pre>
+  <dl class="defs">
+    <dt>git remote add</dt><dd>Save a remote under a short name.</dd>
+    <dt>origin</dt><dd>That name. <span data-g="origin">origin</span> is only a convention for "the main remote"; it could be called anything.</dd>
+    <dt>-u</dt><dd>Short for <code>--set-upstream</code>: remember that my local main belongs with origin's main. After doing this once, plain <code>git push</code> and <code>git pull</code> know where to go.</dd>
+    <dt>origin main</dt><dd>Where to push (origin) and which branch (main).</dd>
+  </dl>
+  <p>The first push asks you to log in, and your GitHub password will not work there. The <a href="#auth">next stop</a> explains what to do instead.</p>
+  <div class="callout note" data-label="What about git branch -M main?">
+    <p>GitHub's setup page also shows <code>git branch -M main</code>. It renames your current branch to main, for people whose git still starts on master. Harmless if you are already on main.</p>
+  </div>
+
+  <h2>Or start from GitHub: git clone</h2>
+  <p>If the project already exists on GitHub (yours or anybody's public project), download it with <span data-g="clone">clone</span>. Copy the URL from the green Code button on the repository page:</p>
+  <pre class="term">$ git clone https://github.com/you/recipes.git
+Cloning into 'recipes'...
+$ cd recipes</pre>
+  <p>Cloning gets you every file, every commit and every branch, and sets up <code>origin</code> automatically. It creates a new folder, so do not forget the <code>cd</code>.</p>
+
+  <h2>origin/main: your computer's memory of GitHub</h2>
+  <p>After you fetch, pull or push, branches like <code>origin/main</code> show up in the log. These <span data-g="remote-tracking">remote-tracking branches</span> are read-only bookmarks meaning "where main was on GitHub last time we talked". They only move when you fetch, pull or push. That is why <code>git status</code> can say "Your branch is up to date with 'origin/main'" while GitHub actually has newer commits: git simply has not asked yet.</p>
+  <p>Step through what happens when a teammate pushes. Watch the dashed origin/main label on your side.</p>
+  <div data-widget="demo" data-demos="fetchpull"></div>
+
+  <h2>When your push is rejected</h2>
+  <pre class="term">$ git push
+To https://github.com/you/recipes.git
+ ! [rejected]        main -> main (fetch first)
+error: failed to push some refs to 'https://github.com/you/recipes.git'</pre>
+  <p>Normal, and not a problem with your work. GitHub has commits you do not have, because someone pushed since you last pulled. Git refuses to overwrite them. The fix is always the same: <code>git pull</code> (resolving conflicts if any), then <code>git push</code> again.</p>
+  <div class="callout danger">
+    <p>Do not "fix" a rejected push with <code>git push --force</code>. That replaces GitHub's history with yours and deletes your teammate's commits.</p>
+  </div>
+
+  <h2>Practice the whole loop</h2>
+  <p>Left graph: your computer. Right graph: GitHub. Push, make a teammate push, then fetch and pull.</p>
+  <div data-widget="terminal" data-scenario="remote"></div>
+
+  <h2>Remote commands</h2>
+  <dl class="defs">
+    <dt>git remote -v</dt><dd>List remotes with their URLs</dd>
+    <dt>git remote set-url origin URL</dt><dd>Point origin somewhere else, for example after renaming the repository</dd>
+    <dt>git push</dt><dd>Upload the current branch to its upstream</dd>
+    <dt>git push -u origin name</dt><dd>First push of a new branch</dd>
+    <dt>git fetch</dt><dd>Download without touching your work</dd>
+    <dt>git pull</dt><dd>Download and merge into the current branch</dd>
+    <dt>git branch -a</dt><dd>List local branches plus the origin/ bookmarks</dd>
+  </dl>
+
+  <div class="quiz">
+    <p class="quiz-q">What is the difference between fetch and pull?</p>
+    <div class="quiz-choices">
+      <button>There is none</button>
+      <button data-correct>fetch only downloads; pull downloads and merges into your branch</button>
+      <button>fetch uploads, pull downloads</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Fetch is the safe look-before-you-leap version. Pull is fetch plus merge.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">Your push was rejected with "fetch first". What now?</p>
+    <div class="quiz-choices">
+      <button>git push --force</button>
+      <button data-correct>git pull, fix any conflicts, then push again</button>
+      <button>Delete the repository and start over</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Bring their work in first, then yours can go on top.</p>
+  </div>
+</section>

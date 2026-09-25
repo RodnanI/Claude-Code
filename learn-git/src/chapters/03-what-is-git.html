@@ -1,0 +1,83 @@
+<section class="chapter" data-id="what-is-git" data-line="a" data-title="What git actually is" data-short="What git is">
+  <header class="ch-head">
+    <h1>What git actually is</h1>
+    <p class="lede">Git is a time machine for a folder. It takes snapshots of your files when you ask, keeps every one of them, and lets many people add their own snapshots to the same project without trampling each other.</p>
+  </header>
+
+  <h2>Version control in one sentence</h2>
+  <p><span data-g="version-control">Version control</span> means keeping track of every change to a set of files over time, so you can see who changed what, when and why, and return to any earlier state. <span data-g="git">Git</span> is the version control system nearly everyone uses, from solo hobby projects to Linux, Windows and most of the software you touch every day. Linus Torvalds wrote it in 2005 to manage the Linux kernel, and it is free and open source.</p>
+
+  <h2>Snapshots, not save files</h2>
+  <p>When you tell git "remember this", it takes a <span data-g="snapshot">snapshot</span> of the whole project and files it away with a short description. That saved snapshot is called a <span data-g="commit">commit</span>. Commits line up one after another into a history, like stations on a line. Drag the slider or click the stations to travel through the history of one recipe:</p>
+  <div data-widget="snapshots"></div>
+  <p>Green lines were added in that commit, red lines removed. You can see who made each change and the reason they gave. A git history gives you exactly that, for every file in the project.</p>
+  <div class="callout note" data-label="Is that not enormous?">
+    <p>No. Git is clever about storage: files that did not change between snapshots are not stored again, and everything is compressed. A project with thousands of commits usually has only a few megabytes of history.</p>
+  </div>
+
+  <h2>Git and GitHub are different things</h2>
+  <p>This trips up everyone. <strong>Git</strong> is a program on your computer, and it works entirely offline. <strong><span data-g="github">GitHub</span></strong> is a website (owned by Microsoft) that stores copies of git projects online and adds teamwork features on top: pull requests, code review, issues, automation.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 720 270" role="img" aria-label="Your laptop and Sam's laptop each have a complete copy of the repository. GitHub holds a shared copy. You push to it and pull from it.">
+      <defs><marker id="ah1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-head"/></marker></defs>
+      <rect x="16" y="60" width="240" height="150" rx="14" class="dg-box"/>
+      <text x="36" y="92" class="dg-title">Your laptop</text>
+      <text x="36" y="118" class="dg-small">git, the program</text>
+      <rect x="36" y="132" width="200" height="58" rx="8" class="dg-box-soft"/>
+      <text x="50" y="157" class="dg-mono">recipes/</text>
+      <text x="50" y="178" class="dg-small">+ .git (the full history)</text>
+      <rect x="456" y="10" width="248" height="114" rx="14" class="dg-box" style="stroke: var(--line-d)"/>
+      <text x="476" y="42" class="dg-title">GitHub.com</text>
+      <text x="476" y="68" class="dg-mono">you/recipes</text>
+      <text x="476" y="89" class="dg-small">a copy with the full history</text>
+      <text x="476" y="109" class="dg-small">+ pull requests, issues, reviews</text>
+      <rect x="456" y="160" width="248" height="96" rx="14" class="dg-box"/>
+      <text x="476" y="192" class="dg-title">Sam's laptop</text>
+      <text x="476" y="218" class="dg-mono">recipes/</text>
+      <text x="476" y="238" class="dg-small">+ .git (the full history)</text>
+      <path d="M262 100 C 340 70, 380 60, 448 62" class="dg-arrow" marker-end="url(#ah1)"/>
+      <text x="330" y="64" class="dg-cmd">push</text>
+      <path d="M448 94 C 380 102, 340 122, 262 142" class="dg-arrow" marker-end="url(#ah1)"/>
+      <text x="336" y="140" class="dg-cmd">pull</text>
+      <path d="M556 128 V 154" class="dg-arrow" marker-end="url(#ah1)"/>
+      <path d="M604 154 V 128" class="dg-arrow" marker-end="url(#ah1)"/>
+      <text x="548" y="146" text-anchor="end" class="dg-small">pull</text>
+      <text x="612" y="146" class="dg-small">push</text>
+    </svg>
+    <figcaption>Every copy holds the complete history. GitHub is simply the shared meeting point.</figcaption>
+  </figure>
+  <div class="compare">
+    <div style="--cc: var(--line-a)"><h4>Git</h4><ul><li>A program you install</li><li>Works offline, on your computer</li><li>Tracks history, branches and merges</li><li>Free and open source</li></ul></div>
+    <div style="--cc: var(--line-d)"><h4>GitHub</h4><ul><li>A website, github.com</li><li>Stores copies of repositories online</li><li>Adds pull requests, issues, code review, automation</li><li>Alternatives: GitLab, Bitbucket, Codeberg</li></ul></div>
+  </div>
+  <div class="callout analogy">
+    <p>Git is your camera and photo album. GitHub is a shared online album where the whole team uploads photos, comments on them and decides which ones make the final cut.</p>
+  </div>
+
+  <h2>A little vocabulary before we start</h2>
+  <dl class="defs">
+    <dt>repository</dt><dd>A project folder that git tracks, usually shortened to "repo". Its history lives in a hidden folder called <code>.git</code> inside it.</dd>
+    <dt>commit</dt><dd>One saved snapshot, with a message.</dd>
+    <dt>branch</dt><dd>A separate line of commits, for working on something without disturbing the rest.</dd>
+    <dt>remote</dt><dd>A copy of the repository somewhere else, usually on GitHub.</dd>
+    <dt>push / pull</dt><dd>Upload your new commits to a remote, or download other people's.</dd>
+  </dl>
+  <p>Each gets its own stop later. No need to memorize anything now.</p>
+
+  <h2>What git is not good at</h2>
+  <ul>
+    <li><strong>Huge binary files</strong> like videos, Photoshop files or game assets. Git keeps every version of every file, so a 2 GB video edited ten times becomes 20 GB of history. Git LFS exists for that.</li>
+    <li><strong>Live co-editing</strong> like Google Docs. Git combines work in deliberate steps, not keystroke by keystroke.</li>
+    <li><strong>Backing up your whole computer.</strong> It is built for projects, not for your photo library.</li>
+  </ul>
+
+  <div class="quiz">
+    <p class="quiz-q">You are on a plane with no internet. Can you still make commits?</p>
+    <div class="quiz-choices">
+      <button>No, commits are stored on GitHub</button>
+      <button data-correct>Yes, git runs entirely on your computer</button>
+      <button>Only with a paid GitHub account</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Commits are saved in the <code>.git</code> folder on your own disk. You only need the internet to push them to GitHub later.</p>
+  </div>
+</section>

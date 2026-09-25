@@ -1,0 +1,71 @@
+<section class="chapter" data-id="undo" data-line="e" data-title="Undo anything" data-short="Undo anything">
+  <header class="ch-head">
+    <h1>Undo (almost) anything</h1>
+    <p class="lede">Once something is committed, it is very hard to lose it for good. This stop is your emergency manual: pick your situation, get the exact commands, and know which undos are harmless and which are not.</p>
+  </header>
+
+  <h2>Oh no. What happened?</h2>
+  <p>Pick a situation. The color says how risky the fix is: green is safe, amber rewrites history (fine for commits only you have), red can throw work away.</p>
+  <div data-widget="rescue"></div>
+
+  <h2>The golden rule of undoing</h2>
+  <div class="callout danger" data-label="Pushed or not pushed?">
+    <p>A commit that exists only on your computer can be rewritten freely: amend it, reset it, rebase it. Once it is <strong>pushed and others may have it</strong>, do not rewrite it. Use <code>git revert</code> instead, which undoes it with a new commit.</p>
+  </div>
+
+  <h2>reset: moving the branch backwards</h2>
+  <p><span data-g="reset">Reset</span> moves your current branch back to an earlier commit. The mode decides what happens to the changes from the commits you stepped back over. Try all three tabs and watch the areas panel:</p>
+  <div data-widget="demo" data-demos="reset-soft,reset-mixed,reset-hard"></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Mode</th><th>Branch moves back</th><th>Staging area</th><th>Your files</th></tr></thead>
+    <tbody>
+      <tr><td><code>--soft</code></td><td>Yes</td><td>Changes stay staged</td><td>Untouched</td></tr>
+      <tr><td><code>--mixed</code> (default)</td><td>Yes</td><td>Unstaged</td><td>Untouched, the changes are still there</td></tr>
+      <tr><td><code>--hard</code></td><td>Yes</td><td>Cleared</td><td><strong>Reset too. Uncommitted work is gone.</strong></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2>revert: undoing in public</h2>
+  <p><span data-g="revert">Revert</span> removes nothing. It creates a new commit that does the exact opposite of an old one. History stays intact, so it is safe on shared branches.</p>
+  <div data-widget="demo" data-demos="revert"></div>
+
+  <h2>amend: fixing the last commit</h2>
+  <p>A typo in the message, or a forgotten file? <code>git commit --amend</code> replaces the last commit with a corrected one. It is a new commit with a new hash, so only amend before pushing.</p>
+  <div data-widget="demo" data-demos="amend"></div>
+
+  <h2>reflog: the safety net under the safety net</h2>
+  <p>Git privately writes down every place HEAD has been, in the <span data-g="reflog">reflog</span>. Reset too far? Deleted a branch? Botched a rebase? The commits are almost certainly still there, and the reflog tells you their hashes:</p>
+  <pre class="term">$ git reflog
+44fd3dc (HEAD -> main) HEAD@{0}: reset: moving to HEAD~1
+06314b3 HEAD@{1}: commit: Add taco recipe
+44fd3dc HEAD@{2}: commit: Add salsa
+$ git reset --hard HEAD@{1}
+HEAD is now at 06314b3 Add taco recipe</pre>
+  <p>Reflog entries are kept for about three months, and commits nothing points to survive at least a couple of weeks. The reflog is local: it only knows what happened on this computer.</p>
+  <div class="callout warn" data-label="What git cannot bring back">
+    <p>Changes that were never committed. If you <code>git restore</code> a file, or <code>git reset --hard</code> or <code>git clean</code> away uncommitted edits, git never had a copy of them. That is the real reason to commit often: every commit is a save point you can always return to.</p>
+  </div>
+
+  <h2>Practice: fix a messy repository</h2>
+  <div data-widget="terminal" data-scenario="undo"></div>
+
+  <div class="quiz">
+    <p class="quiz-q">You pushed a bad commit to main, and your team already pulled it. How do you undo it?</p>
+    <div class="quiz-choices">
+      <button>git reset --hard HEAD~1, then git push --force</button>
+      <button data-correct>git revert the commit, then git push</button>
+      <button>Delete the repository and start again</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Revert adds a new commit that everyone can simply pull. Resetting and force pushing would rip the commit out from under your team.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">Which reset mode can permanently destroy uncommitted changes?</p>
+    <div class="quiz-choices">
+      <button>--soft</button>
+      <button>--mixed</button>
+      <button data-correct>--hard</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> --hard overwrites your files. The other two only move the branch and the staging area.</p>
+  </div>
+</section>

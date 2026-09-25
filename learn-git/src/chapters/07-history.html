@@ -1,0 +1,106 @@
+<section class="chapter" data-id="history" data-line="b" data-title="Reading history" data-short="Reading history">
+  <header class="ch-head">
+    <h1>Reading history</h1>
+    <p class="lede">A history is only useful if you can read it. Learn to list commits, open one up, compare versions, and step back in time to look around.</p>
+  </header>
+
+  <h2>git log</h2>
+  <pre class="term">$ git log
+commit 7ccb74ce66d73f1a89766c7ef7a3c9810db31af2 (HEAD -> main)
+Author: Ada Lovelace &lt;ada@example.com&gt;
+Date:   Tue Sep 15 10:07:38 2026 +0000
+
+    Add guacamole recipe
+
+commit f4ee3e34ec6c1269719ea7c2d8c20b788caac512
+Author: Sam &lt;sam@example.com&gt;
+Date:   Tue Sep 15 09:21:52 2026 +0000
+
+    Add salt to pancakes</pre>
+  <p>Newest first. When the list is longer than your screen, git shows it in a scrollable viewer: arrow keys and space scroll, and <kbd>q</kbd> gets you out. (Everyone gets stuck in there once. Now you know.)</p>
+  <p>Most of the time you want the short version:</p>
+  <pre class="term">$ git log --oneline
+7ccb74c (HEAD -> main) Add guacamole recipe
+f4ee3e3 Add salt to pancakes
+2a4cc3a Add salsa recipe
+dc90184 Add pancake recipe
+3f1b2c0 Start the recipe book</pre>
+  <p>And to see every branch drawn as a graph: <code>git log --oneline --graph --all</code>. The practice terminals draw that graph for you as a metro map instead.</p>
+
+  <h2>Hashes: every commit's ID</h2>
+  <p>That jumble like <code>7ccb74ce66d7...</code> is the commit's <span data-g="hash">hash</span>, a unique ID git calculates from the commit's contents, author, time and parent. Change anything and the hash changes, which is how git can tell history was not tampered with.</p>
+  <p>You never need all 40 characters. The first 7 are enough to point at a commit: <code>git show 7ccb74c</code>.</p>
+
+  <h2>HEAD: you are here</h2>
+  <p><span data-g="head">HEAD</span> is git's name for "the commit you are on right now". Usually it points at a branch (<code>HEAD -&gt; main</code> in the log), and the branch points at its newest commit. In the graphs in this guide, HEAD is the black label and the spinning ring around a station.</p>
+  <p>You can count backwards from it:</p>
+  <dl class="defs">
+    <dt>HEAD</dt><dd>the current commit</dd>
+    <dt>HEAD~1</dt><dd>one commit before it (also written <code>HEAD^</code>)</dd>
+    <dt>HEAD~3</dt><dd>three commits back</dd>
+  </dl>
+
+  <h2>Looking inside a commit</h2>
+  <pre class="term">$ git show f4ee3e3</pre>
+  <p>prints the commit's details plus a <span data-g="diff">diff</span>: exactly which lines changed. Diffs look scary but have a simple structure. Hover the parts:</p>
+  <div class="anatomy" data-widget="anatomy">
+<div class="anatomy-code block"><span class="part" data-tone="0" data-name="diff --git" data-desc="Which file this section is about. a/ is the old version, b/ the new one.">diff --git a/pancakes.txt b/pancakes.txt</span>
+<span class="part" data-tone="2" data-name="index line" data-desc="Internal IDs of the old and new file contents. Safe to ignore.">index 3b18e51..6f8a38c 100644</span>
+<span class="part" data-tone="1" data-name="--- and +++" data-desc="The legend: lines marked - come from the old version (a), lines marked + from the new one (b).">--- a/pancakes.txt
++++ b/pancakes.txt</span>
+<span class="part" data-tone="3" data-name="Hunk header" data-desc="This chunk starts at line 2 and was 3 lines long before; now it starts at line 2 and is 4 lines long. Git shows only the changed area plus a few lines around it.">@@ -2,3 +2,4 @@</span>
+<span class="part" data-tone="2" data-name="Context lines" data-desc="Unchanged lines, starting with a space, shown so you can see where the change happened.">  - 2 cups flour
+  - 2 eggs
+  - 1 cup milk</span>
+<span class="part" data-tone="1" data-name="Added line" data-desc="A line starting with + was added (green in a real terminal). A removed line starts with - (red). A changed line shows up as one removed line followed by one added line.">+ - 1 pinch of salt</span></div>
+    <p class="anatomy-desc"><span class="anatomy-hint">Hover or tap each part of the diff.</span></p>
+  </div>
+
+  <h2>Comparing versions with git diff</h2>
+  <dl class="defs">
+    <dt>git diff</dt><dd>Changes in your files that are not staged yet</dd>
+    <dt>git diff --staged</dt><dd>Staged changes: exactly what your next commit will contain</dd>
+    <dt>git diff HEAD~2</dt><dd>Everything that changed since two commits ago</dd>
+    <dt>git diff main feature</dt><dd>The difference between two branches</dd>
+  </dl>
+  <div class="callout tip">
+    <p>Run <code>git diff --staged</code> right before every commit. It is the cheapest code review you will ever get: you will catch leftover debug lines and files you did not mean to include.</p>
+  </div>
+
+  <h2>Time travel</h2>
+  <p>You can move HEAD to an old commit and see the project exactly as it was then. Your files change to match that moment, and nothing is lost: the newer commits are still there.</p>
+  <div data-widget="demo" data-demos="detached"></div>
+  <p>This state is called <span data-g="detached-head">detached HEAD</span>: HEAD points at a commit instead of a branch. It sounds alarming but it is just sightseeing mode. Look around, then go back with <code>git switch main</code>. Want to keep working from that old point? Put a branch there: <code>git switch -c idea-from-the-past</code>.</p>
+
+  <h2>Practice</h2>
+  <div data-widget="terminal" data-scenario="history"></div>
+
+  <h2>Handy history commands</h2>
+  <dl class="defs">
+    <dt>git log -p file.txt</dt><dd>Every change ever made to one file, with diffs</dd>
+    <dt>git log --author="Sam"</dt><dd>Only one person's commits</dd>
+    <dt>git log --grep="salsa"</dt><dd>Commits whose message mentions a word</dd>
+    <dt>git log -n 5</dt><dd>Only the five newest commits</dd>
+    <dt>git blame file.txt</dt><dd>Who last changed each line (see <a href="#extras">power tools</a>)</dd>
+  </dl>
+
+  <div class="quiz">
+    <p class="quiz-q">What does <code>HEAD~1</code> mean?</p>
+    <div class="quiz-choices">
+      <button>The very first commit in the project</button>
+      <button data-correct>The commit just before the one you are on</button>
+      <button>The newest commit on GitHub</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> <code>~1</code> means one step back from HEAD, <code>~2</code> two steps, and so on.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">In a diff, what does a line starting with <code>-</code> mean?</p>
+    <div class="quiz-choices">
+      <button>The line is a bullet point</button>
+      <button data-correct>The line was removed</button>
+      <button>The line has an error</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> <code>-</code> removed, <code>+</code> added, a leading space means unchanged context.</p>
+  </div>
+</section>

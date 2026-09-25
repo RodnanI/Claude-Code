@@ -1,0 +1,81 @@
+<section class="chapter" data-id="github-tour" data-line="d" data-title="The rest of GitHub" data-short="The rest of GitHub">
+  <header class="ch-head">
+    <h1>The rest of GitHub</h1>
+    <p class="lede">GitHub is more than a place to push. A quick tour of the features you will bump into: READMEs, issues, releases, Actions, Pages, and the settings that protect your main branch.</p>
+  </header>
+
+  <h2>The repository page</h2>
+  <dl class="defs">
+    <dt>Code</dt><dd>Files, the branch dropdown (top left), commit history (the clock icon), and the green Code button with the clone URL.</dd>
+    <dt>Issues</dt><dd>Bug reports, ideas and to-dos, each with its own discussion.</dd>
+    <dt>Pull requests</dt><dd>Open and past pull requests.</dd>
+    <dt>Actions</dt><dd>Automation runs, such as tests and deployments.</dd>
+    <dt>Settings</dt><dd>Collaborators, branch protection, Pages, secrets. Only visible with admin rights.</dd>
+  </dl>
+  <p>At the top: <strong>Star</strong> (a public bookmark, and a thank-you to the authors), <strong>Watch</strong> (notifications) and <strong>Fork</strong>.</p>
+  <div class="callout tip">
+    <p>Press <kbd>.</kbd> (the period key) on any repository page on github.com to open it in a full VS Code editor in your browser. Press <kbd>t</kbd> to search files by name.</p>
+  </div>
+
+  <h2>README.md and Markdown</h2>
+  <p>A file named <span data-g="readme">README.md</span> at the top of your repository is shown as the project's front page. The <code>.md</code> stands for <span data-g="markdown">Markdown</span>: plain text with a few symbols for formatting. The same syntax works in issues, pull request descriptions and comments. Edit the left side:</p>
+  <div data-widget="markdown"></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>You type</th><th>You get</th></tr></thead>
+    <tbody>
+      <tr><td><code># Title</code>, <code>## Section</code></td><td>Headings</td></tr>
+      <tr><td><code>**bold**</code>, <code>*italic*</code></td><td><strong>bold</strong>, <em>italic</em></td></tr>
+      <tr><td><code>- item</code> or <code>1. item</code></td><td>A bulleted or numbered list</td></tr>
+      <tr><td><code>- [ ] task</code></td><td>A checkbox (clickable in issues and pull requests)</td></tr>
+      <tr><td><code>`code`</code></td><td>Inline code</td></tr>
+      <tr><td><code>[text](https://...)</code></td><td>A link</td></tr>
+      <tr><td><code>&gt; quote</code></td><td>A quote block</td></tr>
+    </tbody>
+  </table></div>
+  <p>A good README answers what the project is, how to install or run it, and how to contribute.</p>
+
+  <h2>Issues</h2>
+  <p><span data-g="issue">Issues</span> are a project's to-do list and bug tracker. Each has a number (<code>#12</code>), a discussion, labels like <em>bug</em> or <em>good first issue</em>, and assignees. Mention one anywhere by typing <code>#12</code>. Write <code>Closes #12</code> in a pull request description and the issue closes itself when the PR is merged.</p>
+  <p>A useful bug report says what you did, what you expected, what happened instead, and which versions you use. Screenshots help enormously.</p>
+
+  <h2>Releases</h2>
+  <p>A <span data-g="release">release</span> is a named version of your project, like <code>v1.2.0</code>, with notes about what changed and files to download. It is built on a git <a href="#extras">tag</a>. Create one from <em>Releases, Draft a new release</em> on the repository page; GitHub can even write the notes from your merged pull requests.</p>
+
+  <h2>GitHub Actions: the green check</h2>
+  <p><span data-g="actions">GitHub Actions</span> runs scripts automatically when something happens. The classic example: run the tests on every push and pull request. That is where the green checkmark or red X on commits and PRs comes from, a practice called <span data-g="ci">CI</span>. A workflow is a small YAML file in <code>.github/workflows/</code>:</p>
+  <div class="file-block"><div class="file-name">.github/workflows/test.yml</div><pre class="file">name: test
+on: [push, pull_request]        # when to run
+jobs:
+  test:
+    runs-on: ubuntu-latest      # a fresh virtual machine
+    steps:
+      - uses: actions/checkout@v4   # get the code
+      - run: npm install            # install dependencies
+      - run: npm test               # run the tests</pre></div>
+  <p>You do not have to write these on day one. Just know what the checks on your pull request are, and click <em>Details</em> next to a red X to see what failed.</p>
+
+  <h2>GitHub Pages: free website hosting</h2>
+  <p>A repository of HTML files can be published as a website for free: <em>Settings, Pages</em>, pick the branch, and it appears at <code>https://you.github.io/repository-name</code>. Perfect for portfolios, documentation and small projects. A standalone HTML file like this guide would work there as-is.</p>
+
+  <h2>Protecting main</h2>
+  <p>Under <em>Settings, Rules</em> (or <em>Branches</em>), admins can protect main: require a pull request for every change, require approvals and passing checks, and block force pushes. That is why the Merge button in the pull request walkthrough stayed locked until someone approved.</p>
+
+  <h2>Other things you will run into</h2>
+  <dl class="defs">
+    <dt>LICENSE</dt><dd>States what others may legally do with your code. No license means nobody else may reuse it. <a href="https://choosealicense.com" target="_blank" rel="noopener">choosealicense.com</a> helps you pick.</dd>
+    <dt>.github/</dt><dd>Templates for issues and pull requests, workflows, and CODEOWNERS (who must review which files).</dd>
+    <dt>Gists</dt><dd>gist.github.com, for sharing a single snippet quickly. Each gist is secretly a tiny git repository.</dd>
+    <dt>Discussions</dt><dd>A forum tab for questions that are not bugs.</dd>
+    <dt>Security tab</dt><dd>Dependabot alerts about vulnerable libraries, with automatic pull requests that update them.</dd>
+  </dl>
+
+  <div class="quiz">
+    <p class="quiz-q">Where does the green checkmark next to a commit usually come from?</p>
+    <div class="quiz-choices">
+      <button>A reviewer approved it</button>
+      <button data-correct>GitHub Actions ran the checks, and they passed</button>
+      <button>The commit message followed the rules</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Checks are automated. Approvals are shown separately on the pull request.</p>
+  </div>
+</section>

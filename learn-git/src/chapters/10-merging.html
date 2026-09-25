@@ -1,0 +1,60 @@
+<section class="chapter" data-id="merging" data-line="c" data-title="Merging">
+  <header class="ch-head">
+    <h1>Merging lines back together</h1>
+    <p class="lede">A branch is only useful if its work can come back. Merging takes the commits from one branch and brings them into another.</p>
+  </header>
+
+  <h2>The one rule to remember</h2>
+  <p>You always merge <strong>into the branch you are on</strong>. To bring <code>feature</code> into <code>main</code>: go to main first, then merge feature.</p>
+  <pre class="term">$ git switch main
+$ git merge feature</pre>
+  <p>Depending on what happened on each branch, git merges in one of two ways.</p>
+
+  <h2>Fast-forward: main did not move</h2>
+  <p>If main got no new commits since the branch split off, there is nothing to combine. Git just slides the main label forward to where feature is. That is a <span data-g="fast-forward">fast-forward</span>. Run the steps and watch the main label.</p>
+  <div data-widget="demo" data-demos="ff"></div>
+
+  <h2>Three-way merge: both moved</h2>
+  <p>If both branches got new commits, git combines them. It compares three versions (the two branch tips and the commit where they split, hence "three-way") and works out the combined result. It records that in a new <span data-g="merge-commit">merge commit</span> with two parents. On the map it is an interchange station.</p>
+  <div data-widget="demo" data-demos="threeway"></div>
+  <p>In a real terminal, git opens your editor with a ready-made message like <code>Merge branch 'feature'</code> for the merge commit. Just save and close it. The practice terminal fills it in for you.</p>
+
+  <h2>After merging: delete the branch</h2>
+  <p>Once merged, the branch label has done its job:</p>
+  <pre class="term">$ git branch -d feature
+Deleted branch feature (was 469aa30).</pre>
+  <p>Deleting a merged branch loses nothing. Its commits are part of main's history now; only the sticky note goes. If the branch is <em>not</em> merged yet, git refuses, to protect you.</p>
+
+  <h2>Practice</h2>
+  <div data-widget="terminal" data-scenario="merging"></div>
+
+  <div class="callout tip" data-label="When git combines files by itself">
+    <p>If the branches changed <em>different</em> files, or different parts of the same file, git combines them automatically. It stops and asks only when both sides changed the <em>same lines</em>. That is a merge conflict, and it is the next stop.</p>
+  </div>
+
+  <h2>Keeping a long branch up to date</h2>
+  <p>Working on a branch for a few days while main moves on? Merge main into your branch now and then, so the final merge is small:</p>
+  <pre class="term">$ git switch my-feature
+$ git merge main</pre>
+  <p>Same command, opposite direction: now main's new commits flow into your branch.</p>
+
+  <div class="quiz">
+    <p class="quiz-q">You want feature's changes in main, and you are currently on feature. What do you run?</p>
+    <div class="quiz-choices">
+      <button>git merge main</button>
+      <button data-correct>git switch main, then git merge feature</button>
+      <button>git merge feature</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Merges go into the branch you are on. <code>git merge main</code> from feature would pull main into feature, which is the opposite direction (useful, just not what was asked).</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">When does a fast-forward happen?</p>
+    <div class="quiz-choices">
+      <button data-correct>When the branch you merge into has no new commits of its own since the split</button>
+      <button>When there are conflicts</button>
+      <button>When you add --force</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Nothing to combine, so git only moves the label. No merge commit.</p>
+  </div>
+</section>

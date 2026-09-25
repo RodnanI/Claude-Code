@@ -1,0 +1,96 @@
+<section class="chapter" data-id="branches" data-line="c" data-title="Branches">
+  <header class="ch-head">
+    <h1>Branches: parallel lines</h1>
+    <p class="lede">Branches let you try an idea on the side while the main version stays safe. Draw git history and it looks exactly like a metro map; a branch is simply a new line splitting off.</p>
+  </header>
+
+  <h2>Why branch?</h2>
+  <p>Say your recipe site works. You want to redesign the layout, which will take a few days and break things along the way. Meanwhile someone reports a typo that needs fixing today. Without branches, the half-finished redesign and the typo fix get tangled together. With branches, the redesign lives on its own line, and main stays clean and working the whole time.</p>
+
+  <h2>What a branch really is</h2>
+  <p>The part most people get wrong: a <span data-g="branch">branch</span> is <strong>not a copy of your files</strong>. It is a lightweight label, a sticky note with a name on it, pointing at one commit. Creating one is instant and costs nothing.</p>
+  <p>When you commit, git makes the new commit and moves the label of the branch you are on forward onto it. <span data-g="head">HEAD</span> is how git knows which label that is.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 720 200" role="img" aria-label="Left: main and feature labels both point at commit C, HEAD is on feature. Right: after one commit on feature, the feature label moved to the new commit D while main stayed on C.">
+      <text x="20" y="26" class="dg-cmd">1. git switch -c feature</text>
+      <path d="M40 130 H240" class="dg-line" style="stroke: var(--g0)"/>
+      <circle cx="60" cy="130" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <circle cx="140" cy="130" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <circle cx="220" cy="130" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <text x="60" y="164" text-anchor="middle" class="dg-small">A</text>
+      <text x="140" y="164" text-anchor="middle" class="dg-small">B</text>
+      <text x="220" y="164" text-anchor="middle" class="dg-small">C</text>
+      <rect x="194" y="92" width="52" height="20" rx="4" style="fill: var(--g0)"/>
+      <text x="220" y="106" text-anchor="middle" class="dg-pill">main</text>
+      <rect x="160" y="64" width="120" height="20" rx="4" class="dg-head"/>
+      <text x="220" y="78" text-anchor="middle" class="dg-pill" style="fill: var(--paper)">HEAD &#8594; feature</text>
+      <path d="M318 20 V 180" stroke="var(--rule-2)" stroke-width="2" stroke-dasharray="4 5"/>
+      <text x="360" y="26" class="dg-cmd">2. commit on feature</text>
+      <path d="M380 130 H560" class="dg-line" style="stroke: var(--g0)"/>
+      <path d="M560 130 L600 170 H660" class="dg-line" style="stroke: var(--g1)"/>
+      <circle cx="400" cy="130" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <circle cx="480" cy="130" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <circle cx="560" cy="130" r="11" class="dg-station" style="stroke: var(--g0)"/>
+      <circle cx="660" cy="170" r="11" class="dg-station" style="stroke: var(--g1)"/>
+      <text x="400" y="164" text-anchor="middle" class="dg-small">A</text>
+      <text x="480" y="164" text-anchor="middle" class="dg-small">B</text>
+      <text x="560" y="164" text-anchor="middle" class="dg-small">C</text>
+      <text x="660" y="198" text-anchor="middle" class="dg-small">D</text>
+      <rect x="534" y="92" width="52" height="20" rx="4" style="fill: var(--g0)"/>
+      <text x="560" y="106" text-anchor="middle" class="dg-pill">main</text>
+      <rect x="600" y="126" width="120" height="20" rx="4" class="dg-head"/>
+      <text x="660" y="140" text-anchor="middle" class="dg-pill" style="fill: var(--paper)">HEAD &#8594; feature</text>
+    </svg>
+    <figcaption>Only the label you are on moves when you commit. main stays where it was.</figcaption>
+  </figure>
+
+  <h2>The commands</h2>
+  <dl class="defs">
+    <dt>git branch</dt><dd>List branches. The one marked <code>*</code> is where you are.</dd>
+    <dt>git branch name</dt><dd>Create a branch at the current commit, but stay where you are.</dd>
+    <dt>git switch name</dt><dd>Move onto a branch. Your files change to match it.</dd>
+    <dt>git switch -c name</dt><dd>Create a branch and switch to it in one go. The one you will use most.</dd>
+    <dt>git switch -</dt><dd>Jump back to the branch you were on before.</dd>
+    <dt>git branch -m new-name</dt><dd>Rename the current branch.</dd>
+    <dt>git branch -d name</dt><dd>Delete a branch that has been merged. <code>-D</code> forces it even if it has not. Careful.</dd>
+  </dl>
+  <div class="callout note" data-label="switch or checkout?">
+    <p>Older tutorials use <code>git checkout name</code> and <code>git checkout -b name</code>. Those still work fine. <code>git switch</code> arrived in 2019 because checkout did too many unrelated jobs. Same result, clearer name.</p>
+  </div>
+
+  <h2>Switching changes your files</h2>
+  <p>When you switch branches, git rewrites the files in your folder to match the commit that branch points at. Files that only exist on the other branch disappear from your folder (they are safe in history) and come back when you switch back. It feels like a magic trick the first time. You will see it in the mission below.</p>
+  <div class="callout warn" data-label="Uncommitted changes and switching">
+    <p>If you have uncommitted edits, git carries them over to the new branch when that is safe. If switching would overwrite them, git refuses with "Your local changes would be overwritten". Commit the work, or <a href="#extras">stash</a> it, then switch.</p>
+  </div>
+
+  <h2>Practice</h2>
+  <div data-widget="terminal" data-scenario="branches"></div>
+
+  <h2>Naming branches</h2>
+  <ul>
+    <li>Describe the work: <code>add-dark-mode</code>, <code>fix-login-crash</code>, <code>update-readme</code>.</li>
+    <li>Lowercase words joined by dashes. Spaces are not allowed.</li>
+    <li>Many teams use prefixes like <code>feature/search</code> or <code>fix/menu-typo</code>. Slashes are allowed.</li>
+  </ul>
+
+  <div class="quiz">
+    <p class="quiz-q">You create a branch called <code>experiment</code>. What does git copy?</p>
+    <div class="quiz-choices">
+      <button>All your files, into a new folder</button>
+      <button data-correct>Nothing. It creates a new label pointing at the current commit.</button>
+      <button>The whole repository, to GitHub</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> That is why branches are so cheap that people create them for every small task.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">You are on main and run <code>git branch feature</code>. Which branch are you on now?</p>
+    <div class="quiz-choices">
+      <button>feature</button>
+      <button data-correct>Still main</button>
+      <button>Both at once</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> <code>git branch name</code> only creates the label. <code>git switch -c name</code> creates it and moves you onto it.</p>
+  </div>
+</section>

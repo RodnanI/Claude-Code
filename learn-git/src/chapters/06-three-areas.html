@@ -1,0 +1,120 @@
+<section class="chapter" data-id="three-areas" data-line="b" data-title="The three areas" data-short="The three areas">
+  <header class="ch-head">
+    <h1>The three areas (the big idea)</h1>
+    <p class="lede">If git ever confuses you, it is almost always about this. Your changes live in one of three places, and nearly every everyday command just moves them between those places.</p>
+  </header>
+
+  <h2>Where changes live</h2>
+  <figure class="diagram">
+    <svg viewBox="0 0 720 262" role="img" aria-label="Three boxes: working directory, staging area, repository. git add moves changes from the working directory to the staging area, git commit from the staging area into the repository. git restore --staged and git restore go back.">
+      <defs><marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-head"/></marker></defs>
+      <rect x="10" y="30" width="190" height="112" rx="12" class="dg-box"/>
+      <path d="M24 30 H186" stroke="var(--line-a)" stroke-width="8" stroke-linecap="round"/>
+      <text x="105" y="66" text-anchor="middle" class="dg-title">Working</text>
+      <text x="105" y="88" text-anchor="middle" class="dg-title">directory</text>
+      <text x="105" y="116" text-anchor="middle" class="dg-small">the files you edit</text>
+      <rect x="265" y="30" width="190" height="112" rx="12" class="dg-box"/>
+      <path d="M279 30 H441" stroke="var(--line-c)" stroke-width="8" stroke-linecap="round"/>
+      <text x="360" y="66" text-anchor="middle" class="dg-title">Staging</text>
+      <text x="360" y="88" text-anchor="middle" class="dg-title">area</text>
+      <text x="360" y="116" text-anchor="middle" class="dg-small">the next commit</text>
+      <rect x="520" y="30" width="190" height="112" rx="12" class="dg-box"/>
+      <path d="M534 30 H696" stroke="var(--line-b)" stroke-width="8" stroke-linecap="round"/>
+      <text x="615" y="66" text-anchor="middle" class="dg-title">Repository</text>
+      <text x="615" y="88" text-anchor="middle" class="dg-mono">.git</text>
+      <text x="615" y="116" text-anchor="middle" class="dg-small">every commit, kept</text>
+      <path d="M204 72 H258" class="dg-arrow" marker-end="url(#ah3)"/>
+      <text x="231" y="62" text-anchor="middle" class="dg-mono">add</text>
+      <path d="M459 72 H513" class="dg-arrow" marker-end="url(#ah3)"/>
+      <text x="487" y="62" text-anchor="middle" class="dg-mono">commit</text>
+      <path d="M360 146 V 172 H 140 V 152" class="dg-arrow" marker-end="url(#ah3)"/>
+      <text x="250" y="194" text-anchor="middle" class="dg-small">git restore --staged: unstage (your edit is kept)</text>
+      <path d="M615 146 V 216 H 80 V 152" class="dg-arrow" style="stroke: var(--bad)" marker-end="url(#ah3)"/>
+      <text x="348" y="240" text-anchor="middle" class="dg-small">git restore: throw your edit away, back to the committed version</text>
+    </svg>
+  </figure>
+  <ol class="steps">
+    <li><strong>Working directory</strong> The real files in your project folder, the ones you open and edit. Git notices changes but saves nothing automatically.</li>
+    <li><strong>Staging area</strong> (also called the <em>index</em>) A draft of your next commit. <code>git add</code> copies a change here. Stage one file, a few, or everything.</li>
+    <li><strong>Repository</strong> The permanent history inside <code>.git</code>. <code>git commit</code> takes whatever is staged and saves it as a new snapshot.</li>
+  </ol>
+  <div class="callout analogy">
+    <p>Think of a train station. Your <span data-g="working-directory">working directory</span> is the city, where passengers (your changes) wander around. The <span data-g="staging-area">staging area</span> is the platform: only the passengers you send there will board. <code>git commit</code> is the train leaving: everyone on the platform travels together, and the departure goes into the timetable forever. Passengers still in the city simply wait for a later train.</p>
+  </div>
+
+  <h2>Why have a staging area at all?</h2>
+  <p>Because you rarely change just one thing. Say you fixed a typo and also started on a new feature. You want two separate commits, "Fix typo" and "Add search", so either can be understood or undone on its own. Staging lets you put only the typo fix on the platform, commit it, then deal with the rest.</p>
+
+  <h2>Click through it</h2>
+  <p>Press <em>Edit</em> on a file to change it, <em>Stage</em> to move the change onto the platform, then write a message and <em>Commit</em>. The dark box at the bottom shows the actual git commands your clicks correspond to.</p>
+  <div data-widget="areas"></div>
+
+  <h2>The life of a file</h2>
+  <p>Every file is in one of these states. <code>git status</code> is just a report of which files are where.</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 720 196" role="img" aria-label="File states: untracked, staged, unmodified (committed), modified. git add moves untracked and modified files to staged, git commit moves staged to unmodified, editing moves unmodified to modified.">
+      <defs><marker id="ah4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-head"/></marker></defs>
+      <path d="M70 80 H640" class="dg-line" style="stroke: var(--line-b)"/>
+      <path d="M170 72 l14 8 l-14 8 z" class="dg-head"/>
+      <path d="M360 72 l14 8 l-14 8 z" class="dg-head"/>
+      <path d="M550 72 l14 8 l-14 8 z" class="dg-head"/>
+      <circle cx="70" cy="80" r="14" class="dg-station"/>
+      <circle cx="260" cy="80" r="14" class="dg-station"/>
+      <circle cx="450" cy="80" r="14" class="dg-station"/>
+      <circle cx="640" cy="80" r="14" class="dg-station"/>
+      <text x="165" y="60" text-anchor="middle" class="dg-cmd">git add</text>
+      <text x="355" y="60" text-anchor="middle" class="dg-cmd">git commit</text>
+      <text x="545" y="60" text-anchor="middle" class="dg-small">you edit it</text>
+      <text x="70" y="120" text-anchor="middle" class="dg-text">Untracked</text>
+      <text x="260" y="120" text-anchor="middle" class="dg-text">Staged</text>
+      <text x="450" y="120" text-anchor="middle" class="dg-text">Committed</text>
+      <text x="640" y="120" text-anchor="middle" class="dg-text">Modified</text>
+      <text x="70" y="138" text-anchor="middle" class="dg-small">brand new</text>
+      <text x="450" y="138" text-anchor="middle" class="dg-small">saved, unchanged</text>
+      <text x="640" y="138" text-anchor="middle" class="dg-small">changed, not staged</text>
+      <path d="M660 96 V 170 H 260 V 150" class="dg-arrow" stroke-dasharray="6 5" marker-end="url(#ah4)"/>
+      <text x="460" y="188" text-anchor="middle" class="dg-cmd">git add</text>
+    </svg>
+  </figure>
+
+  <h2>The commands</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>git add file.txt</code></td><td>Stage one file</td></tr>
+      <tr><td><code>git add .</code></td><td>Stage every change in this folder and below: new, modified and deleted files</td></tr>
+      <tr><td><code>git add -p</code></td><td>Walk through your changes chunk by chunk and choose which to stage</td></tr>
+      <tr><td><code>git restore --staged file.txt</code></td><td>Unstage it. Your edit stays in the file.</td></tr>
+      <tr><td><code>git restore file.txt</code></td><td>Throw your edit away and put back the last committed (or staged) version</td></tr>
+      <tr><td><code>git commit -am "..."</code></td><td>Shortcut: stage all modified tracked files and commit. Brand-new files are <em>not</em> included.</td></tr>
+      <tr><td><code>git diff</code></td><td>Show changes you have not staged yet</td></tr>
+      <tr><td><code>git diff --staged</code></td><td>Show what is staged, which is exactly what the next commit will contain</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout danger" data-label="git restore is permanent">
+    <p><code>git restore file.txt</code> overwrites your file with the last saved version. Edits you never committed are gone, with no undo. Not sure? Use <code>git stash</code> instead (see <a href="#extras">power tools</a>).</p>
+  </div>
+
+  <h2>Practice</h2>
+  <div data-widget="terminal" data-scenario="areas"></div>
+
+  <div class="quiz">
+    <p class="quiz-q">You changed two files but want to commit only one of them. What do you do?</p>
+    <div class="quiz-choices">
+      <button>git commit -am "message"</button>
+      <button data-correct>git add the one file, then git commit</button>
+      <button>Delete the other file first</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Only staged changes go into a commit. The other file stays modified in your working directory, ready for a later commit.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q"><code>git diff</code> prints nothing, but <code>git status</code> lists "Changes to be committed". Why?</p>
+    <div class="quiz-choices">
+      <button>Git is broken</button>
+      <button data-correct>The changes are staged, and plain git diff only shows unstaged ones</button>
+      <button>You need to push first</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Use <code>git diff --staged</code> to see staged changes. This confuses everyone at least once.</p>
+  </div>
+</section>

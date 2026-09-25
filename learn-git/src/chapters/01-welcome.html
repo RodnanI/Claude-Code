@@ -1,0 +1,54 @@
+<section class="chapter" data-id="welcome" data-line="a" data-title="Start here">
+  <header class="ch-head">
+    <h1>Git, from absolute zero</h1>
+    <p class="lede">You keep hearing "just push it to GitHub" as if everyone was born knowing what that means. Nobody was. This guide assumes you know nothing: not what a terminal is, not what a commit is. By the last stop you will be branching, fixing merge conflicts and opening pull requests without breaking a sweat.</p>
+  </header>
+
+  <h2>How this guide works</h2>
+  <p>It is drawn like a metro map. Every chapter is a <strong>stop</strong>, and the stops are grouped into colored <strong>lines</strong>. Ride them in order the first time. Later, jump around with the route map on the left or the search box (<kbd>Ctrl</kbd> + <kbd>K</kbd>, or just <kbd>/</kbd>).</p>
+  <ul class="lines-overview">
+    <li style="--lc: var(--line-a)"><b>A</b><span><strong>Foundations</strong>The terminal, what git is, installing it.</span></li>
+    <li style="--lc: var(--line-b)"><b>B</b><span><strong>Everyday git</strong>Saving snapshots, reading history, ignoring junk.</span></li>
+    <li style="--lc: var(--line-c)"><b>C</b><span><strong>Branching</strong>Parallel versions, merging them back, surviving conflicts.</span></li>
+    <li style="--lc: var(--line-d)"><b>D</b><span><strong>GitHub</strong>Pushing, pulling, logging in, pull requests, forks and the website itself.</span></li>
+    <li style="--lc: var(--line-e)"><b>E</b><span><strong>Rescue and habits</strong>Undoing mistakes, handy tools, working like a professional.</span></li>
+    <li style="--lc: var(--line-f)"><b>F</b><span><strong>Terminus</strong>A final challenge, a sandbox, a cheat sheet and a glossary.</span></li>
+  </ul>
+
+  <h2>You cannot break anything here</h2>
+  <p>Most stops have a <strong>practice terminal</strong>: a pretend command line running a simulated git, right inside this page. It never touches your real computer, so type whatever you like, make mistakes on purpose, and hit <em>Reset</em> when things get weird.</p>
+  <p>Practice terminals come with <strong>missions</strong>, short step-by-step goals that tick themselves off as you go. Stuck? Every step has a hint, and the buttons under each terminal type example commands for you (you still press <kbd>Enter</kbd> yourself, so you see what happens).</p>
+  <div class="callout tip" data-label="Try it">
+    <p>Words with a dotted underline, like <span data-g="repository">repository</span> or <span data-g="commit">commit</span>, show a short definition when you hover or tap them. They all live in the <a href="#glossary">glossary</a> too.</p>
+  </div>
+
+  <h2>Why does git even exist?</h2>
+  <p>Picture writing a school essay. You save it. Then you want to make big changes but keep the old version, so you "Save As" a copy. Then another. A week later your folder looks like the left side below. Click the button a few times.</p>
+  <div data-widget="chaos"></div>
+  <p>Now picture five people editing the same files on different computers all week. That is the problem git solves. It remembers every version of every file, who changed what and why, and it lets several people work on the same project and combine their work safely.</p>
+
+  <h2>What you will be able to do</h2>
+  <ul class="checks">
+    <li>Use the terminal without fear</li>
+    <li>Save your work as commits and travel back to any of them</li>
+    <li>Try ideas on branches without breaking the working version</li>
+    <li>Merge branches and calmly fix merge conflicts</li>
+    <li>Put a project on GitHub, then push and pull changes</li>
+    <li>Open, review and merge pull requests the way real teams do</li>
+    <li>Undo almost any mistake, and know which undos are dangerous</li>
+  </ul>
+
+  <div class="callout note" data-label="How long this takes">
+    <p>Reading everything and doing every mission takes a few hours. You do not have to do it in one sitting: the page remembers which stops you have visited. That memory stays in this browser; nothing is sent anywhere.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">What is the main job of git?</p>
+    <div class="quiz-choices">
+      <button>Hosting websites on the internet</button>
+      <button data-correct>Recording the history of files, so you can go back in time and combine work</button>
+      <button>Making code run faster</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Git is a history recorder for a folder of files. Putting things online is what sites like GitHub add on top.</p>
+  </div>
+</section>

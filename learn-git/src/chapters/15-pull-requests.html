@@ -1,0 +1,85 @@
+<section class="chapter" data-id="pull-requests" data-line="d" data-title="Pull requests">
+  <header class="ch-head">
+    <h1>Pull requests</h1>
+    <p class="lede">This is how teams really work together on GitHub. Nobody pushes straight to main. You push a branch and open a pull request: a proposal saying "please review these changes and merge them in".</p>
+  </header>
+
+  <h2>What a pull request is</h2>
+  <p>A <span data-g="pull-request">pull request</span> (PR) is a page on GitHub attached to a branch. It shows every commit and every changed line, has a discussion thread, runs automatic tests, and ends with a Merge button. The name comes from asking the maintainers to <em>pull</em> your changes in. GitLab calls the same thing a merge request.</p>
+  <p>Why not merge on your own computer and push? Because a pull request gives you:</p>
+  <ul>
+    <li><strong>Review:</strong> a teammate reads your change before it lands. Bugs get caught and knowledge spreads.</li>
+    <li><strong>Automatic checks:</strong> tests run on every push, so a broken change shows a red X before it is merged.</li>
+    <li><strong>A record:</strong> months later, the PR explains why a change was made, with the whole discussion attached.</li>
+    <li><strong>A protected main:</strong> repositories can require a PR and an approval for every change to main.</li>
+  </ul>
+
+  <h2>The workflow</h2>
+  <ol class="steps">
+    <li><strong>Update main:</strong> <code>git switch main</code>, then <code>git pull</code></li>
+    <li><strong>Branch:</strong> <code>git switch -c add-tacos</code></li>
+    <li><strong>Work and commit</strong>, as many commits as you like</li>
+    <li><strong>Push the branch:</strong> <code>git push -u origin add-tacos</code></li>
+    <li><strong>Open the pull request</strong> on GitHub</li>
+    <li><strong>Discuss, review, fix:</strong> push more commits to the same branch; the PR updates itself</li>
+    <li><strong>Merge</strong> once it is approved and the checks are green</li>
+    <li><strong>Clean up:</strong> delete the branch, then <code>git switch main</code> and <code>git pull</code></li>
+  </ol>
+
+  <h2>Walk through one</h2>
+  <p>A simplified mock of the GitHub pages involved. Click the pulsing buttons inside the fake browser, or use Next.</p>
+  <div data-widget="pr"></div>
+
+  <h2>Three ways to merge</h2>
+  <p>GitHub's merge button has a dropdown with three options. Here is what each does to main on GitHub, for a pull request with two commits:</p>
+  <div data-widget="demo" data-demos="pr-merge,pr-squash,pr-rebase"></div>
+  <dl class="defs">
+    <dt>Merge commit</dt><dd>Keeps every commit, plus a merge commit. Complete, but busy.</dd>
+    <dt>Squash and merge</dt><dd>One commit per pull request. The most popular choice for tidy history; your "fix typo" commits never reach main.</dd>
+    <dt>Rebase and merge</dt><dd>Keeps every commit, in a straight line, without a merge commit.</dd>
+  </dl>
+  <div class="callout warn" data-label="After a squash merge">
+    <p>Squashing creates a brand-new commit, so git on your computer does not recognize your branch as merged, and <code>git branch -d add-tacos</code> complains that it is not fully merged. If you know the PR was merged, <code>git branch -D add-tacos</code> is fine.</p>
+  </div>
+
+  <h2>Writing a good pull request</h2>
+  <ul>
+    <li><strong>Keep it small.</strong> A 50-line PR gets a careful review in ten minutes. A 2,000-line PR gets "looks good to me" and a hidden bug.</li>
+    <li><strong>A title that says what it does:</strong> "Add taco recipe", not "Updates".</li>
+    <li><strong>A description that says why</strong>, how to test it, and screenshots for anything visual.</li>
+    <li><strong>Link the issue:</strong> <code>Closes #12</code> in the description closes issue 12 automatically when the PR is merged.</li>
+    <li><strong>Draft PRs</strong> (the arrow next to "Create pull request") mean "not ready, but have a look". Great for early feedback.</li>
+  </ul>
+
+  <h2>Reviewing someone else's</h2>
+  <ul>
+    <li>Open <em>Files changed</em>, and click the + beside any line to comment on it.</li>
+    <li>Use <em>suggestions</em> for small fixes; the author can apply them with a click.</li>
+    <li>Finish with <em>Comment</em>, <em>Approve</em> or <em>Request changes</em>.</li>
+    <li>Be specific and kind. Comment on the code, not the person. Questions ("what happens if the list is empty?") land better than verdicts.</li>
+  </ul>
+
+  <h2>The same thing from the terminal</h2>
+  <p>With the GitHub CLI you never leave the terminal. Do the full cycle here, including merging on the pretend GitHub:</p>
+  <div data-widget="terminal" data-scenario="pr"></div>
+
+  <div class="quiz">
+    <p class="quiz-q">A reviewer asks for a change on your pull request. What do you do?</p>
+    <div class="quiz-choices">
+      <button>Close it and open a new pull request</button>
+      <button data-correct>Commit the fix on the same branch and push. The PR updates itself.</button>
+      <button>Ask the reviewer to fix it</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> A pull request follows its branch. New commits on the branch appear in the PR automatically.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">Your PR was merged on GitHub. Why doesn't your local main have the change?</p>
+    <div class="quiz-choices">
+      <button>The merge failed</button>
+      <button data-correct>GitHub never pushes to your computer. You need to pull.</button>
+      <button>You have to merge it again locally</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> <code>git switch main</code> and <code>git pull</code> bring the merged result down.</p>
+  </div>
+</section>

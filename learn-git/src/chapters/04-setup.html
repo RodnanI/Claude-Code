@@ -1,0 +1,80 @@
+<section class="chapter" data-id="setup" data-line="a" data-title="Install and set up" data-short="Install and set up">
+  <header class="ch-head">
+    <h1>Install git and introduce yourself</h1>
+    <p class="lede">A few minutes of setup you only ever do once per computer: install git, tell it your name, and pick sensible defaults.</p>
+  </header>
+
+  <h2>Install it</h2>
+  <div class="tabs" data-os>
+    <div class="tab-list"><button data-tab="windows">Windows</button><button data-tab="mac">macOS</button><button data-tab="linux">Linux</button></div>
+    <div class="tab-panel" data-panel="windows">
+      <ol class="steps">
+        <li><strong>Download Git for Windows</strong> from <a href="https://git-scm.com/downloads" target="_blank" rel="noopener">git-scm.com/downloads</a> and run the installer.</li>
+        <li><strong>Click Next through almost everything.</strong> The defaults are good. Two screens are worth changing:</li>
+        <li><strong>"Choosing the default editor":</strong> pick Visual Studio Code (or Notepad) instead of Vim. Git opens this editor whenever it needs you to type a message, and Vim is famously hard to exit.</li>
+        <li><strong>"Adjusting the name of the initial branch":</strong> choose "Override the default branch name" and type <code>main</code>.</li>
+        <li><strong>Open Git Bash</strong> from the Start menu when it finishes.</li>
+      </ol>
+      <p class="small muted">The installer also sets up Git Credential Manager, which handles logging in to GitHub later. Keep it.</p>
+    </div>
+    <div class="tab-panel" data-panel="mac">
+      <p>macOS often has git already, bundled with Apple's developer tools. Open Terminal and run:</p>
+      <pre class="term">$ git --version</pre>
+      <p>A version number means you are done. If instead a window offers to install the <em>command line developer tools</em>, click Install and wait. That gives you git.</p>
+      <p>Want a newer version? With <a href="https://brew.sh" target="_blank" rel="noopener">Homebrew</a> installed: <code>brew install git</code>.</p>
+    </div>
+    <div class="tab-panel" data-panel="linux">
+      <p>Use your package manager:</p>
+      <pre class="term"># Ubuntu, Debian, Mint
+$ sudo apt update
+$ sudo apt install git
+# Fedora
+$ sudo dnf install git
+# Arch
+$ sudo pacman -S git</pre>
+    </div>
+  </div>
+  <p>Check that it worked. Any version from the last few years is fine:</p>
+  <pre class="term">$ git --version
+git version 2.51.0</pre>
+
+  <h2>Tell git who you are</h2>
+  <p>Every commit is stamped with an author name and email. Git refuses to commit until they are set, so do it now:</p>
+  <pre class="term">$ git config --global user.name "Ada Lovelace"
+$ git config --global user.email "ada@example.com"</pre>
+  <ul>
+    <li><code>--global</code> means "for every repository on this computer". The settings go into a file called <code>.gitconfig</code> in your home folder.</li>
+    <li>Use the <strong>same email as your GitHub account</strong>, so GitHub can link your commits to your profile.</li>
+    <li>Rather keep your email private? GitHub gives you a no-reply address under <em>Settings, Emails</em>. It looks like <code>12345+you@users.noreply.github.com</code>, and you can use it here instead.</li>
+  </ul>
+
+  <h2>Defaults worth setting</h2>
+  <dl class="defs">
+    <dt>init.defaultBranch main</dt><dd>New projects start on a branch called <code>main</code>, matching GitHub. Without it, git uses <code>master</code> and prints a long warning.</dd>
+    <dt>core.editor</dt><dd>The editor git opens when it wants you to type something, like a commit message. <code>"code --wait"</code> makes that VS Code.</dd>
+    <dt>pull.rebase false</dt><dd>What <code>git pull</code> does when both you and GitHub have new work: merge them, the beginner-friendly choice. Without it, git stops and asks. The GitHub stops explain why.</dd>
+    <dt>core.autocrlf</dt><dd>Windows ends lines of text differently from macOS and Linux. <code>true</code> on Windows and <code>input</code> elsewhere stops files from looking "changed" when they are not.</dd>
+  </dl>
+  <p>Fill in the form to get your personal setup commands, ready to copy:</p>
+  <div data-widget="config"></div>
+
+  <h2>Practice on a fresh install</h2>
+  <p>This pretend computer just installed git and has none of these settings. Try <code>git config --list</code> before and after.</p>
+  <div data-widget="terminal" data-scenario="setup"></div>
+
+  <h2>Get a decent code editor</h2>
+  <p>You will edit files constantly. <a href="https://code.visualstudio.com" target="_blank" rel="noopener">Visual Studio Code</a> is free, runs everywhere and has git built in: changed files are colored in the sidebar, and there are buttons for staging, committing and resolving conflicts. Everything you learn here maps directly onto those buttons.</p>
+  <div class="callout note" data-label="What about GitHub Desktop and other apps?">
+    <p>Graphical git apps are fine, and plenty of professionals use them daily. But they hide what is happening underneath. Learn the commands first; after that, any app is just buttons for things you already understand.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">What does <code>--global</code> mean in <code>git config --global user.name "Ada"</code>?</p>
+    <div class="quiz-choices">
+      <button>It uploads your name to GitHub</button>
+      <button data-correct>It applies to every repository on this computer</button>
+      <button>It makes your name visible to everyone on the internet</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Global settings live in <code>~/.gitconfig</code> and apply to all your repositories. Without <code>--global</code>, a setting applies only to the repository you are in.</p>
+  </div>
+</section>

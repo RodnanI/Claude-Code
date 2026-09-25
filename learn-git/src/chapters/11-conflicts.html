@@ -1,0 +1,78 @@
+<section class="chapter" data-id="conflicts" data-line="c" data-title="Merge conflicts">
+  <header class="ch-head">
+    <h1>Merge conflicts, calmly</h1>
+    <p class="lede">A conflict is not an error, and nothing is broken. It is git saying: two people changed the same lines in different ways, and I refuse to guess which one is right. You decide.</p>
+  </header>
+
+  <h2>When they happen</h2>
+  <p>You made the salsa mild on main. A friend made it hot on a branch called spicy. You both edited the same line. When you merge, git sees two opinions about one line and stops:</p>
+  <pre class="term">$ git merge spicy
+Auto-merging salsa.txt
+CONFLICT (content): Merge conflict in salsa.txt
+Automatic merge failed; fix conflicts and then commit the result.</pre>
+  <p>The merge is now paused halfway. <code>git status</code> lists conflicted files as <em>both modified</em>. Everything that merged cleanly is already staged.</p>
+
+  <h2>Reading the conflict markers</h2>
+  <p>Git writes both versions into the file, fenced off by <span data-g="conflict-markers">conflict markers</span>. Hover the parts:</p>
+  <div class="anatomy" data-widget="anatomy">
+<div class="anatomy-code block">Salsa
+- 4 ripe tomatoes
+- 1 onion
+<span class="part" data-tone="4" data-name="&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD" data-desc="Start of the conflict. What follows is YOUR version, from the branch you were on (HEAD) when you ran git merge.">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+<span class="part" data-tone="1" data-name="Current change" data-desc="The line as it is on your branch, main. Editors call it the current change.">- half a jalapeno (mild)</span>
+<span class="part" data-tone="0" data-name="=======" data-desc="The divider between the two versions.">=======</span>
+<span class="part" data-tone="3" data-name="Incoming change" data-desc="The line as it is on the branch you are merging in, spicy. Editors call it the incoming change.">- 3 jalapenos (hot!)</span>
+<span class="part" data-tone="4" data-name="&gt;&gt;&gt;&gt;&gt;&gt;&gt; spicy" data-desc="End of the conflict, labeled with the branch the incoming change came from.">&gt;&gt;&gt;&gt;&gt;&gt;&gt; spicy</span>
+- juice of 1 lime</div>
+    <p class="anatomy-desc"><span class="anatomy-hint">Hover or tap the marked lines.</span></p>
+  </div>
+  <p>Notice line 2 already says "4 ripe tomatoes". Only the spicy branch changed that line, so git merged it without asking. Only the line both sides touched is in conflict.</p>
+
+  <h2>Fixing it in three steps</h2>
+  <ol class="steps">
+    <li><strong>Edit the file into its final form.</strong> Keep your version, theirs, both, or write something new. Then delete all three marker lines. The file should read like a normal file again.</li>
+    <li><strong>Stage it</strong> with <code>git add salsa.txt</code>. That is how you tell git "this one is resolved".</li>
+    <li><strong>Finish the merge</strong> with <code>git commit</code>. Git already prepared the message.</li>
+  </ol>
+  <p>Editors like VS Code turn step 1 into a click: they highlight each conflict and put buttons above it. This mock works the same way. Resolve both files:</p>
+  <div data-widget="conflict"></div>
+
+  <h2>Changed your mind? Abort</h2>
+  <pre class="term">$ git merge --abort</pre>
+  <p>Puts everything back exactly the way it was before you ran <code>git merge</code>. Always available while a merge is paused. No harm done.</p>
+
+  <h2>Now for real</h2>
+  <p>The same conflict in a terminal. You will fix the file in the built-in editor, just as you would with nano or VS Code.</p>
+  <div data-widget="terminal" data-scenario="conflict"></div>
+
+  <h2>Fewer, smaller conflicts</h2>
+  <ul>
+    <li><strong>Merge or pull often.</strong> The longer two branches drift apart, the bigger the eventual conflict.</li>
+    <li><strong>Keep branches small and short.</strong> A two-day branch rarely conflicts badly. A two-month branch always does.</li>
+    <li><strong>Talk to each other.</strong> If two people need to rework the same file, coordinate first.</li>
+    <li><strong>Do not reformat whole files</strong> in the same commit as real changes. Re-indenting every line makes every line conflict.</li>
+  </ul>
+  <div class="callout danger" data-label="The silent failure">
+    <p>Git does not check whether you actually removed the markers. If you <code>git add</code> a file that still contains <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> lines, they get committed, and your program or document breaks. Always look at the file before adding it.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">In a conflict, the lines between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> and <code>=======</code> are...</p>
+    <div class="quiz-choices">
+      <button data-correct>Your version, from the branch you are on</button>
+      <button>The version from the branch you are merging in</button>
+      <button>The original, before either change</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> HEAD is where you are. The incoming version sits between <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">You fixed the file and removed the markers. What next?</p>
+    <div class="quiz-choices">
+      <button>git push</button>
+      <button data-correct>git add the file, then git commit</button>
+      <button>Run git merge again</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Adding marks it resolved; committing completes the paused merge.</p>
+  </div>
+</section>

@@ -1,0 +1,77 @@
+<section class="chapter" data-id="extras" data-line="e" data-title="Stash, tags and power tools" data-short="Stash, tags, tools">
+  <header class="ch-head">
+    <h1>Stash, tags and power tools</h1>
+    <p class="lede">Smaller commands that make daily life easier: parking half-done work, marking releases, copying single commits, and finding out who changed a line and when.</p>
+  </header>
+
+  <h2>git stash: park your work</h2>
+  <p>You are halfway through something when an urgent fix comes in, and git will not let you switch branches with conflicting uncommitted changes. <span data-g="stash">Stash</span> puts them in a drawer and hands you a clean folder:</p>
+  <pre class="term">$ git stash
+Saved working directory and index state WIP on main: 3a1f2c9 Raise coffee price
+# ...switch branches, fix the urgent thing, come back...
+$ git stash pop</pre>
+  <dl class="defs">
+    <dt>git stash</dt><dd>Park all changes to tracked files</dd>
+    <dt>git stash -u</dt><dd>Also park brand-new, untracked files</dd>
+    <dt>git stash push -m "note"</dt><dd>Park with a description</dd>
+    <dt>git stash list</dt><dd>See what is in the drawer</dd>
+    <dt>git stash pop</dt><dd>Take the newest one out and apply it</dd>
+    <dt>git stash apply</dt><dd>Apply it, but keep a copy in the drawer</dd>
+    <dt>git stash drop</dt><dd>Throw the newest one away</dd>
+  </dl>
+  <div class="callout tip">
+    <p>Stashes are easy to forget about. If you will be away from the work for more than an hour, a quick commit on a branch ("wip: halfway through the menu") is often safer. You can tidy it up later.</p>
+  </div>
+
+  <h2>Tags: naming a release</h2>
+  <p>A <span data-g="tag">tag</span> is a permanent label on one commit, usually a version number. Unlike a branch, it never moves.</p>
+  <pre class="term">$ git tag v1.0.0
+$ git tag -a v1.1.0 -m "Adds dark mode"
+$ git push origin --tags</pre>
+  <p>Tags are not pushed automatically, so remember the last line. <code>-a</code> makes an annotated tag with a message and an author, which is what releases should use.</p>
+  <div class="callout note" data-label="What do the numbers mean?">
+    <p>Most projects use <strong>semantic versioning</strong>, <code>MAJOR.MINOR.PATCH</code>. Bump PATCH for bug fixes (1.0.1), MINOR for new features that break nothing (1.1.0), and MAJOR when you break compatibility (2.0.0).</p>
+  </div>
+
+  <h2>cherry-pick: copy one commit</h2>
+  <p>Need one specific commit from another branch, but not the rest? <span data-g="cherry-pick">Cherry-pick</span> copies just that commit onto your current branch.</p>
+  <div data-widget="demo" data-demos="cherry"></div>
+
+  <h2>blame: who wrote this line?</h2>
+  <pre class="term">$ git blame menu.txt
+a4c1e20 (You 2026-09-14  1) Menu
+9f3b7d1 (Sam 2026-09-15  2) Coffee 3.20
+a4c1e20 (You 2026-09-14  3) Tea 2.50</pre>
+  <p>For every line: the commit that last changed it, who made it and when. Then <code>git show 9f3b7d1</code> tells you why. Despite the name, <span data-g="blame">blame</span> is for understanding code, not for pointing fingers. GitHub has a Blame button on every file too.</p>
+
+  <h2>bisect: finding the commit that broke it</h2>
+  <p>Something worked last month and is broken now, with 200 commits in between. <code>git bisect</code> runs a binary search: it checks out the commit halfway, you say good or bad, it halves again. You find the culprit in about 8 steps instead of 200.</p>
+  <pre class="term">$ git bisect start
+$ git bisect bad              # the current version is broken
+$ git bisect good v1.0.0      # this old version worked
+# git checks out a commit in the middle. Test it, then:
+$ git bisect good             # or: git bisect bad
+# ...repeat until git names the first bad commit...
+$ git bisect reset            # back to where you started</pre>
+
+  <h2>Aliases: shorter commands</h2>
+  <p>Tired of typing? Make your own shortcuts:</p>
+  <pre class="term">$ git config --global alias.st status
+$ git config --global alias.lg "log --oneline --graph --all"
+$ git st
+$ git lg</pre>
+  <p>Aliases work in the practice terminals too.</p>
+
+  <h2>Practice</h2>
+  <div data-widget="terminal" data-scenario="extras"></div>
+
+  <div class="quiz">
+    <p class="quiz-q">What is the difference between a tag and a branch?</p>
+    <div class="quiz-choices">
+      <button>There is none</button>
+      <button data-correct>A branch label moves forward with each new commit; a tag stays on one commit forever</button>
+      <button>Tags only exist on GitHub</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> That is why tags are used for versions: v1.0.0 should always mean exactly the same code.</p>
+  </div>
+</section>

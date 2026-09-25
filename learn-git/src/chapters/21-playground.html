@@ -1,0 +1,32 @@
+<section class="chapter" data-id="playground" data-line="f" data-title="Final challenge" data-short="Final challenge">
+  <header class="ch-head">
+    <h1>Final challenge</h1>
+    <p class="lede">One last mission that strings everything together in the order it happens in real life. After that, a sandbox with no rules, and pointers for where to go next.</p>
+  </header>
+
+  <h2>The graduation mission</h2>
+  <p>Sam started a shared cookbook on GitHub and gave you access. You will clone it, change the menu and push. Except Sam is editing the very same line at the very same time. You will need clone, commit, push, pull, conflict resolution and push again.</p>
+  <div data-widget="terminal" data-scenario="final"></div>
+
+  <h2>Sandbox</h2>
+  <p>Anything goes. Two GitHub repositories exist here: an empty one at <code>https://github.com/you/sandbox.git</code>, and Sam's cookbook to clone. Type <code>help</code> for the command list, <code>sim teammate</code> to make a teammate push, and borrow ideas from the <a href="#cheatsheet">cheat sheet</a>.</p>
+  <div data-widget="terminal" data-scenario="sandbox"></div>
+
+  <h2>Things to try in the sandbox</h2>
+  <ul>
+    <li>Create a project and push it to the empty sandbox repository with <code>git remote add</code> and <code>git push -u</code>.</li>
+    <li>Make several branches, merge them in different orders, and watch the map.</li>
+    <li>Cause a conflict on purpose. Back out with <code>git merge --abort</code> the first time, then resolve it properly.</li>
+    <li>Rebase a branch, then find the old commits with <code>git reflog</code>.</li>
+    <li>Delete the <code>.git</code> folder with <code>rm -rf .git</code> and see what is left. Only in here, please.</li>
+  </ul>
+
+  <h2>Where to go from here</h2>
+  <ul>
+    <li><strong>Use it for real.</strong> Put your next project, your notes or your config files under git and push them to GitHub. Daily use is what makes it stick.</li>
+    <li><strong>Contribute one small thing</strong> to an open source project. A typo fix in documentation is a perfectly respectable first pull request.</li>
+    <li><strong>Read <a href="https://git-scm.com/book" target="_blank" rel="noopener">Pro Git</a></strong>, the free official book, when you want every detail.</li>
+    <li><strong><a href="https://docs.github.com" target="_blank" rel="noopener">GitHub Docs</a></strong> cover every button on the website.</li>
+    <li>When stuck: <code>git status</code> first, then the <a href="#undo">Undo</a> stop.</li>
+  </ul>
+</section>

@@ -1,0 +1,66 @@
+<section class="chapter" data-id="rebase" data-line="c" data-title="Rebase">
+  <header class="ch-head">
+    <h1>Rebase (optional, but you will hear about it)</h1>
+    <p class="lede">Rebase is the other way to bring branches together. It rewrites your branch so it looks as if you had started from the latest main, giving a perfectly straight history. Powerful, occasionally dangerous, and not required for beginners.</p>
+  </header>
+
+  <h2>Merge and rebase, side by side</h2>
+  <p>Both tabs start from the same situation: main and feature both have new commits. Step through each and compare the final maps.</p>
+  <div data-widget="demo" data-demos="threeway,rebase"></div>
+  <p>Merge shows the truth: two lines that joined. <span data-g="rebase">Rebase</span> replays your commits one by one on top of main, producing a straight line. The faded grey stations are the originals.</p>
+
+  <h2>Rebase creates new commits</h2>
+  <p>This is the key fact. Compare the hashes before and after: they change. A commit's hash depends on its parent, so moving a commit onto a new parent creates a brand-new commit. The old ones still exist for a while (the <span data-g="reflog">reflog</span> can find them), but no branch points at them anymore.</p>
+
+  <h2>The golden rule</h2>
+  <div class="callout danger" data-label="Never rebase commits other people already have">
+    <p>If you rebase commits that are already on GitHub and a teammate has pulled them, your history and theirs now disagree about what those commits are. The result is duplicated commits and very confused colleagues. Rebase only your own local work, or a feature branch nobody else uses.</p>
+  </div>
+  <p>If you rebase your own branch after pushing it, a normal push gets rejected (the histories no longer line up), and you need <code>git push --force-with-lease</code>. Fine on your own branch, a disaster on a shared one.</p>
+
+  <h2>How to use it</h2>
+  <pre class="term"># update your feature branch with the latest main
+$ git switch feature
+$ git rebase main</pre>
+  <p>If a replayed commit conflicts, git pauses, just like a merge. Fix the file, then:</p>
+  <pre class="term">$ git add salsa.txt
+$ git rebase --continue
+# or give up and go back to how things were:
+$ git rebase --abort</pre>
+  <p>A very common everyday use is <code>git pull --rebase</code>: it puts your unpushed commits on top of what you just downloaded, instead of making a merge commit.</p>
+
+  <h2>Interactive rebase: tidying up</h2>
+  <p><code>git rebase -i HEAD~3</code> opens your last three commits in your editor as a to-do list. The word at the start of each line decides what happens to that commit:</p>
+  <div class="file-block"><div class="file-name">git-rebase-todo</div><pre class="file">pick   a1b2c3d Add taco recipe
+squash e4f5a6b Fix typo in tacos
+reword 9c8d7e6 Add salsa to tacos
+
+# pick   = keep the commit as it is
+# reword = keep it, but edit its message
+# squash = melt it into the commit above
+# drop   = delete the commit entirely</pre></div>
+  <p>Save and close, and git rewrites those commits accordingly. People use it to clean up messy "wip" commits before opening a pull request. The golden rule still applies. (The practice terminals do not simulate interactive rebase.)</p>
+
+  <h2>So which should I use?</h2>
+  <p>Honest answer: <strong>as a beginner, merge</strong>. It never rewrites anything, so it is hard to hurt yourself with it. Many teams pick one style per project, and GitHub can enforce it through the merge button (see the pull request stop). When a team asks you to rebase, you now know what that means and what to watch for.</p>
+
+  <div class="quiz">
+    <p class="quiz-q">Why do rebased commits get new hashes?</p>
+    <div class="quiz-choices">
+      <button>Git adds a random number every time</button>
+      <button data-correct>A hash depends on the parent commit, and rebase gives them a new parent</button>
+      <button>Rebase compresses them</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Same changes, different parent, so a different commit. That is also why rebasing shared commits causes trouble.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">Is it fine to rebase a branch your teammates are also working on?</p>
+    <div class="quiz-choices">
+      <button>Yes, always</button>
+      <button data-correct>No. Only rebase commits nobody else has.</button>
+      <button>Only on Fridays</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> Rewriting shared history forces everyone else to untangle their copies.</p>
+  </div>
+</section>

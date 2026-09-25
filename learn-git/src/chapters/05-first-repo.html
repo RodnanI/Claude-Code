@@ -1,0 +1,126 @@
+<section class="chapter" data-id="first-repo" data-line="b" data-title="Your first repository" data-short="Your first repo">
+  <header class="ch-head">
+    <h1>Your first repository</h1>
+    <p class="lede">Enough theory. Let's make a project, put it under git and save the first snapshot. This is the loop you will repeat for the rest of your life: change something, stage it, commit it.</p>
+  </header>
+
+  <h2>Step 1: a folder</h2>
+  <p>A <span data-g="repository">repository</span> starts life as a completely normal folder:</p>
+  <pre class="term">$ mkdir recipes
+$ cd recipes</pre>
+
+  <h2>Step 2: git init</h2>
+  <pre class="term">$ git init
+Initialized empty Git repository in /home/you/recipes/.git/</pre>
+  <p>That is all it takes. Git created a hidden folder called <code>.git</code> inside recipes. That hidden folder <em>is</em> the repository: every commit, branch and setting lives there. Your own files stay exactly where they are.</p>
+  <pre class="term">$ ls -a
+./   ../   .git/</pre>
+  <div class="callout danger">
+    <p>Never edit or delete the <code>.git</code> folder by hand. Deleting it deletes the entire history of the project. Your current files survive, but every commit is gone.</p>
+  </div>
+  <div class="callout warn" data-label="Classic mistake">
+    <p>Do not run <code>git init</code> in your home folder or on your Desktop, or git will try to track <em>everything</em> in there. Always <code>cd</code> into a project folder first. If it already happened, deleting that stray <code>.git</code> folder (only that one) fixes it.</p>
+  </div>
+
+  <h2>Step 3: make a file</h2>
+  <p>Create a file any way you like: in VS Code, in Notepad, or straight from the terminal:</p>
+  <pre class="term">$ echo "Pancakes: flour, eggs, milk" &gt; pancakes.txt</pre>
+
+  <h2>Step 4: git status, your best friend</h2>
+  <p><code>git status</code> tells you what git sees right now. Run it constantly. It costs nothing and it explains itself. Hover the parts of its answer:</p>
+  <div class="anatomy" data-widget="anatomy">
+<div class="anatomy-code block"><span class="part" data-tone="0" data-name="On branch main" data-desc="Which branch you are on. Branches come later; for now main is simply the default line of history.">On branch main</span>
+
+<span class="part" data-tone="1" data-name="No commits yet" data-desc="Nothing has been saved yet. This line disappears after your first commit.">No commits yet</span>
+
+<span class="part" data-tone="3" data-name="Untracked files" data-desc="Files git can see in the folder but has never been told to track. Git ignores them until you git add them.">Untracked files:</span>
+<span class="part" data-tone="2" data-name="The hint" data-desc="Git nearly always tells you what to run next. Read the hints; they are genuinely useful.">  (use "git add &lt;file&gt;..." to include in what will be committed)</span>
+<span class="part" data-tone="4" data-name="pancakes.txt" data-desc="Your new file. Real terminals show it in red, because it is not tracked yet.">        pancakes.txt</span>
+
+<span class="part" data-tone="2" data-name="The summary" data-desc="The bottom line: nothing is staged, but there are new files you could add.">nothing added to commit but untracked files present (use "git add" to track)</span></div>
+    <p class="anatomy-desc"><span class="anatomy-hint">Hover or tap each colored part of the output.</span></p>
+  </div>
+
+  <h2>Step 5: git add</h2>
+  <p>Committing is a two-step dance. First you pick which changes go into the next snapshot. That is called <span data-g="staged">staging</span>, and <code>git add</code> does it:</p>
+  <pre class="term">$ git add pancakes.txt
+$ git status
+On branch main
+
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached &lt;file&gt;..." to unstage)
+        new file:   pancakes.txt</pre>
+  <p>In a real terminal that line turns green: the file is staged and ready for the snapshot. Why two steps? That is the whole <a href="#three-areas">next stop</a>.</p>
+
+  <h2>Step 6: git commit</h2>
+  <pre class="term">$ git commit -m "Add pancake recipe"
+[main (root-commit) dc90184] Add pancake recipe
+ 1 file changed, 1 insertion(+)
+ create mode 100644 pancakes.txt</pre>
+  <p>Your first commit. Reading the reply: it went onto the branch <code>main</code>, it is the root (very first) commit, its ID starts with <code>dc90184</code>, and it added one file containing one line. The text after <code>-m</code> is the commit message.</p>
+  <div class="callout tip" data-label="Forgot the -m?">
+    <p>Without <code>-m</code>, git opens your text editor and waits for you to write a message, save and close it. If it opened Vim and you feel trapped: press <kbd>Esc</kbd>, type <code>:wq</code>, press <kbd>Enter</kbd>.</p>
+  </div>
+
+  <h2>Step 7: look at your history</h2>
+  <pre class="term">$ git log
+commit dc90184a7a70b49d29b3a36fb05a03298be8832c (HEAD -> main)
+Author: Ada Lovelace &lt;ada@example.com&gt;
+Date:   Mon Sep 14 09:15:53 2026 +0000
+
+    Add pancake recipe</pre>
+  <p>From here on, the rhythm is always the same:</p>
+  <figure class="diagram">
+    <svg viewBox="0 0 640 200" role="img" aria-label="A loop line with three stations: edit, git add, git commit, then back to edit.">
+      <path d="M130 70 H510 A55 55 0 0 1 510 180 H130 A55 55 0 0 1 130 70 Z" class="dg-line" style="stroke: var(--line-b)"/>
+      <path d="M222 62 l14 8 l-14 8 z" class="dg-head"/>
+      <path d="M402 62 l14 8 l-14 8 z" class="dg-head"/>
+      <path d="M330 172 l-14 8 l14 8 z" class="dg-head"/>
+      <circle cx="140" cy="70" r="13" class="dg-station"/>
+      <circle cx="320" cy="70" r="13" class="dg-station"/>
+      <circle cx="500" cy="70" r="13" class="dg-station"/>
+      <text x="140" y="42" text-anchor="middle" class="dg-title">Edit</text>
+      <text x="320" y="42" text-anchor="middle" class="dg-cmd">git add</text>
+      <text x="500" y="42" text-anchor="middle" class="dg-cmd">git commit</text>
+      <text x="140" y="106" text-anchor="middle" class="dg-small">change files in any editor</text>
+      <text x="320" y="106" text-anchor="middle" class="dg-small">pick what to save</text>
+      <text x="500" y="106" text-anchor="middle" class="dg-small">save the snapshot</text>
+      <text x="320" y="152" text-anchor="middle" class="dg-text">and again, and again</text>
+    </svg>
+  </figure>
+
+  <h2>Do it yourself</h2>
+  <p>The panels show where your changes are (explained on the next stop) and your history drawn as a line. Watch a station appear when you commit.</p>
+  <div data-widget="terminal" data-scenario="first-repo"></div>
+
+  <h2>A decent commit message</h2>
+  <p>Future you will read these messages when something breaks. Make them useful:</p>
+  <ul>
+    <li>Say specifically <strong>what</strong> changed: "Add pancake recipe", not "update".</li>
+    <li>Write it as a command, the way git's own messages read: "Add", "Fix", "Remove", not "Added" or "Adding".</li>
+    <li>Keep the first line short, around 50 characters. More detail can go in a second paragraph.</li>
+  </ul>
+  <p>The <a href="#habits">Good habits</a> stop has a checker that grades your messages as you type.</p>
+
+  <div class="quiz">
+    <p class="quiz-q">You just ran <code>git add notes.txt</code>. Is notes.txt saved in the history yet?</p>
+    <div class="quiz-choices">
+      <button>Yes, git add saves it</button>
+      <button data-correct>No, it is only staged. It is saved when you commit.</button>
+      <button>Only once you push it to GitHub</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> <code>git add</code> puts the change in the staging area. <code>git commit</code> is what records a snapshot. Pushing is a separate, later step that uploads commits.</p>
+  </div>
+
+  <div class="quiz">
+    <p class="quiz-q">What does <code>git init</code> create?</p>
+    <div class="quiz-choices">
+      <button>A new account on GitHub</button>
+      <button data-correct>A hidden .git folder that will hold the history</button>
+      <button>A backup copy of all your files</button>
+    </div>
+    <p class="quiz-explain"><b>Right.</b> It turns the folder into a repository by adding <code>.git</code>. Nothing is saved until your first commit, and nothing goes online.</p>
+  </div>
+</section>

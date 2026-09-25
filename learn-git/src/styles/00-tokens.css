@@ -1,0 +1,138 @@
+/* Design tokens. The whole guide is styled like a metro map printed on warm paper:
+   each "line" (group of chapters) has its own signal color, commits are stations. */
+:root {
+  color-scheme: light;
+  --paper: #f2ede2;
+  --paper-2: #e9e2d3;
+  --card: #fbf8f1;
+  --card-2: #f4eee2;
+  --ink: #1e1b16;
+  --ink-2: #48423a;
+  --ink-3: #797165;
+  --rule: #d9d0be;
+  --rule-2: #c3b8a2;
+  --sign-bg: #1e1b16;
+  --sign-ink: #f2ede2;
+
+  /* line colors */
+  --line-a: #d4402a; /* Foundations: vermillion */
+  --line-b: #2b8a4d; /* Everyday git: green */
+  --line-c: #d4940a; /* Branching: amber */
+  --line-d: #bf416d; /* GitHub: rose */
+  --line-e: #87552b; /* Rescue: brown */
+  --line-f: #6c665c; /* Terminus: grey */
+
+  /* commit graph lanes */
+  --g0: #d4402a;
+  --g1: #2b8a4d;
+  --g2: #d4940a;
+  --g3: #bf416d;
+  --g4: #87552b;
+  --g5: #7b8a1c;
+  --g6: #4f7d70;
+  --g-ghost: #aaa294;
+
+  --ok: #2b8a4d;
+  --ok-bg: #e2eedf;
+  --warn: #a8740a;
+  --warn-bg: #f5e8cc;
+  --bad: #c43a24;
+  --bad-bg: #f6ded6;
+
+  /* terminal (dark in both themes, like a real one) */
+  --term-bg: #1d1a15;
+  --term-bg-2: #28241d;
+  --term-ink: #eee6d5;
+  --term-dim: #9d9482;
+  --term-r: #f07a62;
+  --term-g: #93d282;
+  --term-y: #f2c14e;
+  --term-c: #82d0c3;
+  --term-m: #eb9fbd;
+
+  --shadow: 0 1px 0 rgba(30, 27, 22, .05), 0 10px 26px -14px rgba(30, 27, 22, .32);
+  --radius: 10px;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, Menlo, monospace;
+  --sidebar: 296px;
+  --topbar: 58px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #161510;
+    --paper-2: #1d1b16;
+    --card: #211f19;
+    --card-2: #29261f;
+    --ink: #eee7d7;
+    --ink-2: #c8c0af;
+    --ink-3: #948c7c;
+    --rule: #38342b;
+    --rule-2: #4c463b;
+    --sign-bg: #0b0a08;
+    --sign-ink: #eee7d7;
+    --line-a: #ee5a40;
+    --line-b: #48a968;
+    --line-c: #eeb02b;
+    --line-d: #e2648f;
+    --line-e: #bb8252;
+    --line-f: #9d9587;
+    --g0: #ee5a40;
+    --g1: #48a968;
+    --g2: #eeb02b;
+    --g3: #e2648f;
+    --g4: #bb8252;
+    --g5: #a9b93c;
+    --g6: #7ea697;
+    --g-ghost: #5e584d;
+    --ok: #5cb87a;
+    --ok-bg: #1d2d20;
+    --warn: #e5ad2e;
+    --warn-bg: #33291a;
+    --bad: #f06d55;
+    --bad-bg: #3a211b;
+    --term-bg: #0e0d0a;
+    --term-bg-2: #1b1914;
+    --shadow: 0 1px 0 rgba(0, 0, 0, .35), 0 12px 30px -16px rgba(0, 0, 0, .8);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #161510;
+  --paper-2: #1d1b16;
+  --card: #211f19;
+  --card-2: #29261f;
+  --ink: #eee7d7;
+  --ink-2: #c8c0af;
+  --ink-3: #948c7c;
+  --rule: #38342b;
+  --rule-2: #4c463b;
+  --sign-bg: #0b0a08;
+  --sign-ink: #eee7d7;
+  --line-a: #ee5a40;
+  --line-b: #48a968;
+  --line-c: #eeb02b;
+  --line-d: #e2648f;
+  --line-e: #bb8252;
+  --line-f: #9d9587;
+  --g0: #ee5a40;
+  --g1: #48a968;
+  --g2: #eeb02b;
+  --g3: #e2648f;
+  --g4: #bb8252;
+  --g5: #a9b93c;
+  --g6: #7ea697;
+  --g-ghost: #5e584d;
+  --ok: #5cb87a;
+  --ok-bg: #1d2d20;
+  --warn: #e5ad2e;
+  --warn-bg: #33291a;
+  --bad: #f06d55;
+  --bad-bg: #3a211b;
+  --term-bg: #0e0d0a;
+  --term-bg-2: #1b1914;
+  --shadow: 0 1px 0 rgba(0, 0, 0, .35), 0 12px 30px -16px rgba(0, 0, 0, .8);
+}
