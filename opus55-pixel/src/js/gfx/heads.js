@@ -33,7 +33,7 @@ defHead('hero', [
   'hhhhhjsSSeS.',
   'hhhhhjsSSSST',
   '.hhhhdsSSSs.',
-  '..hhhdssms..',
+  '..hhhdssdss.',
   '...hj.ddss..',
   '......dd....',
 ], 6, 10, { hair: [3, 0], ribbon: [4, 0] }, {

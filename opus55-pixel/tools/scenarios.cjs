@@ -241,3 +241,40 @@ module.exports.perf = async (a) => {
     await a.hold('KeyD', 1500);
   }
 };
+
+module.exports.full = async (a) => {
+  // run all four chapters with god mode, pushing right, fighting, jumping when stuck
+  const t0 = Date.now();
+  let lastX = 0, stuck = 0, lastLevel = -1, k = 0;
+  while (Date.now() - t0 < 540000) {
+    const s = await a.ev(() => {
+      const G = window.RS.G, p = G.player, sc = window.RS.Scenes.cur;
+      if (!p || !G.map) return { scene: sc.constructor.name };
+      const foes = G.ents.filter(e => (e.team === 2 || e.team === 3) && !e.dead && e.hittable && Math.abs(e.x - p.x) < 220 && Math.abs(e.y - p.y) < 90);
+      foes.sort((x, y) => Math.abs(x.x - p.x) - Math.abs(y.x - p.x));
+      if (p.dmgTaken !== 0) p.dmgTaken = 0;
+      if (p.hp < 30) p.hp = 100;
+      return { scene: sc.constructor.name, lvl: G.levelIdx, px: p.x, py: p.y, fx: foes[0] ? foes[0].x : null, script: !!G.script, lock: !!G.cam.lock, over: !!sc.over, boss: G.boss ? Math.round(G.boss.hp) : null, pw: G.map.pw };
+    });
+    if (s.scene === 'EndingScene') { console.log('REACHED ENDING in', Math.round((Date.now() - t0) / 1000), 's'); await a.shot('ending'); return; }
+    if (s.scene !== 'GameScene') { await a.tap('Enter', 200); continue; }
+    if (s.lvl !== lastLevel) { lastLevel = s.lvl; console.log('level', s.lvl, 'at', Math.round((Date.now() - t0) / 1000), 's'); }
+    if (s.over) { console.log('died?!'); await a.tap('Enter', 500); continue; }
+    if (s.script) { await a.tap('Enter', 60); continue; }
+    if (s.fx !== null) {
+      const dx = s.fx - s.px;
+      if (Math.abs(dx) > 30) await a.hold(dx > 0 ? 'KeyD' : 'KeyA', 140);
+      else { if (Math.random() < 0.1) await a.tap('KeyI', 80); for (let i = 0; i < 4; i++) await a.tap('KeyJ', 85); }
+    } else {
+      await a.page.keyboard.down('KeyD');
+      if (Math.abs(s.px - lastX) < 4) stuck++; else stuck = 0;
+      if (stuck > 2) { await a.tap('Space', 180); await a.tap('Space', 120); await a.page.keyboard.down('KeyL'); await a.wait(40); await a.page.keyboard.up('KeyL'); stuck = 0; }
+      await a.wait(220);
+      await a.page.keyboard.up('KeyD');
+    }
+    lastX = s.px;
+    if (++k % 60 === 0) console.log(JSON.stringify(s));
+  }
+  console.log('timeout');
+  await a.shot('timeout');
+};

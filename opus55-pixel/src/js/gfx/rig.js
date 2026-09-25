@@ -124,7 +124,7 @@ function poly(B, pts, mat, grp, o = SH_FLAT) {
       s = lumShade(nx * v * LX + ny * v * LY + Math.sqrt(1 - v * v) * LZ, x, y, o);
     } else s = o.sh !== undefined ? o.sh : 2;
     let m = mat;
-    if (hem && distSeg(cx, cy, hem[0] + B.ax, hem[1] + B.ay, hem[2] + B.ax, hem[3] + B.ay) < hem[4]) m = hem[5];
+    if (hem && distSeg(cx, cy, hem[0] + B.ax, hem[1] + B.ay, hem[2] + B.ax, hem[3] + B.ay) < hem[4]) { m = hem[5]; if (hem[6] && (x + y * 2) % 4 === 0) m = hem[6]; }
     if (o.pat) s += o.pat(u, v, x, y);
     bput(B, x, y, m, s, grp, fl);
   }
@@ -312,8 +312,8 @@ function drawBelt(B, C, J, P, grp, A) {
   A.sash = pt((u0 + u1) / 2, W.waistF * 0.5);
   A.sashB = pt((u0 + u1) / 2, -W.waistB * 0.7);
   if (T.pendant) {
-    const p = pt(u0 - 0.1, W.waistF * 0.2);
-    disc(B, p[0], p[1] + 1.2, 1.3, M[T.pendant], grp, SH_METAL);
+    const p = pt(u0 - 0.12, W.waistF * 0.75);
+    disc(B, p[0], p[1] + 1.5, 0.95, M[T.pendant], grp, SH_METAL);
     A.pendant = [p[0], p[1] + 2.4];
   }
 }
@@ -335,7 +335,7 @@ function drawFlap(B, C, J, P, side, grp) {
   const mx = (top[0] + inn[0]) / 2, my = (top[1] + inn[1]) / 2;
   poly(B, [...top, ...b0, ...b1, ...inn], M[R.mat], grp, {
     ...C.shC, axis: [mx, my, (b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2, (W.waistF + W.waistB) * 0.6],
-    hem: R.trim ? [b0[0], b0[1], b1[0], b1[1], R.hemW || 1.5, M[R.trim]] : null, pat: PAT.fold,
+    hem: R.trim ? [b0[0], b0[1], b1[0], b1[1], R.hemW || 1.5, M[R.trim], R.stitch ? M[R.stitch] : 0] : null, pat: PAT.fold,
   });
   if (R.edge) {
     // vertical trim along the outer opening

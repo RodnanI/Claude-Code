@@ -97,7 +97,7 @@ LEVELS.push({
     B.m(130, 15, 'a').m(133, 15, 'r').m(146, 18, 'k').m(157, 18, 'a').m(152, 15, 'o');
   },
   props: [
-    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 8 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 6 }], ['fgbamboo', 130, 0, { front: true, f: 1.3, w: 9 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 7 }],
+    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 13 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 11 }], ['fgbamboo', 130, 0, { front: true, f: 1.3, w: 14 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 12 }],
     ['rock', 14, 19, { w: 28, h: 14 }], ['sign', 6, 19], ['rock', 44, 19], ['rock', 96, 19, { w: 34, h: 18 }],
     ['shrine', 114, 19], ['incense', 118, 19], ['rock', 145, 19], ['rock', 190, 19, { w: 40, h: 20 }], ['rock', 214, 19, { w: 26, h: 14 }],
   ],

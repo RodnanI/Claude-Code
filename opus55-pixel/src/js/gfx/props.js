@@ -388,24 +388,31 @@ const PROP_DEFS = {
   },
   dummy: { draw() {} },
   fgbamboo: {
-    // near-camera stalk: dark, detailed, with a leaf spray
+    // near-camera stalk: dark, with node rings, a sheen and leaf sprays
     draw(p, ctx, x, y) {
-      if (x < -40 || x > VW + 40) return;
-      const w = p.o.w || 9, cols = ['#0b120a', '#15210f', '#1f2f17', '#2c4020', '#3d5530'];
+      if (x < -60 || x > VW + 60) return;
+      const w = p.o.w || 12, cols = ['#0a1109', '#132012', '#1c2e19', '#284024', '#3b5732', '#56753f'];
       for (let j = 0; j < VH; j++) {
-        const node = (j + p.seed) % 38;
-        for (let i = 0; i < w; i++) {
-          let k = i === 0 ? 0 : i === w - 1 ? 1 : i === 2 ? 4 : i < 4 ? 3 : 2;
-          if (node === 0) k = 0; else if (node === 1) k = Math.min(4, k + 1);
+        const node = (j + p.seed) % 46;
+        const bulge = node === 0 || node === 45 ? 1 : 0;
+        for (let i = -bulge; i < w + bulge; i++) {
+          const u = (i + 0.5) / w;
+          let k = u < 0.08 ? 0 : u > 0.92 ? 1 : u < 0.22 ? 4 : u < 0.32 ? 5 : u < 0.6 ? 3 : 2;
+          if (node === 0) k = 0; else if (node === 1 || node === 45) k = Math.min(5, k + 1);
           ctx.fillStyle = cols[k]; ctx.fillRect(x + i, j, 1, 1);
         }
       }
       const R = new RNG(p.seed);
       for (let c = 0; c < 3; c++) {
-        const cy = R.r(10, 120), dir = R.ch(0.5) ? 1 : -1;
-        for (let l = 0; l < 6; l++) {
-          const a = R.r(0.2, 0.9), L = R.r(12, 22);
-          for (let s = 0; s < L; s++) { ctx.fillStyle = s > L - 4 ? cols[1] : cols[2 + (s % 3 === 0 ? 1 : 0)]; ctx.fillRect(Math.round(x + w / 2 + dir * s * Math.cos(a)), Math.round(cy + s * Math.sin(a) * 0.8 + l * 3), 2, 1); }
+        const cy = R.r(6, 150), dir = R.ch(0.5) ? 1 : -1;
+        for (let l = 0; l < 5; l++) {
+          const a = R.r(0.25, 0.95), L = R.r(14, 26);
+          for (let t = 0; t < L; t++) {
+            const lx = Math.round(x + w / 2 + dir * (6 + t * Math.cos(a))), ly = Math.round(cy + l * 4 + t * Math.sin(a) * 0.9);
+            const wd = t < 3 || t > L - 4 ? 1 : 2;
+            ctx.fillStyle = t > L - 5 ? cols[1] : cols[3 + (t % 4 === 1 ? 1 : 0)];
+            ctx.fillRect(lx, ly, 2, wd);
+          }
         }
       }
     },

@@ -924,7 +924,7 @@ function poly(B, pts, mat, grp, o = SH_FLAT) {
       s = lumShade(nx * v * LX + ny * v * LY + Math.sqrt(1 - v * v) * LZ, x, y, o);
     } else s = o.sh !== undefined ? o.sh : 2;
     let m = mat;
-    if (hem && distSeg(cx, cy, hem[0] + B.ax, hem[1] + B.ay, hem[2] + B.ax, hem[3] + B.ay) < hem[4]) m = hem[5];
+    if (hem && distSeg(cx, cy, hem[0] + B.ax, hem[1] + B.ay, hem[2] + B.ax, hem[3] + B.ay) < hem[4]) { m = hem[5]; if (hem[6] && (x + y * 2) % 4 === 0) m = hem[6]; }
     if (o.pat) s += o.pat(u, v, x, y);
     bput(B, x, y, m, s, grp, fl);
   }
@@ -1112,8 +1112,8 @@ function drawBelt(B, C, J, P, grp, A) {
   A.sash = pt((u0 + u1) / 2, W.waistF * 0.5);
   A.sashB = pt((u0 + u1) / 2, -W.waistB * 0.7);
   if (T.pendant) {
-    const p = pt(u0 - 0.1, W.waistF * 0.2);
-    disc(B, p[0], p[1] + 1.2, 1.3, M[T.pendant], grp, SH_METAL);
+    const p = pt(u0 - 0.12, W.waistF * 0.75);
+    disc(B, p[0], p[1] + 1.5, 0.95, M[T.pendant], grp, SH_METAL);
     A.pendant = [p[0], p[1] + 2.4];
   }
 }
@@ -1135,7 +1135,7 @@ function drawFlap(B, C, J, P, side, grp) {
   const mx = (top[0] + inn[0]) / 2, my = (top[1] + inn[1]) / 2;
   poly(B, [...top, ...b0, ...b1, ...inn], M[R.mat], grp, {
     ...C.shC, axis: [mx, my, (b0[0] + b1[0]) / 2, (b0[1] + b1[1]) / 2, (W.waistF + W.waistB) * 0.6],
-    hem: R.trim ? [b0[0], b0[1], b1[0], b1[1], R.hemW || 1.5, M[R.trim]] : null, pat: PAT.fold,
+    hem: R.trim ? [b0[0], b0[1], b1[0], b1[1], R.hemW || 1.5, M[R.trim], R.stitch ? M[R.stitch] : 0] : null, pat: PAT.fold,
   });
   if (R.edge) {
     // vertical trim along the outer opening
@@ -1501,7 +1501,7 @@ defHead('hero', [
   'hhhhhjsSSeS.',
   'hhhhhjsSSSST',
   '.hhhhdsSSSs.',
-  '..hhhdssms..',
+  '..hhhdssdss.',
   '...hj.ddss..',
   '......dd....',
 ], 6, 10, { hair: [3, 0], ribbon: [4, 0] }, {
@@ -1808,7 +1808,7 @@ defCostume('hero', {
   headMap: { a: 'trim', b: 'gold', c: 'jade' },
   body: body(), head: 'hero',
   torso: { mat: 'robe', collar: 'trim', inner: 'robe', belt: 'trim', pendant: 'jade', back: scabbardBack },
-  robe: { mat: 'robe', trim: 'trim', len: 12, flare: 1.4, stiff: 0.45, backLen: 1.12, hemW: 1.1 },
+  robe: { mat: 'robe', trim: 'trim', len: 12, flare: 1.4, stiff: 0.45, backLen: 1.12, hemW: 1.6, stitch: 'gold' },
   arms: { upper: 'robe', fore: 'bracer', cuff: 'trim', wrap: true },
   legs: { thigh: 'pants', shin: 'pants', wrap: 'wraps', boot: 'boot', wrapFrom: 0.5 },
   weapon: 'jian', anims: 'hero',
@@ -1949,7 +1949,7 @@ defCostume('liu', {
   shiny: ['steel', 'gold'], headMap: { a: 'lip', b: 'gold', c: 'jadeR' },
   body: body({ tw: { chestF: 3.5, waistF: 2.5, waistB: 2.6, hipB: 3.3 } }, 1, 0.92), head: 'liu',
   torso: { mat: 'robe', collar: 'trim', inner: 'outer', belt: 'trim', pendant: 'gold' },
-  robe: { mat: 'outer', trim: 'robe', len: 18, flare: 2.4, stiff: 0.45, backLen: 1.2 },
+  robe: { mat: 'outer', trim: 'robe', len: 18, flare: 2.4, stiff: 0.45, backLen: 1.2, hemW: 2, stitch: 'gold' },
   arms: { upper: 'robe', fore: 'outer', cuff: 'robe', wide: 4 },
   legs: { thigh: 'pants', shin: 'pants', boot: 'boot' },
   weapon: 'fan', anims: 'liu',
@@ -1976,7 +1976,7 @@ const DEMON_DEF = {
   shiny: ['gold', 'blade'], headMap: { b: 'gold' },
   body: body({ tw: { chestF: 4.2, chestB: 3.8, shB: 3.8 } }, 1.1, 1.05), head: 'demon',
   torso: { mat: 'robe', collar: 'trim', inner: 'inner', belt: 'gold', buckle: 'trim', front: claspFront },
-  robe: { mat: 'robe', trim: 'trim', len: 20, flare: 2.4, stiff: 0.5, backLen: 1.1, hemW: 1.4, edge: 'gold' },
+  robe: { mat: 'robe', trim: 'trim', len: 20, flare: 2.4, stiff: 0.5, backLen: 1.1, hemW: 2, edge: 'gold', stitch: 'gold' },
   arms: { upper: 'robe', fore: 'robe', cuff: 'gold', wide: 3.2 },
   legs: { thigh: 'pants', shin: 'pants', boot: 'boot' },
   weapon: 'bloodjian', anims: 'demon',
@@ -3988,24 +3988,31 @@ const PROP_DEFS = {
   },
   dummy: { draw() {} },
   fgbamboo: {
-    // near-camera stalk: dark, detailed, with a leaf spray
+    // near-camera stalk: dark, with node rings, a sheen and leaf sprays
     draw(p, ctx, x, y) {
-      if (x < -40 || x > VW + 40) return;
-      const w = p.o.w || 9, cols = ['#0b120a', '#15210f', '#1f2f17', '#2c4020', '#3d5530'];
+      if (x < -60 || x > VW + 60) return;
+      const w = p.o.w || 12, cols = ['#0a1109', '#132012', '#1c2e19', '#284024', '#3b5732', '#56753f'];
       for (let j = 0; j < VH; j++) {
-        const node = (j + p.seed) % 38;
-        for (let i = 0; i < w; i++) {
-          let k = i === 0 ? 0 : i === w - 1 ? 1 : i === 2 ? 4 : i < 4 ? 3 : 2;
-          if (node === 0) k = 0; else if (node === 1) k = Math.min(4, k + 1);
+        const node = (j + p.seed) % 46;
+        const bulge = node === 0 || node === 45 ? 1 : 0;
+        for (let i = -bulge; i < w + bulge; i++) {
+          const u = (i + 0.5) / w;
+          let k = u < 0.08 ? 0 : u > 0.92 ? 1 : u < 0.22 ? 4 : u < 0.32 ? 5 : u < 0.6 ? 3 : 2;
+          if (node === 0) k = 0; else if (node === 1 || node === 45) k = Math.min(5, k + 1);
           ctx.fillStyle = cols[k]; ctx.fillRect(x + i, j, 1, 1);
         }
       }
       const R = new RNG(p.seed);
       for (let c = 0; c < 3; c++) {
-        const cy = R.r(10, 120), dir = R.ch(0.5) ? 1 : -1;
-        for (let l = 0; l < 6; l++) {
-          const a = R.r(0.2, 0.9), L = R.r(12, 22);
-          for (let s = 0; s < L; s++) { ctx.fillStyle = s > L - 4 ? cols[1] : cols[2 + (s % 3 === 0 ? 1 : 0)]; ctx.fillRect(Math.round(x + w / 2 + dir * s * Math.cos(a)), Math.round(cy + s * Math.sin(a) * 0.8 + l * 3), 2, 1); }
+        const cy = R.r(6, 150), dir = R.ch(0.5) ? 1 : -1;
+        for (let l = 0; l < 5; l++) {
+          const a = R.r(0.25, 0.95), L = R.r(14, 26);
+          for (let t = 0; t < L; t++) {
+            const lx = Math.round(x + w / 2 + dir * (6 + t * Math.cos(a))), ly = Math.round(cy + l * 4 + t * Math.sin(a) * 0.9);
+            const wd = t < 3 || t > L - 4 ? 1 : 2;
+            ctx.fillStyle = t > L - 5 ? cols[1] : cols[3 + (t % 4 === 1 ? 1 : 0)];
+            ctx.fillRect(lx, ly, 2, wd);
+          }
         }
       }
     },
@@ -4615,7 +4622,7 @@ LEVELS.push({
     B.m(130, 15, 'a').m(133, 15, 'r').m(146, 18, 'k').m(157, 18, 'a').m(152, 15, 'o');
   },
   props: [
-    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 8 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 6 }], ['fgbamboo', 130, 0, { front: true, f: 1.3, w: 9 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 7 }],
+    ['fgbamboo', 12, 0, { front: true, f: 1.3, w: 13 }], ['fgbamboo', 70, 0, { front: true, f: 1.3, w: 11 }], ['fgbamboo', 130, 0, { front: true, f: 1.3, w: 14 }], ['fgbamboo', 200, 0, { front: true, f: 1.3, w: 12 }],
     ['rock', 14, 19, { w: 28, h: 14 }], ['sign', 6, 19], ['rock', 44, 19], ['rock', 96, 19, { w: 34, h: 18 }],
     ['shrine', 114, 19], ['incense', 118, 19], ['rock', 145, 19], ['rock', 190, 19, { w: 40, h: 20 }], ['rock', 214, 19, { w: 26, h: 14 }],
   ],
