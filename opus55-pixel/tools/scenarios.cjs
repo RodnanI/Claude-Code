@@ -194,6 +194,7 @@ module.exports.full = async (a) => {
     if (s.over) { console.log('died?!'); await a.tap('Enter', 500); continue; }
     if (s.script) { await a.tap('Enter', 60); continue; }
     if (s.px > best + 40) { best = s.px; bestT = Date.now(); }
+    if (Date.now() - bestT > 15000 && await a.ev(() => !!window.RS.G.cam.lock)) bestT = Date.now(); // locked fights: keep fighting
     if (Date.now() - bestT > 15000) { console.log('NUDGE at level', s.lvl, 'tile', Math.round(s.px / 16)); await a.ev(() => {
         // hop to the next safe footing ahead (never into a pit, spikes or a wall)
         const G = window.RS.G, p = G.player, M = G.map;

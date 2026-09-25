@@ -99,8 +99,9 @@ function moveBody(b, map) {
       const tx = Math.floor((b.x - hw) / TS);
       for (let ty = r0; ty <= r1; ty++) if (map.solid(tx, ty)) { b.x = (tx + 1) * TS + hw + 0.01; b.vx = 0; b.wallL = true; break; }
     }
-    if (b.bounds) { if (b.x - hw < b.bounds[0]) { b.x = b.bounds[0] + hw; b.vx = 0; b.wallL = true; } if (b.x + hw > b.bounds[1]) { b.x = b.bounds[1] - hw; b.vx = 0; b.wallR = true; } }
   }
+  // arena walls hold even for bodies moved without velocity (platform rides, teleports)
+  if (b.bounds) { if (b.x - hw < b.bounds[0]) { b.x = b.bounds[0] + hw; b.vx = 0; b.wallL = true; } if (b.x + hw > b.bounds[1]) { b.x = b.bounds[1] - hw; b.vx = 0; b.wallR = true; } }
   const prevY = b.y;
   b.y += b.vy;
   b.onSlope = false;
