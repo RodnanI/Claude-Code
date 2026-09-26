@@ -1,0 +1,83 @@
+<section class="stop" id="merging" data-line="2" data-short="Merging" data-time="15 min">
+<h1>Merging and merge conflicts</h1>
+<p class="lead">Merging brings the work from one branch into another. Most merges happen automatically in a second. Sometimes Git hits a question it cannot answer on its own, a conflict, and asks you. That is not an error; it is a question.</p>
+
+<h2>You merge into the branch you are on</h2>
+<p>The rule people mix up: <code>git merge feature</code> brings feature <em>into your current branch</em>. So first go to the branch that should receive the work, then merge:</p>
+<pre class="sh">git switch main
+git merge dark-mode</pre>
+
+<h2>Two kinds of merge</h2>
+<div class="fig fig-row">
+  <svg viewBox="0 0 330 190" width="330" role="img" aria-label="Fast-forward: main simply moves forward to the tip of the branch">
+    <text x="10" y="22" font-size="15" font-weight="700">Fast-forward</text>
+    <path d="M30 110H300" class="s-red w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="30" cy="110" r="10"/><circle cx="110" cy="110" r="10"/><circle cx="190" cy="110" r="10"/><circle cx="270" cy="110" r="10"/></g>
+    <rect x="80" y="62" width="60" height="20" rx="4" class="f-soft s-ink w2 dash"/><text x="110" y="77" class="t-c t-dim" font-size="12">main was</text>
+    <path d="M140 72H232" class="s-ink w2 f-none dash"/><path d="M226 66l8 6-8 6" class="s-ink w2 f-none"/>
+    <rect x="240" y="62" width="60" height="20" rx="4" class="f-red s-ink w2"/><text x="270" y="77" class="t-c t-w" font-size="12" font-weight="700">main</text>
+    <text x="10" y="150" font-size="12.5">main had nothing new, so Git just</text><text x="10" y="168" font-size="12.5">slides the label forward. No new commit.</text>
+  </svg>
+  <svg viewBox="0 0 330 190" width="330" role="img" aria-label="Merge commit: both lines had new commits, so Git makes a commit with two parents">
+    <text x="10" y="22" font-size="15" font-weight="700">Merge commit</text>
+    <path d="M30 110H290" class="s-red w6 f-none"/>
+    <path d="M110 110L150 60H210L270 106" class="s-grn w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="30" cy="110" r="10"/><circle cx="110" cy="110" r="10"/><circle cx="190" cy="110" r="10"/><circle cx="160" cy="60" r="10"/><circle cx="210" cy="60" r="10"/><circle cx="282" cy="110" r="13"/></g>
+    <circle cx="282" cy="110" r="4" class="f-ink"/>
+    <text x="282" y="140" class="t-c" font-size="12" font-weight="700">merge commit</text>
+    <text x="10" y="162" font-size="12.5">Both lines moved on, so Git creates a</text><text x="10" y="180" font-size="12.5">commit with two parents that joins them.</text>
+  </svg>
+</div>
+<p>You do not choose between these; Git picks automatically. (If you always want a merge commit, <code>git merge --no-ff branch</code> forces one.) For a real merge commit Git needs a message and may open your editor with one prewritten, like "Merge branch 'dark-mode'". Save and close to finish.</p>
+
+<h2>Practise: one easy merge, one conflict</h2>
+<div data-widget="gitsim" data-mission="merging"></div>
+
+<h2>Anatomy of a conflict</h2>
+<p>A <dfn>conflict</dfn> happens when both branches changed the same lines in different ways. Git writes both versions into the file, fenced by <dfn>conflict markers</dfn>:</p>
+<pre class="out">body {
+<span class="r">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+  background: orange;
+<span class="y">=======</span>
+  background: palegreen;
+<span class="g">&gt;&gt;&gt;&gt;&gt;&gt;&gt; new-colors</span>
+  font-family: sans-serif;
+}</pre>
+<ul>
+  <li>Between <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> and <code>=======</code>: your version, from the branch you are on ("current").</li>
+  <li>Between <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; new-colors</code>: the version being merged in ("incoming").</li>
+  <li>Everything outside the markers merged cleanly already.</li>
+</ul>
+
+<h2>Resolving a conflict, step by step</h2>
+<ol class="steps">
+  <li><code>git status</code> lists every conflicted file under "Unmerged paths".</li>
+  <li>Open each one. Search for <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>. VS Code highlights conflicts and offers clickable <strong>Accept Current Change</strong>, <strong>Accept Incoming Change</strong> and <strong>Accept Both Changes</strong> links above each one.</li>
+  <li>Edit the text into what it should finally be. Keep one side, the other, both, or write something new. Delete every marker line.</li>
+  <li>Save, then mark the file as resolved: <code>git add style.css</code></li>
+  <li>When all files are resolved, finish with <code>git commit</code> (Git suggests the message).</li>
+</ol>
+<p>Panicking halfway through? This puts everything back to how it was before the merge:</p>
+<pre class="sh">git merge --abort</pre>
+<aside class="co warn"><h4>Careful</h4><p>Git lets you <code>git add</code> a file that still contains markers. It will happily commit a broken file. Always search for <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> before adding.</p></aside>
+
+<h2>Fewer conflicts, less pain</h2>
+<ul>
+  <li>Merge main into your branch often, so differences stay small.</li>
+  <li>Keep branches short-lived: days, not months.</li>
+  <li>Do not reformat a whole file in the same branch as a real change; that touches every line.</li>
+  <li>Talk to your team when two people need the same file.</li>
+</ul>
+
+<div data-widget="quiz">
+  <div class="q"><p>You want the work from branch <code>fix</code> to end up on <code>main</code>. What do you run?</p>
+    <ul><li>git switch fix, then git merge main</li><li data-ok>git switch main, then git merge fix</li><li>git merge main fix</li></ul>
+    <p class="why">Merge brings the named branch into the branch you are standing on.</p></div>
+  <div class="q"><p>What does the section between <code>=======</code> and <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; new-colors</code> contain?</p>
+    <ul><li>Your version</li><li data-ok>The version from new-colors, the branch being merged in</li><li>The version from before both changes</li></ul>
+    <p class="why">Top half is HEAD (you), bottom half is the incoming branch.</p></div>
+  <div class="q"><p>You resolved the conflict in the file. What tells Git it is resolved?</p>
+    <ul><li>Saving the file</li><li data-ok>git add on that file</li><li>git merge --abort</li></ul>
+    <p class="why"><code>git add</code> marks the conflict as resolved; then <code>git commit</code> finishes the merge.</p></div>
+</div>
+</section>

@@ -1,0 +1,53 @@
+<section class="stop" id="final" data-line="5" data-short="Final exam" data-time="10 min">
+<h1>Final exam</h1>
+<p class="lead">Twelve questions from across the whole line. No pressure: every answer comes with an explanation, and the stop number to revisit if it did not stick.</p>
+
+<div data-widget="quiz" data-title="Final exam">
+  <div class="q"><p>1. Git versus GitHub: which statement is true?</p>
+    <ul><li>GitHub is required to use Git</li><li data-ok>Git runs on your PC; GitHub hosts copies of repositories online</li><li>They are the same thing</li></ul>
+    <p class="why">Stop 1. Git works offline; GitHub is a website built around it.</p></div>
+  <div class="q"><p>2. Right after installing Git, PowerShell says "git is not recognized". First thing to try?</p>
+    <ul><li>Reinstall Windows</li><li data-ok>Open a new terminal window</li><li>Run git as administrator</li></ul>
+    <p class="why">Stop 3. Terminals only see programs that existed when they started.</p></div>
+  <div class="q"><p>3. What does <code>git add index.html</code> do?</p>
+    <ul><li>Uploads index.html to GitHub</li><li data-ok>Copies the current version of index.html into the staging area</li><li>Creates a new file</li></ul>
+    <p class="why">Stop 5. Staging decides what goes into the next commit.</p></div>
+  <div class="q"><p>4. <code>git status</code> lists a file in red under "Untracked files". Meaning?</p>
+    <ul><li data-ok>Git sees the file but has never been told to track it</li><li>The file is corrupted</li><li>The file is ignored</li></ul>
+    <p class="why">Stop 5. <code>git add</code> it to start tracking.</p></div>
+  <div class="q"><p>5. You committed with a typo in the message and have not pushed. Fix?</p>
+    <ul><li>git revert HEAD</li><li data-ok>git commit --amend -m "Correct message"</li><li>Delete the .git folder</li></ul>
+    <p class="why">Stop 8. Amend replaces the last commit; fine because nobody else has it yet.</p></div>
+  <div class="q"><p>6. A bad commit is already on GitHub and teammates pulled it. Fix?</p>
+    <ul><li>git reset --hard and git push --force</li><li data-ok>git revert it, then push</li><li>Ask GitHub support</li></ul>
+    <p class="why">Stop 8. Never rewrite shared history; add an undoing commit.</p></div>
+  <div class="q"><p>7. Which command creates a branch and switches to it?</p>
+    <ul><li>git branch -d name</li><li data-ok>git switch -c name</li><li>git merge name</li></ul>
+    <p class="why">Stop 9. <code>git branch name</code> only creates; <code>-c</code> creates and switches.</p></div>
+  <div class="q"><p>8. To get branch <code>feature</code> into main, you...</p>
+    <ul><li>git switch feature, then git merge main</li><li data-ok>git switch main, then git merge feature</li><li>git push feature main</li></ul>
+    <p class="why">Stop 10. You merge into the branch you are on.</p></div>
+  <div class="q"><p>9. After fixing a conflicted file, how do you mark it resolved?</p>
+    <ul><li>Save it</li><li data-ok>git add the file, then git commit</li><li>git merge --abort</li></ul>
+    <p class="why">Stop 10. <code>git add</code> marks it resolved; the commit finishes the merge.</p></div>
+  <div class="q"><p>10. Your push is rejected: "the remote contains work that you do not have locally". Next?</p>
+    <ul><li>git push --force</li><li data-ok>git pull, then git push</li><li>Create a new repository</li></ul>
+    <p class="why">Stop 11. Someone pushed first; integrate their work, then push.</p></div>
+  <div class="q"><p>11. You want to contribute to a project you cannot push to. The workflow?</p>
+    <ul><li>Email your files to the owner</li><li data-ok>Fork, clone your fork, branch, push to your fork, open a pull request</li><li>Clone the original and push with --force</li></ul>
+    <p class="why">Stops 12 and 13.</p></div>
+  <div class="q"><p>12. You added <code>.env</code> to .gitignore but Git still tracks it. Why, and the fix?</p>
+    <ul><li>.gitignore needs a restart</li><li data-ok>It was already tracked; git rm --cached .env and commit</li><li>Rename it to .ENV</li></ul>
+    <p class="why">Stop 14. Ignore rules only apply to untracked files. (And if it held a real secret: change that secret.)</p></div>
+</div>
+
+<h2>Where to go from here</h2>
+<ul>
+  <li><strong>Put something real on GitHub.</strong> Notes, a small website, dotfiles, a school project. Use a branch and a pull request even when working alone; it builds the habit.</li>
+  <li><strong>Host a website for free.</strong> GitHub Pages publishes a repository of HTML files as a live site (repository Settings &rarr; Pages).</li>
+  <li><strong>Make a first open source contribution.</strong> Search GitHub for the label <code>good first issue</code>.</li>
+  <li><strong>Go deeper.</strong> The book "Pro Git" is free on git-scm.com/book, and GitHub Skills (skills.github.com) has short hands-on courses that run inside real repositories.</li>
+  <li><strong>Use your editor's Git panel.</strong> Now that you know what staging, commits and branches are, VS Code's Source Control view will make total sense.</li>
+</ul>
+<p>And when something goes wrong: <code>git status</code>, read it slowly, and remember that committed work is almost never truly lost.</p>
+</section>

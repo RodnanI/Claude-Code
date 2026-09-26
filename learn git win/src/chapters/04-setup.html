@@ -1,0 +1,51 @@
+<section class="stop" id="setup" data-line="1" data-short="Set up Git" data-time="6 min">
+<h1>Telling Git who you are</h1>
+<p class="lead">Every commit is stamped with a name and an email address. Git refuses to commit until it knows them. You set them once per PC, together with a few settings that make Git friendlier.</p>
+
+<h2>Build your setup commands</h2>
+<p>Fill in the form. The box underneath updates as you type; copy it and paste it into PowerShell. When these commands succeed they print nothing at all, which is normal.</p>
+<div data-widget="config"></div>
+
+<h2>What each line does</h2>
+<dl class="prose">
+  <dt><code>user.name</code> and <code>user.email</code></dt>
+  <dd>The author stamped on every commit you make. GitHub uses the email to link commits to your account and show your profile picture next to them.</dd>
+  <dt><code>init.defaultBranch main</code></dt>
+  <dd>New repositories start with a branch called <code>main</code>, the same name GitHub uses. Without it, Git says <code>master</code> and you get a mismatch later.</dd>
+  <dt><code>core.editor</code></dt>
+  <dd>Sometimes Git needs a longer text from you, for example a merge message, and opens an editor. This picks which one. <code>code --wait</code> makes Git wait until you close the VS Code tab.</dd>
+  <dt><code>pull.rebase false</code></dt>
+  <dd>Tells <code>git pull</code> to merge (the beginner-friendly behaviour this guide uses) and silences a warning that newer Git versions print otherwise.</dd>
+</dl>
+<aside class="co note"><h4>What --global means</h4><p><code>--global</code> saves the setting for your Windows user, for every repository. It lands in a plain text file, <code>C:\Users\you\.gitconfig</code>. Without <code>--global</code>, a setting applies only to the repository you are standing in, which is how you would use a different email for work projects.</p></aside>
+<p>Look at the file directly if you are curious:</p>
+<pre class="sh">notepad $HOME\.gitconfig</pre>
+
+<h2>Keeping your email private</h2>
+<p>Commits in public repositories are public, including the email inside them. If you would rather not publish your real address, GitHub gives you a private stand-in: on github.com open <strong>Settings &rarr; Emails</strong>, tick <strong>Keep my email addresses private</strong>, and copy the address shown there. It looks like this:</p>
+<pre class="out">12345678+yourname@users.noreply.github.com</pre>
+<p>Use that as your <code>user.email</code>. You can come back to this after you create your account in Stop 11.</p>
+
+<h2>About that editor</h2>
+<p>When you run <code>git commit</code> without <code>-m "message"</code>, or finish a merge, Git opens your editor with a text file and <strong>waits</strong>. You type the message, save, and close the tab or window. Only then does Git continue. If the terminal seems frozen after a Git command, look for an editor window waiting for you.</p>
+<aside class="co warn" data-os="11"><h4>Windows 11 and Notepad</h4><p>The Windows 11 Notepad opens files as tabs. If a Notepad window is already open, the file may open as a tab there and Git can stop waiting immediately, then complain: "Aborting commit due to empty commit message". If that happens, close Notepad completely and try again, or switch to VS Code.</p></aside>
+<aside class="co warn"><h4>Trapped in Vim?</h4><p>If a strange full-screen editor appears in the terminal with <code>~</code> symbols down the left, that is Vim. Press <kbd>Esc</kbd>, type <code>:q!</code> and press <kbd>Enter</kbd> to leave without saving. (To save and continue instead: <kbd>Esc</kbd>, <code>:wq</code>, <kbd>Enter</kbd>.) Then set a friendlier editor with the form above.</p></aside>
+
+<h2>Check your settings</h2>
+<pre class="sh">git config --global --list</pre>
+<pre class="out">user.name=Ada Lovelace
+user.email=ada@example.com
+init.defaultbranch=main
+core.editor=code --wait
+pull.rebase=false</pre>
+<p>Your list may contain a few extra lines set by the installer. Made a typo? Just run the same command again with the right value; the new value replaces the old one.</p>
+
+<div data-widget="quiz">
+  <div class="q"><p>You ran the four config commands and PowerShell printed nothing. What happened?</p>
+    <ul><li>They failed silently, run them as administrator</li><li data-ok>They worked: no output means success</li><li>Git is not installed</li></ul>
+    <p class="why">Many commands only speak up when something goes wrong. Check with <code>git config --global --list</code>.</p></div>
+  <div class="q"><p>What does <code>--global</code> do?</p>
+    <ul><li>Uploads the setting to GitHub</li><li data-ok>Saves it for all repositories of your Windows user</li><li>Applies it to every user on the PC</li></ul>
+    <p class="why">Global settings live in <code>C:\Users\you\.gitconfig</code>. Nothing is uploaded anywhere.</p></div>
+</div>
+</section>

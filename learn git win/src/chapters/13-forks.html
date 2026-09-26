@@ -1,0 +1,70 @@
+<section class="stop" id="forks" data-line="3" data-short="Forks" data-time="12 min">
+<h1>Forks: contributing to other people's projects</h1>
+<p class="lead">You cannot push to a repository you do not own. That would be chaos. Instead you make your own copy on GitHub, a <dfn>fork</dfn>, change that, and send a pull request back to the original. This is how all of open source works.</p>
+
+<h2>Three copies of one project</h2>
+<figure class="fig">
+  <svg viewBox="0 0 720 260" width="720" role="img" aria-label="The original repository, your fork on GitHub, and your clone on your PC, with arrows for fork, clone, push, pull request and fetch upstream">
+    <rect x="30" y="24" width="230" height="76" rx="12" class="f-soft s-ink w3"/><text x="145" y="54" class="t-c" font-size="15" font-weight="700">zoe/cool-game</text><text x="145" y="76" class="t-c t-dim" font-size="12">the original, called "upstream"</text>
+    <rect x="460" y="24" width="230" height="76" rx="12" class="f-soft s-ink w3"/><text x="575" y="54" class="t-c" font-size="15" font-weight="700">you/cool-game</text><text x="575" y="76" class="t-c t-dim" font-size="12">your fork, called "origin"</text>
+    <rect x="245" y="170" width="230" height="70" rx="12" class="f-card s-ink w3"/><text x="360" y="200" class="t-c" font-size="15" font-weight="700">Your PC</text><text x="360" y="222" class="t-c t-dim" font-size="12">your clone</text>
+    <path d="M266 48H452" class="s-ink w3 f-none"/><path d="M444 40l10 8-10 8" class="s-ink w3 f-none"/><text x="359" y="40" class="t-c" font-size="12.5" font-weight="700">1. Fork button</text>
+    <path d="M540 106L440 166" class="s-grn w3 f-none"/><text x="560" y="140" font-size="12.5" font-weight="700">2. clone</text>
+    <path d="M470 176L570 108" class="s-red w3 f-none"/><text x="585" y="170" font-size="12.5" font-weight="700">3. push your branch</text>
+    <path d="M452 80H268" class="s-amb w6 f-none"/><path d="M276 72l-10 8 10 8" class="s-amb w3 f-none"/><text x="359" y="100" class="t-c" font-size="12.5" font-weight="700">4. pull request</text>
+    <path d="M150 106L258 176" class="s-grn w3 f-none dash"/><text x="40" y="160" font-size="12.5" font-weight="700">5. git fetch upstream</text><text x="40" y="178" font-size="11.5" class="t-dim">(stay in sync)</text>
+  </svg>
+</figure>
+
+<h2>Step by step</h2>
+<ol class="steps">
+  <li>On the project's GitHub page, click <strong>Fork</strong> (top right), then <strong>Create fork</strong>. You now own <code>you/cool-game</code>.</li>
+  <li>Clone <em>your fork</em> (not the original), then connect the original under the name <code>upstream</code>:
+    <pre class="sh">git clone https://github.com/you/cool-game.git
+cd cool-game
+git remote add upstream https://github.com/zoe/cool-game.git</pre></li>
+  <li>Make a branch, change things, commit, and push the branch to your fork:
+    <pre class="sh">git switch -c faster-enemies
+# edit, then:
+git add .
+git commit -m "Make enemies faster"
+git push -u origin faster-enemies</pre></li>
+  <li>On GitHub, your fork shows the <strong>Compare &amp; pull request</strong> banner. The PR form now has four boxes: <strong>base repository</strong> (zoe/cool-game), <strong>base</strong> (main), <strong>head repository</strong> (you/cool-game) and <strong>compare</strong> (faster-enemies). Check them, describe your change, create the PR.</li>
+  <li>Leave <strong>Allow edits by maintainers</strong> ticked. It lets the project owner push small fixes onto your branch instead of asking you.</li>
+</ol>
+
+<h2>Practise the fork workflow</h2>
+<div data-widget="gitsim" data-mission="fork"></div>
+
+<h2>Keeping your fork up to date</h2>
+<p>The original keeps moving while you work. Your fork does not follow automatically. Two ways to catch up:</p>
+<div data-widget="tabs">
+  <div data-tab="On GitHub">
+    <p>On your fork's page, GitHub shows "This branch is N commits behind". Click <strong>Sync fork</strong>, then <strong>Update branch</strong>. Afterwards run <code>git pull</code> on your PC.</p>
+  </div>
+  <div data-tab="In the terminal">
+    <pre class="sh">git switch main
+git fetch upstream
+git merge upstream/main
+git push</pre>
+  </div>
+</div>
+<aside class="co tip"><h4>Shortcut</h4><p>The GitHub CLI forks, clones and sets up <code>upstream</code> in one go: <code>gh repo fork zoe/cool-game --clone</code></p></aside>
+
+<h2>Finding a first contribution</h2>
+<ul>
+  <li>Look for issues labelled <strong>good first issue</strong> or <strong>help wanted</strong>.</li>
+  <li>Read the project's <code>CONTRIBUTING.md</code> and <code>README</code> first; many projects have rules about tests, formatting or commit messages.</li>
+  <li>For anything bigger than a typo, comment on the issue before you start, so nobody duplicates work.</li>
+  <li>Documentation fixes are real contributions and a great way to learn a project.</li>
+</ul>
+
+<div data-widget="quiz">
+  <div class="q"><p>Why can you not just push to someone else's repository?</p>
+    <ul><li>Git forbids pushing on Windows</li><li data-ok>You have no write permission there; only owners and invited collaborators do</li><li>You can, if you use --force</li></ul>
+    <p class="why">GitHub answers with "Permission denied" (403). That is why forks exist.</p></div>
+  <div class="q"><p>In a fork setup, what do <code>origin</code> and <code>upstream</code> usually point to?</p>
+    <ul><li data-ok>origin is your fork, upstream is the original</li><li>origin is the original, upstream is your fork</li><li>Both point to your fork</li></ul>
+    <p class="why">You clone your fork (origin) and add the original yourself under the conventional name upstream.</p></div>
+</div>
+</section>

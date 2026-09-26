@@ -1,0 +1,69 @@
+<section class="stop" id="undo" data-line="2" data-short="Undo mistakes" data-time="15 min">
+<h1>Undoing mistakes</h1>
+<p class="lead">Once something is committed, Git almost never truly loses it. The skill is not avoiding mistakes; it is picking the right undo for the mistake you made.</p>
+
+<h2>The one rule</h2>
+<aside class="co warn"><h4>Before pushing vs after pushing</h4><p><strong>Not pushed yet:</strong> the commits exist only on your PC, so you may rewrite them (amend, reset). <strong>Already pushed:</strong> other people may have them, so never rewrite. Add a new commit that undoes the old one (revert). Rewriting shared history is how teammates lose work.</p></aside>
+
+<h2>Practise the common undos</h2>
+<div data-widget="gitsim" data-mission="undo"></div>
+
+<h2>The undo finder</h2>
+<p>Answer a question or two and get the exact command, with a warning label about how risky it is.</p>
+<div data-widget="undo"></div>
+
+<h2>The undo commands, explained</h2>
+<h3><code>git restore file</code>: throw away unstaged edits</h3>
+<p>Puts the file back to how it is in the staging area (which, if you did not stage anything, equals the last commit). <strong>The edits are gone for good.</strong> They do not go to the Recycle Bin, because Git never saved them.</p>
+
+<h3><code>git restore --staged file</code>: unstage</h3>
+<p>The opposite of <code>git add</code>. The change leaves the staging area but stays in your file. Completely safe.</p>
+
+<h3><code>git commit --amend</code>: fix the last commit</h3>
+<p>Replaces the last commit with a new one containing whatever is staged now, plus a new message if you give one. Perfect for typos and forgotten files. It creates a new commit ID, which is exactly why you must not amend commits you already pushed.</p>
+<pre class="sh"># forgot a file:
+git add forgotten.css
+git commit --amend --no-edit</pre>
+
+<h3><code>git revert</code>: undo a commit by adding its opposite</h3>
+<p>Looks at what a commit changed and creates a new commit that changes it back. History stays intact (both commits are visible), which makes it the safe choice for anything already on GitHub.</p>
+
+<h3><code>git reset</code>: move the branch backwards</h3>
+<p>Moves your branch to an earlier commit, as if later commits never happened. It has three strengths:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Command</th><th>Branch moves back</th><th>Staging area</th><th>Your files</th><th>Use it to</th></tr>
+  <tr><td><code>git reset --soft HEAD~1</code></td><td>Yes</td><td>Keeps the changes, staged</td><td>Untouched</td><td>Redo the last commit differently</td></tr>
+  <tr><td><code>git reset HEAD~1</code> (mixed, the default)</td><td>Yes</td><td>Emptied</td><td>Untouched, changes still there</td><td>Un-commit and re-pick what to stage</td></tr>
+  <tr><td><code>git reset --hard HEAD~1</code></td><td>Yes</td><td>Emptied</td><td><strong>Reset too: uncommitted work is deleted</strong></td><td>Throw everything away, for real</td></tr>
+</table></div>
+<aside class="co warn"><h4>Careful with --hard</h4><p><code>git reset --hard</code> is one of the very few Git commands that destroys work you cannot get back: uncommitted changes. Run <code>git status</code> first and read it. The commits it removes can still be rescued for a while with the reflog (Stop 15); uncommitted edits cannot.</p></aside>
+
+<h2>Old commands you will see online</h2>
+<p>Git added <code>git restore</code> and <code>git switch</code> in 2019 because the older <code>git checkout</code> did too many unrelated jobs. Older tutorials use the old forms. They still work:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Old way</th><th>New way</th></tr>
+  <tr><td><code>git checkout -- file</code></td><td><code>git restore file</code></td></tr>
+  <tr><td><code>git reset HEAD file</code></td><td><code>git restore --staged file</code></td></tr>
+  <tr><td><code>git checkout branch</code></td><td><code>git switch branch</code></td></tr>
+  <tr><td><code>git checkout -b branch</code></td><td><code>git switch -c branch</code></td></tr>
+</table></div>
+
+<h2>Habits that make undo easy</h2>
+<ul>
+  <li><strong>Commit often.</strong> Committed work is recoverable almost forever. Uncommitted work is one bad command from gone.</li>
+  <li><strong>Read <code>git status</code> before anything destructive.</strong></li>
+  <li><strong>Before an experiment, make a branch</strong> (next stop). If it fails, delete the branch.</li>
+</ul>
+
+<div data-widget="quiz">
+  <div class="q"><p>You pushed a commit that broke the site. Teammates have already pulled it. What do you do?</p>
+    <ul><li>git reset --hard HEAD~1, then push</li><li data-ok>git revert the commit, then push</li><li>git commit --amend</li></ul>
+    <p class="why">Pushed history is shared. <code>git revert</code> adds a fixing commit instead of rewriting history under your teammates' feet.</p></div>
+  <div class="q"><p>You staged passwords.txt by accident. How do you unstage it but keep the file?</p>
+    <ul><li>git restore passwords.txt</li><li data-ok>git restore --staged passwords.txt</li><li>git reset --hard</li></ul>
+    <p class="why"><code>--staged</code> only touches the staging area. Without it, <code>git restore</code> works on your file instead.</p></div>
+  <div class="q"><p>Which command can delete work that is gone for good?</p>
+    <ul><li>git revert</li><li>git restore --staged</li><li data-ok>git reset --hard</li></ul>
+    <p class="why">It overwrites your files, and uncommitted changes were never saved anywhere.</p></div>
+</div>
+</section>

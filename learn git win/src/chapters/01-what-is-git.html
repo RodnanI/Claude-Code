@@ -1,0 +1,98 @@
+<section class="stop" id="what-is-git" data-line="1" data-short="Git vs GitHub" data-time="8 min">
+<h1>What Git and GitHub actually are</h1>
+<p class="lead">Git is a time machine for a folder. GitHub is a website where those time machines live online, so people can back them up, share them, and work on them together. Two different things with confusingly similar names.</p>
+
+<h2>The problem Git solves</h2>
+<p>Everybody has done this. You are working on something important and you do not want to lose a good version, so you make copies:</p>
+<figure class="fig">
+  <div class="fig-row">
+    <svg viewBox="0 0 320 210" width="320" role="img" aria-label="A folder full of confusingly named copies of one essay">
+      <rect x="10" y="10" width="300" height="190" rx="10" class="f-card s-ink w2"/>
+      <text x="26" y="36" font-weight="700" font-size="15">Without Git</text>
+      <g class="t-mono" font-size="12.5">
+        <text x="26" y="64">essay.docx</text><text x="26" y="86">essay_v2.docx</text><text x="26" y="108">essay_v2_fixed.docx</text>
+        <text x="26" y="130">essay_final.docx</text><text x="26" y="152">essay_final_REALLY.docx</text><text x="26" y="174">essay_final_v3_USE THIS.docx</text>
+      </g>
+      <text x="300" y="190" text-anchor="end" font-size="12" class="t-dim">Which one is right? What changed?</text>
+    </svg>
+    <svg viewBox="0 0 330 210" width="330" role="img" aria-label="One file with a clean history of commits">
+      <rect x="10" y="10" width="310" height="190" rx="10" class="f-card s-ink w2"/>
+      <text x="26" y="36" font-weight="700" font-size="15">With Git</text>
+      <text x="26" y="62" class="t-mono" font-size="12.5">essay.docx</text><text x="120" y="62" font-size="12" class="t-dim">(one file, full history)</text>
+      <path d="M40 84V180" class="s-red w6 f-none"/>
+      <g class="f-paper s-ink w3"><circle cx="40" cy="88" r="7"/><circle cx="40" cy="118" r="7"/><circle cx="40" cy="148" r="7"/><circle cx="40" cy="178" r="7"/></g>
+      <g font-size="12.5"><text x="58" y="92">Mon: first draft</text><text x="58" y="122">Tue: add sources</text><text x="58" y="152">Wed: rewrite intro</text><text x="58" y="182">Thu: fix typos (latest)</text></g>
+    </svg>
+  </div>
+  <figcaption>Git keeps one version of your files on disk and remembers every saved state behind the scenes.</figcaption>
+</figure>
+<p>With Git you keep working in normal files. Whenever you reach a good point, you tell Git to take a <dfn>snapshot</dfn> of the whole folder. That snapshot is called a <dfn>commit</dfn>. Each commit records:</p>
+<ul>
+  <li>exactly what every file looked like at that moment,</li>
+  <li>a short message you write ("Rewrite intro"),</li>
+  <li>who made it and when,</li>
+  <li>a unique ID, so you can point at it later.</li>
+</ul>
+<p>With that, Git can show you what changed between any two commits, bring back any old version, and let you try risky ideas on a separate line of work (a <dfn>branch</dfn>) without touching the version that works.</p>
+<aside class="co ticket"><h4>Think of it like</h4><p>Save points in a video game. You save before the boss fight; if the fight goes badly, you reload. Commits are save points for your project, except you keep all of them forever, each with a label saying what happened.</p></aside>
+
+<h2>What Git is not</h2>
+<ul>
+  <li><strong>Not a backup on its own.</strong> Git stores its history inside your project folder. If the disk dies, the history dies with it. The copy on GitHub is what protects you.</li>
+  <li><strong>Not only for code.</strong> Websites, notes, recipes, config files, books written in plain text: anything made of text files works beautifully. Large binary files (videos, Photoshop files, Word documents) can be stored, but Git cannot show you what changed inside them.</li>
+  <li><strong>Not GitHub.</strong> Git runs on your PC and works fully offline. Which brings us to...</li>
+</ul>
+
+<h2>Git versus GitHub</h2>
+<figure class="fig">
+  <svg viewBox="0 0 720 170" width="720" role="img" aria-label="Your PC runs Git; GitHub is a website that stores a copy of your repository; push uploads, pull downloads">
+    <rect x="20" y="30" width="230" height="120" rx="12" class="f-card s-ink w3"/>
+    <text x="135" y="62" class="t-c" font-size="17" font-weight="700">Your PC</text>
+    <text x="135" y="88" class="t-c" font-size="13">Git (a program)</text>
+    <text x="135" y="110" class="t-c" font-size="13">your project + its history</text>
+    <text x="135" y="132" class="t-c t-dim" font-size="12">works offline</text>
+    <rect x="470" y="30" width="230" height="120" rx="12" class="f-soft s-ink w3"/>
+    <text x="585" y="62" class="t-c" font-size="17" font-weight="700">GitHub</text>
+    <text x="585" y="88" class="t-c" font-size="13">a website (github.com)</text>
+    <text x="585" y="110" class="t-c" font-size="13">a copy of the same history</text>
+    <text x="585" y="132" class="t-c t-dim" font-size="12">shared with others</text>
+    <path d="M262 72H452" class="s-red w6 f-none"/><path d="M440 62l14 10-14 10" class="s-red w3 f-none"/>
+    <text x="357" y="60" class="t-c" font-size="13" font-weight="700">push (upload)</text>
+    <path d="M458 116H268" class="s-grn w6 f-none"/><path d="M280 106l-14 10 14 10" class="s-grn w3 f-none"/>
+    <text x="357" y="140" class="t-c" font-size="13" font-weight="700">pull (download)</text>
+  </svg>
+</figure>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th></th><th>Git</th><th>GitHub</th></tr>
+  <tr><td>What it is</td><td>A program you install</td><td>A website and service</td></tr>
+  <tr><td>Where it lives</td><td>On your PC</td><td>In the cloud</td></tr>
+  <tr><td>Needs internet</td><td>No</td><td>Yes</td></tr>
+  <tr><td>Cost</td><td>Free, open source</td><td>Free for public and private repositories; paid plans add team features</td></tr>
+  <tr><td>Who makes it</td><td>Started by Linus Torvalds (the Linux creator) in 2005, now a large open source community</td><td>A company, owned by Microsoft since 2018</td></tr>
+  <tr><td>Alternatives</td><td>Hardly any in practice</td><td>GitLab, Bitbucket, Codeberg and others all host Git repositories too</td></tr>
+</table></div>
+<p>You can use Git your whole life without GitHub. You cannot use GitHub meaningfully without Git. Learn Git first (Line 2), then GitHub (Line 3).</p>
+
+<h2>Four words you will hear constantly</h2>
+<dl class="prose">
+  <dt><strong><dfn>Repository</dfn></strong> (repo)</dt><dd>A project folder that Git is tracking, plus all its history.</dd>
+  <dt><strong><dfn>Commit</dfn></strong></dt><dd>One saved snapshot, with a message.</dd>
+  <dt><strong><dfn>Branch</dfn></strong></dt><dd>A separate line of commits, so you can work on something without disturbing the main version.</dd>
+  <dt><strong><dfn>Remote</dfn></strong></dt><dd>A copy of the repository somewhere else, usually on GitHub.</dd>
+</dl>
+
+<h2>Why learn the commands instead of clicking buttons?</h2>
+<p>VS Code, GitHub Desktop and other apps offer buttons for Git, and they are fine. But every one of those buttons runs the same commands you will learn here. Knowing the commands means the buttons make sense, every tutorial and forum answer makes sense (they are all written as commands), and when a button fails with a Git error message, you can read it. This guide teaches the commands and points out the buttons along the way.</p>
+
+<div data-widget="quiz">
+  <div class="q"><p>Your laptop is stolen. You used Git on your project daily but never pushed to GitHub. What is left?</p>
+    <ul><li>Everything, Git syncs automatically</li><li data-ok>Nothing: the history lived on the laptop</li><li>Only the latest version</li></ul>
+    <p class="why">Git keeps history inside the project folder on your disk. Only a push to GitHub (or another remote) creates a copy elsewhere.</p></div>
+  <div class="q"><p>Which one needs an internet connection to work?</p>
+    <ul><li>Git</li><li data-ok>GitHub</li><li>Both</li></ul>
+    <p class="why">Git is a program on your PC and works fully offline. GitHub is a website.</p></div>
+  <div class="q"><p>What is a commit?</p>
+    <ul><li>A file you upload to GitHub</li><li data-ok>A saved snapshot of the whole project, with a message</li><li>A promise to finish the project</li></ul>
+    <p class="why">A commit captures every tracked file at one moment, plus who, when, a message and a unique ID.</p></div>
+</div>
+</section>

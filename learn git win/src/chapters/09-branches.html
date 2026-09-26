@@ -1,0 +1,70 @@
+<section class="stop" id="branches" data-line="2" data-short="Branches" data-time="12 min">
+<h1>Branches</h1>
+<p class="lead">A branch sounds big, but it is a tiny thing: a movable name tag pointing at a commit. Creating one is instant and free. Everyone uses them, all day, and pull requests are built on them.</p>
+
+<h2>What a branch really is</h2>
+<figure class="fig">
+  <svg viewBox="0 0 700 200" width="700" role="img" aria-label="The main line with three commits and a dark-mode branch splitting off with two commits; HEAD points at dark-mode">
+    <path d="M60 130H330" class="s-red w6 f-none"/>
+    <path d="M200 130L260 60H470" class="s-grn w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="60" cy="130" r="11"/><circle cx="200" cy="130" r="11"/><circle cx="330" cy="130" r="11"/><circle cx="340" cy="60" r="11"/><circle cx="470" cy="60" r="11"/></g>
+    <g class="t-mono t-dim" font-size="11.5"><text x="60" y="160" class="t-c">a1f3c0e</text><text x="200" y="160" class="t-c">7b21d94</text><text x="330" y="160" class="t-c">c90e5a2</text><text x="340" y="92" class="t-c">4d7aa31</text><text x="470" y="92" class="t-c">e82b61f</text></g>
+    <rect x="300" y="168" width="60" height="22" rx="4" class="f-red s-ink w2"/><text x="330" y="184" class="t-c t-w" font-size="13" font-weight="700">main</text>
+    <rect x="505" y="49" width="92" height="22" rx="4" class="f-grn s-ink w2"/><text x="551" y="65" class="t-c t-w" font-size="13" font-weight="700">dark-mode</text>
+    <path d="M483 60H503" class="s-ink w2 f-none"/>
+    <rect x="610" y="49" width="62" height="22" rx="11" class="f-ink"/><text x="641" y="65" class="t-c" font-size="12" font-weight="700" style="fill:var(--paper)">HEAD</text>
+    <path d="M598 60H609" class="s-ink w2 f-none"/>
+    <text x="40" y="36" font-size="13" class="t-dim">Each circle is a commit. Labels are branches. HEAD = you are here.</text>
+  </svg>
+</figure>
+<ul>
+  <li><strong>main</strong> is a label pointing at commit <code>c90e5a2</code>.</li>
+  <li><strong>dark-mode</strong> is another label pointing at <code>e82b61f</code>. Both lines share their history up to <code>7b21d94</code>.</li>
+  <li><dfn>HEAD</dfn> points at the branch you are on, dark-mode. Your working folder currently contains dark-mode's version of every file.</li>
+  <li>When you commit, a new commit appears after the one HEAD's branch points at, and that branch label slides forward onto it. The other label stays put.</li>
+</ul>
+<aside class="co ticket"><h4>Think of it like</h4><p>A transit network. main is the main line. A branch is a new line splitting off at one station and continuing on its own track. HEAD is the red "you are here" dot on the map. Switching branches means changing trains: the scenery (your files) changes to match the line you are on.</p></aside>
+
+<h2>Why bother?</h2>
+<ul>
+  <li><strong>Safe experiments.</strong> Try something on a branch. It works: merge it. It fails: delete the branch. main never noticed.</li>
+  <li><strong>Several things at once.</strong> A bug fix on one branch, a new feature on another, without mixing them.</li>
+  <li><strong>Teamwork.</strong> Pull requests (Stop 12) are "please merge my branch". On most teams nobody commits to main directly.</li>
+  <li><strong>main stays working.</strong> Whatever is on main can be shown, shipped or deployed at any time.</li>
+</ul>
+
+<h2>Try it</h2>
+<div data-widget="gitsim" data-mission="branches"></div>
+
+<h2>The branch commands</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Command</th><th>Does</th></tr>
+  <tr><td><code>git branch</code></td><td>Lists branches; <code>*</code> marks the one you are on</td></tr>
+  <tr><td><code>git branch dark-mode</code></td><td>Creates a branch at the current commit (does not switch)</td></tr>
+  <tr><td><code>git switch dark-mode</code></td><td>Switches to it: moves HEAD and swaps the files in your folder</td></tr>
+  <tr><td><code>git switch -c dark-mode</code></td><td>Creates and switches in one step (the one you will actually use)</td></tr>
+  <tr><td><code>git switch -</code></td><td>Back to the previous branch</td></tr>
+  <tr><td><code>git branch -m new-name</code></td><td>Renames the current branch</td></tr>
+  <tr><td><code>git branch -d dark-mode</code></td><td>Deletes a branch that has been merged (Git refuses if it has unmerged work; <code>-D</code> forces it)</td></tr>
+</table></div>
+
+<h2>What happens to your files when you switch</h2>
+<p>Git rewrites your working folder to match the branch you switch to. Files that only exist on the other branch disappear from the folder (they are safe inside <code>.git</code>) and come back when you switch back. That surprises everyone the first time. It is fine.</p>
+<p>Uncommitted changes: if they do not clash with the branch you switch to, Git carries them along. If they would be overwritten, Git refuses to switch and tells you which files. Commit them, or put them aside with <code>git stash</code> (Stop 15).</p>
+<aside class="co warn"><h4>Editors and switching</h4><p>VS Code notices when Git changes a file and reloads it. Classic Notepad does not: if you still have a file open from the other branch and press Save, you overwrite the new branch's version with the old text. Close files in simple editors before switching branches.</p></aside>
+
+<h2>Naming branches</h2>
+<p>No spaces, lowercase, dashes between words, and a name that says what the branch is for: <code>fix-login-button</code>, <code>add-dark-mode</code>, <code>update-readme</code>. Many teams add a prefix such as <code>feature/</code> or <code>fix/</code>: <code>fix/login-button</code>.</p>
+
+<div data-widget="quiz">
+  <div class="q"><p>You create a branch with <code>git branch idea</code> and then commit. Which branch gets the commit?</p>
+    <ul><li>idea</li><li data-ok>The branch you were on, because git branch does not switch</li><li>Both</li></ul>
+    <p class="why"><code>git branch name</code> only creates the label. Use <code>git switch -c name</code> to create and move onto it.</p></div>
+  <div class="q"><p>What is HEAD?</p>
+    <ul><li>The first commit of the project</li><li>The newest commit on GitHub</li><li data-ok>A marker for where you are: normally pointing at your current branch</li></ul>
+    <p class="why">HEAD is "you are here". Switching branches moves it.</p></div>
+  <div class="q"><p>After <code>git switch main</code>, a file you created on the other branch vanished from File Explorer. Is it lost?</p>
+    <ul><li>Yes, switching deletes files</li><li data-ok>No, it was committed on the other branch and comes back when you switch there</li><li>It went to the Recycle Bin</li></ul>
+    <p class="why">Your folder always shows the branch you are on. Committed files are safe in the repository.</p></div>
+</div>
+</section>

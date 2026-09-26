@@ -1,0 +1,80 @@
+<section class="stop" id="history" data-line="2" data-short="Reading history" data-time="10 min">
+<h1>Reading the history</h1>
+<p class="lead">History is only useful if you can read it. Three commands do almost all of the looking back: <code>git log</code> lists commits, <code>git show</code> opens one, and <code>git diff</code> compares versions.</p>
+
+<div data-widget="gitsim" data-mission="history"></div>
+
+<h2>git log, in its useful shapes</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Command</th><th>Shows</th></tr>
+  <tr><td><code>git log</code></td><td>Every commit, full details, newest first</td></tr>
+  <tr><td><code>git log --oneline</code></td><td>One line per commit: short ID and message. The one you will use most.</td></tr>
+  <tr><td><code>git log -5</code></td><td>Only the last five</td></tr>
+  <tr><td><code>git log --oneline --graph --all</code></td><td>Every branch, with lines drawn in text characters</td></tr>
+  <tr><td><code>git log -- index.html</code></td><td>Only commits that touched that file</td></tr>
+  <tr><td><code>git log --author="Ada"</code></td><td>Only commits by that person</td></tr>
+</table></div>
+
+<h2>How to read a diff</h2>
+<p>A <dfn>diff</dfn> shows exactly which lines changed. It looks cryptic until you know the four parts:</p>
+<pre class="out"><b>diff --git a/about.html b/about.html</b>
+<b>--- a/about.html</b>
+<b>+++ b/about.html</b>
+<span class="y">@@ -1,2 +1,2 @@</span>
+ &lt;h1&gt;About me&lt;/h1&gt;
+<span class="r">-&lt;p&gt;I am learning Git.&lt;/p&gt;</span>
+<span class="g">+&lt;p&gt;I am learning Git and GitHub.&lt;/p&gt;</span></pre>
+<ol class="steps">
+  <li><code>diff --git</code> names the file being compared.</li>
+  <li><code>---</code> is the old version ("a"), <code>+++</code> the new one ("b").</li>
+  <li><code>@@ -1,2 +1,2 @@</code> says where: starting at line 1, 2 lines in the old version and 2 lines in the new.</li>
+  <li>Lines starting with <code>-</code> (red) were removed, <code>+</code> (green) were added, a space means unchanged context. A changed line shows up as one removed plus one added.</li>
+</ol>
+
+<h2>Which diff compares what?</h2>
+<figure class="fig">
+  <svg viewBox="0 0 700 170" width="700" role="img" aria-label="git diff compares working folder with staging area; git diff --staged compares staging area with the last commit; git diff HEAD compares working folder with the last commit">
+    <rect x="20" y="30" width="170" height="60" rx="10" class="f-card s-ink w3"/><text x="105" y="66" class="t-c" font-size="15" font-weight="700">Working folder</text>
+    <rect x="265" y="30" width="170" height="60" rx="10" class="f-card s-ink w3"/><text x="350" y="66" class="t-c" font-size="15" font-weight="700">Staging area</text>
+    <rect x="510" y="30" width="170" height="60" rx="10" class="f-card s-ink w3"/><text x="595" y="66" class="t-c" font-size="15" font-weight="700">Last commit (HEAD)</text>
+    <path d="M195 60H260" class="s-red w6 f-none"/><text x="228" y="20" class="t-c t-mono" font-size="12.5" font-weight="700">git diff</text>
+    <path d="M440 60H505" class="s-amb w6 f-none"/><text x="472" y="20" class="t-c t-mono" font-size="12.5" font-weight="700">git diff --staged</text>
+    <path d="M105 96v34H595V96" class="s-grn w3 f-none"/><text x="350" y="152" class="t-c t-mono" font-size="12.5" font-weight="700">git diff HEAD (everything not committed yet)</text>
+  </svg>
+</figure>
+<p>This is why <code>git diff</code> goes quiet after you <code>git add</code>: the working folder and the staging area match again. The change did not disappear; it moved one box to the right. <code>git diff --staged</code> shows it.</p>
+
+<h2>Naming commits</h2>
+<p>Many commands need you to point at a commit. You have several ways:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Name</th><th>Means</th></tr>
+  <tr><td><code>3f9a2c1</code></td><td>The commit's ID. The first 7 characters are enough (copy them from <code>git log --oneline</code>).</td></tr>
+  <tr><td><code>HEAD</code></td><td>The commit you are on right now.</td></tr>
+  <tr><td><code>HEAD~1</code>, <code>HEAD~2</code></td><td>One, two commits before HEAD.</td></tr>
+  <tr><td><code>main</code></td><td>The newest commit on the branch main.</td></tr>
+  <tr><td><code>main~3</code></td><td>Three commits before the tip of main.</td></tr>
+</table></div>
+<aside class="co note"><h4>Why ~ and not ^</h4><p>Tutorials sometimes write <code>HEAD^</code>. In Command Prompt the <code>^</code> character is special and gets swallowed, so <code>HEAD~1</code> is the safer habit on Windows. It works everywhere.</p></aside>
+
+<h2>Peek at an old version without changing anything</h2>
+<p>Print a file exactly as it was a few commits ago:</p>
+<pre class="sh">git show HEAD~2:index.html</pre>
+<p>Or bring back the old version of one file into your working folder (it shows up as a normal change you can commit, or undo):</p>
+<pre class="sh">git restore --source HEAD~2 index.html</pre>
+
+<h2>The pager, once more</h2>
+<p>Long output (log, diff, show) opens in a scrollable viewer. Keys: <kbd>Space</kbd> next page, <kbd>&uarr;</kbd> <kbd>&darr;</kbd> scroll, <kbd>/</kbd> then a word to search, <kbd>q</kbd> quit. If you would rather get plain output for one command, add <code>--no-pager</code> right after <code>git</code>:</p>
+<pre class="sh">git --no-pager log --oneline</pre>
+
+<div data-widget="quiz">
+  <div class="q"><p>You staged a change and now <code>git diff</code> prints nothing. Why?</p>
+    <ul><li>The change was lost</li><li data-ok>git diff only shows unstaged changes; use git diff --staged</li><li>Git needs a restart</li></ul>
+    <p class="why">After <code>git add</code>, the working folder matches the staging area, so there is no unstaged difference left to show.</p></div>
+  <div class="q"><p>In a diff, what does a line starting with <code>+</code> mean?</p>
+    <ul><li data-ok>A line that was added</li><li>A line that got longer</li><li>An important line</li></ul>
+    <p class="why"><code>+</code> added, <code>-</code> removed. A modified line shows as one of each.</p></div>
+  <div class="q"><p>What is <code>HEAD~1</code>?</p>
+    <ul><li>The first commit ever</li><li data-ok>The commit right before the current one</li><li>The next commit</li></ul>
+    <p class="why">HEAD is where you are; <code>~1</code> steps back one commit.</p></div>
+</div>
+</section>

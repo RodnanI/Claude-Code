@@ -1,0 +1,85 @@
+<section class="stop" id="windows" data-line="4" data-short="Windows gotchas" data-time="15 min">
+<h1>Windows gotchas and fixes</h1>
+<p class="lead">Git grew up on Linux. On Windows it works very well, but a handful of differences bite beginners again and again. Here is every one of them, with the fix.</p>
+
+<h2>1. Line endings: CRLF versus LF</h2>
+<p>Every line in a text file ends with invisible characters. Windows uses two, carriage return plus line feed (<strong>CRLF</strong>); macOS and Linux use just line feed (<strong>LF</strong>). Without care, a Mac user and a Windows user editing the same file make Git think every single line changed. Git's <code>core.autocrlf</code> setting converts for you. Click through the options:</p>
+<div data-widget="eol"></div>
+<p>This is also where the message <code>warning: in the working copy of 'index.html', LF will be replaced by CRLF the next time Git touches it</code> comes from. It is informational. Nothing is wrong.</p>
+<p>For a team project, the robust fix is a <code>.gitattributes</code> file in the project's top folder, committed like any other file. It makes the rules part of the repository, so everyone gets the same behaviour whatever their personal settings:</p>
+<pre class="out"># let Git normalise all text files
+* text=auto
+# shell scripts must keep LF, even on Windows
+*.sh text eol=lf
+# Windows batch files must keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf</pre>
+
+<h2>2. Upper and lower case in file names</h2>
+<p>To Windows, <code>README.md</code> and <code>readme.md</code> are the same file. To Git (and to Linux servers, and GitHub), they are different. Consequences:</p>
+<ul>
+  <li>Renaming <code>readme.md</code> to <code>README.md</code> in File Explorer changes nothing as far as Git is concerned. Use Git to rename it: <code>git mv readme.md README.md</code>, then commit.</li>
+  <li>A repository made on Linux containing both <code>Photo.jpg</code> and <code>photo.jpg</code> cannot be checked out properly on Windows. Rare, but confusing when it happens.</li>
+</ul>
+
+<h2>3. "Filename too long"</h2>
+<p>Windows traditionally limits paths to 260 characters, and deep folders (hello, <code>node_modules</code>) exceed that. Fix it on both sides:</p>
+<pre class="sh">git config --global core.longpaths true</pre>
+<p>Then let Windows itself allow long paths. Open PowerShell <strong>as administrator</strong> (right-click Start, pick <span data-os="11">Terminal (Admin)</span><span data-os="10">Windows PowerShell (Admin)</span>) and run:</p>
+<pre class="sh">New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force</pre>
+<p>Restart your terminal and editors afterwards. (Only needed if you actually hit the error.)</p>
+
+<h2>4. OneDrive and Git do not mix</h2>
+<p>OneDrive often syncs your Desktop and Documents folders without asking. A repository inside a synced folder means two programs fighting over the thousands of small files in <code>.git</code>: sync conflicts, "file in use" errors, sometimes a corrupted repository.</p>
+<aside class="co tip"><h4>Fix</h4><p>Keep repositories in a folder OneDrive does not touch, such as <code>C:\Users\you\projects</code> or <code>C:\dev</code>. Your backup is GitHub; that is what push is for.</p></aside>
+<p data-os="11"><span class="osb">Win 11</span> For heavy projects, Windows 11 offers a <strong>Dev Drive</strong> (Settings &rarr; System &rarr; Storage &rarr; Advanced storage settings &rarr; Disks &amp; volumes &rarr; Create dev drive): a separate volume tuned for developer workloads where Microsoft Defender scans in a lighter mode, which makes Git and package installs noticeably faster. Optional.</p>
+<p data-os="10"><span class="osb">Win 10</span> If Git feels slow in huge repositories, antivirus scanning of the many small files is a common cause. Recent Git for Windows versions are already well tuned; keeping Git updated helps most.</p>
+
+<h2>5. PowerShell quirks</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>You see / type</th><th>What happens</th><th>Do this instead</th></tr>
+  <tr><td><code>git add . &amp;&amp; git commit -m "x"</code></td><td>Windows PowerShell 5.1: "The token '&amp;&amp;' is not a valid statement separator"</td><td>Run the commands one by one, separate them with <code>;</code>, or install PowerShell 7 (which understands <code>&amp;&amp;</code>)</td></tr>
+  <tr><td><code>git stash apply stash@{1}</code></td><td>PowerShell mangles the <code>@{ }</code> part</td><td>Quote it: <code>'stash@{1}'</code>, <code>'HEAD@{1}'</code></td></tr>
+  <tr><td><code>git commit -m "cost $5"</code></td><td>Inside double quotes, PowerShell replaces <code>$5</code> with a (usually empty) variable</td><td>Use single quotes when the message contains <code>$</code>: <code>'cost $5'</code></td></tr>
+  <tr><td><code>echo "hi" &gt; file.txt</code></td><td>Windows PowerShell 5.1 writes UTF-16 text, which Git treats as binary</td><td>Create and edit files in an editor, or use PowerShell 7 (writes UTF-8)</td></tr>
+  <tr><td><code>git reset HEAD^</code> in Command Prompt</td><td>cmd swallows <code>^</code></td><td>Use <code>HEAD~1</code> everywhere</td></tr>
+</table></div>
+
+<h2>6. "The terminal is stuck"</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>What you see</th><th>What it is</th><th>Way out</th></tr>
+  <tr><td>A <code>:</code> or <code>(END)</code> at the bottom</td><td>The pager showing long output</td><td><kbd>q</kbd></td></tr>
+  <tr><td>Full-screen text with <code>~</code> down the left side</td><td>Vim, opened for a message</td><td><kbd>Esc</kbd>, type <code>:q!</code>, <kbd>Enter</kbd> (or <code>:wq</code> to save and continue)</td></tr>
+  <tr><td>Nothing happens after <code>git commit</code> or <code>git merge</code></td><td>Git is waiting for your editor</td><td>Find the editor window (taskbar), write, save, close</td></tr>
+  <tr><td>A command that runs forever</td><td>Something is hanging</td><td><kbd>Ctrl</kbd> + <kbd>C</kbd></td></tr>
+</table></div>
+
+<h2>7. Signed in as the wrong GitHub account</h2>
+<p>Git Credential Manager remembers one login per site. To switch: open Credential Manager (search the Start menu), <strong>Windows Credentials</strong>, remove <code>git:https://github.com</code>, then push again and sign in fresh. A "403" or "Permission denied" on push usually means this, or that you are pushing to a repository you do not have access to.</p>
+
+<h2>8. "Running scripts is disabled on this system"</h2>
+<p>This is PowerShell refusing to run <code>.ps1</code> script files, which matters for add-ons such as posh-git or some npm tools (plain <code>git</code> is unaffected). Windows blocks scripts by default. Allowing your own local scripts for your user only is the common, reasonable setting:</p>
+<pre class="sh">Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</pre>
+<p data-os="11"><span class="osb">Win 11</span> The same switch lives in Settings &rarr; System &rarr; For developers (named Advanced on the newest builds), in the PowerShell section.</p>
+<p data-os="10"><span class="osb">Win 10</span> The same switch exists in Settings &rarr; Update &amp; Security &rarr; For developers, in the PowerShell section.</p>
+
+<h2>Upgrades that make Git on Windows nicer</h2>
+<div class="grid2">
+  <div class="card cool"><h4>posh-git</h4><p>Shows the current branch and status right in your PowerShell prompt, and adds Tab completion for Git commands and branch names.</p><pre class="sh">Install-Module posh-git -Scope CurrentUser
+Add-PoshGitToProfile</pre></div>
+  <div class="card warm"><h4>PowerShell 7</h4><p>Fixes the <code>&amp;&amp;</code> and UTF-16 quirks above. Installs next to the built-in 5.1; Windows Terminal adds it as a profile.</p><pre class="sh">winget install --id Microsoft.PowerShell -e</pre></div>
+  <div class="card hot"><h4>A visual view</h4><p>VS Code's Source Control panel, or GitHub Desktop, show the same staging area and history you now understand. Use them alongside the terminal whenever a picture helps.</p></div>
+</div>
+
+<div data-widget="quiz">
+  <div class="q"><p>You renamed <code>logo.PNG</code> to <code>logo.png</code> in File Explorer, and <code>git status</code> shows nothing. Why?</p>
+    <ul><li>Git is broken</li><li data-ok>Windows treats both names as the same file, so Git sees no change; use git mv</li><li>You need to push first</li></ul>
+    <p class="why">Case-only renames need <code>git mv logo.PNG logo.png</code> on Windows.</p></div>
+  <div class="q"><p>Where should your repositories live?</p>
+    <ul><li>On the OneDrive-synced Desktop, for backup</li><li data-ok>In a folder OneDrive does not sync, like C:\Users\you\projects</li><li>In C:\Windows</li></ul>
+    <p class="why">Sync tools and <code>.git</code> fight. GitHub is your backup.</p></div>
+  <div class="q"><p>In Windows PowerShell 5.1, <code>git add . &amp;&amp; git commit -m "x"</code> fails. Why?</p>
+    <ul><li>Git does not support two commands</li><li data-ok>PowerShell 5.1 does not understand &amp;&amp;; use ; or PowerShell 7</li><li>You need admin rights</li></ul>
+    <p class="why">The <code>&amp;&amp;</code> operator arrived in PowerShell 7.</p></div>
+</div>
+</section>

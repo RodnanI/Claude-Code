@@ -1,0 +1,81 @@
+<section class="stop" id="first-commit" data-line="2" data-short="First commit" data-time="15 min">
+<h1>Your first repository and commit</h1>
+<p class="lead">Do it in the simulator first, where nothing can go wrong. Then do the exact same thing on your own PC.</p>
+
+<h2>In the simulator</h2>
+<p>A folder called my-site with two files is waiting. The steps sit above the terminal; <strong>Type it for me</strong> fills in the command if you are stuck (you still press Enter). Try commands that are not in the steps too: <code>git status</code> is always safe.</p>
+<div data-widget="gitsim" data-mission="first-commit"></div>
+
+<h2>What each command did</h2>
+<h3><code>git init</code>: start tracking this folder</h3>
+<pre class="out">Initialized empty Git repository in C:/Users/you/my-site/.git/</pre>
+<p>Creates the hidden <code>.git</code> folder. Your files are untouched. The forward slashes in the path are normal: Git comes from the Linux world and prints paths that way. Run <code>git init</code> once per project, never inside a folder that is already a repository.</p>
+
+<h3><code>git status</code>: what is going on?</h3>
+<p>The command you will type more than any other. Read it top to bottom: which branch you are on, what is staged (green), what is changed but not staged (red), and what is untracked (red). It even tells you which command to run next, in brackets. When in doubt, <code>git status</code>.</p>
+
+<h3><code>git add</code>: put changes in the staging area</h3>
+<p>Silent when it works. <code>git add index.html</code> stages one file, <code>git add .</code> stages everything in the folder, <code>git add *.css</code> stages all CSS files.</p>
+<aside class="co note"><h4>"LF will be replaced by CRLF"</h4><p>On Windows, <code>git add</code> sometimes prints a warning about LF and CRLF. It is harmless: Git is telling you it will convert invisible line-ending characters. Stop 16 explains, with a demo.</p></aside>
+
+<h3><code>git commit -m "message"</code>: save the snapshot</h3>
+<pre class="out">[main (root-commit) 3f9a2c1] First version of my site
+ 2 files changed, 6 insertions(+)
+ create mode 100644 index.html
+ create mode 100644 style.css</pre>
+<ul>
+  <li><code>main</code>: the branch the commit went on.</li>
+  <li><code>root-commit</code>: the very first commit of the repository; it has no parent.</li>
+  <li><code>3f9a2c1</code>: the start of the new commit's unique ID.</li>
+  <li>"insertions" and "deletions" count changed lines. "create mode 100644" is file permission trivia you can ignore.</li>
+</ul>
+
+<h3><code>git log</code>: the history</h3>
+<pre class="out">commit 3f9a2c1e8b7d6a5f4e3d2c1b0a9f8e7d6c5b4a39 (HEAD -&gt; main)
+Author: Ada Lovelace &lt;ada@example.com&gt;
+Date:   Sat Sep 26 14:03:12 2026 +0200
+
+    First version of my site</pre>
+<p>Newest commit first. If the output is long, Git shows it one screen at a time with a <code>:</code> at the bottom. That is the <dfn>pager</dfn>: <kbd>Space</kbd> scrolls, <kbd>q</kbd> quits. The terminal is not frozen; it is waiting for you.</p>
+
+<h2>Now on your real PC</h2>
+<ol class="steps">
+  <li>Open a terminal (it starts in your home folder) and make a projects folder with a first project inside, then step into it:
+    <pre class="sh">mkdir projects\my-site
+cd projects\my-site</pre></li>
+  <li>Create a file with Notepad. It asks whether to create a new file: click <strong>Yes</strong>, type anything, save with <kbd>Ctrl</kbd> + <kbd>S</kbd>, close Notepad.
+    <pre class="sh">notepad index.html</pre></li>
+  <li>Turn the folder into a repository and look around:
+    <pre class="sh">git init
+git status</pre></li>
+  <li>Stage and commit:
+    <pre class="sh">git add .
+git commit -m "First commit"
+git log</pre></li>
+</ol>
+<p>Done: a real repository with a real commit. Change the file, then repeat <code>git status</code>, <code>git add</code>, <code>git commit</code>. That loop is most of everyday Git.</p>
+<aside class="co warn"><h4>Where to keep projects</h4><p>Use a plain folder like <code>C:\Users\you\projects</code>. Avoid the Desktop and Documents if OneDrive syncs them (it often does by default): OneDrive and Git fight over the <code>.git</code> folder. Stop 16 has the details.</p></aside>
+
+<h2>Writing good commit messages</h2>
+<p>Future you will read these when something breaks. A good message is a short summary (roughly 50 characters) written as a command, saying what the commit does:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Weak</th><th>Better</th></tr>
+  <tr><td><code>changes</code></td><td><code>Add contact form to homepage</code></td></tr>
+  <tr><td><code>fixed stuff</code></td><td><code>Fix broken link in footer</code></td></tr>
+  <tr><td><code>asdf</code></td><td><code>Make header text readable on phones</code></td></tr>
+  <tr><td><code>updated index.html and style.css and the logo and</code></td><td>Three separate commits, one per change</td></tr>
+</table></div>
+<p>Commit whenever you finish one small, complete step you could describe in one sentence. Many small commits beat one giant "did everything" commit.</p>
+
+<div data-widget="quiz">
+  <div class="q"><p>You typed <code>git log</code> and the terminal shows a <code>:</code> at the bottom and ignores your commands. What now?</p>
+    <ul><li>Close the window, it crashed</li><li data-ok>Press q to leave the pager</li><li>Press Ctrl + S</li></ul>
+    <p class="why">Long output opens in a pager. <kbd>q</kbd> quits and gives you the prompt back.</p></div>
+  <div class="q"><p>What order builds a commit?</p>
+    <ul><li>git commit, then git add</li><li data-ok>edit files, git add, git commit</li><li>git init before every commit</li></ul>
+    <p class="why">Edit, stage what you want with <code>git add</code>, then save it with <code>git commit</code>. <code>git init</code> happens once per project.</p></div>
+  <div class="q"><p>Which commit message is best?</p>
+    <ul><li>update</li><li data-ok>Fix typo in homepage heading</li><li>I changed some things in the files today because they were wrong</li></ul>
+    <p class="why">Short, specific, and phrased as what the commit does.</p></div>
+</div>
+</section>

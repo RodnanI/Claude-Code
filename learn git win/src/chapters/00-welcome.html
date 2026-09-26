@@ -1,0 +1,62 @@
+<section class="stop" id="welcome" data-line="1" data-short="Welcome aboard" data-time="4 min">
+<h1>Welcome aboard</h1>
+<p class="lead">This guide takes you from "what even is Git?" to opening pull requests on GitHub, on a Windows 10 or Windows 11 PC. You need zero experience. Not with Git, not with programming, not even with the black window where people type commands.</p>
+
+<h2>How this guide is built</h2>
+<p>Git is easiest to picture as a transit map, so that is how the whole guide works. Every chapter is a <strong>stop</strong>. Stops are grouped into five <strong>lines</strong>, and the map on the left shows where you are. Ride them in order the first time; later, jump around.</p>
+<figure class="fig">
+  <svg viewBox="0 0 760 118" width="760" role="img" aria-label="The five lines of this guide, from Getting on board to Reference">
+    <path class="s-red w6 f-none" d="M24 44H168"/>
+    <path class="s-grn w6 f-none" d="M168 44H320"/>
+    <path class="s-amb w6 f-none" d="M320 44H472"/>
+    <path class="s-rust w6 f-none" d="M472 44H624"/>
+    <path class="s-ink w6 f-none" d="M624 44H736"/>
+    <g class="f-paper s-ink w3"><circle cx="24" cy="44" r="10"/><circle cx="168" cy="44" r="10"/><circle cx="320" cy="44" r="10"/><circle cx="472" cy="44" r="10"/><circle cx="624" cy="44" r="10"/><circle cx="736" cy="44" r="10"/></g>
+    <g font-size="15" font-weight="700"><text x="96" y="84" class="t-c">Getting on board</text><text x="244" y="84" class="t-c">Git on your PC</text><text x="396" y="84" class="t-c">GitHub</text><text x="548" y="84" class="t-c">Power tools</text><text x="680" y="84" class="t-c">Reference</text></g>
+    <g font-size="12" class="t-dim"><text x="96" y="104" class="t-c">terminal, install, setup</text><text x="244" y="104" class="t-c">commits, branches, merges</text><text x="396" y="104" class="t-c">push, pull, pull requests</text><text x="548" y="104" class="t-c">ignore, stash, fixes</text><text x="680" y="104" class="t-c">cheat sheet, exam</text></g>
+  </svg>
+  <figcaption>Five lines, twenty stops. Budget two to three hours in total, split however you like.</figcaption>
+</figure>
+<p>Your progress is remembered in this browser. Press <strong>Mark this stop as done</strong> at the bottom of a stop (or just use the <strong>Next</strong> button, which marks it for you) and the station on the map fills in.</p>
+
+<h2>First: which Windows do you have?</h2>
+<p>A few instructions differ between Windows 10 and Windows 11: where menus are, what is preinstalled. Pick yours with the switch at the top of the sidebar and the guide only shows what applies to you. Not sure which one you have?</p>
+<ol class="steps">
+  <li>Press <kbd>Win</kbd> + <kbd>R</kbd> (the Windows logo key and R at the same time). A small "Run" box appears.</li>
+  <li>Type <code>winver</code> and press <kbd>Enter</kbd>.</li>
+  <li>The window that opens says <strong>Windows 10</strong> or <strong>Windows 11</strong> in big letters. Set the switch to match.</li>
+</ol>
+<p data-os="10">You are seeing the <span class="osb">Win 10</span> version of every instruction.</p>
+<p data-os="11">You are seeing the <span class="osb">Win 11</span> version of every instruction.</p>
+
+<h2>What you need</h2>
+<ul>
+  <li>A Windows 10 or 11 PC with internet access.</li>
+  <li>Permission to install programs. On a school or work PC that might mean asking IT.</li>
+  <li>A free GitHub account, but not yet. Stop 11 walks you through making one.</li>
+</ul>
+
+<h2>How to read this guide</h2>
+<p>Dark boxes like the one below are <strong>commands</strong>. You type them (or paste them) into the terminal and press <kbd>Enter</kbd>. Do not type the grey <code>PS&gt;</code> at the start: that is the terminal's prompt, shown so you know where the command goes. Lines starting with <code>#</code> are comments, notes for you. The <strong>Copy</strong> button copies only the commands.</p>
+<pre class="sh"># This is a comment. The line below is a command.
+git --version</pre>
+<p>Light boxes show what the terminal prints back:</p>
+<pre class="out">git version 2.51.0.windows.1</pre>
+<p>Words with a dotted underline, like <dfn>repository</dfn> or <dfn>commit</dfn>, have a short definition. Hover over them, tap them, or tab to them with the keyboard. The full list lives in the Glossary stop.</p>
+<aside class="co tip"><h4>Tip</h4><p>Green boxes are shortcuts and good habits.</p></aside>
+<aside class="co warn"><h4>Careful</h4><p>Red boxes are where people lose work. Read these twice.</p></aside>
+<aside class="co note"><h4>Note</h4><p>Yellow boxes are background: useful, but you can skim them.</p></aside>
+<aside class="co ticket"><h4>Think of it like</h4><p>Dashed "ticket" boxes compare a Git idea to something from everyday life.</p></aside>
+
+<h2>Practise without fear</h2>
+<p>Many stops contain a <strong>simulator</strong>: a pretend terminal and a pretend project, running entirely inside this page. They understand real Git commands and answer the way real Git does, but nothing you type can touch your actual files. Break things on purpose there. That is what they are for.</p>
+
+<div data-widget="quiz">
+  <div class="q"><p>You see this in a dark box: <code>PS&gt; git status</code>. What do you type?</p>
+    <ul><li>PS&gt; git status</li><li data-ok>git status</li><li>status</li></ul>
+    <p class="why"><code>PS&gt;</code> is the prompt: the terminal already shows it. You type only the command itself, then press Enter.</p></div>
+  <div class="q"><p>How do you find out whether your PC runs Windows 10 or 11?</p>
+    <ul><li>Open Git and ask it</li><li>Look at the colour of the Start button</li><li data-ok>Press Win + R, type winver, press Enter</li></ul>
+    <p class="why"><code>winver</code> opens a small "About Windows" window with the exact version.</p></div>
+</div>
+</section>

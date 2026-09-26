@@ -1,0 +1,69 @@
+<section class="stop" id="gitignore" data-line="4" data-short=".gitignore" data-time="10 min">
+<h1>.gitignore: files Git should never see</h1>
+<p class="lead">Some files must stay out of your repository: passwords and keys, gigantic folders of downloaded packages, build output, and Windows' own junk files. A plain text file called <code>.gitignore</code> lists them, and Git then acts as if they do not exist.</p>
+
+<h2>What typically goes in it</h2>
+<div class="grid2">
+  <div class="card hot"><h4>Secrets</h4><p><code>.env</code> files, API keys, <code>*.key</code>, passwords. The number one thing to never commit.</p></div>
+  <div class="card warm"><h4>Things you can regenerate</h4><p><code>node_modules/</code>, <code>dist/</code>, <code>build/</code>, <code>__pycache__/</code>, <code>bin/</code>, <code>obj/</code>. Huge, and rebuilt by a command anyway.</p></div>
+  <div class="card cool"><h4>Windows and editor junk</h4><p><code>Thumbs.db</code>, <code>desktop.ini</code>, <code>*.log</code>, <code>.vs/</code>, personal editor settings.</p></div>
+</div>
+
+<h2>Creating the file on Windows</h2>
+<p>The name is literally <code>.gitignore</code>: it starts with a dot and has no extension. Windows makes that oddly fiddly:</p>
+<ul>
+  <li><strong>Easiest, in the terminal:</strong> <code>ni .gitignore</code> then <code>notepad .gitignore</code></li>
+  <li><strong>VS Code:</strong> New File, name it <code>.gitignore</code>. Works as expected.</li>
+  <li><strong>Notepad's Save dialog:</strong> set "Save as type" to <strong>All files (*.*)</strong> before typing the name. Otherwise Notepad quietly saves <code>.gitignore.txt</code>, which Git ignores completely.</li>
+</ul>
+<p data-os="11"><span class="osb">Win 11</span> File Explorer accepts a name starting with a dot. Turn on <strong>View &rarr; Show &rarr; File name extensions</strong> so you can see whether a sneaky <code>.txt</code> got attached.</p>
+<p data-os="10"><span class="osb">Win 10</span> Older Windows 10 builds refuse a name that starts with a dot ("You must type a file name"). Trick: type <code>.gitignore.</code> with an extra dot at the end; Windows removes the trailing dot for you. Also tick <strong>View &rarr; File name extensions</strong> to spot a sneaky <code>.txt</code>.</p>
+<p>Put it in the top folder of your project (next to <code>.git</code>) and commit it like any other file, so your teammates get the same rules.</p>
+
+<h2>Pattern rules</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Line</th><th>Ignores</th></tr>
+  <tr><td><code>secret.txt</code></td><td>Any file or folder named secret.txt, in any folder</td></tr>
+  <tr><td><code>*.log</code></td><td>Every file ending in .log, anywhere</td></tr>
+  <tr><td><code>build/</code></td><td>Every folder named build, with everything inside (trailing slash = folders only)</td></tr>
+  <tr><td><code>/todo.txt</code></td><td>todo.txt only in the top folder (leading slash = anchored to the project root)</td></tr>
+  <tr><td><code>docs/*.pdf</code></td><td>PDFs directly inside docs</td></tr>
+  <tr><td><code>**/temp</code></td><td>temp at any depth (same as plain <code>temp</code>)</td></tr>
+  <tr><td><code>!keep.log</code></td><td>Exception: do <em>not</em> ignore keep.log, even though <code>*.log</code> matched it</td></tr>
+  <tr><td><code># comment</code></td><td>Nothing; a note for humans</td></tr>
+</table></div>
+<p>Rules are read top to bottom and the last matching rule wins. One catch: if a whole folder is ignored, a <code>!</code> rule cannot bring back a file inside it.</p>
+
+<h2>Try it: a live .gitignore tester</h2>
+<p>Edit the rules or the file list; the verdict updates as you type. Paths use forward slashes, the way Git writes them. Matching ignores upper and lower case, like Git on Windows does.</p>
+<div data-widget="ignore"></div>
+
+<h2>"I added it to .gitignore, but Git still tracks it"</h2>
+<p>.gitignore only affects files Git is not tracking yet. If the file was committed before, tell Git to stop tracking it (the file stays on your disk), then commit:</p>
+<pre class="sh">git rm --cached .env
+git commit -m "Stop tracking .env"</pre>
+<p>For a whole folder: <code>git rm -r --cached node_modules</code>. And to find out which rule is ignoring a file:</p>
+<pre class="sh">git check-ignore -v debug.log</pre>
+<aside class="co warn"><h4>Committed a password?</h4><p>Removing the file in a new commit is not enough: it is still in the history, and if you pushed, it is on GitHub. <strong>Change the password or revoke the key first, immediately.</strong> That is the real fix. Scrubbing history afterwards is possible (the tool is <code>git filter-repo</code>) but it is advanced surgery, and anything already public should be treated as leaked.</p></aside>
+
+<h2>Starting points</h2>
+<ul>
+  <li>When creating a repository on GitHub, the <strong>Add .gitignore</strong> dropdown offers ready-made templates per language (Node, Python, VisualStudio and so on).</li>
+  <li>GitHub's collection of templates lives in the <code>github/gitignore</code> repository.</li>
+  <li>For junk that follows you everywhere (Thumbs.db, desktop.ini), make a personal global ignore file once:
+    <pre class="sh">notepad $HOME\.gitignore_global
+git config --global core.excludesFile "$HOME\.gitignore_global"</pre></li>
+</ul>
+
+<div data-widget="quiz">
+  <div class="q"><p>Which line ignores every .log file except important.log?</p>
+    <ul><li>*.log important.log</li><li data-ok>*.log on one line, then !important.log below it</li><li>!*.log</li></ul>
+    <p class="why">Last matching rule wins, so the exception has to come after the general rule.</p></div>
+  <div class="q"><p>You added <code>.env</code> to .gitignore, but <code>git status</code> still shows it as modified. Why?</p>
+    <ul><li>.gitignore only works after a restart</li><li data-ok>It was already tracked; use git rm --cached .env and commit</li><li>The file name is case-sensitive</li></ul>
+    <p class="why">Ignore rules only apply to untracked files. Stop tracking it first.</p></div>
+  <div class="q"><p>Notepad saved your file, but Git ignores none of your rules. The likeliest cause?</p>
+    <ul><li data-ok>The file is really called .gitignore.txt</li><li>Notepad cannot write plain text</li><li>Rules only work on GitHub</li></ul>
+    <p class="why">Save as type "All files", and turn on file name extensions in Explorer to catch it.</p></div>
+</div>
+</section>

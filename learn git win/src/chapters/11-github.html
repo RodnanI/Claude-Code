@@ -1,0 +1,114 @@
+<section class="stop" id="github" data-line="3" data-short="GitHub: push and pull" data-time="20 min">
+<h1>GitHub: remotes, push and pull</h1>
+<p class="lead">Until now everything lived on your PC. Now you give the repository a second home on GitHub: an offsite backup, a way to share, and the place where teamwork happens.</p>
+
+<h2>1. Create a GitHub account</h2>
+<ol class="steps">
+  <li>Go to <strong>github.com</strong> and click <strong>Sign up</strong>.</li>
+  <li>Choose your username carefully. It is public and appears in every URL, like <code>github.com/yourname</code>. Something you would not mind on a CV.</li>
+  <li>Verify your email address.</li>
+  <li>Set up <dfn>two-factor authentication</dfn> when GitHub asks (it is required for accounts that push code). An authenticator app on your phone works best. <strong>Save the recovery codes</strong> somewhere safe; lose your phone without them and you lose the account.</li>
+</ol>
+
+<h2>2. Create an empty repository on GitHub</h2>
+<ol class="steps">
+  <li>Click the <strong>+</strong> in the top right corner, then <strong>New repository</strong>.</li>
+  <li>Name it (for example <code>my-site</code>). Pick Public (anyone can see it) or Private (only you and people you invite).</li>
+  <li>If you already have the project on your PC, <strong>leave "Add a README file", ".gitignore" and "license" all off.</strong> Those create a first commit on GitHub that clashes with your own history. (Starting from scratch with nothing local? Then tick README and clone it instead, see below.)</li>
+  <li>Click <strong>Create repository</strong>.</li>
+</ol>
+<p>GitHub now shows a page of setup instructions. The block you want is titled "...or push an existing repository from the command line":</p>
+<pre class="sh">git remote add origin https://github.com/you/my-site.git
+git branch -M main
+git push -u origin main</pre>
+<dl class="prose">
+  <dt><code>git remote add origin URL</code></dt><dd>"There is a copy of this repository at this address; let us call it <dfn>origin</dfn>." Just a nickname, saved in your repo's settings. Nothing is uploaded yet.</dd>
+  <dt><code>git branch -M main</code></dt><dd>Renames your current branch to main, in case it was called master. Harmless if it already is main.</dd>
+  <dt><code>git push -u origin main</code></dt><dd>Uploads main to origin. <code>-u</code> also remembers the link ("<dfn>upstream</dfn>"), so from now on a plain <code>git push</code> or <code>git pull</code> knows where to go.</dd>
+</dl>
+
+<h2>3. Signing in from the terminal</h2>
+<p>The first push needs to prove it is you. GitHub stopped accepting account passwords for Git in 2021, so pick one of these:</p>
+<div data-widget="tabs">
+  <div data-tab="Git Credential Manager (recommended)">
+    <p>Nothing to set up: it came with Git for Windows. On your first push, a window titled <strong>Connect to GitHub</strong> appears. Click <strong>Sign in with your browser</strong>, approve in the browser, done. Windows stores the login securely and never asks again.</p>
+    <p><strong>Signed in with the wrong account?</strong> Open <strong>Control Panel &rarr; User Accounts &rarr; Credential Manager &rarr; Windows Credentials</strong>, find the entry <code>git:https://github.com</code>, and click <strong>Remove</strong>. The next push asks again. (Or search the Start menu for "Credential Manager".)</p>
+  </div>
+  <div data-tab="GitHub CLI (gh)">
+    <p>GitHub's own command line tool. It also sets up Git's login, and can create repositories and pull requests from the terminal.</p>
+    <pre class="sh">winget install --id GitHub.cli -e
+# open a NEW terminal, then:
+gh auth login</pre>
+    <p>Answer the questions: <strong>GitHub.com</strong>, <strong>HTTPS</strong>, <strong>Yes</strong> to authenticating Git, <strong>Login with a web browser</strong>. It shows an 8-character code, opens the browser, you paste the code, done.</p>
+    <p>Bonus: create the GitHub repository and push, all from your project folder, in one command:</p>
+    <pre class="sh">gh repo create my-site --public --source=. --remote=origin --push</pre>
+  </div>
+  <div data-tab="SSH keys (optional)">
+    <p>An <dfn>SSH key</dfn> is a pair of files that proves who you are. Fine, but more steps than the other two, so only use it if you have a reason to.</p>
+    <pre class="sh">ssh-keygen -t ed25519 -C "you@example.com"
+# press Enter to accept the file location; a passphrase is optional but wise
+Get-Content $HOME\.ssh\id_ed25519.pub | Set-Clipboard</pre>
+    <p>That copied your <em>public</em> key. On GitHub: <strong>Settings &rarr; SSH and GPG keys &rarr; New SSH key</strong>, paste, save. Test it (type <code>yes</code> the first time):</p>
+    <pre class="sh">ssh -T git@github.com</pre>
+    <pre class="out">Hi you! You've successfully authenticated, but GitHub does not provide shell access.</pre>
+    <p>Then use SSH addresses (<code>git@github.com:you/my-site.git</code>) instead of https ones. Never share the file without <code>.pub</code>: that one is private.</p>
+  </div>
+</div>
+
+<h2>How your PC sees GitHub</h2>
+<figure class="fig">
+  <svg viewBox="0 0 720 210" width="720" role="img" aria-label="Your PC has main and origin/main; GitHub has main. push uploads, fetch downloads into origin/main, pull is fetch plus merge.">
+    <rect x="16" y="20" width="300" height="170" rx="12" class="f-card s-ink w3"/><text x="166" y="48" class="t-c" font-size="16" font-weight="700">Your PC</text>
+    <rect x="48" y="70" width="110" height="40" rx="8" class="f-red s-ink w2"/><text x="103" y="95" class="t-c t-w" font-size="14" font-weight="700">main</text>
+    <rect x="176" y="70" width="112" height="40" rx="8" class="f-card s-ink w2 dash"/><text x="232" y="95" class="t-c" font-size="14" font-weight="700">origin/main</text>
+    <text x="103" y="132" class="t-c t-dim" font-size="11.5">your branch</text><text x="232" y="132" class="t-c t-dim" font-size="11.5">last-known copy</text><text x="232" y="148" class="t-c t-dim" font-size="11.5">of GitHub's main</text>
+    <rect x="420" y="20" width="284" height="170" rx="12" class="f-soft s-ink w3"/><text x="562" y="48" class="t-c" font-size="16" font-weight="700">GitHub (origin)</text>
+    <rect x="507" y="70" width="110" height="40" rx="8" class="f-red s-ink w2"/><text x="562" y="95" class="t-c t-w" font-size="14" font-weight="700">main</text>
+    <path d="M160 64C260 20 420 20 500 70" class="s-red w3 f-none"/><text x="330" y="30" class="t-c t-mono" font-size="12.5" font-weight="700">git push</text>
+    <path d="M504 106C430 150 330 150 292 112" class="s-grn w3 f-none"/><text x="398" y="164" class="t-c t-mono" font-size="12.5" font-weight="700">git fetch</text>
+    <text x="166" y="176" class="t-c t-mono" font-size="12" font-weight="700">git pull = fetch + merge into main</text>
+  </svg>
+</figure>
+<p>Your PC keeps a <dfn>remote-tracking branch</dfn> called <code>origin/main</code>: a bookmark of where main was on GitHub the last time you talked to it. It only updates when you run fetch, pull or push, which is why <code>git status</code> can say "up to date" while a teammate has pushed something new. Run <code>git fetch</code> and it knows.</p>
+
+<h2>Practise: push, get rejected, pull, push</h2>
+<div data-widget="gitsim" data-mission="remote"></div>
+
+<h2>The three sync commands</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Command</th><th>Direction</th><th>Changes your files?</th></tr>
+  <tr><td><code>git push</code></td><td>PC &rarr; GitHub: upload your new commits</td><td>No</td></tr>
+  <tr><td><code>git fetch</code></td><td>GitHub &rarr; PC: download new commits, update <code>origin/main</code></td><td>No, always safe</td></tr>
+  <tr><td><code>git pull</code></td><td>GitHub &rarr; PC: fetch, then merge into your branch</td><td>Yes</td></tr>
+</table></div>
+<p>A rejected push ("Updates were rejected because the remote contains work that you do not have locally") is the most common GitHub message there is. It means a teammate pushed first. Run <code>git pull</code>, resolve any conflict, then <code>git push</code> again.</p>
+
+<h2>Cloning: starting from GitHub instead</h2>
+<p>When the repository already exists on GitHub (someone else's project, or yours on a new PC), you do not <code>init</code>; you <dfn>clone</dfn>. On the repository's GitHub page, click the green <strong>Code</strong> button and copy the HTTPS address. Then:</p>
+<pre class="sh">cd ~\projects
+git clone https://github.com/you/my-site.git
+cd my-site</pre>
+<p>Clone creates a new folder named after the repository, with the full history, <code>origin</code> already set, and main already linked to <code>origin/main</code>. The classic beginner slip is forgetting the <code>cd my-site</code> afterwards and running Git in the parent folder.</p>
+
+<h2>The daily loop, with GitHub</h2>
+<pre class="sh">git pull
+# ...work, then:
+git add .
+git commit -m "Describe the change"
+git push</pre>
+
+<div data-widget="quiz">
+  <div class="q"><p>What is <code>origin</code>?</p>
+    <ul><li>The first commit</li><li data-ok>A nickname for the address of your GitHub repository</li><li>Your main branch</li></ul>
+    <p class="why">A remote is just a named URL. <code>origin</code> is the conventional name for the main one.</p></div>
+  <div class="q"><p>Your push is rejected because "the remote contains work that you do not have locally". What now?</p>
+    <ul><li>Delete the GitHub repository and push again</li><li data-ok>git pull, fix conflicts if any, then git push</li><li>Wait a few minutes and retry</li></ul>
+    <p class="why">Someone else pushed first. Bring their work in with pull, then your push can go on top.</p></div>
+  <div class="q"><p>You created the GitHub repository with a README, but you already had a local project with commits. What happens on push?</p>
+    <ul><li>It works fine</li><li data-ok>The push is rejected, because GitHub has a commit (the README) your history does not have</li><li>The README gets deleted</li></ul>
+    <p class="why">That is why you leave README, .gitignore and license unticked when pushing an existing project.</p></div>
+  <div class="q"><p>Which command is always safe and never changes your files?</p>
+    <ul><li>git pull</li><li data-ok>git fetch</li><li>git merge</li></ul>
+    <p class="why">Fetch only downloads and updates <code>origin/main</code>. Merging is a separate step.</p></div>
+</div>
+</section>

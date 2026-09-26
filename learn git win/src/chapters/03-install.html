@@ -1,0 +1,76 @@
+<section class="stop" id="install" data-line="1" data-short="Install Git" data-time="10 min">
+<h1>Installing Git on Windows</h1>
+<p class="lead">Git for Windows is one free download. There are two ways to install it: a single command, or the classic installer with a dozen screens. Both give you the same Git; this stop covers both.</p>
+
+<h2>Step 0: maybe it is already there</h2>
+<p>Some PCs already have Git (it arrives with certain developer tools). Open a terminal and ask:</p>
+<pre class="sh">git --version</pre>
+<p>If you see a version number like below, skip to the next stop. If you get "not recognized", install it.</p>
+<pre class="out">git version 2.51.0.windows.1</pre>
+
+<h2>Step 1: install</h2>
+<div data-widget="tabs">
+  <div data-tab="Option A: one command (winget)">
+    <p><dfn>winget</dfn> is Windows' own app installer for the terminal. Run this in a normal PowerShell window:</p>
+    <pre class="sh">winget install --id Git.Git -e --source winget</pre>
+    <ul>
+      <li>The first time, winget may ask you to accept its source agreements. Type <code>Y</code> and press Enter.</li>
+      <li>Windows asks "Do you want to allow this app to make changes to your device?" Click <strong>Yes</strong>.</li>
+      <li>Wait for "Successfully installed".</li>
+    </ul>
+    <p data-os="11"><span class="osb">Win 11</span> winget is built in.</p>
+    <p data-os="10"><span class="osb">Win 10</span> winget comes with the "App Installer" app. If PowerShell says <code>winget</code> is not recognized, open the Microsoft Store, search for <strong>App Installer</strong>, update it, and try again. Or use Option B.</p>
+    <aside class="co note"><h4>Note</h4><p>winget installs with the installer's default answers. Two of those defaults are unfriendly (the Vim editor, and "master" as the first branch name). The next stop fixes both with one command each, so no harm done.</p></aside>
+  </div>
+  <div data-tab="Option B: the installer (more control)">
+    <ol class="steps">
+      <li>Go to <strong>git-scm.com</strong>, click <strong>Downloads</strong>, then <strong>Windows</strong>. Download the "64-bit Git for Windows Setup". (Any PC from the last ten years is 64-bit.)</li>
+      <li>Open the downloaded file. Windows asks whether the app may make changes: click <strong>Yes</strong>.</li>
+      <li>Click through the screens. The walkthrough below shows every one of them and what to pick. Almost everything stays on the default; one screen really matters (the editor).</li>
+    </ol>
+  </div>
+</div>
+
+<h2>The installer, screen by screen</h2>
+<p>Click <strong>Next</strong> in the mock-up (or the dots) to step through. The green outline marks the recommended choice; the right-hand panel explains it in plain words.</p>
+<div data-widget="installer"></div>
+
+<h2>Step 2: open a new terminal and check</h2>
+<aside class="co warn"><h4>Careful</h4><p>A terminal only learns about programs that existed when it started. <strong>Close every terminal window</strong> (and VS Code, if it was open) and open a fresh one. This single step fixes most "Git is not recognized" problems.</p></aside>
+<pre class="sh">git --version</pre>
+<pre class="out">git version 2.51.0.windows.1</pre>
+<p>Your number may be higher. Any 2.x version is fine for everything in this guide.</p>
+
+<h2>What you got</h2>
+<ul>
+  <li><strong>git</strong> itself, usable from PowerShell, Command Prompt and any editor.</li>
+  <li><strong>Git Bash</strong>: a Linux-style terminal. Find it in the Start menu. Useful when a tutorial uses Linux commands; optional.</li>
+  <li><strong><dfn>Git Credential Manager</dfn></strong>: the helper that signs you in to GitHub later with one browser click.</li>
+  <li><strong>Git GUI and gitk</strong>: two old-school graphical tools. You can ignore them.</li>
+</ul>
+
+<h2>Nice to have (optional)</h2>
+<div class="grid2">
+  <div class="card cool"><h4>Visual Studio Code</h4><p>A free editor with excellent Git support built in. It shows changed lines, conflict buttons and a Source Control panel.</p><pre class="sh">winget install --id Microsoft.VisualStudioCode -e</pre></div>
+  <div class="card warm" data-os="10"><h4>Windows Terminal</h4><p>Tabs, proper copy and paste, better fonts. Built into Windows 11, a free add-on for Windows 10.</p><pre class="sh">winget install --id Microsoft.WindowsTerminal -e</pre></div>
+  <div class="card warm" data-os="11"><h4>PowerShell 7</h4><p>The newer PowerShell. Windows ships version 5.1, which works fine for this guide; 7 fixes a few old quirks you will meet in Stop 16.</p><pre class="sh">winget install --id Microsoft.PowerShell -e</pre></div>
+</div>
+
+<h2>Troubleshooting</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Problem</th><th>Fix</th></tr>
+  <tr><td>"git is not recognized" after installing</td><td>Close all terminals and editors and open a new one. Still broken: restart the PC. Still broken: run the installer again and keep the recommended PATH option ("Git from the command line and also from 3rd-party software").</td></tr>
+  <tr><td>"winget is not recognized"</td><td>Update "App Installer" from the Microsoft Store, or use the installer from git-scm.com.</td></tr>
+  <tr><td>Installer blocked on a work or school PC</td><td>You probably lack admin rights. Ask IT; many companies offer Git through a software portal.</td></tr>
+  <tr><td>Want to update Git later</td><td><code>winget upgrade --id Git.Git</code>, or <code>git update-git-for-windows</code>, or just run a newer installer.</td></tr>
+</table></div>
+
+<div data-widget="quiz">
+  <div class="q"><p>Which installer screen matters most for beginners?</p>
+    <ul><li>Select Destination Location</li><li data-ok>Choosing the default editor</li><li>Select Start Menu Folder</li></ul>
+    <p class="why">The default editor is Vim, which traps beginners. Pick VS Code or Notepad. (Fixable later with one command.)</p></div>
+  <div class="q"><p>Git is installed but the terminal says "git is not recognized". Most likely cause?</p>
+    <ul><li data-ok>The terminal was opened before Git was installed</li><li>You need to type Git with a capital G</li><li>You need a GitHub account first</li></ul>
+    <p class="why">Old terminal windows do not see newly installed programs. Open a new one.</p></div>
+</div>
+</section>

@@ -1,0 +1,95 @@
+<section class="stop" id="toolbox" data-line="4" data-short="Stash, tags, rebase" data-time="20 min">
+<h1>The toolbox: stash, tags, rebase, reflog</h1>
+<p class="lead">Four tools you will not use every day, but you will be very glad to know about on the day you need them. Plus a sandbox at the end where anything goes.</p>
+
+<h2>Stash: "hold that thought"</h2>
+<p>You are halfway through something messy and need to switch branches right now, for an urgent fix. You do not want to commit half-finished work. <dfn>Stash</dfn> puts your uncommitted changes on a shelf and gives you a clean folder; later you take them back off the shelf.</p>
+<div data-widget="gitsim" data-mission="stash"></div>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Command</th><th>Does</th></tr>
+  <tr><td><code>git stash</code></td><td>Shelve changes to tracked files; folder goes back to the last commit</td></tr>
+  <tr><td><code>git stash -u</code></td><td>Shelve new (untracked) files too</td></tr>
+  <tr><td><code>git stash push -m "redesign"</code></td><td>Shelve with a label</td></tr>
+  <tr><td><code>git stash list</code></td><td>Show the shelf</td></tr>
+  <tr><td><code>git stash pop</code></td><td>Take the newest entry back and remove it from the shelf</td></tr>
+  <tr><td><code>git stash apply</code></td><td>Take it back but keep a copy on the shelf</td></tr>
+  <tr><td><code>git stash drop</code></td><td>Throw away the newest entry</td></tr>
+</table></div>
+<aside class="co warn"><h4>PowerShell and stash@{1}</h4><p>Older entries are named <code>stash@{1}</code>, <code>stash@{2}</code>... PowerShell treats <code>@{ }</code> as its own syntax and mangles it. Wrap the name in single quotes: <code>git stash apply 'stash@{1}'</code></p></aside>
+<p>Stash is for short interruptions. Anything that lives longer than an afternoon belongs in a commit on a branch, where it has a name and a message.</p>
+
+<h2>Tags: permanent labels for releases</h2>
+<p>A <dfn>tag</dfn> is like a branch that never moves. You stick it on a commit to mark it forever: "this is version 1.0".</p>
+<pre class="sh"># annotated tag (with author, date and a message), the recommended kind
+git tag -a v1.0 -m "First public release"
+# list tags
+git tag
+# tags are not pushed automatically:
+git push origin v1.0</pre>
+<p>On GitHub, <strong>Releases</strong> are built on tags: pick a tag, write release notes, attach downloadable files.</p>
+
+<h2>Rebase: replaying your work on a new base</h2>
+<p>Merge ties two lines together with a merge commit. <dfn>Rebase</dfn> does something different: it lifts your branch's commits off and replays them, one by one, on top of another branch. The result is a straight line, as if you had started your work after the latest main.</p>
+<figure class="fig fig-row">
+  <svg viewBox="0 0 330 150" width="330" role="img" aria-label="Before rebase: feature branches off main at B while main moved on to E">
+    <text x="10" y="20" font-size="14" font-weight="700">Before: git switch feature</text>
+    <path d="M30 110H250" class="s-red w6 f-none"/><path d="M110 110L150 60H240" class="s-grn w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="30" cy="110" r="9"/><circle cx="110" cy="110" r="9"/><circle cx="250" cy="110" r="9"/><circle cx="170" cy="60" r="9"/><circle cx="240" cy="60" r="9"/></g>
+    <g font-size="12" class="t-c"><text x="30" y="136">A</text><text x="110" y="136">B</text><text x="250" y="136">E main</text><text x="170" y="44">C</text><text x="240" y="44">D feature</text></g>
+  </svg>
+  <svg viewBox="0 0 400 150" width="400" role="img" aria-label="After git rebase main: copies C prime and D prime sit after E in a straight line">
+    <text x="10" y="20" font-size="14" font-weight="700">After: git rebase main</text>
+    <path d="M30 110H250" class="s-red w6 f-none"/><path d="M250 110L290 60H370" class="s-grn w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="30" cy="110" r="9"/><circle cx="110" cy="110" r="9"/><circle cx="250" cy="110" r="9"/><circle cx="300" cy="60" r="9"/><circle cx="370" cy="60" r="9"/></g>
+    <g font-size="12" class="t-c"><text x="30" y="136">A</text><text x="110" y="136">B</text><text x="250" y="136">E main</text><text x="300" y="44">C'</text><text x="370" y="44">D' feature</text></g>
+  </svg>
+</figure>
+<p>C' and D' are <em>new</em> commits with new IDs (the originals are left behind). That is the whole catch, and it leads to the golden rule:</p>
+<aside class="co warn"><h4>The golden rule of rebasing</h4><p>Never rebase commits that other people already have, such as anything on main or a branch someone else uses. Rebase your own, unpushed (or unshared) work only. Breaking this rule forces everyone else to untangle duplicate commits.</p></aside>
+<ul>
+  <li><code>git pull --rebase</code> replays your local commits on top of what you downloaded instead of making a merge commit. Many people like it for keeping history tidy.</li>
+  <li><code>git rebase -i HEAD~3</code> ("interactive") opens your editor with the last three commits, so you can reorder, reword or squash them before pushing. Powerful; practise on a throwaway repository first.</li>
+  <li>Rebase can hit conflicts too. Fix the file, <code>git add</code> it, <code>git rebase --continue</code>. Or bail out with <code>git rebase --abort</code>.</li>
+</ul>
+
+<h2>Reflog: the safety net under everything</h2>
+<p>Deleted a branch you needed? Did a <code>reset --hard</code> too far? The <dfn>reflog</dfn> is Git's private diary of every place HEAD has been, kept for about 90 days by default. Commits are almost never truly gone while it remembers them.</p>
+<pre class="sh">git reflog</pre>
+<pre class="out"><span class="y">e82b61f</span> (HEAD -&gt; main) HEAD@{0}: reset: moving to HEAD~2
+<span class="y">4d7aa31</span> HEAD@{1}: commit: Add contact page
+<span class="y">c90e5a2</span> HEAD@{2}: commit: Tweak colors</pre>
+<p>Found the commit you want back? Put a branch on it, or jump straight back:</p>
+<pre class="sh">git branch rescued 4d7aa31
+# or undo the reset itself (quotes needed in PowerShell):
+git reset --hard 'HEAD@{1}'</pre>
+<p>What the reflog cannot save: changes you never committed. One more reason to commit early and often.</p>
+
+<h2>Detached HEAD: not as scary as it sounds</h2>
+<p>Normally HEAD points at a branch. If you switch to a commit directly (<code>git switch --detach 7b21d94</code>, or <code>git checkout 7b21d94</code>), HEAD points at the commit itself: <dfn>detached HEAD</dfn>. Perfect for looking at an old version. The risk: commits you make there belong to no branch and are easy to lose.</p>
+<ul>
+  <li>Just looking? Go back with <code>git switch -</code> or <code>git switch main</code>.</li>
+  <li>Made commits you want to keep? Give them a branch first: <code>git switch -c keep-this</code>.</li>
+</ul>
+
+<h2>Two more worth knowing</h2>
+<dl class="prose">
+  <dt><code>git cherry-pick a1b2c3d</code></dt><dd>Copies one single commit from another branch onto yours. Handy for grabbing one bug fix without merging a whole branch.</dd>
+  <dt><code>git blame index.html</code></dt><dd>Shows, line by line, which commit and person last changed each line. Despite the name, mostly used to find out <em>why</em> a line exists.</dd>
+</dl>
+
+<h2>The sandbox</h2>
+<p>No instructions, no checklist. A repository with a feature branch, a GitHub remote and a few commits. Try <code>git switch feature</code> then <code>git rebase main</code> and watch the map redraw; tag something; reset too far and rescue it with the reflog; detach HEAD and wander around. "Start over" resets it.</p>
+<div data-widget="gitsim" data-mission="sandbox"></div>
+
+<div data-widget="quiz">
+  <div class="q"><p>You are mid-change and must switch branches for an urgent fix. Quickest safe move?</p>
+    <ul><li>git reset --hard</li><li data-ok>git stash, switch and fix, switch back, git stash pop</li><li>Delete the changed files</li></ul>
+    <p class="why">Stash parks the changes without a commit and gives them back later.</p></div>
+  <div class="q"><p>When is it fine to rebase?</p>
+    <ul><li>Always</li><li>Only on main</li><li data-ok>On your own commits that nobody else has yet</li></ul>
+    <p class="why">Rebase creates new commits. Rewriting commits others have causes duplicate history.</p></div>
+  <div class="q"><p>You ran <code>git reset --hard HEAD~3</code> by mistake. Is the work gone?</p>
+    <ul><li>Yes, forever</li><li data-ok>The commits can be found with git reflog and restored</li><li>Only GitHub support can restore it</li></ul>
+    <p class="why">The reflog remembers where HEAD was. Committed work comes back; only uncommitted edits are lost.</p></div>
+</div>
+</section>

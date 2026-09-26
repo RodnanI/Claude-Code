@@ -1,0 +1,69 @@
+<section class="stop" id="three-areas" data-line="2" data-short="The three areas" data-time="8 min">
+<h1>The three places your work lives</h1>
+<p class="lead">This is the most important idea in Git. Every command you will learn moves changes between three places. Understand these three and the rest is details.</p>
+
+<figure class="fig">
+  <svg viewBox="0 0 760 250" width="760" role="img" aria-label="Working folder to staging area with git add, staging area to repository with git commit, and the ways back">
+    <rect x="20" y="40" width="200" height="110" rx="12" class="f-card s-ink w3"/><rect x="20" y="40" width="200" height="14" rx="6" class="f-red"/>
+    <rect x="280" y="40" width="200" height="110" rx="12" class="f-card s-ink w3"/><rect x="280" y="40" width="200" height="14" rx="6" class="f-amb"/>
+    <rect x="540" y="40" width="200" height="110" rx="12" class="f-card s-ink w3"/><rect x="540" y="40" width="200" height="14" rx="6" class="f-grn"/>
+    <text x="120" y="86" class="t-c" font-size="18" font-weight="700">Working folder</text><text x="120" y="108" class="t-c t-dim" font-size="12.5">the files you edit</text><text x="120" y="126" class="t-c t-dim" font-size="12.5">(what Explorer shows)</text>
+    <text x="380" y="86" class="t-c" font-size="18" font-weight="700">Staging area</text><text x="380" y="108" class="t-c t-dim" font-size="12.5">what goes into</text><text x="380" y="126" class="t-c t-dim" font-size="12.5">the next commit</text>
+    <text x="640" y="86" class="t-c" font-size="18" font-weight="700">Repository</text><text x="640" y="108" class="t-c t-dim" font-size="12.5">saved commits, kept</text><text x="640" y="126" class="t-c t-dim" font-size="12.5">in the hidden .git folder</text>
+    <path d="M226 78H270" class="s-red w6 f-none"/><path d="M262 70l10 8-10 8" class="s-red w3 f-none"/>
+    <text x="250" y="30" class="t-c t-mono" font-size="13" font-weight="700">git add</text>
+    <path d="M486 78H530" class="s-grn w6 f-none"/><path d="M522 70l10 8-10 8" class="s-grn w3 f-none"/>
+    <text x="508" y="30" class="t-c t-mono" font-size="13" font-weight="700">git commit</text>
+    <path d="M380 156v30H120v-26" class="s-ink w2 f-none dash"/><path d="M114 166l6-8 6 8" class="s-ink w2 f-none"/>
+    <text x="250" y="206" class="t-c t-mono" font-size="12.5">git restore --staged (unstage)</text>
+    <path d="M640 156v64H120v-26" class="s-dim w2 f-none dash"/>
+    <text x="380" y="240" class="t-c t-mono t-dim" font-size="12.5">git restore / git switch (get an old version back)</text>
+  </svg>
+</figure>
+
+<h2>1. The working folder</h2>
+<p>Your actual files, exactly as File Explorer and your editor see them. This is where you work. Git watches this folder and notices every change, but watching is all it does. Nothing here is saved in Git's history yet.</p>
+
+<h2>2. The staging area</h2>
+<p>A waiting room for your next commit. <code>git add index.html</code> takes a copy of index.html <em>as it is right now</em> and puts it in the waiting room. You can add several files, one at a time, until the waiting room holds exactly what you want to save. Git's official name for it is the <dfn>index</dfn>; people also say "stage".</p>
+
+<h2>3. The repository</h2>
+<p><code>git commit</code> takes everything in the staging area and saves it as one permanent snapshot, a commit. Commits are stored in a hidden folder called <code>.git</code> inside your project. That folder <em>is</em> the repository: the whole history lives there.</p>
+
+<aside class="co ticket"><h4>Think of it like</h4><p>A group photo. People wander around the room (working folder). You call some of them up onto the stage (git add). Click: the photo (commit) shows exactly who was on the stage at that moment. The people still wandering around are not in the picture, and the picture never changes afterwards, even if someone on it changes their haircut.</p></aside>
+
+<h2>Try it: move changes between the areas</h2>
+<p>Click the buttons in any order. Edit a file twice before adding it, add only one file, commit with nothing staged: see what happens and read the explanation below the boxes.</p>
+<div data-widget="areas"></div>
+
+<h2>Why not just save everything automatically?</h2>
+<p>Because you often do two unrelated things at once. Say you fixed a typo on the homepage <em>and</em> started a half-finished new page. With staging, you add only the typo fix and commit it as "Fix typo". The half-finished page stays out of that commit. Clean, separate commits make history readable and make it possible to undo one change without undoing the other.</p>
+<p>(And yes, when you just want everything, <code>git add .</code> stages the whole folder in one go.)</p>
+
+<h2>The four states a file can be in</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>State</th><th>Meaning</th><th>In <code>git status</code></th></tr>
+  <tr><td><dfn>Untracked</dfn></td><td>New file Git has never been told about</td><td>Red, under "Untracked files"</td></tr>
+  <tr><td>Modified</td><td>Tracked file, changed since the last commit, not staged</td><td>Red, under "Changes not staged for commit"</td></tr>
+  <tr><td>Staged</td><td>Change copied into the staging area, waiting</td><td>Green, under "Changes to be committed"</td></tr>
+  <tr><td>Unchanged</td><td>Same as in the last commit</td><td>Not listed at all</td></tr>
+</table></div>
+
+<h2>The hidden .git folder</h2>
+<p>The <code>.git</code> folder is hidden on purpose. You will never need to open it, but it helps to know it is there. To see hidden items in File Explorer:</p>
+<p data-os="11"><span class="osb">Win 11</span> In File Explorer, click <strong>View &rarr; Show &rarr; Hidden items</strong>. While you are there, also tick <strong>File name extensions</strong>; it saves you from mistakes like a file secretly called <code>.gitignore.txt</code>.</p>
+<p data-os="10"><span class="osb">Win 10</span> In File Explorer, open the <strong>View</strong> tab on the ribbon and tick <strong>Hidden items</strong>. Tick <strong>File name extensions</strong> too; it saves you from mistakes like a file secretly called <code>.gitignore.txt</code>.</p>
+<aside class="co warn"><h4>Careful</h4><p>Deleting <code>.git</code> deletes the entire history (your current files stay). Never edit anything inside it by hand, and never copy a project into another project's folder together with its <code>.git</code>.</p></aside>
+
+<div data-widget="quiz">
+  <div class="q"><p>You edit style.css, run <code>git add style.css</code>, then edit style.css again and commit. What goes into the commit?</p>
+    <ul><li>The latest version, with both edits</li><li data-ok>The version from the moment you ran git add</li><li>Nothing, because the file changed again</li></ul>
+    <p class="why"><code>git add</code> copies the file as it is at that moment. The second edit is still only in the working folder. Run <code>git add</code> again to include it.</p></div>
+  <div class="q"><p>Where does Git keep all commits?</p>
+    <ul><li>On GitHub</li><li data-ok>In the hidden .git folder inside the project</li><li>In C:\Program Files\Git</li></ul>
+    <p class="why">The repository is the <code>.git</code> folder. GitHub only has a copy once you push.</p></div>
+  <div class="q"><p>What is the staging area for?</p>
+    <ul><li>Uploading files</li><li data-ok>Choosing exactly which changes go into the next commit</li><li>Backing up files automatically</li></ul>
+    <p class="why">It lets you commit some changes and leave others for later.</p></div>
+</div>
+</section>

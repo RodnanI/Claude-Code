@@ -1,0 +1,98 @@
+<section class="stop" id="pull-requests" data-line="3" data-short="Pull requests" data-time="20 min">
+<h1>Pull requests</h1>
+<p class="lead">A <dfn>pull request</dfn> (PR) says: "I made changes on a branch. Please look at them, and if they are good, merge them into main." It is where review, discussion and automatic checks happen before anything touches main.</p>
+
+<h2>Why teams (and even solo developers) use them</h2>
+<ul>
+  <li><strong>A second pair of eyes.</strong> A teammate reads the change before it lands. Bugs get caught while they are cheap.</li>
+  <li><strong>Automatic <dfn>checks</dfn>.</strong> Tests and builds run on every PR and show a green or red mark.</li>
+  <li><strong>A record of why.</strong> Months later, the PR page still explains what changed and why, with the whole discussion.</li>
+  <li><strong>main stays clean.</strong> Nothing reaches it without passing through a PR.</li>
+</ul>
+
+<h2>The whole flow</h2>
+<figure class="fig">
+  <svg viewBox="0 0 760 150" width="760" role="img" aria-label="Pull request flow: branch, commit, push, open PR, review, merge, pull and clean up">
+    <path d="M40 60H720" class="s-amb w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="40" cy="60" r="11"/><circle cx="153" cy="60" r="11"/><circle cx="266" cy="60" r="11"/><circle cx="380" cy="60" r="11"/><circle cx="493" cy="60" r="11"/><circle cx="606" cy="60" r="11"/><circle cx="720" cy="60" r="11"/></g>
+    <g font-size="13" font-weight="700"><text x="40" y="96" class="t-c">branch</text><text x="153" y="96" class="t-c">commit</text><text x="266" y="96" class="t-c">push</text><text x="380" y="96" class="t-c">open PR</text><text x="493" y="96" class="t-c">review</text><text x="606" y="96" class="t-c">merge</text><text x="720" y="96" class="t-c">pull, tidy</text></g>
+    <g font-size="11.5" class="t-dim"><text x="40" y="114" class="t-c">your PC</text><text x="153" y="114" class="t-c">your PC</text><text x="266" y="114" class="t-c">PC to GitHub</text><text x="380" y="114" class="t-c">GitHub</text><text x="493" y="114" class="t-c">GitHub</text><text x="606" y="114" class="t-c">GitHub</text><text x="720" y="114" class="t-c">your PC</text></g>
+    <text x="40" y="30" class="t-mono" font-size="12">git switch -c fix-typo</text><text x="266" y="30" class="t-c t-mono" font-size="12">git push -u origin fix-typo</text><text x="720" y="30" text-anchor="end" class="t-mono" font-size="12">git switch main; git pull</text>
+  </svg>
+</figure>
+
+<h2>Part 1: the terminal side</h2>
+<div data-widget="gitsim" data-mission="pr"></div>
+
+<h2>Part 2: the GitHub side</h2>
+<p>A simplified mock-up of GitHub's pages. Click the highlighted button at each step; the panel on the right explains what you are looking at. The real site has more buttons, but they sit in these places.</p>
+<div data-widget="prflow"></div>
+
+<h2>Merge commit, squash or rebase?</h2>
+<p>When merging a PR, GitHub offers three buttons. Here is what each does to main's history, for a PR with two commits:</p>
+<figure class="fig">
+  <svg viewBox="0 0 740 250" width="740" role="img" aria-label="Merge commit keeps both commits plus a merge commit; squash makes one commit; rebase copies both commits onto main in a straight line">
+    <text x="16" y="36" font-size="14" font-weight="700">Merge commit</text>
+    <path d="M190 30H690" class="s-red w6 f-none"/><path d="M290 30L330 70H450L500 34" class="s-amb w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="190" cy="30" r="9"/><circle cx="290" cy="30" r="9"/><circle cx="360" cy="70" r="9"/><circle cx="440" cy="70" r="9"/><circle cx="510" cy="30" r="12"/></g><circle cx="510" cy="30" r="4" class="f-ink"/>
+    <text x="700" y="36" font-size="12" class="t-dim" text-anchor="end">all commits kept</text>
+    <text x="16" y="136" font-size="14" font-weight="700">Squash and merge</text>
+    <path d="M190 130H690" class="s-red w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="190" cy="130" r="9"/><circle cx="290" cy="130" r="9"/></g><circle cx="390" cy="130" r="12" class="f-amb s-ink w3"/>
+    <text x="700" y="136" font-size="12" class="t-dim" text-anchor="end">one tidy commit</text>
+    <text x="16" y="216" font-size="14" font-weight="700">Rebase and merge</text>
+    <path d="M190 210H690" class="s-red w6 f-none"/>
+    <g class="f-paper s-ink w3"><circle cx="190" cy="210" r="9"/><circle cx="290" cy="210" r="9"/></g><circle cx="390" cy="210" r="9" class="f-amb s-ink w3"/><circle cx="470" cy="210" r="9" class="f-amb s-ink w3"/>
+    <text x="700" y="216" font-size="12" class="t-dim" text-anchor="end">straight line, no merge commit</text>
+  </svg>
+</figure>
+<p>Squash is the most common choice on busy projects: one PR becomes one commit on main, however messy the branch was. Whatever the project uses, the result on main contains your change.</p>
+
+<h2>Reviewing someone else's pull request</h2>
+<ol class="steps">
+  <li>Open the PR and go to the <strong>Files changed</strong> tab.</li>
+  <li>Hover a line and click the <strong>+</strong> that appears to comment on it. You can even suggest an exact replacement with the "suggestion" button, which the author can accept with one click.</li>
+  <li>Click <strong>Review changes</strong> and pick <strong>Comment</strong>, <strong>Approve</strong> or <strong>Request changes</strong>.</li>
+</ol>
+<p>Want to run their branch on your PC? With the GitHub CLI it is one command (12 being the PR number):</p>
+<pre class="sh">gh pr checkout 12</pre>
+
+<h2>Keeping your PR up to date</h2>
+<p>If main moves on while your PR waits, bring the new main into your branch and push again. The PR updates by itself:</p>
+<pre class="sh">git switch main
+git pull
+git switch fix-typo
+git merge main
+git push</pre>
+<p>GitHub also shows an <strong>Update branch</strong> button on the PR page that does the same thing on the website.</p>
+
+<h2>Pull requests from the terminal</h2>
+<pre class="sh"># open a PR for the current branch, title and text taken from your commits
+gh pr create --fill
+# see its status, or open it in the browser
+gh pr status
+gh pr view --web
+# merge it (once allowed) and delete the branch
+gh pr merge --squash --delete-branch</pre>
+
+<h2>Good pull request manners</h2>
+<ul>
+  <li>One topic per PR. Small PRs get reviewed fast; huge ones get skimmed or ignored.</li>
+  <li>Title a stranger understands. Description: what, why, and how to test it. Screenshots for visual changes.</li>
+  <li>Link the issue: <code>Closes #3</code> closes it automatically on merge.</li>
+  <li>Not finished but want feedback? Open a <dfn>draft pull request</dfn>.</li>
+  <li>Review comments are about the code, not about you. Answer each one, push fixes, say thanks.</li>
+</ul>
+
+<div data-widget="quiz">
+  <div class="q"><p>A reviewer requested changes on your PR. What do you do?</p>
+    <ul><li>Close it and open a new PR</li><li data-ok>Commit the fixes on the same branch and push; the PR updates itself</li><li>Merge anyway</li></ul>
+    <p class="why">A PR follows its branch. New commits pushed to the branch appear in the PR automatically.</p></div>
+  <div class="q"><p>In "base: main &larr; compare: fix-typo", which branch receives the changes?</p>
+    <ul><li data-ok>main</li><li>fix-typo</li><li>Both</li></ul>
+    <p class="why">base is the destination, compare is your branch.</p></div>
+  <div class="q"><p>After your PR was merged on GitHub, what should you do on your PC?</p>
+    <ul><li>Nothing, your PC updates automatically</li><li data-ok>git switch main, git pull, then git branch -d fix-typo</li><li>git push --force</li></ul>
+    <p class="why">GitHub does not touch your PC. Pull the merged main down, then delete the finished branch.</p></div>
+</div>
+</section>

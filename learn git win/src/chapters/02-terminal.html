@@ -1,0 +1,111 @@
+<section class="stop" id="terminal" data-line="1" data-short="The terminal" data-time="15 min">
+<h1>The terminal, minus the fear</h1>
+<p class="lead">The <dfn>terminal</dfn> is a window where you type instructions instead of clicking. It looks old-fashioned, but it only does what you already do with the mouse: open folders, make files, run programs. Fifteen minutes here makes every other stop easier.</p>
+
+<h2>Terminal, shell, PowerShell... what are all these words?</h2>
+<ul>
+  <li>The <strong>terminal</strong> is the window itself.</li>
+  <li>The <strong>shell</strong> is the program inside that window which reads your commands and runs them.</li>
+  <li><dfn>PowerShell</dfn> is the shell built into Windows 10 and 11. <strong>This guide uses it everywhere.</strong></li>
+  <li><dfn>Command Prompt</dfn> (cmd) is the older Windows shell. It works with Git too, but its commands differ.</li>
+  <li><dfn>Git Bash</dfn> arrives with Git (next stop). It is a Linux-style shell. Handy for following Linux tutorials, not required here.</li>
+</ul>
+<p data-os="11">On <span class="osb">Win 11</span> the window app is called <dfn>Windows Terminal</dfn> and it opens PowerShell by default. It has tabs, so you can have several terminals side by side.</p>
+<p data-os="10">On <span class="osb">Win 10</span> PowerShell opens in a plain blue or black console window. That is fine, but installing <dfn>Windows Terminal</dfn> (free, from the Microsoft Store) gives you tabs, better copy and paste and nicer fonts. Recommended, not required.</p>
+
+<h2>Open a terminal</h2>
+<div data-os="11">
+  <p><strong>From anywhere:</strong> right-click the Start button (or press <kbd>Win</kbd> + <kbd>X</kbd>) and pick <strong>Terminal</strong>. It starts in your home folder, <code>C:\Users\yourname</code>.</p>
+  <p><strong>Right inside a folder (the most useful way):</strong> open the folder in File Explorer, right-click an empty spot and choose <strong>Open in Terminal</strong>. The terminal starts in that exact folder.</p>
+  <div class="mockrow">
+    <div class="winmock w11" aria-hidden="true"><div>View</div><div>Sort by</div><div>Group by</div><div class="sep"></div><div>Undo Rename</div><div class="sep"></div><div>New</div><div>Properties</div><div class="sep"></div><div class="hi">Open in Terminal</div><div>Show more options</div></div>
+    <p class="mockcap">Windows 11: right-click the empty space inside a folder, not on a file.</p>
+  </div>
+</div>
+<div data-os="10">
+  <p><strong>From anywhere:</strong> right-click the Start button (or press <kbd>Win</kbd> + <kbd>X</kbd>) and pick <strong>Windows PowerShell</strong>. It starts in your home folder, <code>C:\Users\yourname</code>.</p>
+  <p><strong>Right inside a folder (the most useful way):</strong> open the folder in File Explorer, hold <kbd>Shift</kbd>, right-click an empty spot, and choose <strong>Open PowerShell window here</strong>. It only appears while Shift is held.</p>
+  <div class="mockrow">
+    <div class="winmock" aria-hidden="true"><div>View</div><div>Sort by</div><div>Group by</div><div>Refresh</div><div class="sep"></div><div class="hi">Open PowerShell window here</div><div class="sep"></div><div>Give access to</div><div>New</div><div class="sep"></div><div>Properties</div></div>
+    <p class="mockcap">Windows 10: Shift + right-click the empty space inside a folder.</p>
+  </div>
+</div>
+<p><strong>Trick that works on both:</strong> click File Explorer's address bar (where the folder path is shown), type <code>powershell</code> and press <kbd>Enter</kbd>. PowerShell opens in that folder.</p>
+<aside class="co tip"><h4>Tip</h4><p>Do not pick "Run as administrator" for everyday Git work. A normal terminal is correct. Admin rights are only for the rare command that says it needs them.</p></aside>
+
+<h2>Reading the prompt</h2>
+<p>When the terminal is ready for you, it shows a <dfn>prompt</dfn>:</p>
+<figure class="fig">
+  <svg viewBox="0 0 640 150" width="640" role="img" aria-label="Anatomy of the prompt PS C:\Users\you\projects&gt;">
+    <rect x="10" y="20" width="620" height="48" rx="8" style="fill:#151412"/>
+    <text x="30" y="51" class="t-mono" font-size="20" textLength="432" lengthAdjust="spacingAndGlyphs" style="fill:#e9e2d3">PS C:\Users\you\projects&gt; <tspan style="fill:#e8b339">git status</tspan></text>
+    <path d="M32 76v18M54 76v18M66 76v18M318 76v18M324 76v18M342 76v18M462 76v18" class="s-ink w2 f-none"/>
+    <path d="M32 94H54M66 94H318M342 94H462" class="s-ink w2 f-none"/>
+    <text x="43" y="116" class="t-c" font-size="13" font-weight="700">PS</text><text x="43" y="132" class="t-c t-dim" font-size="11.5">PowerShell</text>
+    <text x="192" y="116" class="t-c" font-size="13" font-weight="700">where you are</text><text x="192" y="132" class="t-c t-dim" font-size="11.5">the current folder</text>
+    <text x="324" y="116" class="t-c" font-size="13" font-weight="700">&gt;</text><text x="324" y="132" class="t-c t-dim" font-size="11.5">ready</text>
+    <text x="402" y="116" class="t-c" font-size="13" font-weight="700">your command</text><text x="402" y="132" class="t-c t-dim" font-size="11.5">then press Enter</text>
+  </svg>
+</figure>
+<p>The middle part is the <dfn>current folder</dfn>: the folder the terminal is "standing in". Commands act on it. Git commands in particular act on the repository you are standing in, so "where am I?" is the first thing to check whenever something behaves oddly.</p>
+
+<h2>Paths: addresses for files</h2>
+<p>A <dfn>path</dfn> is a file's address. <code>C:\Users\you\Documents\notes.txt</code> means: drive C, folder Users, folder you, folder Documents, file notes.txt. Folders are separated by backslashes. A few shortcuts:</p>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Shortcut</th><th>Means</th><th>Example</th></tr>
+  <tr><td><code>~</code></td><td>Your home folder</td><td><code>cd ~</code> goes to <code>C:\Users\you</code></td></tr>
+  <tr><td><code>.</code></td><td>This folder, right here</td><td><code>git add .</code> means "everything here"</td></tr>
+  <tr><td><code>..</code></td><td>The folder one level up</td><td><code>cd ..</code></td></tr>
+  <tr><td><code>/</code></td><td>PowerShell accepts forward slashes too</td><td><code>cd Documents/letters</code></td></tr>
+</table></div>
+
+<h2>Practise on a pretend PC</h2>
+<p>Below is a safe, fake Windows PC. Follow the steps on the left. Wrong commands just print an error, exactly like the real thing.</p>
+<div data-widget="shellsim"></div>
+
+<h2>The commands worth knowing</h2>
+<div class="tbl-wrap"><table class="tbl">
+  <tr><th>Type this</th><th>It does</th><th>Also works</th></tr>
+  <tr><td><code>pwd</code></td><td>Shows where you are</td><td><code>Get-Location</code></td></tr>
+  <tr><td><code>ls</code></td><td>Lists files and folders here</td><td><code>dir</code>, <code>Get-ChildItem</code></td></tr>
+  <tr><td><code>cd projects</code></td><td>Goes into a folder</td><td><code>Set-Location</code></td></tr>
+  <tr><td><code>cd ..</code></td><td>Goes up one level</td><td></td></tr>
+  <tr><td><code>mkdir my-site</code></td><td>Makes a folder</td><td><code>md</code></td></tr>
+  <tr><td><code>ni notes.txt</code></td><td>Makes an empty file</td><td><code>New-Item</code></td></tr>
+  <tr><td><code>cat notes.txt</code></td><td>Prints a file's contents</td><td><code>type</code>, <code>Get-Content</code></td></tr>
+  <tr><td><code>notepad notes.txt</code></td><td>Opens a file in Notepad</td><td><code>code notes.txt</code> for VS Code</td></tr>
+  <tr><td><code>explorer .</code></td><td>Opens this folder in File Explorer</td><td></td></tr>
+  <tr><td><code>cls</code></td><td>Clears the screen</td><td><code>clear</code>, <kbd>Ctrl</kbd>+<kbd>L</kbd></td></tr>
+</table></div>
+<h3>Keys that save your sanity</h3>
+<ul>
+  <li><kbd>Tab</kbd> completes file and folder names. Type the first letters, press Tab, press it again to cycle. PowerShell writes <code>.\</code> in front of the name; that just means "in this folder".</li>
+  <li><kbd>&uarr;</kbd> brings back the previous command. Press again to go further back.</li>
+  <li><kbd>Ctrl</kbd> + <kbd>C</kbd> with nothing selected cancels whatever is running or half-typed.</li>
+</ul>
+
+<h2>Copy and paste</h2>
+<p data-os="11">In Windows Terminal, <kbd>Ctrl</kbd> + <kbd>V</kbd> pastes, and <kbd>Ctrl</kbd> + <kbd>C</kbd> copies when text is selected. Right-click also pastes.</p>
+<p data-os="10">In the Windows 10 PowerShell window, <kbd>Ctrl</kbd> + <kbd>V</kbd> pastes and so does a right-click. To copy, select text with the mouse and press <kbd>Enter</kbd> or <kbd>Ctrl</kbd> + <kbd>C</kbd>. Windows Terminal behaves more like other apps, another reason to install it.</p>
+<aside class="co warn"><h4>Careful</h4><p>Pasting several lines runs all of them, one after another. And never paste commands from a random website unless you understand what they do. Anything that downloads and runs a script in one go deserves extra suspicion.</p></aside>
+
+<h2>Reading error messages</h2>
+<p>Red text is not a disaster. It is the terminal telling you what went wrong, usually in the first line. The two you will meet most:</p>
+<pre class="out">git : The term 'git' is not recognized as the name of a cmdlet, function, script file, or operable program.</pre>
+<p>Meaning: PowerShell cannot find a program with that name. Either a typo, or the program is not installed, or it was installed after this terminal window was opened (close it and open a new one).</p>
+<pre class="out">cd : Cannot find path 'C:\Users\you\Docs' because it does not exist.</pre>
+<p>Meaning: no folder with that name here. Check the spelling, check where you are with <code>pwd</code>, list what is here with <code>ls</code>, and let <kbd>Tab</kbd> type names for you.</p>
+<aside class="co note"><h4>Names with spaces</h4><p>A space separates words in a command, so a folder like <code>Program Files</code> must be wrapped in quotes: <code>cd 'C:\Program Files'</code>. Easiest habit: never put spaces in names of project folders and files. Use dashes: <code>my-site</code>.</p></aside>
+
+<div data-widget="quiz">
+  <div class="q"><p>The prompt says <code>PS C:\Users\you\Downloads&gt;</code>. What does <code>cd ..</code> do?</p>
+    <ul><li>Goes to C:\</li><li data-ok>Goes to C:\Users\you</li><li>Deletes the Downloads folder</li></ul>
+    <p class="why"><code>..</code> is the folder one level up. From Downloads, that is your home folder.</p></div>
+  <div class="q"><p>You installed a program, but the terminal says its name "is not recognized". What do you try first?</p>
+    <ul><li>Reinstall Windows</li><li data-ok>Close the terminal and open a new one</li><li>Type the command in capital letters</li></ul>
+    <p class="why">A terminal only learns about new programs when it starts. Open a fresh window.</p></div>
+  <div class="q"><p>Fastest way to open a terminal already inside a project folder?</p>
+    <ul><li data-ok>From File Explorer: right-click the folder background (Windows 11) or Shift + right-click (Windows 10), or type powershell in the address bar</li><li>Open PowerShell and use cd with the full path every time</li><li>Double-click the folder</li></ul>
+    <p class="why">Starting in the right folder saves typing and mistakes. The address bar trick works on both versions.</p></div>
+</div>
+</section>
