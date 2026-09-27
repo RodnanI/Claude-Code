@@ -1,0 +1,81 @@
+<section class="chapter" id="reinforcement" data-num="20" data-part="Learning by doing" data-title="Reinforcement learning">
+  <header class="ch-head">
+    <h2>Reinforcement learning</h2>
+    <p class="lede">No labeled answers, only consequences. An agent tries things, collects rewards and penalties, and gradually learns which actions pay off in the long run.</p>
+  </header>
+
+  <h3>The loop</h3>
+  <figure class="fig" data-title="Agent and environment">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 170" role="img" aria-label="The agent sends an action to the environment; the environment returns a new state and a reward to the agent.">
+        <rect x="40" y="55" width="150" height="60" rx="4" class="bx-a"/><text x="115" y="82" text-anchor="middle" class="t-ink">agent</text><text x="115" y="100" text-anchor="middle" class="t-mut">policy &#960;(a | s)</text>
+        <rect x="450" y="55" width="150" height="60" rx="4" class="bx-i"/><text x="525" y="82" text-anchor="middle" class="t-ink">environment</text><text x="525" y="100" text-anchor="middle" class="t-mut">game, robot, market</text>
+        <path class="ln" d="M190 70 C290 20 350 20 446 70" marker-end="url(#ah)"/><text x="320" y="30" text-anchor="middle" class="t-ink">action a</text>
+        <path class="ln" d="M450 100 C350 150 290 150 194 100" marker-end="url(#ah)"/><text x="320" y="146" text-anchor="middle" class="t-ink">new state s&#8242;, reward r</text>
+      </svg>
+    </div>
+  </figure>
+  <p>At each step the agent observes a <strong>state</strong>, picks an <strong>action</strong> according to its <strong>policy</strong>, and the environment responds with a new state and a numeric <strong>reward</strong>. The goal is to maximize the total reward over time, called the <strong>return</strong>. Rewards can be delayed: a chess move's value may only show twenty moves later. Working out which earlier actions deserve the credit is the core difficulty.</p>
+  <p>Future rewards are usually <strong>discounted</strong> by a factor <span class="m">&gamma;</span> between 0 and 1 per step:</p>
+  <div class="eq">G = r<sub>1</sub> + &gamma; r<sub>2</sub> + &gamma;&sup2; r<sub>3</sub> + &hellip;<small>&gamma; near 1 means patient and far-sighted; &gamma; near 0 means greedy for immediate reward.</small></div>
+
+  <h3>Q-learning</h3>
+  <p>One classic approach learns a table of <strong>Q-values</strong>: <span class="m">Q(s, a)</span> estimates the return you get by taking action <span class="m">a</span> in state <span class="m">s</span> and acting well afterward. If you know Q, the best policy is simply "pick the action with the highest Q". After every step, nudge the estimate toward what just happened:</p>
+  <div class="eq">Q(s, a) &larr; Q(s, a) + &alpha; [ r + &gamma; max<sub>a&#8242;</sub> Q(s&#8242;, a&#8242;) &minus; Q(s, a) ]<small>The bracket is the surprise: the reward received plus the best value of the next state, minus what we expected.</small></div>
+  <p>Notice the estimate is built from another estimate, <span class="m">Q(s&#8242;, a&#8242;)</span>. Value information flows backward from the goal, one step at a time, episode by episode.</p>
+
+  <figure class="fig wide" data-demo="gridworld" data-title="Q-learning in a gridworld">
+    <figcaption>The agent (black dot) starts knowing nothing and wanders randomly. Each step costs a little (&minus;0.04), a pit costs 1, the goal pays 1. Press Run and raise the speed. Watch value spread backward from the goal as teal triangles, and the greedy path (orange) settle into the safest short route. Set exploration &epsilon; to 0 early and the agent can lock into a poor habit. Build walls or pits while it runs and watch it adapt.</figcaption>
+  </figure>
+
+  <h3>Explore or exploit?</h3>
+  <p>An agent that always takes the best-known action never discovers better ones. An agent that always explores never cashes in. The simple <strong>&epsilon;-greedy</strong> rule takes a random action with probability <span class="m">&epsilon;</span> and the best-known action otherwise, often lowering <span class="m">&epsilon;</span> over time. The same dilemma appears in A/B testing and recommendation systems, where it is studied as the <strong>multi-armed bandit</strong> problem.</p>
+
+  <h3>Deep reinforcement learning</h3>
+  <p>A table works for 48 grid cells, not for the pixels of a video game or the joint angles of a robot. <strong>Deep RL</strong> replaces the table with a neural network:</p>
+  <ul>
+    <li><strong>DQN</strong> (2015): a CNN estimates Q-values from raw screen pixels. It learned dozens of Atari games from score alone.</li>
+    <li><strong>Policy gradient</strong> methods train the policy network directly to make high-return actions more likely. <strong>PPO</strong> is the workhorse, including in RLHF for language models (chapter 19).</li>
+    <li><strong>AlphaGo and AlphaZero</strong> combined deep networks, search and self-play to beat world champions at Go and chess.</li>
+  </ul>
+
+  <div class="note warn" data-k="Why RL is hard in practice">
+    <ul>
+      <li><strong>Sample hungry:</strong> millions of trials are cheap in a simulator and impossible on real hardware.</li>
+      <li><strong>Reward hacking:</strong> agents optimize the reward you wrote, not the one you meant. A famous boat-racing agent learned to spin in circles collecting points instead of finishing the race.</li>
+      <li><strong>Unstable training</strong> and high variance between runs; results depend heavily on random seeds.</li>
+    </ul>
+    <p>For most business problems supervised learning is the better tool. Use RL when decisions affect future data and there is a simulator or a safe way to experiment.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="tabular Q-learning with Gymnasium"><pre><code>import numpy as np
+import gymnasium as gym
+
+env = gym.make("FrozenLake-v1", is_slippery=False)
+Q = np.zeros((env.observation_space.n, env.action_space.n))
+alpha, gamma, eps = 0.5, 0.95, 0.2
+
+for episode in range(2000):
+    s, _ = env.reset()
+    done = False
+    while not done:
+        a = env.action_space.sample() if np.random.rand() &lt; eps else int(np.argmax(Q[s]))
+        s2, r, terminated, truncated, _ = env.step(a)
+        target = r + (0 if terminated else gamma * Q[s2].max())
+        Q[s, a] += alpha * (target - Q[s, a])       # the Q-learning update
+        s, done = s2, terminated or truncated
+print(np.argmax(Q, axis=1).reshape(4, 4))           # learned policy</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>What does the discount factor &gamma; control?</p>
+      <div class="opts"><button>The learning speed</button><button>How much future rewards count compared with immediate ones</button><button>The probability of exploring</button><button>The size of the Q-table</button></div>
+      <div class="fb">&gamma; weights rewards k steps ahead by &gamma;<sup>k</sup>. Higher values make the agent value long-term outcomes.</div></div>
+    <div class="q" data-a="3"><p>An agent always takes the action it currently believes is best, from its very first episode. What is the risk?</p>
+      <div class="opts"><button>It learns too fast</button><button>It will diverge</button><button>Its Q-values become negative</button><button>It may never discover better actions it has not tried (no exploration)</button></div>
+      <div class="fb">Pure exploitation locks in early, possibly poor, habits. Some exploration is needed to find better strategies.</div></div>
+    <div class="q" data-a="0"><p>A cleaning robot rewarded for "no visible mess in camera" learns to cover its camera. This is an example of:</p>
+      <div class="opts"><button>Reward hacking (specification gaming)</button><button>Overfitting</button><button>Vanishing gradients</button><button>Data leakage</button></div>
+      <div class="fb">The agent maximized the reward as written rather than the intended goal. Careful reward design and oversight are essential.</div></div>
+  </div>
+</section>

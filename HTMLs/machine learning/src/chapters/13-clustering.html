@@ -1,0 +1,88 @@
+<section class="chapter" id="clustering" data-num="13" data-part="Unsupervised learning" data-title="Clustering">
+  <header class="ch-head">
+    <h2>Clustering</h2>
+    <p class="lede">No labels, no right answers. Just data, and the question: which of these things belong together?</p>
+  </header>
+
+  <p>Most of the world's data has no labels. Clustering finds groups of similar examples on its own: customer segments for marketing, families of similar documents, groups of genes that behave alike, typical patterns of sensor readings. It is also a powerful exploration tool: cluster first, then look at what each cluster has in common.</p>
+
+  <h3>k-means</h3>
+  <p>The most widely used clustering algorithm fits in four lines:</p>
+  <ol class="steps">
+    <li>Pick <span class="m">k</span>, the number of clusters, and drop <span class="m">k</span> centers somewhere.</li>
+    <li><strong>Assign</strong> every point to its nearest center.</li>
+    <li><strong>Update</strong> every center to the average position of its assigned points.</li>
+    <li>Repeat steps 2 and 3 until nothing changes.</li>
+  </ol>
+  <p>Each step can only reduce the total squared distance from points to their centers, called the <strong>inertia</strong>, so the algorithm always converges. Not necessarily to the best answer, though.</p>
+
+  <figure class="fig" data-demo="kmeans" data-title="k-means, one step at a time">
+    <figcaption>Press Step repeatedly to alternate between assigning points (colors change) and moving centers (squares move, leaving trails). The shaded regions show which center owns each area. Try random initialization several times with "New centers": sometimes two centers get stuck sharing one blob. k-means++ spreads the starting centers out and avoids most of these traps. The chart below shows the lowest inertia found for each k: the "elbow" where it stops dropping sharply suggests a good k.</figcaption>
+  </figure>
+
+  <h3>Choosing k</h3>
+  <ul>
+    <li><strong>Elbow method:</strong> inertia always falls as k grows (k = number of points gives zero), so look for the bend where extra clusters stop paying off.</li>
+    <li><strong>Silhouette score:</strong> for each point, compares the distance to its own cluster with the distance to the nearest other cluster. Ranges from &minus;1 to 1; higher is better.</li>
+    <li><strong>The business question:</strong> often the decisive factor. A marketing team that can run four campaigns needs four segments.</li>
+  </ul>
+
+  <div class="note warn" data-k="What k-means assumes">
+    <p>k-means quietly assumes clusters are round blobs of similar size and density, because it only uses distance to a center. Try "Uneven" and "Moons" in the figure: it slices the big blob in two and cuts the moons straight across. It is also sensitive to feature scale and to outliers, which drag centers around.</p>
+  </div>
+
+  <h3>DBSCAN: clusters as dense regions</h3>
+  <p><strong>DBSCAN</strong> defines clusters by density instead of centers. A point is a <strong>core point</strong> if at least <em>minPts</em> points (itself included) lie within distance <em>eps</em>. Core points that are within reach of each other chain together into one cluster. Points near a cluster but not dense themselves are <strong>border points</strong>; everything else is <strong>noise</strong>.</p>
+
+  <figure class="fig" data-demo="dbscan" data-title="Density-based clustering">
+    <figcaption>Hover to see the eps neighborhood around the cursor. DBSCAN follows the moon shapes, needs no k, and labels scattered points as noise. Switch to k-means with k = 2 to see the difference. Then shrink eps: clusters fragment. Grow it: everything merges. On "Uneven blobs", no single eps suits both the sparse and the dense clusters, which is DBSCAN's main weakness (HDBSCAN addresses it).</figcaption>
+  </figure>
+
+  <h3>Hierarchical clustering</h3>
+  <p><strong>Agglomerative</strong> clustering starts with every point as its own cluster and repeatedly merges the two closest clusters. The full history of merges forms a tree called a <strong>dendrogram</strong>; cutting it at different heights gives different numbers of clusters. It is great for small datasets where the nested structure itself is interesting (species, document topics), but costs at least <span class="m">O(n&sup2;)</span> memory.</p>
+
+  <figure class="fig" data-title="A dendrogram">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 170" role="img" aria-label="A dendrogram merging six points into two groups and then one.">
+        <path class="ln" d="M40 150 V110 H120 V150 M80 110 V70 H210 V110 M170 150 V110 H250 V150 M145 70 V30 H470 V70 M370 150 V90 H450 V150 M410 90 V70 H530 V150"/>
+        <path class="ln-a" d="M0 60 H640" stroke-dasharray="5 4"/>
+        <text x="640" y="54" text-anchor="end" class="t-acc">cut here: 2 clusters</text>
+        <circle cx="40" cy="154" r="5" class="f1"/><circle cx="120" cy="154" r="5" class="f1"/><circle cx="170" cy="154" r="5" class="f1"/><circle cx="250" cy="154" r="5" class="f1"/>
+        <circle cx="370" cy="154" r="5" class="f2"/><circle cx="450" cy="154" r="5" class="f2"/><circle cx="530" cy="154" r="5" class="f2"/>
+        <text x="600" y="120" text-anchor="end" class="t-mut">height = distance</text><text x="600" y="134" text-anchor="end" class="t-mut">at which groups merged</text>
+      </svg>
+    </div>
+  </figure>
+
+  <h3>Soft clustering and anomalies</h3>
+  <p><strong>Gaussian mixture models</strong> generalize k-means: each cluster is a stretched bell shape, and each point gets a <em>probability</em> of belonging to each cluster rather than a hard label. Closely related, <strong>anomaly detection</strong> flags points that fit no group well: DBSCAN's noise points, points with low probability under a mixture model, or the output of dedicated methods like <strong>isolation forests</strong>, which isolate outliers with few random splits.</p>
+
+  <div class="note key" data-k="Evaluating clusters is hard">
+    <p>With no labels there is no accuracy to compute. Clusters are "good" if they are stable (similar when you re-run on resampled data) and <em>useful</em> for the decision at hand. Always inspect examples from each cluster and describe them in plain words. If you cannot, the clusters probably are not meaningful.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>from sklearn.cluster import KMeans, DBSCAN
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+
+X_s = StandardScaler().fit_transform(X)
+for k in range(2, 9):
+    km = KMeans(n_clusters=k, n_init=10, random_state=0).fit(X_s)   # k-means++ by default
+    print(k, round(km.inertia_, 1), round(silhouette_score(X_s, km.labels_), 3))
+
+db = DBSCAN(eps=0.3, min_samples=5).fit(X_s)
+print(set(db.labels_))          # -1 marks noise points</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>What does the k-means update step do?</p>
+      <div class="opts"><button>Adds a new cluster</button><button>Assigns each point to its nearest center</button><button>Moves each center to the mean of its assigned points</button><button>Removes outliers</button></div>
+      <div class="fb">The two alternating steps are assign (points to nearest center) and update (centers to the mean of their points).</div></div>
+    <div class="q" data-a="0"><p>Your data forms two interlocking crescent shapes. Which algorithm is more suitable?</p>
+      <div class="opts"><button>DBSCAN</button><button>k-means with k = 2</button><button>k-means with k = 10</button><button>Linear regression</button></div>
+      <div class="fb">Density-based clustering follows arbitrary shapes; k-means can only produce convex, blob-like regions around centers.</div></div>
+    <div class="q" data-a="3"><p>Why does inertia alone not tell you the right number of clusters?</p>
+      <div class="opts"><button>It cannot be computed without labels</button><button>It increases with k</button><button>It only works for DBSCAN</button><button>It always decreases as k increases, reaching zero when every point is its own cluster</button></div>
+      <div class="fb">More centers always fit better, so you look for diminishing returns (the elbow) or use silhouette and domain knowledge.</div></div>
+  </div>
+</section>

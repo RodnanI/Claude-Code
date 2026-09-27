@@ -1,0 +1,143 @@
+<section class="chapter" id="data" data-num="03" data-part="Foundations" data-title="Data comes first">
+  <header class="ch-head">
+    <h2>Data comes first</h2>
+    <p class="lede">A mediocre algorithm on good data beats a brilliant algorithm on bad data, nearly every time. Practitioners spend most of their hours here, and for good reason.</p>
+  </header>
+
+  <h3>Anatomy of a dataset</h3>
+  <p>Most business data is <strong>tabular</strong>: one row per example, one column per feature, plus a target column you want to predict.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>size_m2</th><th>rooms</th><th>district</th><th>year_built</th><th>has_garden</th><th class="num">price (target)</th></tr>
+    <tr><td>84</td><td>3</td><td>North</td><td>1998</td><td>yes</td><td class="num">312,000</td></tr>
+    <tr><td>52</td><td>2</td><td>Center</td><td>1965</td><td>no</td><td class="num">289,000</td></tr>
+    <tr><td>131</td><td>5</td><td>South</td><td>2011</td><td><em>missing</em></td><td class="num">455,000</td></tr>
+  </table></div>
+  <p>Notice the variety. Numbers on very different scales, text categories, a year that is really a hidden "age", and a missing value. Models only understand numbers, so every one of these needs a decision about how to turn it into features.</p>
+
+  <div class="cards">
+    <div class="card"><span class="tag">Numerical</span><h4>Continuous or counts</h4><p>Size, income, temperature. Watch for skew (incomes), outliers, and wildly different scales.</p></div>
+    <div class="card"><span class="tag">Categorical</span><h4>Labels without order</h4><p>District, color, product ID. Usually <strong>one-hot encoded</strong>: one 0/1 column per category.</p></div>
+    <div class="card"><span class="tag">Ordinal</span><h4>Labels with order</h4><p>Small &lt; medium &lt; large, ratings. Can be mapped to integers that keep the order.</p></div>
+    <div class="card"><span class="tag">Unstructured</span><h4>Text, images, audio</h4><p>Need conversion into vectors, classically by hand-made features, today mostly by neural networks.</p></div>
+  </div>
+
+  <h3>Split before you do anything else</h3>
+  <p>The goal is performance on <em>unseen</em> data, so you must hold some data back and never let the model, or yourself, peek at it during development.</p>
+
+  <figure class="fig" data-title="Train, validation, test">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 118" role="img" aria-label="A bar split into 70 percent training data, 15 percent validation and 15 percent test.">
+        <rect x="0" y="10" width="444" height="44" class="fs" /><rect x="0" y="10" width="444" height="44" class="ln-m"/>
+        <rect x="448" y="10" width="92" height="44" class="f3" opacity=".35"/>
+        <rect x="544" y="10" width="96" height="44" class="bx-a"/>
+        <text x="14" y="37" class="t-ink">TRAIN 70%</text><text x="458" y="37" class="t-ink">VAL 15%</text><text x="556" y="37" class="t-ink">TEST 15%</text>
+        <text x="0" y="78" class="t-mut">fit the parameters</text>
+        <text x="448" y="78" class="t-mut">tune choices,</text><text x="448" y="93" class="t-mut">pick models</text>
+        <text x="544" y="78" class="t-mut">final exam:</text><text x="544" y="93" class="t-mut">use once, at the end</text>
+      </svg>
+    </div>
+    <figcaption>Every decision you make while watching validation scores leaks a little information from the validation set into your model. That is why a separate, untouched test set gives the only honest final estimate.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Training set:</strong> the model learns its parameters here.</li>
+    <li><strong>Validation set:</strong> you compare models and tune hyperparameters here.</li>
+    <li><strong>Test set:</strong> touched once, at the very end, to report expected real-world performance.</li>
+  </ul>
+  <p>When data is scarce, <strong>k-fold cross-validation</strong> reuses it better: split the training data into <span class="m">k</span> parts, train <span class="m">k</span> times, each time validating on a different part, then average the scores.</p>
+
+  <figure class="fig" data-title="5-fold cross-validation">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 176" role="img" aria-label="Five rows, each with five blocks; in each row a different block is used for validation and the rest for training.">
+        <text x="0" y="26" class="t-mut">run 1</text><text x="0" y="56" class="t-mut">run 2</text><text x="0" y="86" class="t-mut">run 3</text><text x="0" y="116" class="t-mut">run 4</text><text x="0" y="146" class="t-mut">run 5</text>
+        <rect x="60" y="10" width="86" height="24" class="bx-a"/><rect x="150" y="10" width="86" height="24" class="fs"/><rect x="240" y="10" width="86" height="24" class="fs"/><rect x="330" y="10" width="86" height="24" class="fs"/><rect x="420" y="10" width="86" height="24" class="fs"/>
+        <rect x="60" y="40" width="86" height="24" class="fs"/><rect x="150" y="40" width="86" height="24" class="bx-a"/><rect x="240" y="40" width="86" height="24" class="fs"/><rect x="330" y="40" width="86" height="24" class="fs"/><rect x="420" y="40" width="86" height="24" class="fs"/>
+        <rect x="60" y="70" width="86" height="24" class="fs"/><rect x="150" y="70" width="86" height="24" class="fs"/><rect x="240" y="70" width="86" height="24" class="bx-a"/><rect x="330" y="70" width="86" height="24" class="fs"/><rect x="420" y="70" width="86" height="24" class="fs"/>
+        <rect x="60" y="100" width="86" height="24" class="fs"/><rect x="150" y="100" width="86" height="24" class="fs"/><rect x="240" y="100" width="86" height="24" class="fs"/><rect x="330" y="100" width="86" height="24" class="bx-a"/><rect x="420" y="100" width="86" height="24" class="fs"/>
+        <rect x="60" y="130" width="86" height="24" class="fs"/><rect x="150" y="130" width="86" height="24" class="fs"/><rect x="240" y="130" width="86" height="24" class="fs"/><rect x="330" y="130" width="86" height="24" class="fs"/><rect x="420" y="130" width="86" height="24" class="bx-a"/>
+        <text x="526" y="26">score 0.81</text><text x="526" y="56">score 0.84</text><text x="526" y="86">score 0.79</text><text x="526" y="116">score 0.83</text><text x="526" y="146">score 0.82</text>
+        <text x="526" y="172" class="t-acc">mean 0.82 &#177; 0.02</text>
+      </svg>
+    </div>
+    <figcaption>Highlighted blocks are the validation fold in each run. You get five scores instead of one, so you also learn how much the score wobbles, which tells you whether a 0.01 improvement is real or noise.</figcaption>
+  </figure>
+
+  <div class="note warn" data-k="Split the right way">
+    <ul>
+      <li><strong>Time series:</strong> never shuffle. Train on the past, validate on the future, or you are predicting yesterday with tomorrow's data.</li>
+      <li><strong>Groups:</strong> if one patient has ten scans, all ten go in the same split. Otherwise the model recognizes the patient, not the disease.</li>
+      <li><strong>Imbalanced classes:</strong> use a <em>stratified</em> split so each part keeps the same class proportions.</li>
+    </ul>
+  </div>
+
+  <h3>Feature scaling</h3>
+  <p>Many algorithms measure distances or take gradient steps in feature space. If one feature is measured in dollars (tens of thousands) and another in years (tens), the dollar feature silently dominates. The fix is to put features on comparable scales:</p>
+  <ul>
+    <li><strong>Standardization:</strong> <span class="m">z = (x &minus; &mu;) / &sigma;</span>. Mean 0, standard deviation 1. The default choice.</li>
+    <li><strong>Min-max scaling:</strong> <span class="m">(x &minus; min) / (max &minus; min)</span>. Squeezes into 0 to 1. Sensitive to outliers.</li>
+  </ul>
+
+  <figure class="fig" data-demo="scaling" data-title="Scaling changes who your neighbors are">
+    <figcaption>Customers under 40 tend to buy (teal). We classify the new 27-year-old by the vote of the five most similar customers. In raw units the income axis is thousands of times longer than the age axis, so "similar" means "similar income" and age is ignored. Standardize and the neighbors become people of similar age and income, and the prediction flips.</figcaption>
+  </figure>
+
+  <p>Tree-based models (decision trees, random forests, gradient boosting) split one feature at a time and do not care about scale. Distance-based and gradient-based models (k-NN, SVMs, linear models, neural networks) care a lot.</p>
+
+  <h3>The rest of the cleanup</h3>
+  <ul>
+    <li><strong>Missing values:</strong> fill with the median or most frequent value, and often add a "was missing" 0/1 column, because missingness itself can be informative.</li>
+    <li><strong>Categoricals:</strong> one-hot encode low-cardinality columns. For thousands of categories consider target encoding or learned embeddings.</li>
+    <li><strong>Skew:</strong> take the log of heavy-tailed values like income or prices so a few giants do not dominate.</li>
+    <li><strong>Outliers:</strong> find out whether they are errors (fix or drop) or rare truths (keep, maybe clip).</li>
+    <li><strong>Feature engineering:</strong> turn raw data into signals the model can use. A timestamp becomes hour of day and day of week; two amounts become their ratio; a house's year built becomes its age.</li>
+  </ul>
+
+  <h3>Data leakage: the silent killer</h3>
+  <p><strong>Leakage</strong> is when information that would not be available at prediction time sneaks into training. It produces spectacular validation scores and a model that fails in production. Classic cases:</p>
+  <ul>
+    <li><strong>Preprocessing on all data:</strong> fitting the scaler or imputer on the full dataset before splitting lets test statistics shape training. Fit on train only, then apply to the rest.</li>
+    <li><strong>Target leakage:</strong> predicting customer churn with a feature like "cancellation_reason", which only exists after they churned.</li>
+    <li><strong>Duplicates across splits:</strong> near-identical rows in train and test make memorization look like skill.</li>
+    <li><strong>Future information</strong> in time series features, such as a 7-day average centered on the prediction date.</li>
+  </ul>
+  <div class="note key" data-k="Rule of thumb">
+    <p>If a result looks too good to be true, suspect leakage first. Ask of every feature: <em>would I actually know this value at the moment I need the prediction?</em></p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="pandas + scikit-learn"><pre><code>import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+
+df = pd.read_csv("houses.csv")
+X, y = df.drop(columns="price"), df["price"]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+num = ["size_m2", "rooms", "year_built"]
+cat = ["district", "has_garden"]
+prep = ColumnTransformer([
+    ("num", Pipeline([("impute", SimpleImputer(strategy="median")),
+                      ("scale", StandardScaler())]), num),
+    ("cat", Pipeline([("impute", SimpleImputer(strategy="most_frequent")),
+                      ("onehot", OneHotEncoder(handle_unknown="ignore"))]), cat),
+])
+# Fit on training data only. The pipeline then applies the same
+# learned means, scales and categories to the test set: no leakage.
+X_train_ready = prep.fit_transform(X_train)
+X_test_ready = prep.transform(X_test)</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="3"><p>You standardize features using the mean and standard deviation of the entire dataset, then split into train and test. What is the problem?</p>
+      <div class="opts"><button>Nothing, standardization is harmless</button><button>The model will train slower</button><button>Tree models will break</button><button>Test set statistics leaked into training</button></div>
+      <div class="fb">The scaler "saw" the test data. The effect is often small, but it is leakage and with other preprocessing (like target encoding) it can be large. Always fit preprocessing on train only.</div></div>
+    <div class="q" data-a="1"><p>You are predicting next month's sales. How should you split the data?</p>
+      <div class="opts"><button>Random 80/20 split</button><button>Train on earlier months, validate on later months</button><button>Stratify by product</button><button>Use the test set for tuning to save data</button></div>
+      <div class="fb">With time involved, a random split lets the model learn from the future. A chronological split mimics how the model will actually be used.</div></div>
+    <div class="q" data-a="0"><p>Which model is least affected by unscaled features?</p>
+      <div class="opts"><button>Random forest</button><button>k-nearest neighbors</button><button>Neural network</button><button>Support vector machine</button></div>
+      <div class="fb">Trees split on one feature at a time using thresholds, so multiplying a feature by 1,000 does not change which splits are possible.</div></div>
+  </div>
+</section>

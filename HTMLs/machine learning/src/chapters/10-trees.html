@@ -1,0 +1,88 @@
+<section class="chapter" id="trees" data-num="10" data-part="Supervised learning" data-title="Decision trees and ensembles">
+  <header class="ch-head">
+    <h2>Decision trees and ensembles</h2>
+    <p class="lede">A tree asks a sequence of yes/no questions. One tree is readable but fragile. Hundreds of trees combined are among the most powerful tools for tabular data that exist.</p>
+  </header>
+
+  <h3>A game of twenty questions</h3>
+  <p>A decision tree predicts by walking from the root to a leaf, answering one question per node: "Is income above 52k? Is age below 30?" Each leaf holds a prediction: the majority class of the training examples that ended up there (or their average value, for regression). You can print a tree and hand it to a colleague, and they can follow it by hand.</p>
+
+  <h3>How a tree picks its questions</h3>
+  <p>Training is greedy. At each node, try every feature and every threshold, and pick the split that makes the two child groups as <strong>pure</strong> as possible. Purity is measured by <strong>Gini impurity</strong> (or entropy):</p>
+  <div class="eq">Gini = 1 &minus; &Sigma;<sub>k</sub> p<sub>k</sub>&sup2;<small>0 for a group of one class only; 0.5 for a 50/50 mix of two classes.</small></div>
+  <p>Then repeat inside each child, recursively, until the groups are pure or a stopping rule kicks in: a maximum depth, or a minimum number of samples per leaf. Regression trees use the same procedure with variance instead of Gini.</p>
+
+  <figure class="fig wide" data-demo="tree" data-title="Grow a tree, then a forest">
+    <figcaption>Each split is a straight cut parallel to an axis, so trees carve the plane into rectangles. Raise max depth and watch training accuracy climb toward 100% while test accuracy stalls or drops: deep trees memorize. Then switch to "Random forest": each tree sees a different bootstrap sample and random features, their mistakes differ, and averaging them gives a smoother boundary that generalizes better.</figcaption>
+  </figure>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Why people like trees</th><th>Why one tree is rarely enough</th></tr>
+    <tr><td>Readable rules; easy to explain</td><td>High variance: a small change in the data can produce a completely different tree</td></tr>
+    <tr><td>No feature scaling needed; mixed feature types are fine</td><td>Deep trees overfit badly</td></tr>
+    <tr><td>Captures non-linear effects and interactions automatically</td><td>Axis-aligned cuts approximate diagonal boundaries with staircases</td></tr>
+  </table></div>
+
+  <h3>Ensembles: the wisdom of crowds</h3>
+  <p>If you average many models whose errors are at least partly independent, the errors cancel and the average is better than any individual. The two great ways to build tree ensembles are bagging and boosting.</p>
+
+  <h4>Bagging and random forests</h4>
+  <p><strong>Bagging</strong> (bootstrap aggregating) trains each tree on a random sample of the data drawn with replacement, then averages their votes. A <strong>random forest</strong> adds one more twist: at each split, a tree may only consider a random subset of features. That forces the trees to be different from one another, which makes the averaging far more effective. Random forests are hard to break, need little tuning, and are a superb first model for almost any table of data.</p>
+  <p>Bonus: each tree skips about a third of the examples in its bootstrap sample. Predicting those <strong>out-of-bag</strong> examples gives a free validation score.</p>
+
+  <h4>Boosting</h4>
+  <p><strong>Boosting</strong> builds trees in sequence instead of in parallel. Each new tree is trained to fix the mistakes of all the trees before it. In <strong>gradient boosting</strong>, each tree is fitted to the <em>residuals</em> (the remaining errors), and its prediction is added in with a small weight <span class="m">&nu;</span>, the learning rate:</p>
+  <div class="eq">F<sub>m</sub>(x) = F<sub>m&minus;1</sub>(x) + &nu; &middot; tree<sub>m</sub>(x)</div>
+
+  <figure class="fig" data-demo="boost" data-title="Gradient boosting, one tree at a time">
+    <figcaption>Stage 0 predicts the average. Press "Add one tree" and watch the lower panel: each new stump is fitted to what is still wrong, and the ensemble above creeps toward the data. With a small learning rate the model needs more trees but overfits more slowly. Push trees to 100 with depth-3 trees and compare training to test error.</figcaption>
+  </figure>
+
+  <div class="note key" data-k="Why it is called gradient boosting">
+    <p>For squared error, the residual <span class="m">y &minus; F(x)</span> is exactly the negative gradient of the loss with respect to the prediction. So each tree takes one gradient descent step, not in parameter space but in <em>function space</em>. Swap in another loss's gradient and the same machinery handles classification, ranking or any differentiable objective.</p>
+  </div>
+
+  <div class="note work" data-k="In practice">
+    <p><strong>XGBoost</strong>, <strong>LightGBM</strong> and <strong>CatBoost</strong> are the industrial-strength gradient boosting libraries. On tabular data they routinely beat deep learning and win a large share of Kaggle competitions. Key hyperparameters: number of trees, learning rate (smaller is better but slower), max depth (3 to 8 is typical), row and column subsampling, and early stopping on a validation set to pick the number of trees automatically.</p>
+  </div>
+
+  <h3>Which features matter?</h3>
+  <ul>
+    <li><strong>Impurity importance</strong> (the built-in <code>feature_importances_</code>): fast, but biased toward features with many unique values.</li>
+    <li><strong>Permutation importance</strong>: shuffle one feature in the validation set and measure how much the score drops. Model-agnostic and more trustworthy.</li>
+    <li><strong>SHAP values</strong>: split each individual prediction into per-feature contributions. The standard for explaining tree ensembles to stakeholders.</li>
+  </ul>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn and LightGBM"><pre><code>from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.inspection import permutation_importance
+
+rf = RandomForestClassifier(n_estimators=300, min_samples_leaf=2,
+                            oob_score=True, n_jobs=-1, random_state=0)
+rf.fit(X_train, y_train)
+print("out-of-bag accuracy:", rf.oob_score_)
+
+gb = HistGradientBoostingClassifier(learning_rate=0.05, max_iter=500,
+                                    early_stopping=True)
+gb.fit(X_train, y_train)
+
+imp = permutation_importance(gb, X_val, y_val, n_repeats=10)
+print(imp.importances_mean)
+
+# import lightgbm as lgb
+# model = lgb.LGBMClassifier(n_estimators=2000, learning_rate=0.03, num_leaves=31)
+# model.fit(X_train, y_train, eval_set=[(X_val, y_val)],
+#           callbacks=[lgb.early_stopping(100)])</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>What makes a random forest's trees different from each other?</p>
+      <div class="opts"><button>Each uses a different impurity measure</button><button>Bootstrap samples of the data and random feature subsets at each split</button><button>They are trained on different labels</button><button>Each has a different depth by design</button></div>
+      <div class="fb">Randomness in both rows (bootstrap) and columns (feature subsets) decorrelates the trees, which is what makes averaging them powerful.</div></div>
+    <div class="q" data-a="2"><p>In gradient boosting, what is each new tree trained to predict?</p>
+      <div class="opts"><button>The original labels</button><button>A random subset of the labels</button><button>The residual errors of the current ensemble</button><button>The predictions of the previous tree</button></div>
+      <div class="fb">Each tree fits what the ensemble still gets wrong (the negative gradient of the loss), then gets added with a small learning rate.</div></div>
+    <div class="q" data-a="0"><p>You have a spreadsheet-style dataset with 50,000 rows and 40 mixed features. What is a strong first model?</p>
+      <div class="opts"><button>Gradient-boosted trees (e.g. LightGBM)</button><button>A convolutional neural network</button><button>k-NN on raw features</button><button>A single very deep decision tree</button></div>
+      <div class="fb">For tabular data, boosted trees are usually the strongest out-of-the-box option, and random forests the most forgiving baseline.</div></div>
+  </div>
+</section>

@@ -1,0 +1,69 @@
+<section class="chapter" id="naive-bayes" data-num="12" data-part="Supervised learning" data-title="Naive Bayes">
+  <header class="ch-head">
+    <h2>Naive Bayes</h2>
+    <p class="lede">A classifier built directly on Bayes' rule, with one deliberately wrong assumption that makes it fast, tiny and surprisingly good. It powered the first generation of spam filters.</p>
+  </header>
+
+  <h3>Classifying with Bayes' rule</h3>
+  <p>In chapter 02 you used Bayes' rule to flip a conditional probability. A classifier wants <span class="m">P(class | features)</span>, and Bayes' rule rewrites it in terms of things we can count in training data:</p>
+  <div class="eq">P(spam | words) &prop; P(words | spam) &middot; P(spam)<small>&prop; means "proportional to": we compute this for each class and normalize so they sum to 1.</small></div>
+  <p><span class="m">P(spam)</span> is easy: the share of training messages that are spam. <span class="m">P(words | spam)</span> is hard: the probability of this exact combination of words would need an astronomically large dataset.</p>
+
+  <h3>The naive assumption</h3>
+  <p>Naive Bayes assumes every feature is independent of the others once you know the class. Then the joint probability splits into a simple product:</p>
+  <div class="eq">P(w<sub>1</sub>, &hellip;, w<sub>n</sub> | spam) &asymp; P(w<sub>1</sub> | spam) &middot; P(w<sub>2</sub> | spam) &middot; &hellip; &middot; P(w<sub>n</sub> | spam)</div>
+  <p>The assumption is obviously false ("free" and "prize" appear together far more than chance), but for classification you only need the <em>right class to win</em>, not correct probabilities, and it often does.</p>
+
+  <figure class="fig" data-demo="nb" data-title="A spam filter trained on 24 messages">
+    <figcaption>Type any message. Each known word pushes toward spam (right) or ham (left) by its log-likelihood ratio, <span class="m">log P(word | spam) &minus; log P(word | ham)</span>. The contributions simply add up, then become a probability. Words never seen in training are ignored, and every word got a pseudo-count of one so nothing has zero probability.</figcaption>
+  </figure>
+
+  <h3>Two practical details</h3>
+  <ul>
+    <li><strong>Work in log space.</strong> Multiplying hundreds of small probabilities underflows to zero on a computer. Adding their logarithms is stable, and turns the model into a sum of per-word scores, which is exactly what the bars show.</li>
+    <li><strong>Laplace smoothing.</strong> A word never seen in spam would get probability zero and veto the class no matter what else the message says. Adding 1 to every count prevents that.</li>
+  </ul>
+
+  <h3>Flavors</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Variant</th><th>Feature type</th><th>Typical use</th></tr>
+    <tr><td>Multinomial NB</td><td>Word counts</td><td>Text classification, topic tagging</td></tr>
+    <tr><td>Bernoulli NB</td><td>Word present or absent</td><td>Short texts</td></tr>
+    <tr><td>Gaussian NB</td><td>Continuous values, assumed bell-shaped per class</td><td>Quick baselines on numeric data</td></tr>
+  </table></div>
+
+  <div class="note key" data-k="Generative vs discriminative">
+    <p>Naive Bayes is a <strong>generative</strong> model: it models how the data of each class is produced, <span class="m">P(x | y)</span>, and could in principle generate fake emails. Logistic regression is <strong>discriminative</strong>: it models only the boundary, <span class="m">P(y | x)</span>. Discriminative models usually win with plenty of data; generative ones cope better with very little. Today's "generative AI" is the same idea scaled up enormously: models of <span class="m">P(x)</span> rich enough to sample convincing new text and images.</p>
+  </div>
+
+  <h3>Strengths and weaknesses</h3>
+  <ul>
+    <li>Trains in one pass over the data, predicts instantly, works with tiny datasets and huge vocabularies.</li>
+    <li>A strong, honest baseline for any text task. If your transformer barely beats Naive Bayes, question the transformer.</li>
+    <li>Its probabilities are badly calibrated: correlated words get counted several times, pushing outputs toward 0% or 100%. Use it for ranking and decisions, not for trustworthy confidence.</li>
+  </ul>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+
+texts = ["win a free prize now", "see you at lunch", "claim your cash", "report attached"]
+labels = [1, 0, 1, 0]                       # 1 = spam
+
+clf = make_pipeline(CountVectorizer(), MultinomialNB(alpha=1.0))   # alpha = Laplace smoothing
+clf.fit(texts, labels)
+print(clf.predict_proba(["free lunch today"]))</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>What is "naive" about Naive Bayes?</p>
+      <div class="opts"><button>It ignores the class priors</button><button>It assumes features are independent given the class</button><button>It only works with two classes</button><button>It uses no training data</button></div>
+      <div class="fb">Conditional independence lets the joint likelihood factor into a product of simple per-feature probabilities.</div></div>
+    <div class="q" data-a="3"><p>Why add 1 to every word count (Laplace smoothing)?</p>
+      <div class="opts"><button>To speed up training</button><button>To make probabilities sum to 1</button><button>To remove stop words</button><button>So a word unseen in one class does not force that class's probability to zero</button></div>
+      <div class="fb">Without smoothing, one unseen word multiplies the class likelihood by zero and overrides all other evidence.</div></div>
+    <div class="q" data-a="0"><p>Why do implementations add log probabilities instead of multiplying probabilities?</p>
+      <div class="opts"><button>Products of many small numbers underflow to zero in floating point</button><button>Logs make the model non-linear</button><button>It is required by Bayes' rule</button><button>It improves accuracy by changing the model</button></div>
+      <div class="fb">The log is monotonic, so the winning class is unchanged, but sums of logs stay within floating point range.</div></div>
+  </div>
+</section>

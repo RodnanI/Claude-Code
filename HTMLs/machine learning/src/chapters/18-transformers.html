@@ -1,0 +1,99 @@
+<section class="chapter" id="transformers" data-num="18" data-part="Deep learning" data-title="Embeddings, attention, transformers">
+  <header class="ch-head">
+    <h2>Embeddings, attention and transformers</h2>
+    <p class="lede">The architecture behind ChatGPT, Claude, modern translation and much of today's AI. It rests on two ideas: represent meaning as vectors, and let every word decide which other words matter to it.</p>
+  </header>
+
+  <h3>From words to vectors</h3>
+  <p>Models need numbers. Text is first split into <strong>tokens</strong> (words or pieces of words), each token gets an ID, and each ID looks up a learned vector called an <strong>embedding</strong>, typically with hundreds or thousands of dimensions. Training arranges these vectors so that tokens used in similar contexts end up near each other. Nobody tells the model that "king" and "queen" are related; it discovers it because they appear in similar sentences.</p>
+
+  <figure class="fig" data-demo="embeddings" data-title="A toy embedding space">
+    <figcaption>A hand-made 2D illustration of what learned embeddings do in hundreds of dimensions. Tap a word to see its neighbors. Then try vector arithmetic: directions in the space encode relationships (royal vs. common, male vs. female, adult vs. young), so adding the same arrow to a different word applies the same relationship. Real embeddings compare meaning with cosine similarity, the dot product idea from chapter 02.</figcaption>
+  </figure>
+
+  <div class="note work" data-k="Embeddings at work">
+    <p>Embeddings are one of the most useful tools in applied ML, even without training anything. Embed product descriptions, support tickets or documents with a pretrained model, then use nearest neighbor search for semantic search, recommendations, deduplication, clustering, or retrieval for a chatbot.</p>
+  </div>
+
+  <h3>The sequence problem</h3>
+  <p>Meaning depends on context: "bank" in "river bank" versus "bank account". Earlier <strong>recurrent neural networks</strong> (RNNs, and the improved LSTMs) read text one token at a time, carrying a running memory vector. They worked, but information from far back faded, and processing tokens one after another made training slow and hard to parallelize.</p>
+
+  <h3>Attention</h3>
+  <p><strong>Self-attention</strong> lets every token look at every other token at once and decide how much each one matters to it. Each token produces three vectors from its embedding, using three learned weight matrices:</p>
+  <ul>
+    <li>a <strong>query</strong> <span class="m">q</span>: what am I looking for?</li>
+    <li>a <strong>key</strong> <span class="m">k</span>: what do I contain?</li>
+    <li>a <strong>value</strong> <span class="m">v</span>: what will I pass along if chosen?</li>
+  </ul>
+  <p>The relevance of token <span class="m">j</span> to token <span class="m">i</span> is the dot product <span class="m">q<sub>i</sub> &middot; k<sub>j</sub></span>. A softmax turns these scores into weights that sum to 1, and token <span class="m">i</span>'s new representation is the weighted average of all the values:</p>
+  <div class="eq">Attention(Q, K, V) = softmax( <span class="frac"><span>Q K<sup>T</sup></span><span>&radic;d</span></span> ) V<small>Dividing by &radic;d (the vector size) keeps scores in a range where softmax still has useful gradients.</small></div>
+
+  <figure class="fig wide" data-demo="attention" data-title="Where does 'it' look?">
+    <figcaption>Select a token as the query; token shading and the highlighted matrix row show its attention weights over the sentence. In "the animal didn't cross the street because it was too tired", resolving "it" requires knowing that tired things are animals; change the last word to "wide" and "it" should now point at the street. The weights here are illustrative, set by hand to mimic what trained models learn. Raise the temperature to flatten the distribution, lower it to make attention sharper.</figcaption>
+  </figure>
+
+  <h3>The transformer block</h3>
+  <p>A transformer stacks identical blocks, each with two parts wrapped in residual (skip) connections and layer normalization:</p>
+  <figure class="fig" data-title="One transformer block, repeated N times">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 170" role="img" aria-label="Token embeddings plus positions flow into multi-head attention, then add and normalize, then a feed-forward network, then add and normalize, repeated N times.">
+        <rect x="0" y="70" width="104" height="54" rx="4" class="bx"/><text x="52" y="92" text-anchor="middle" class="t-ink">embeddings</text><text x="52" y="108" text-anchor="middle" class="t-mut">+ positions</text>
+        <rect x="150" y="70" width="120" height="54" rx="4" class="bx-a"/><text x="210" y="92" text-anchor="middle" class="t-ink">multi-head</text><text x="210" y="108" text-anchor="middle" class="t-ink">attention</text>
+        <rect x="300" y="78" width="70" height="38" rx="4" class="bx-i"/><text x="335" y="101" text-anchor="middle">add+norm</text>
+        <rect x="400" y="70" width="110" height="54" rx="4" class="bx-a"/><text x="455" y="92" text-anchor="middle" class="t-ink">feed-forward</text><text x="455" y="108" text-anchor="middle" class="t-mut">MLP per token</text>
+        <rect x="540" y="78" width="70" height="38" rx="4" class="bx-i"/><text x="575" y="101" text-anchor="middle">add+norm</text>
+        <path class="ln" d="M104 97 H146 M270 97 H296 M370 97 H396 M510 97 H536" marker-end="url(#ah)"/>
+        <path class="ln" d="M126 97 V40 H335 V74" marker-end="url(#ah)"/><path class="ln" d="M385 97 V40 H575 V74" marker-end="url(#ah)"/>
+        <text x="230" y="34" text-anchor="middle" class="t-mut">residual: add the input back</text><text x="480" y="34" text-anchor="middle" class="t-mut">residual</text>
+        <path class="ln-m" d="M140 140 H620" stroke-dasharray="4 4"/><text x="380" y="160" text-anchor="middle" class="t-mut">&#215; N blocks (12 in small models, around 100 in the largest)</text>
+      </svg>
+    </div>
+  </figure>
+  <ul>
+    <li><strong>Multi-head attention:</strong> several attention mechanisms in parallel, each free to track a different kind of relationship (grammar, coreference, topic).</li>
+    <li><strong>Feed-forward network:</strong> an MLP applied to each token separately. Much of the model's stored knowledge is thought to live here.</li>
+    <li><strong>Positional information:</strong> attention itself ignores word order, so position is injected into the embeddings (sinusoids, learned vectors, or rotary encodings).</li>
+    <li><strong>Residual connections and layer norm:</strong> the ResNet trick from chapter 17, which keeps very deep stacks trainable.</li>
+  </ul>
+
+  <h3>Why transformers took over</h3>
+  <p>All tokens are processed in parallel, which suits GPUs perfectly; any token can reach any other in one step, so long-range context is easy; and performance keeps improving predictably as you add data, parameters and compute (the <strong>scaling laws</strong>). The same block now handles text, images (Vision Transformers), audio, protein sequences and more.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Flavor</th><th>Attention</th><th>Examples and uses</th></tr>
+    <tr><td>Encoder-only</td><td>Every token sees every token</td><td>BERT: classification, search embeddings</td></tr>
+    <tr><td>Decoder-only</td><td>Each token sees only earlier tokens (causal mask)</td><td>GPT, Claude, Llama: text generation</td></tr>
+    <tr><td>Encoder-decoder</td><td>Both, linked by cross-attention</td><td>T5, original translation transformer</td></tr>
+  </table></div>
+  <div class="note" data-k="The cost">
+    <p>Every token attends to every other, so compute grows with the square of the sequence length. Doubling the context quadruples the attention work. Much engineering (efficient attention kernels, caching, sparse and linear attention variants) exists to fight this.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="self-attention from scratch in PyTorch"><pre><code>import torch, torch.nn.functional as F
+
+def self_attention(x, Wq, Wk, Wv, causal=False):
+    # x: (tokens, d_model); W*: (d_model, d_head)
+    Q, K, V = x @ Wq, x @ Wk, x @ Wv
+    scores = Q @ K.T / K.shape[-1] ** 0.5           # (tokens, tokens) relevance
+    if causal:                                       # decoder: no peeking at the future
+        mask = torch.triu(torch.ones_like(scores), diagonal=1).bool()
+        scores = scores.masked_fill(mask, float("-inf"))
+    weights = F.softmax(scores, dim=-1)              # each row sums to 1
+    return weights @ V                               # weighted mix of values
+
+x = torch.randn(11, 64)
+out = self_attention(x, *(torch.randn(64, 16) for _ in range(3)), causal=True)
+print(out.shape)   # torch.Size([11, 16])</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>In attention, what determines how much token i attends to token j?</p>
+      <div class="opts"><button>Their distance in the sentence</button><button>The dot product of i's query with j's key, passed through a softmax</button><button>Alphabetical order</button><button>A fixed weight per word</button></div>
+      <div class="fb">Scores are query-key dot products, normalized with a softmax. Both vectors are computed by learned weight matrices, so the model learns what to look for.</div></div>
+    <div class="q" data-a="3"><p>Why do transformers need positional information?</p>
+      <div class="opts"><button>To reduce memory use</button><button>To speed up the softmax</button><button>Because embeddings are random</button><button>Self-attention treats the input as an unordered set, so order must be added explicitly</button></div>
+      <div class="fb">Without positions, "dog bites man" and "man bites dog" would look identical to attention.</div></div>
+    <div class="q" data-a="0"><p>Doubling the context length of a standard transformer makes attention cost roughly:</p>
+      <div class="opts"><button>4 times larger</button><button>2 times larger</button><button>Unchanged</button><button>Half as large</button></div>
+      <div class="fb">Every token scores every other token, so work scales with the square of the sequence length.</div></div>
+  </div>
+</section>

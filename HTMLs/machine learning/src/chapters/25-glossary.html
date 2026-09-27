@@ -1,0 +1,128 @@
+<section class="chapter" id="glossary" data-num="25" data-part="Working in ML" data-title="Glossary">
+  <header class="ch-head">
+    <h2>Glossary</h2>
+    <p class="lede">Every term from the guide, in plain language. Type to filter.</p>
+  </header>
+  <input class="gl-search" id="gl-search" type="search" placeholder="Search terms, e.g. recall, embedding, dropout" aria-label="Search the glossary">
+  <div class="gl-count"></div>
+  <dl class="gloss">
+    <div><dt>Accuracy</dt><dd>Share of predictions that are correct. Misleading when classes are imbalanced.</dd></div>
+    <div><dt>Activation function</dt><dd>The non-linear function applied after a neuron's weighted sum (ReLU, tanh, sigmoid, GELU). Without it, deep networks collapse to linear models.</dd></div>
+    <div><dt>Adam</dt><dd>An optimizer combining momentum with per-parameter adaptive step sizes. The default for deep learning; AdamW adds decoupled weight decay.</dd></div>
+    <div><dt>Agent</dt><dd>In reinforcement learning, the decision maker. In LLM applications, a model that calls tools and acts in a loop.</dd></div>
+    <div><dt>Attention</dt><dd>A mechanism where each token computes weights over all other tokens (query-key dot products plus softmax) and mixes their values accordingly.</dd></div>
+    <div><dt>AUC (ROC AUC)</dt><dd>Area under the ROC curve: the probability that a random positive is scored higher than a random negative. 0.5 is random, 1.0 perfect.</dd></div>
+    <div><dt>Autoencoder</dt><dd>A network trained to reconstruct its input through a narrow bottleneck, learning a compressed representation.</dd></div>
+    <div><dt>Backpropagation</dt><dd>Computing gradients of the loss with respect to all weights by applying the chain rule backward through the network.</dd></div>
+    <div><dt>Bagging</dt><dd>Bootstrap aggregating: train models on random resamples of the data and average them. The basis of random forests.</dd></div>
+    <div><dt>Baseline</dt><dd>A simple reference solution (predict the mean, majority class, last value) that any real model must beat.</dd></div>
+    <div><dt>Batch normalization</dt><dd>Normalizing a layer's outputs over the mini-batch to stabilize and speed up training.</dd></div>
+    <div><dt>Batch size</dt><dd>Number of examples used to estimate the gradient for one update.</dd></div>
+    <div><dt>Bias (model)</dt><dd>Systematic error from overly simple assumptions; high bias means underfitting. Also the intercept term b in a linear model or neuron.</dd></div>
+    <div><dt>Bias (fairness)</dt><dd>Systematically worse or unfair outcomes for some groups, often inherited from data.</dd></div>
+    <div><dt>Boosting</dt><dd>Building an ensemble sequentially, each model correcting the errors of the previous ones. Gradient boosting fits each new tree to residuals.</dd></div>
+    <div><dt>Calibration</dt><dd>Whether predicted probabilities match observed frequencies: of cases given 70%, about 70% should be positive.</dd></div>
+    <div><dt>Chain rule</dt><dd>The derivative of nested functions is the product of their derivatives. The math behind backpropagation.</dd></div>
+    <div><dt>Class imbalance</dt><dd>When one class is much rarer than others. Calls for suitable metrics, class weights or resampling.</dd></div>
+    <div><dt>Classification</dt><dd>Supervised learning that predicts a category.</dd></div>
+    <div><dt>Clustering</dt><dd>Grouping similar examples without labels (k-means, DBSCAN, hierarchical).</dd></div>
+    <div><dt>CNN</dt><dd>Convolutional neural network: uses small shared kernels slid across the input. The classic architecture for images.</dd></div>
+    <div><dt>Concept drift</dt><dd>A change over time in the relationship between inputs and target, which degrades deployed models.</dd></div>
+    <div><dt>Confusion matrix</dt><dd>A table of true positives, false positives, false negatives and true negatives.</dd></div>
+    <div><dt>Context window</dt><dd>The maximum number of tokens an LLM can consider at once.</dd></div>
+    <div><dt>Convolution</dt><dd>Sliding a small kernel over an input, computing a weighted sum at each position to produce a feature map.</dd></div>
+    <div><dt>Cosine similarity</dt><dd>The cosine of the angle between two vectors; compares direction regardless of length. Standard for embeddings.</dd></div>
+    <div><dt>Cross-entropy</dt><dd>The loss for classification: the negative log of the probability assigned to the true class.</dd></div>
+    <div><dt>Cross-validation</dt><dd>Splitting training data into k folds and rotating which fold is used for validation, giving a more reliable estimate.</dd></div>
+    <div><dt>Curse of dimensionality</dt><dd>As features multiply, data becomes sparse and distances lose meaning, hurting many methods.</dd></div>
+    <div><dt>Data augmentation</dt><dd>Creating extra training examples by transforming existing ones (flips, crops, noise).</dd></div>
+    <div><dt>Data leakage</dt><dd>Information unavailable at prediction time sneaking into training, producing falsely good validation scores.</dd></div>
+    <div><dt>DBSCAN</dt><dd>Density-based clustering that finds arbitrarily shaped clusters and marks sparse points as noise.</dd></div>
+    <div><dt>Decision boundary</dt><dd>The surface where a classifier switches from one class to another.</dd></div>
+    <div><dt>Decision tree</dt><dd>A model that predicts by following a sequence of feature threshold questions to a leaf.</dd></div>
+    <div><dt>Deep learning</dt><dd>Machine learning with neural networks of many layers.</dd></div>
+    <div><dt>Derivative</dt><dd>The rate of change of a function; the slope of its tangent line.</dd></div>
+    <div><dt>Diffusion model</dt><dd>A generative model that learns to reverse a gradual noising process, used for image generation.</dd></div>
+    <div><dt>Dimensionality reduction</dt><dd>Representing data with fewer features while keeping as much structure as possible (PCA, UMAP).</dd></div>
+    <div><dt>Dot product</dt><dd>Sum of products of matching vector entries. Measures alignment; the core operation of linear models and neurons.</dd></div>
+    <div><dt>Dropout</dt><dd>Randomly disabling neurons during training so the network cannot rely on any single one; a regularizer.</dd></div>
+    <div><dt>Early stopping</dt><dd>Stopping training when validation performance stops improving.</dd></div>
+    <div><dt>Embedding</dt><dd>A learned vector representing an item (word, product, user) so that similar items are close.</dd></div>
+    <div><dt>Ensemble</dt><dd>Combining several models to get better, more stable predictions.</dd></div>
+    <div><dt>Epoch</dt><dd>One full pass over the training data.</dd></div>
+    <div><dt>Epsilon-greedy</dt><dd>Exploration strategy: random action with probability &epsilon;, best-known action otherwise.</dd></div>
+    <div><dt>Evaluation set (eval)</dt><dd>A fixed collection of inputs with expected outputs used to measure a model or prompt, especially for LLM applications.</dd></div>
+    <div><dt>F1 score</dt><dd>Harmonic mean of precision and recall.</dd></div>
+    <div><dt>Feature</dt><dd>An input variable describing an example.</dd></div>
+    <div><dt>Feature engineering</dt><dd>Creating informative features from raw data using domain knowledge.</dd></div>
+    <div><dt>Fine-tuning</dt><dd>Continuing to train a pretrained model on a smaller, task-specific dataset.</dd></div>
+    <div><dt>Foundation model</dt><dd>A large model pretrained on broad data that can be adapted to many tasks (LLMs, vision-language models).</dd></div>
+    <div><dt>Generalization</dt><dd>Performing well on new, unseen data. The real goal of ML.</dd></div>
+    <div><dt>Gini impurity</dt><dd>A measure of how mixed the classes in a node are; trees choose splits that reduce it.</dd></div>
+    <div><dt>Gradient</dt><dd>The vector of partial derivatives; points in the direction of steepest increase.</dd></div>
+    <div><dt>Gradient descent</dt><dd>Iteratively moving parameters against the gradient to reduce the loss.</dd></div>
+    <div><dt>Hallucination</dt><dd>A fluent but false output from a generative model.</dd></div>
+    <div><dt>Hyperparameter</dt><dd>A setting chosen before training (learning rate, depth, k), tuned on validation data.</dd></div>
+    <div><dt>Inference</dt><dd>Using a trained model to make predictions.</dd></div>
+    <div><dt>k-means</dt><dd>Clustering by alternately assigning points to the nearest of k centers and moving centers to their points' mean.</dd></div>
+    <div><dt>k-nearest neighbors</dt><dd>Predicting from the labels of the k most similar training examples.</dd></div>
+    <div><dt>Kernel (SVM)</dt><dd>A function computing dot products in an implicit high-dimensional feature space, enabling non-linear boundaries.</dd></div>
+    <div><dt>Kernel (CNN)</dt><dd>A small grid of learned weights slid across an image; also called a filter.</dd></div>
+    <div><dt>L1 / L2 regularization</dt><dd>Penalties on the absolute (L1, lasso) or squared (L2, ridge, weight decay) size of weights. L1 produces sparse models.</dd></div>
+    <div><dt>Label</dt><dd>The known answer for a training example; the target.</dd></div>
+    <div><dt>Large language model (LLM)</dt><dd>A very large transformer trained on next-token prediction over huge text corpora, then tuned to follow instructions.</dd></div>
+    <div><dt>Learning rate</dt><dd>The step size in gradient descent; the most important training hyperparameter.</dd></div>
+    <div><dt>Linear regression</dt><dd>Predicting a number as a weighted sum of features, fit by minimizing squared error.</dd></div>
+    <div><dt>Log loss</dt><dd>Binary cross-entropy; penalizes confident wrong probabilities heavily.</dd></div>
+    <div><dt>Logistic regression</dt><dd>A linear model passed through a sigmoid to output a class probability.</dd></div>
+    <div><dt>LoRA</dt><dd>Low-rank adaptation: fine-tuning by training small added matrices instead of all weights.</dd></div>
+    <div><dt>Loss function</dt><dd>A number measuring how wrong the model is; training minimizes it.</dd></div>
+    <div><dt>MAE / MSE / RMSE</dt><dd>Mean absolute error, mean squared error, and its square root: standard regression metrics.</dd></div>
+    <div><dt>Mini-batch</dt><dd>A small random subset of training data used for one gradient step.</dd></div>
+    <div><dt>MLOps</dt><dd>Practices and tools for deploying, monitoring and maintaining ML systems in production.</dd></div>
+    <div><dt>Momentum</dt><dd>An optimizer technique that accumulates past gradients as velocity to speed up and smooth descent.</dd></div>
+    <div><dt>Naive Bayes</dt><dd>A probabilistic classifier using Bayes' rule with the assumption that features are independent given the class.</dd></div>
+    <div><dt>Neural network</dt><dd>Layers of neurons, each a weighted sum followed by an activation, trained with backpropagation.</dd></div>
+    <div><dt>One-hot encoding</dt><dd>Representing a category as a vector of 0s with a single 1.</dd></div>
+    <div><dt>Overfitting</dt><dd>Fitting training data, including its noise, so closely that performance on new data suffers.</dd></div>
+    <div><dt>Parameter</dt><dd>A number inside the model learned during training (a weight or bias).</dd></div>
+    <div><dt>PCA</dt><dd>Principal component analysis: projecting data onto the directions of greatest variance.</dd></div>
+    <div><dt>Pipeline</dt><dd>A chained sequence of preprocessing and modeling steps fit and applied together, preventing leakage and skew.</dd></div>
+    <div><dt>Policy</dt><dd>In reinforcement learning, the rule mapping states to actions.</dd></div>
+    <div><dt>Pooling</dt><dd>Downsampling a feature map by summarizing blocks, usually with their maximum.</dd></div>
+    <div><dt>Precision</dt><dd>Of the items predicted positive, the share that truly are.</dd></div>
+    <div><dt>Pretraining</dt><dd>Training a large model on broad data with a generic objective before adapting it.</dd></div>
+    <div><dt>Prompt injection</dt><dd>An attack where instructions hidden in content an LLM reads hijack its behavior.</dd></div>
+    <div><dt>Q-learning</dt><dd>A reinforcement learning algorithm that learns the expected return of each action in each state.</dd></div>
+    <div><dt>R&sup2;</dt><dd>Fraction of target variance explained by a regression model.</dd></div>
+    <div><dt>RAG</dt><dd>Retrieval-augmented generation: retrieving relevant documents and adding them to an LLM's prompt.</dd></div>
+    <div><dt>Random forest</dt><dd>An ensemble of decision trees trained on bootstrap samples with random feature subsets, averaged.</dd></div>
+    <div><dt>Recall</dt><dd>Of the truly positive items, the share the model caught. Also called sensitivity or true positive rate.</dd></div>
+    <div><dt>Regression</dt><dd>Supervised learning that predicts a number.</dd></div>
+    <div><dt>Regularization</dt><dd>Any technique that discourages overly complex models to improve generalization.</dd></div>
+    <div><dt>Reinforcement learning</dt><dd>Learning to act by trial and error from rewards.</dd></div>
+    <div><dt>ReLU</dt><dd>Rectified linear unit, max(0, z). The most common hidden-layer activation.</dd></div>
+    <div><dt>Residual (connection)</dt><dd>Adding a layer's input to its output so gradients flow through very deep networks. Also: a prediction error, y minus y hat.</dd></div>
+    <div><dt>RLHF</dt><dd>Reinforcement learning from human feedback: tuning a model toward responses people prefer.</dd></div>
+    <div><dt>ROC curve</dt><dd>True positive rate plotted against false positive rate across all thresholds.</dd></div>
+    <div><dt>SHAP</dt><dd>A method that attributes each prediction to feature contributions, based on Shapley values.</dd></div>
+    <div><dt>Sigmoid</dt><dd>The S-shaped function 1 / (1 + e<sup>-z</sup>) mapping any number into (0, 1).</dd></div>
+    <div><dt>Softmax</dt><dd>Turns a vector of scores into probabilities that sum to 1.</dd></div>
+    <div><dt>Standardization</dt><dd>Rescaling a feature to mean 0 and standard deviation 1.</dd></div>
+    <div><dt>Supervised learning</dt><dd>Learning from examples paired with correct answers.</dd></div>
+    <div><dt>Support vector machine</dt><dd>A classifier that finds the maximum-margin boundary, determined by the support vectors.</dd></div>
+    <div><dt>Temperature</dt><dd>A sampling setting that sharpens (low) or flattens (high) a model's output distribution.</dd></div>
+    <div><dt>Test set</dt><dd>Held-out data used once at the end to estimate real-world performance.</dd></div>
+    <div><dt>Token</dt><dd>A unit of text (word or word piece) that language models read and produce.</dd></div>
+    <div><dt>Top-k / top-p sampling</dt><dd>Restricting sampling to the k most likely tokens, or to the smallest set whose probabilities sum to p.</dd></div>
+    <div><dt>Transfer learning</dt><dd>Reusing a model trained on one task as the starting point for another.</dd></div>
+    <div><dt>Transformer</dt><dd>A neural architecture built from self-attention and feed-forward blocks; the basis of modern LLMs.</dd></div>
+    <div><dt>Underfitting</dt><dd>A model too simple to capture the real pattern; high error on training and test data alike.</dd></div>
+    <div><dt>Unsupervised learning</dt><dd>Finding structure in data without labels.</dd></div>
+    <div><dt>Validation set</dt><dd>Data held out from training and used to compare models and tune hyperparameters.</dd></div>
+    <div><dt>Vanishing gradient</dt><dd>Gradients shrinking toward zero through many layers, stalling learning in early layers.</dd></div>
+    <div><dt>Variance (model)</dt><dd>Sensitivity to the particular training sample; high variance means overfitting.</dd></div>
+    <div><dt>Vector database</dt><dd>A system storing embeddings and answering nearest-neighbor queries quickly, used for semantic search and RAG.</dd></div>
+    <div><dt>Weight decay</dt><dd>L2 regularization applied during optimization, shrinking weights a little at every step.</dd></div>
+  </dl>
+</section>

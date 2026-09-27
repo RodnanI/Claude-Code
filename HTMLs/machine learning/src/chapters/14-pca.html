@@ -1,0 +1,67 @@
+<section class="chapter" id="pca" data-num="14" data-part="Unsupervised learning" data-title="Dimensionality reduction">
+  <header class="ch-head">
+    <h2>Dimensionality reduction</h2>
+    <p class="lede">Real datasets have hundreds or thousands of features, but the interesting variation often lives in just a few directions. Find them, and you can compress, denoise and visualize.</p>
+  </header>
+
+  <p>Why throw information away on purpose?</p>
+  <ul>
+    <li><strong>To see:</strong> you can only plot two or three dimensions. Squashing 50 features into 2 lets you look at your data.</li>
+    <li><strong>To fight the curse of dimensionality:</strong> fewer, more informative features help distance-based models and reduce overfitting.</li>
+    <li><strong>To compress and denoise:</strong> small directions of variation are often just noise.</li>
+    <li><strong>To speed things up:</strong> fewer features, faster training.</li>
+  </ul>
+
+  <h3>Principal component analysis</h3>
+  <p><strong>PCA</strong> finds new axes for your data. The first <strong>principal component</strong> is the direction along which the data varies the most. The second is the direction of most remaining variation, perpendicular to the first, and so on. Keep the first few components and drop the rest.</p>
+
+  <figure class="fig wide" data-demo="pca" data-title="Find the direction of maximum variance">
+    <figcaption>Rotate the line and watch two numbers move in opposite directions: the variance of the projected points (teal) and the squared length of the gray lines, the information lost by projecting. They always add up to the same total, so <strong>maximizing variance kept is the same as minimizing reconstruction error</strong>. The peak of the curve on the right is PC1. Press "Snap to PC1" to jump there.</figcaption>
+  </figure>
+
+  <h3>How many components?</h3>
+  <p>Each component comes with the amount of variance it captures. The <strong>explained variance ratio</strong> tells you what fraction of the total each one keeps. A common rule is to keep enough components for 90 to 95% of the variance. On images of faces or handwritten digits, a few dozen components out of hundreds of pixels often suffice.</p>
+
+  <div class="note" data-k="The math, briefly">
+    <p>The principal components are the <strong>eigenvectors of the covariance matrix</strong> of the data, and the variance along each is its <strong>eigenvalue</strong>. Libraries compute them with the singular value decomposition (SVD) of the centered data matrix, which is faster and numerically stable. The matrix-as-transformation picture from chapter 02 is exactly what is happening: PCA rotates your axes to line up with the data.</p>
+  </div>
+
+  <div class="note warn" data-k="Pitfalls">
+    <ul>
+      <li><strong>Standardize first.</strong> PCA chases variance, so a feature measured in large units will dominate the first component for no good reason.</li>
+      <li><strong>Components are blends.</strong> PC1 might be 0.4 &times; income + 0.3 &times; age &minus; 0.2 &times; debt. That is harder to explain than the original features.</li>
+      <li><strong>Linear only.</strong> PCA finds flat subspaces. Data curled up on a curved surface needs non-linear methods.</li>
+    </ul>
+  </div>
+
+  <h3>Non-linear methods for visualization</h3>
+  <p><strong>t-SNE</strong> and <strong>UMAP</strong> build 2D maps where points that are neighbors in the original space stay neighbors. They produce striking pictures of clusters in images, text embeddings and single-cell biology. Read them carefully: they preserve <em>local</em> neighborhoods, so the sizes of clusters and the distances between clusters on the map usually mean nothing. Use them to look, not to measure.</p>
+
+  <h3>Learned compression</h3>
+  <p>An <strong>autoencoder</strong> is a neural network trained to reproduce its input through a narrow middle layer. To succeed it must learn a compact code, a non-linear generalization of PCA. The idea of learning compact, meaningful vector representations, called <strong>embeddings</strong>, runs through all of modern deep learning and returns in chapter 18.</p>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+pca = make_pipeline(StandardScaler(), PCA(n_components=0.95))  # keep 95% of variance
+Z = pca.fit_transform(X)
+p = pca.named_steps["pca"]
+print(Z.shape, p.explained_variance_ratio_.round(3))
+
+X_2d = PCA(n_components=2).fit_transform(StandardScaler().fit_transform(X))  # for a scatter plot
+# For non-linear maps: from sklearn.manifold import TSNE, or the umap-learn package</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="0"><p>What does the first principal component represent?</p>
+      <div class="opts"><button>The direction of greatest variance in the data</button><button>The most important original feature</button><button>The class boundary</button><button>The average data point</button></div>
+      <div class="fb">PC1 is a direction (a weighted blend of features) along which projected data has maximum variance.</div></div>
+    <div class="q" data-a="2"><p>Why standardize features before PCA?</p>
+      <div class="opts"><button>PCA only accepts values between 0 and 1</button><button>It makes PCA non-linear</button><button>Otherwise features with large units dominate the variance and the components</button><button>It is not needed</button></div>
+      <div class="fb">PCA maximizes variance, and variance depends on units. A feature in grams would swamp the same feature in kilograms.</div></div>
+    <div class="q" data-a="3"><p>On a t-SNE plot, cluster A appears far from cluster B. What can you safely conclude?</p>
+      <div class="opts"><button>A and B are the most different groups in the data</button><button>A has more points than B</button><button>The distance is proportional to their true distance</button><button>Not much: t-SNE preserves local neighborhoods, not global distances</button></div>
+      <div class="fb">t-SNE and UMAP are tuned for local structure. Between-cluster distances and cluster sizes are often distorted.</div></div>
+  </div>
+</section>

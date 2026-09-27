@@ -1,0 +1,74 @@
+<section class="chapter" id="logistic-regression" data-num="06" data-part="Supervised learning" data-title="Logistic regression">
+  <header class="ch-head">
+    <h2>Logistic regression</h2>
+    <p class="lede">Despite the name, it is a classifier. It predicts the probability that an example belongs to a class, and it is the direct ancestor of the neuron.</p>
+  </header>
+
+  <p>Suppose we want to predict pass or fail from hours studied. Labels are 0 (fail) and 1 (pass). We could fit a straight line, but a line shoots below 0 and above 1, which makes no sense as a probability, and a few extreme students would tilt it badly. We want an S-shaped curve that stays between 0 and 1.</p>
+
+  <h3>The sigmoid</h3>
+  <p>Logistic regression computes the same weighted sum as linear regression, then squashes it through the <strong>sigmoid</strong> function:</p>
+  <div class="eq">&sigma;(z) = <span class="frac"><span>1</span><span>1 + e<sup>&minus;z</sup></span></span> &nbsp;&nbsp;&nbsp; p = &sigma;(w &middot; x + b)<small>Large positive z gives p near 1, large negative z gives p near 0, and z = 0 gives exactly 0.5.</small></div>
+
+  <figure class="fig" data-demo="sigmoid" data-title="Fit a probability curve">
+    <figcaption>w controls how steep the curve is (how confident the model gets), b slides it left and right. The dashed line is the <strong>decision boundary</strong>, where the model is exactly 50/50. Notice the log loss can keep improving even when accuracy does not change: loss rewards being confidently right, not just right.</figcaption>
+  </figure>
+
+  <h3>Log loss: punishing confident mistakes</h3>
+  <p>For classification we do not use squared error. We use <strong>log loss</strong>, also called <strong>binary cross-entropy</strong>:</p>
+  <div class="eq">L = &minus;<span class="frac"><span>1</span><span>n</span></span> &Sigma;<sub>i</sub> [ y<sub>i</sub> log p<sub>i</sub> + (1 &minus; y<sub>i</sub>) log(1 &minus; p<sub>i</sub>) ]</div>
+  <p>It reads more simply than it looks: for each example, take the probability the model gave to the <em>correct</em> answer, and add <span class="m">&minus;log</span> of it. Predicting 0.9 for the truth costs 0.1. Predicting 0.5 costs 0.69. Predicting 0.01 for the truth costs 4.6. Being confidently wrong is catastrophically expensive, which is exactly the pressure we want.</p>
+  <div class="note" data-k="Why not MSE?">
+    <p>Combined with a sigmoid, squared error gives a bumpy, non-convex loss with tiny gradients when the model is confidently wrong, the moment it most needs to learn. Log loss gives a convex bowl and a gradient that is beautifully simple: <span class="m">&part;L/&part;z = p &minus; y</span>, prediction minus truth.</p>
+  </div>
+
+  <h3>Boundaries in two dimensions</h3>
+  <p>With two features the decision boundary <span class="m">w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + b = 0</span> is a straight line. Logistic regression is a <strong>linear classifier</strong>. That is a strength (simple, fast, stable, interpretable) and a limitation, as the figure shows.</p>
+
+  <figure class="fig" data-demo="logreg" data-title="Logistic regression, trained live">
+    <figcaption>Watch gradient descent fit the boundary. Switch to "Circle" or "XOR": no straight line can separate them, and accuracy stalls. Now tick "Add x&sup2;, y&sup2;, xy features". The model is still linear, but in a richer feature space, and the boundary it draws back in the original plane is curved. Add your own points to stress it.</figcaption>
+  </figure>
+
+  <div class="note key" data-k="Key idea">
+    <p>Feature engineering can turn a linear model into a non-linear one. Neural networks take this to its conclusion: instead of you inventing <span class="m">x&sup2;</span> and <span class="m">xy</span>, hidden layers <em>learn</em> which features to build.</p>
+  </div>
+
+  <h3>More than two classes: softmax</h3>
+  <p>For <span class="m">K</span> classes (cat, dog, bird), compute one score per class, <span class="m">z<sub>k</sub> = w<sub>k</sub> &middot; x + b<sub>k</sub></span>, then turn scores into probabilities that sum to one with the <strong>softmax</strong>:</p>
+  <div class="eq">p<sub>k</sub> = <span class="frac"><span>e<sup>z<sub>k</sub></sup></span><span>&Sigma;<sub>j</sub> e<sup>z<sub>j</sub></sup></span></span></div>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th></th><th class="num">cat</th><th class="num">dog</th><th class="num">bird</th></tr>
+    <tr><td>scores z</td><td class="num">2.0</td><td class="num">1.0</td><td class="num">0.1</td></tr>
+    <tr><td>e<sup>z</sup></td><td class="num">7.39</td><td class="num">2.72</td><td class="num">1.11</td></tr>
+    <tr><td>softmax p</td><td class="num">0.66</td><td class="num">0.24</td><td class="num">0.10</td></tr>
+  </table></div>
+  <p>The loss becomes <strong>cross-entropy</strong>: <span class="m">&minus;log</span> of the probability assigned to the true class. Softmax plus cross-entropy is the output layer of practically every classification network, including the one inside a language model choosing the next word from 100,000 candidates.</p>
+
+  <h3>Reading the model</h3>
+  <p>Each weight shifts the <em>log-odds</em> <span class="m">log(p / (1 &minus; p))</span>. So <span class="m">e<sup>w</sup></span> is an <strong>odds ratio</strong>: a weight of 0.7 on "hours studied" means each extra hour multiplies the odds of passing by <span class="m">e<sup>0.7</sup> &asymp; 2</span>. This interpretability is why logistic regression is still standard in medicine, credit scoring and anywhere decisions must be explained.</p>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+
+clf = make_pipeline(StandardScaler(), LogisticRegression(C=1.0))
+clf.fit(X_train, y_train)
+
+proba = clf.predict_proba(X_test)[:, 1]    # P(class 1) for each example
+pred = (proba >= 0.5).astype(int)          # the default threshold
+print(clf.score(X_test, y_test))           # accuracy
+# C is the inverse regularization strength: smaller C = simpler model</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>Logistic regression outputs 0.97 for an example whose true label is 0. How does log loss treat this?</p>
+      <div class="opts"><button>A small penalty, since 0.97 is close to 1</button><button>A large penalty, because the model was confidently wrong</button><button>No penalty, only accuracy matters</button><button>The same penalty as predicting 0.51</button></div>
+      <div class="fb">The probability of the true class was 0.03, and &minus;log(0.03) &asymp; 3.5, much larger than the 0.67 for predicting 0.51.</div></div>
+    <div class="q" data-a="2"><p>What shape is the decision boundary of plain logistic regression on two raw features?</p>
+      <div class="opts"><button>A circle</button><button>Any curve it needs</button><button>A straight line</button><button>A set of rectangles</button></div>
+      <div class="fb">The boundary is where w&middot;x + b = 0, which is a line in 2D and a flat hyperplane in higher dimensions. Curves require engineered features or a different model.</div></div>
+    <div class="q" data-a="0"><p>Softmax scores are [3, 3, 3] for three classes. What are the probabilities?</p>
+      <div class="opts"><button>1/3 each</button><button>[1, 0, 0]</button><button>[0.5, 0.25, 0.25]</button><button>They cannot be computed</button></div>
+      <div class="fb">Equal scores mean equal exponentials, so each class gets exactly one third. Softmax only cares about differences between scores.</div></div>
+  </div>
+</section>

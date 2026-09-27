@@ -1,0 +1,113 @@
+<section class="chapter" id="what-is-ml" data-num="01" data-part="Foundations" data-title="What machine learning is">
+  <header class="ch-head">
+    <h2>What machine learning is</h2>
+    <p class="lede">Machine learning is getting a computer to improve at a task by finding patterns in examples, instead of following rules a person wrote by hand.</p>
+  </header>
+
+  <p>Start by doing it. The figure below holds a tiny model. Each dot is an <em>example</em> with a known answer: class A or class B. The shaded background is the model's opinion about every other location on the plane. Add a few points and watch that opinion change.</p>
+
+  <figure class="fig" data-demo="teach" data-title="Train your first model">
+    <figcaption>Tap empty space to add an example of the selected class. Drag a point to move it, tap it to delete it. The model here is simple: for any location it looks at the five nearest examples and takes a weighted vote. You wrote zero rules, yet it classifies the entire plane.</figcaption>
+  </figure>
+
+  <p>That is the whole trick in miniature. You supplied <strong>data</strong> with <strong>answers</strong>, and the program produced <strong>behavior</strong> you never spelled out. The rest of this guide is about doing that well: with better models, on messier data, while measuring honestly how good the result is.</p>
+
+  <h3>Rules versus learning</h3>
+  <p>In traditional programming a person writes the rules and the computer applies them. In machine learning you flip it: you provide inputs together with the answers you want, and a training algorithm produces the rules. Those learned rules are called the <strong>model</strong>.</p>
+
+  <figure class="fig" data-title="Two ways to make a computer do something">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 210" role="img" aria-label="Traditional programming: rules plus data go into a program which produces answers. Machine learning: data plus answers go into training which produces a model.">
+        <text x="0" y="12" class="t-mut">TRADITIONAL PROGRAMMING</text>
+        <rect class="bx" x="0" y="22" width="120" height="30" rx="3"/><text x="60" y="41" text-anchor="middle">Rules</text>
+        <rect class="bx" x="0" y="60" width="120" height="30" rx="3"/><text x="60" y="79" text-anchor="middle">Data</text>
+        <path class="ln" d="M120 37 C180 37 190 56 243 56" marker-end="url(#ah)"/>
+        <path class="ln" d="M120 75 C180 75 190 56 243 56"/>
+        <rect class="bx-i" x="246" y="38" width="150" height="36" rx="3"/><text x="321" y="60" text-anchor="middle" class="t-ink">Program</text>
+        <path class="ln" d="M396 56 H500" marker-end="url(#ah)"/>
+        <rect class="bx" x="504" y="38" width="136" height="36" rx="3"/><text x="572" y="60" text-anchor="middle">Answers</text>
+        <text x="0" y="122" class="t-mut">MACHINE LEARNING</text>
+        <rect class="bx" x="0" y="132" width="120" height="30" rx="3"/><text x="60" y="151" text-anchor="middle">Data</text>
+        <rect class="bx" x="0" y="170" width="120" height="30" rx="3"/><text x="60" y="189" text-anchor="middle">Answers</text>
+        <path class="ln-a" d="M120 147 C180 147 190 166 243 166" marker-end="url(#aha)"/>
+        <path class="ln-a" d="M120 185 C180 185 190 166 243 166"/>
+        <rect class="bx-a" x="246" y="148" width="150" height="36" rx="3"/><text x="321" y="170" text-anchor="middle" class="t-ink">Training</text>
+        <path class="ln-a" d="M396 166 H500" marker-end="url(#aha)"/>
+        <rect class="bx-a" x="504" y="148" width="136" height="36" rx="3"/><text x="572" y="170" text-anchor="middle" class="t-ink">Model = rules</text>
+      </svg>
+    </div>
+    <figcaption>Once trained, the model is used like a normal program: new data in, predictions out. Running a trained model is called <strong>inference</strong>.</figcaption>
+  </figure>
+
+  <p>Why bother? Because for many useful tasks nobody can write the rules. Try writing an explicit rule for "this photo contains a cat" or "this email is a phishing attempt" or "this sentence is sarcastic". Humans do these effortlessly and cannot explain how. We can, however, collect thousands of labeled examples. ML turns examples into working behavior.</p>
+
+  <h3>The four ingredients</h3>
+  <p>Every supervised learning system, from a two-parameter line fit to a trillion-parameter language model, is built from the same four parts. Keep this table in your head; later chapters mostly swap one row at a time.</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Ingredient</th><th>What it is</th><th>Example for house prices</th></tr>
+    <tr><td><strong>Data</strong></td><td>Examples: inputs (features) paired with known answers (labels).</td><td>10,000 past sales: size, rooms, location, and the sale price.</td></tr>
+    <tr><td><strong>Model</strong></td><td>A function with adjustable numbers called parameters or weights.</td><td><span class="m">price = w<sub>1</sub>·size + w<sub>2</sub>·rooms + b</span></td></tr>
+    <tr><td><strong>Loss</strong></td><td>A single number measuring how wrong the model is on the data.</td><td>Average squared difference between predicted and actual price.</td></tr>
+    <tr><td><strong>Optimizer</strong></td><td>A procedure that changes the parameters to reduce the loss.</td><td>Gradient descent: repeatedly nudge each weight downhill.</td></tr>
+  </table></div>
+
+  <h3>Kinds of learning</h3>
+  <div class="cards">
+    <div class="card"><span class="tag">Supervised</span><h4>Learn from answers</h4><p>Every example has a label. Predict a number (<strong>regression</strong>: price, temperature) or a category (<strong>classification</strong>: spam or not, which digit). The bulk of industry ML.</p></div>
+    <div class="card"><span class="tag">Unsupervised</span><h4>Find structure</h4><p>No labels. Group similar customers (<strong>clustering</strong>), compress many features into a few (<strong>dimensionality reduction</strong>), spot oddballs (<strong>anomaly detection</strong>).</p></div>
+    <div class="card"><span class="tag">Self-supervised</span><h4>Make your own labels</h4><p>Hide part of the data and predict it from the rest, like predicting the next word in a sentence. This is how large language models are pretrained on raw text.</p></div>
+    <div class="card"><span class="tag">Reinforcement</span><h4>Learn from reward</h4><p>An agent acts in an environment and receives rewards. No one gives the right action, only a score. Used for games, robotics and fine-tuning chat models.</p></div>
+  </div>
+
+  <h3>Words you will see everywhere</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><td><strong>Example</strong> / sample / row</td><td>One data point, such as one house or one email.</td></tr>
+    <tr><td><strong>Feature</strong> / input / <span class="m">x</span></td><td>A measurable property of an example: square meters, word counts, pixel values.</td></tr>
+    <tr><td><strong>Label</strong> / target / <span class="m">y</span></td><td>The answer we want to predict for an example.</td></tr>
+    <tr><td><strong>Parameters</strong> / weights</td><td>The numbers inside the model that training adjusts.</td></tr>
+    <tr><td><strong>Hyperparameters</strong></td><td>Settings you choose before training: learning rate, tree depth, number of neighbors. Not learned from the training data directly.</td></tr>
+    <tr><td><strong>Training</strong></td><td>Fitting parameters to data by minimizing the loss.</td></tr>
+    <tr><td><strong>Generalization</strong></td><td>Performing well on new data the model has never seen. This is the real goal, and it is what makes ML hard.</td></tr>
+  </table></div>
+
+  <div class="note key" data-k="Key idea">
+    <p>Doing well on the training examples is easy: a lookup table can memorize them. The entire discipline exists to answer one question: <strong>will it work on data it has not seen yet?</strong> You will meet this question in almost every chapter.</p>
+  </div>
+
+  <h3>AI, ML, deep learning, LLMs</h3>
+  <figure class="fig" data-title="How the terms nest">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 250" role="img" aria-label="Nested boxes: artificial intelligence contains machine learning, which contains deep learning, which contains generative models and large language models.">
+        <rect class="bx" x="1" y="1" width="638" height="248" rx="6"/>
+        <text x="16" y="24" class="t-ink">Artificial intelligence</text><text x="16" y="40" class="t-mut">any technique that makes machines act intelligently, including hand-written rules and search</text>
+        <rect class="bx-i" x="30" y="54" width="580" height="186" rx="6"/>
+        <text x="46" y="76" class="t-ink">Machine learning</text><text x="46" y="92" class="t-mut">systems that learn their behavior from data</text>
+        <rect class="bx" x="60" y="106" width="520" height="124" rx="6"/>
+        <text x="76" y="128" class="t-ink">Deep learning</text><text x="76" y="144" class="t-mut">machine learning with many-layered neural networks</text>
+        <rect class="bx-a" x="90" y="158" width="460" height="62" rx="6"/>
+        <text x="106" y="182" class="t-ink">Generative AI and large language models</text><text x="106" y="200" class="t-mut">deep networks trained to produce text, images, audio, code</text>
+      </svg>
+    </div>
+  </figure>
+  <p>Deep learning dominates images, audio and text. For tabular business data (spreadsheets and database tables) older methods such as gradient-boosted trees still frequently win. A good practitioner knows both worlds.</p>
+
+  <h3>When not to use ML</h3>
+  <ul>
+    <li><strong>A simple rule works.</strong> If ten lines of <code>if</code> statements solve it reliably, ship those.</li>
+    <li><strong>You have no data</strong> and no realistic way to get it. Models are made of data.</li>
+    <li><strong>Every error is unacceptable.</strong> ML is statistical: it will be wrong some fraction of the time. Plan for that or do not use it.</li>
+    <li><strong>The world keeps changing faster than you can collect examples.</strong> A model only knows the past it was trained on.</li>
+  </ul>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>A bank wants to predict how many dollars a customer will spend next month. What kind of problem is this?</p>
+      <div class="opts"><button>Classification</button><button>Regression</button><button>Clustering</button><button>Reinforcement learning</button></div>
+      <div class="fb">The target is a continuous number, so it is regression. If the question were "will they spend more than $500, yes or no", it would become classification.</div></div>
+    <div class="q" data-a="2"><p>Which task is the best fit for machine learning instead of hand-written rules?</p>
+      <div class="opts"><button>Converting Celsius to Fahrenheit</button><button>Calculating sales tax</button><button>Flagging fraudulent card transactions</button><button>Sorting names alphabetically</button></div>
+      <div class="fb">Fraud has patterns that shift and are hard to state explicitly, and there are many labeled historical transactions. The other three have exact known formulas.</div></div>
+    <div class="q" data-a="1"><p>What are a model's parameters?</p>
+      <div class="opts"><button>The inputs you feed it at prediction time</button><button>The internal numbers that training adjusts</button><button>The correct answers in the dataset</button><button>Settings such as the learning rate that you choose beforehand</button></div>
+      <div class="fb">Parameters (weights) are learned. Settings you choose before training are hyperparameters.</div></div>
+  </div>
+</section>

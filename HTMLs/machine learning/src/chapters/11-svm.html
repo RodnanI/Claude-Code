@@ -1,0 +1,62 @@
+<section class="chapter" id="svm" data-num="11" data-part="Supervised learning" data-title="Support vector machines">
+  <header class="ch-head">
+    <h2>Support vector machines</h2>
+    <p class="lede">If many lines separate two classes, pick the one with the widest safety margin. Then bend space so that a straight line can separate almost anything.</p>
+  </header>
+
+  <h3>The widest street</h3>
+  <p>When two classes can be separated by a line, there are infinitely many lines that do it. Logistic regression picks one based on probabilities. A <strong>support vector machine</strong> picks the line that sits in the middle of the widest possible "street" between the classes. A wide margin means small nudges to the data will not flip predictions, which tends to generalize well.</p>
+  <p>The remarkable part: the street is defined entirely by the few points touching its edges, the <strong>support vectors</strong>. Every other point could be deleted or moved (without crossing the street) and the answer would not change at all.</p>
+
+  <figure class="fig" data-demo="svm" data-title="Maximum margin classifier">
+    <figcaption>Ringed points are the support vectors. Drag a point that is not ringed: nothing moves. Drag a support vector: the whole street pivots. Then add a few points of the wrong class inside the other cluster and play with C: a large C insists on classifying every training point correctly (narrow street), a small C accepts some violations in exchange for a wider, more robust margin.</figcaption>
+  </figure>
+
+  <h3>Soft margins and the C parameter</h3>
+  <p>Real data overlaps, so the SVM is allowed to let points into the street or even across it, at a price. It minimizes the <strong>hinge loss</strong> plus a penalty on weight size:</p>
+  <div class="eq">&lambda;||w||&sup2; + <span class="frac"><span>1</span><span>n</span></span> &Sigma;<sub>i</sub> max(0, 1 &minus; y<sub>i</sub>(w &middot; x<sub>i</sub> + b))<small>Labels are &plusmn;1. A point well on the correct side contributes zero, which is why only support vectors matter.</small></div>
+  <p>Small <span class="m">||w||</span> means a wide margin (the width is <span class="m">2 / ||w||</span>). In libraries the trade-off is set by <span class="m">C</span>, which behaves like <span class="m">1/&lambda;</span>: big C, low tolerance for violations, higher risk of overfitting.</p>
+
+  <h3>The kernel trick</h3>
+  <p>What if no straight line can separate the classes? Look at the one-dimensional data below: one class sits in the middle, the other on both sides. No single threshold splits them. But add a feature, <span class="m">x&sup2;</span>, and the data lifts onto a parabola where a flat line separates it perfectly.</p>
+
+  <figure class="fig" data-demo="lift" data-title="Lifting data into a higher dimension">
+    <figcaption>A linear boundary in the lifted space (the horizontal line) corresponds to two thresholds back in the original 1D space. The same idea works in any number of dimensions.</figcaption>
+  </figure>
+
+  <p>Computing huge feature expansions explicitly would be expensive. The trick is that the SVM's math only ever needs <em>dot products</em> between examples, and for many useful feature maps the dot product in the big space can be computed directly from the original vectors. That shortcut function is a <strong>kernel</strong>:</p>
+  <ul>
+    <li><strong>Polynomial kernel</strong> <span class="m">(x &middot; z + 1)<sup>d</sup></span>: implicit polynomial features of degree d.</li>
+    <li><strong>RBF (Gaussian) kernel</strong> <span class="m">exp(&minus;&gamma; ||x &minus; z||&sup2;)</span>: similarity that decays with distance. It corresponds to an infinite-dimensional feature space and can carve out almost any boundary. <span class="m">&gamma;</span> sets how local each point's influence is; large <span class="m">&gamma;</span> overfits.</li>
+  </ul>
+
+  <div class="note work" data-k="Where SVMs stand today">
+    <p>SVMs were the state of the art in the 2000s. Today they remain strong for small to medium datasets, and linear SVMs are still excellent for high-dimensional sparse data such as text classification with word counts. Kernel SVMs scale poorly past roughly 100,000 examples, and gradient-boosted trees or neural networks usually take over. Always scale features first: the margin is a distance.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>from sklearn.svm import SVC, LinearSVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.model_selection import GridSearchCV
+
+svm = make_pipeline(StandardScaler(), SVC(kernel="rbf"))
+grid = GridSearchCV(svm, {"svc__C": [0.1, 1, 10, 100],
+                          "svc__gamma": ["scale", 0.01, 0.1, 1]}, cv=5)
+grid.fit(X_train, y_train)
+print(grid.best_params_, grid.score(X_test, y_test))
+
+text_clf = LinearSVC(C=0.5)          # fast linear SVM for sparse text features</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>You delete a training point that is not a support vector and retrain the SVM. What happens to the boundary?</p>
+      <div class="opts"><button>It shifts toward the deleted point</button><button>The margin gets wider</button><button>Nothing changes</button><button>The model must be rebuilt from scratch and changes randomly</button></div>
+      <div class="fb">Only support vectors carry non-zero weight in the solution. Removing any other point leaves the optimal boundary unchanged.</div></div>
+    <div class="q" data-a="0"><p>An RBF-kernel SVM gets 100% training accuracy and poor test accuracy. Which change should help?</p>
+      <div class="opts"><button>Decrease C and/or gamma</button><button>Increase C</button><button>Increase gamma</button><button>Remove feature scaling</button></div>
+      <div class="fb">Large C and large gamma both increase flexibility. Lowering them yields a smoother boundary and less overfitting.</div></div>
+    <div class="q" data-a="3"><p>What does the kernel trick let an SVM do?</p>
+      <div class="opts"><button>Train without any labels</button><button>Skip feature scaling</button><button>Use trees inside the SVM</button><button>Work in a high-dimensional feature space without computing the features explicitly</button></div>
+      <div class="fb">Kernels compute dot products in the expanded space directly from the original vectors, giving non-linear boundaries at a fraction of the cost.</div></div>
+  </div>
+</section>

@@ -1,0 +1,89 @@
+<section class="chapter" id="gradient-descent" data-num="05" data-part="Supervised learning" data-title="Gradient descent">
+  <header class="ch-head">
+    <h2>Gradient descent</h2>
+    <p class="lede">The engine inside nearly every modern model. Walk downhill on the loss, one small step at a time.</p>
+  </header>
+
+  <p>Picture the loss as a landscape. Every possible setting of the parameters is a location, and the height at that location is the loss. Training means finding a low point. The catch: you are standing in thick fog. You cannot see the valley, only feel the slope under your feet. So you do the obvious thing: take a step in the steepest downhill direction, feel again, repeat.</p>
+  <div class="eq">&theta; &larr; &theta; &minus; &eta; &nabla;L(&theta;)<small>Parameters move against the gradient. &eta; (the learning rate) sets the step size.</small></div>
+  <p>That single line trains linear regression, logistic regression and every neural network from a tiny classifier to the largest language models. What changes is how the gradient is computed (backpropagation, chapter 15) and a few refinements to the step.</p>
+
+  <h3>The learning rate is the most important knob</h3>
+  <p>Take steps too small and training crawls. Take them too large and you overshoot the valley floor, bounce up the other wall, and can fly off entirely. Try it on the simplest possible loss, <span class="m">L(w) = w&sup2;</span>.</p>
+
+  <figure class="fig" data-demo="lr1d" data-title="Too small, just right, too big">
+    <figcaption>Set a learning rate, then Step or Run. Try 0.05, 0.3, 0.5, 0.8, 1.0 and 1.05 and read the explanation that appears for each regime.</figcaption>
+  </figure>
+
+  <div class="note work" data-k="In practice">
+    <p>When a training run's loss explodes to NaN, the first suspect is a learning rate that is too high. When loss decreases painfully slowly, try raising it by 3x to 10x. Sweeping learning rates on a log scale (0.1, 0.03, 0.01, 0.003&hellip;) is standard practice.</p>
+  </div>
+
+  <h3>Two dimensions and better optimizers</h3>
+  <p>With two parameters the landscape is a surface, drawn below as a contour map: each line joins points of equal loss, and darker shading means higher loss. Three optimizers race from the same start:</p>
+  <ul>
+    <li><strong>Gradient descent:</strong> the plain rule above.</li>
+    <li><strong>Momentum:</strong> keeps a running velocity, like a heavy ball. Consistent directions build speed; zig-zags cancel out.</li>
+    <li><strong>Adam:</strong> momentum plus a per-parameter step size that adapts to how large that parameter's gradients have been. The default optimizer for deep learning.</li>
+  </ul>
+
+  <figure class="fig wide" data-demo="gd" data-title="Optimizers racing on loss landscapes">
+    <figcaption>On the stretched valley, plain gradient descent zig-zags across the narrow direction while crawling along the long one; momentum races along the valley but overshoots like a heavy ball; Adam rescales each direction separately. That valley is exactly what unscaled features produce, which is the geometric reason standardization speeds up training. On "Two valleys", start on the right: plain descent settles in the nearer, higher valley. Click anywhere to choose a new start point.</figcaption>
+  </figure>
+
+  <h3>Batches, epochs, and useful noise</h3>
+  <p>Computing the exact gradient needs the whole dataset, which may be millions of examples. Instead we estimate it from a small random <strong>mini-batch</strong>:</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Variant</th><th>Gradient from</th><th>Character</th></tr>
+    <tr><td>Batch GD</td><td>All examples</td><td>Accurate, smooth, slow per step, needs the data in memory.</td></tr>
+    <tr><td>Stochastic GD (SGD)</td><td>One example</td><td>Very noisy, very cheap per step.</td></tr>
+    <tr><td>Mini-batch GD</td><td>32 to a few thousand examples</td><td>The practical default. Fits GPU parallelism well.</td></tr>
+  </table></div>
+  <p>One pass through the whole training set is an <strong>epoch</strong>. The noise from mini-batches is not just tolerated, it helps: it can knock the optimizer out of sharp, narrow minima into wider ones, and wide minima tend to generalize better.</p>
+
+  <h3>Learning rate schedules</h3>
+  <p>Big steps help early, small steps help at the end to settle into the minimum. So the rate usually changes over training: a short <strong>warmup</strong> that ramps up from near zero (stabilizes early training of large networks), followed by <strong>decay</strong>, commonly a cosine curve down toward zero.</p>
+
+  <h3>What about local minima?</h3>
+  <p>In two dimensions local minima look scary. In the millions of dimensions of real networks, true bad local minima turn out to be rare: to trap you, a point must curve upward in every one of a million directions at once. More common are <strong>saddle points</strong> and flat plateaus, which momentum and noise help escape. For convex problems such as linear and logistic regression there is only one minimum, so gradient descent finds the global optimum.</p>
+
+  <h3>In code</h3>
+  <div class="code" data-title="gradient descent from scratch"><pre><code>import numpy as np
+
+X = np.random.rand(200, 1) * 10
+y = 3.0 * X[:, 0] + 2.0 + np.random.randn(200)
+
+w, b, lr = 0.0, 0.0, 0.01
+for epoch in range(2000):
+    y_hat = w * X[:, 0] + b
+    err = y_hat - y
+    grad_w = 2 * np.mean(err * X[:, 0])   # dMSE/dw
+    grad_b = 2 * np.mean(err)             # dMSE/db
+    w -= lr * grad_w
+    b -= lr * grad_b
+print(w, b)   # close to 3 and 2</code></pre></div>
+  <div class="code" data-title="the same idea in PyTorch"><pre><code>import torch
+model = torch.nn.Linear(10, 1)
+opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
+sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=100)
+
+for epoch in range(100):
+    for xb, yb in loader:                 # mini-batches
+        loss = torch.nn.functional.mse_loss(model(xb), yb)
+        opt.zero_grad()
+        loss.backward()                   # compute gradients
+        opt.step()                        # theta -= lr * (adjusted) gradient
+    sched.step()</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>Your training loss jumps around wildly and then becomes NaN. What should you try first?</p>
+      <div class="opts"><button>Increase the learning rate</button><button>Decrease the learning rate</button><button>Add more layers</button><button>Train for more epochs</button></div>
+      <div class="fb">Exploding loss is the classic symptom of steps that overshoot. Lower the learning rate (and check your data for extreme values).</div></div>
+    <div class="q" data-a="3"><p>What is an epoch?</p>
+      <div class="opts"><button>One gradient step</button><button>One mini-batch</button><button>The time until the loss reaches zero</button><button>One full pass over the training data</button></div>
+      <div class="fb">With 10,000 examples and batch size 100, one epoch is 100 gradient steps.</div></div>
+    <div class="q" data-a="0"><p>Why does plain gradient descent zig-zag in a long, narrow valley?</p>
+      <div class="opts"><button>The gradient mostly points across the valley, not along it</button><button>The learning rate is always too small</button><button>Momentum is too high</button><button>The loss is not differentiable</button></div>
+      <div class="fb">In a narrow valley the steep walls dominate the gradient. Steps bounce between the walls while progress along the gentle floor is slow. Momentum and Adam, or simply scaling features, fix this.</div></div>
+  </div>
+</section>

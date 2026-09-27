@@ -1,0 +1,96 @@
+<section class="chapter" id="cnn" data-num="17" data-part="Deep learning" data-title="Convolutional networks">
+  <header class="ch-head">
+    <h2>Convolutional neural networks</h2>
+    <p class="lede">How machines learned to see: slide small learned filters across an image, detect edges, then shapes, then objects.</p>
+  </header>
+
+  <h3>Images are grids of numbers</h3>
+  <p>A grayscale image is a matrix of brightness values. A color image is three of them stacked (red, green, blue channels). A modest 224&times;224 color photo is 150,528 numbers. Feeding that into a regular fully connected layer with 1,000 neurons needs 150 million weights for the first layer alone, and the network would have to learn "a cat in the top left" and "a cat in the bottom right" as unrelated facts.</p>
+  <p>Convolutional networks fix both problems with two ideas that match how images work:</p>
+  <ul>
+    <li><strong>Local connectivity:</strong> nearby pixels matter together. Each unit looks only at a small patch.</li>
+    <li><strong>Weight sharing:</strong> an edge is an edge wherever it appears. The same small filter is reused at every position.</li>
+  </ul>
+
+  <h3>Convolution</h3>
+  <p>A <strong>kernel</strong> (or filter) is a small grid of weights, typically 3&times;3. Place it over a patch of the image, multiply overlapping numbers, and sum them: one output value. Slide it one step and repeat. The grid of outputs is a <strong>feature map</strong>: a picture of where the pattern the kernel encodes appears.</p>
+
+  <figure class="fig wide" data-demo="conv" data-title="A convolution, cell by cell">
+    <figcaption>The "Vertical edges" kernel responds positively where the image gets brighter from left to right, negatively where it gets darker, and not at all on flat areas or horizontal strokes. Switch kernels, draw your own image, or type your own weights. In a CNN nobody designs these numbers: they are weights, learned by backpropagation, and the first layer of almost every trained image network rediscovers edge detectors much like these.</figcaption>
+  </figure>
+
+  <h3>The building blocks</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Piece</th><th>What it does</th></tr>
+    <tr><td><strong>Channels</strong></td><td>A conv layer has many kernels (say 64), each producing its own feature map. The next layer's kernels read all 64 maps at once, combining features.</td></tr>
+    <tr><td><strong>Padding</strong></td><td>Adds a border of zeros so the output keeps the input's size (the figure uses this).</td></tr>
+    <tr><td><strong>Stride</strong></td><td>How far the kernel moves each step. Stride 2 halves the resolution.</td></tr>
+    <tr><td><strong>Pooling</strong></td><td>Summarizes small blocks, usually by their maximum. Shrinks the map and makes detection robust to small shifts.</td></tr>
+    <tr><td><strong>Receptive field</strong></td><td>The patch of the original image a unit can see. It grows with every layer, so deep units respond to large structures.</td></tr>
+  </table></div>
+
+  <figure class="fig" data-title="A classic CNN architecture">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 190" role="img" aria-label="An image passes through convolution and pooling layers that shrink spatially and grow in channels, then a dense layer outputs class probabilities.">
+        <rect x="10" y="40" width="90" height="90" class="bx-i"/><text x="55" y="152" text-anchor="middle" class="t-mut">image</text><text x="55" y="166" text-anchor="middle" class="t-mut">224&#215;224&#215;3</text>
+        <rect x="140" y="50" width="70" height="70" class="bx"/><rect x="146" y="44" width="70" height="70" class="bx"/><rect x="152" y="38" width="70" height="70" class="bx-a"/><text x="180" y="152" text-anchor="middle" class="t-mut">conv + ReLU</text><text x="180" y="166" text-anchor="middle" class="t-mut">edges</text>
+        <rect x="258" y="62" width="46" height="46" class="bx"/><rect x="263" y="57" width="46" height="46" class="bx"/><rect x="268" y="52" width="46" height="46" class="bx"/><rect x="273" y="47" width="46" height="46" class="bx-a"/><text x="290" y="152" text-anchor="middle" class="t-mut">pool, conv</text><text x="290" y="166" text-anchor="middle" class="t-mut">textures, parts</text>
+        <rect x="360" y="70" width="28" height="28" class="bx"/><rect x="364" y="66" width="28" height="28" class="bx"/><rect x="368" y="62" width="28" height="28" class="bx"/><rect x="372" y="58" width="28" height="28" class="bx"/><rect x="376" y="54" width="28" height="28" class="bx-a"/><text x="385" y="152" text-anchor="middle" class="t-mut">pool, conv</text><text x="385" y="166" text-anchor="middle" class="t-mut">objects</text>
+        <rect x="448" y="30" width="16" height="110" class="bx-i"/><text x="456" y="152" text-anchor="middle" class="t-mut">flatten</text><text x="456" y="166" text-anchor="middle" class="t-mut">+ dense</text>
+        <path class="ln" d="M102 85 H136 M226 80 H254 M322 76 H356 M406 70 H444 M466 85 H500" marker-end="url(#ah)"/>
+        <text x="508" y="62" class="t-ink">cat   0.92</text><text x="508" y="84">dog   0.06</text><text x="508" y="106" class="t-mut">fox   0.02</text>
+      </svg>
+    </div>
+    <figcaption>Spatial size shrinks while the number of channels grows: the network trades "where" for "what". Early layers find edges, middle layers textures and parts, late layers whole objects.</figcaption>
+  </figure>
+
+  <h3>A short history worth knowing</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Year</th><th>Model</th><th>Why it mattered</th></tr>
+    <tr><td>1998</td><td>LeNet-5</td><td>Read handwritten digits on bank checks. The template for every CNN since.</td></tr>
+    <tr><td>2012</td><td>AlexNet</td><td>Crushed the ImageNet competition using GPUs and ReLU. The start of the deep learning boom.</td></tr>
+    <tr><td>2015</td><td>ResNet</td><td><strong>Skip connections</strong> (add a layer's input to its output) made 100+ layer networks trainable. Now used almost everywhere, including transformers.</td></tr>
+    <tr><td>2020</td><td>Vision Transformer</td><td>Chopped images into patches and applied transformers (next chapter). Competitive with CNNs at scale.</td></tr>
+  </table></div>
+
+  <div class="note work" data-k="Transfer learning: the practical default">
+    <p>You almost never train an image model from scratch at work. Take a network pretrained on millions of images, keep its feature-extracting layers, replace the final layer with one for your classes, and fine-tune. A few hundred labeled images per class can then give excellent results. The same pattern (pretrain big, fine-tune small) dominates text and audio too.</p>
+  </div>
+
+  <p>Beyond classification, the same building blocks power <strong>object detection</strong> (boxes around every object, as in the YOLO family), <strong>segmentation</strong> (a label for every pixel, as in U-Net for medical images) and the denoising networks inside <strong>diffusion</strong> image generators.</p>
+
+  <h3>In code</h3>
+  <div class="code" data-title="PyTorch: a small CNN and transfer learning"><pre><code>import torch
+from torch import nn
+import torchvision
+
+class SmallCNN(nn.Module):
+    def __init__(self, n_classes=10):
+        super().__init__()
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1), nn.ReLU(), nn.MaxPool2d(2),   # 28x28 -> 14x14
+            nn.Conv2d(32, 64, kernel_size=3, padding=1), nn.ReLU(), nn.MaxPool2d(2),  # 14x14 -> 7x7
+        )
+        self.head = nn.Sequential(nn.Flatten(), nn.Linear(64 * 7 * 7, 128), nn.ReLU(),
+                                  nn.Linear(128, n_classes))
+    def forward(self, x):
+        return self.head(self.features(x))
+
+# Transfer learning: reuse a pretrained ResNet, retrain only the last layer
+net = torchvision.models.resnet18(weights="IMAGENET1K_V1")
+for p in net.parameters():
+    p.requires_grad = False
+net.fc = nn.Linear(net.fc.in_features, 5)   # 5 new classes; only this layer trains</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>Why do CNNs need far fewer parameters than fully connected networks on images?</p>
+      <div class="opts"><button>They use smaller images</button><button>Each small kernel is shared across all positions in the image</button><button>They skip backpropagation</button><button>They only work in grayscale</button></div>
+      <div class="fb">Weight sharing: one 3&times;3 kernel has 9 weights no matter how large the image, and it detects its pattern anywhere.</div></div>
+    <div class="q" data-a="3"><p>What does 2&times;2 max pooling do to a 32&times;32 feature map?</p>
+      <div class="opts"><button>Makes it 64&times;64</button><button>Blurs it without changing size</button><button>Adds 4 channels</button><button>Reduces it to 16&times;16, keeping the strongest response in each block</button></div>
+      <div class="fb">Each non-overlapping 2&times;2 block is replaced by its maximum, halving width and height.</div></div>
+    <div class="q" data-a="0"><p>You have 800 labeled photos of 4 product types. What is the most sensible approach?</p>
+      <div class="opts"><button>Fine-tune a pretrained CNN (transfer learning)</button><button>Train a large CNN from scratch</button><button>Use k-NN on raw pixels</button><button>Collect a million images first</button></div>
+      <div class="fb">Pretrained features already capture edges, textures and shapes. Fine-tuning adapts them to your classes with little data.</div></div>
+  </div>
+</section>

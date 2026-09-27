@@ -1,0 +1,92 @@
+<section class="chapter" id="neural-networks" data-num="15" data-part="Deep learning" data-title="Neural networks and backprop">
+  <header class="ch-head">
+    <h2>Neural networks and backpropagation</h2>
+    <p class="lede">Stack many simple units, each a weighted sum followed by a bend, and train them all at once with the chain rule. That is the entire foundation of deep learning.</p>
+  </header>
+
+  <h3>The artificial neuron</h3>
+  <p>You have already met the neuron: it is logistic regression. It takes inputs, multiplies each by a weight, adds a bias, and passes the result through an <strong>activation function</strong>:</p>
+  <div class="eq">a = f(w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + &hellip; + w<sub>n</sub>x<sub>n</sub> + b) = f(<b>w</b> &middot; <b>x</b> + b)</div>
+
+  <figure class="fig" data-title="One neuron">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 190" role="img" aria-label="Three inputs, each multiplied by a weight, summed with a bias, passed through an activation function to produce an output.">
+        <circle cx="40" cy="40" r="20" class="bx"/><text x="40" y="45" text-anchor="middle" class="t-ser">x&#8321;</text>
+        <circle cx="40" cy="95" r="20" class="bx"/><text x="40" y="100" text-anchor="middle" class="t-ser">x&#8322;</text>
+        <circle cx="40" cy="150" r="20" class="bx"/><text x="40" y="155" text-anchor="middle" class="t-ser">x&#8323;</text>
+        <path class="ln" d="M60 40 L262 88" marker-end="url(#ah)"/><path class="ln" d="M60 95 H260" marker-end="url(#ah)"/><path class="ln" d="M60 150 L262 102" marker-end="url(#ah)"/>
+        <text x="150" y="54" class="t-acc">w&#8321;</text><text x="150" y="88" class="t-acc">w&#8322;</text><text x="150" y="140" class="t-acc">w&#8323;</text>
+        <circle cx="300" cy="95" r="36" class="bx-i"/><text x="300" y="102" text-anchor="middle" class="t-ser" style="font-size:24px">&#931;</text>
+        <text x="300" y="160" text-anchor="middle" class="t-mut">+ bias b</text><path class="ln-m" d="M300 131 V146"/>
+        <path class="ln" d="M336 95 H408" marker-end="url(#ah)"/><text x="372" y="86" text-anchor="middle" class="t-mut">z</text>
+        <rect x="412" y="65" width="80" height="60" rx="4" class="bx-a"/><path class="ln-a" d="M424 112 H448 L480 78" /><text x="452" y="142" text-anchor="middle" class="t-mut">activation f</text>
+        <path class="ln" d="M492 95 H580" marker-end="url(#ah)"/><circle cx="604" cy="95" r="20" class="bx"/><text x="604" y="100" text-anchor="middle" class="t-ser">a</text>
+      </svg>
+    </div>
+    <figcaption>A weighted sum (a dot product, chapter 02), plus a bias, bent by a non-linear function. The weights and bias are what training learns.</figcaption>
+  </figure>
+
+  <h3>Why the bend matters</h3>
+  <p>Without an activation function, a neuron is linear, and stacking linear layers gives... another linear function. Ten layers of matrix multiplications collapse into a single matrix. The non-linear activation is what lets depth add expressive power: each layer can fold and bend the space that the next layer sees.</p>
+
+  <figure class="fig" data-demo="activations" data-title="Activation functions and their slopes">
+    <figcaption>The dashed line is the derivative, which is what backpropagation multiplies by at every layer. Compare sigmoid's tiny maximum slope of 0.25 with ReLU's slope of exactly 1 for positive inputs: multiply 0.25 by itself over 10 layers and the gradient is one millionth of its size. That is why deep networks switched to ReLU and its relatives.</figcaption>
+  </figure>
+
+  <h3>Layers</h3>
+  <p>A layer is many neurons reading the same inputs, each with its own weights. In matrix form a whole layer is one line, which is why GPUs are so good at this:</p>
+  <div class="eq">h = f(W x + b)<small>W holds one row of weights per neuron. The output h is a new vector: the input re-described by learned features.</small></div>
+  <p>A <strong>multilayer perceptron</strong> (MLP) chains layers: input, one or more <strong>hidden layers</strong>, and an output layer. The output uses a sigmoid for binary classification, a softmax for multiple classes, or nothing (identity) for regression. The hidden layers learn their own features, the thing you did by hand with <span class="m">x&sup2;</span> in chapter 06.</p>
+  <div class="note key" data-k="Universal approximation">
+    <p>A network with a single hidden layer and enough neurons can approximate any reasonable continuous function as closely as you like. The theorem guarantees the capacity exists; it says nothing about how many neurons, how much data, or whether training will find the weights. In practice, depth (many layers) reaches the same power far more efficiently than width.</p>
+  </div>
+
+  <h3>Backpropagation</h3>
+  <p>Training needs the gradient of the loss with respect to every weight, possibly billions of them. <strong>Backpropagation</strong> computes all of them in one backward sweep, at about the cost of one forward pass. It is nothing but the chain rule applied systematically:</p>
+  <ol class="steps">
+    <li><strong>Forward pass:</strong> compute and remember every intermediate value, from input to loss.</li>
+    <li><strong>Backward pass:</strong> start at the loss with gradient 1. At each operation, multiply the gradient arriving from above by the operation's local derivative and pass it down to its inputs.</li>
+    <li><strong>Update:</strong> every parameter now knows its gradient; take an optimizer step.</li>
+  </ol>
+
+  <figure class="fig wide" data-demo="backprop" data-title="Backpropagation, one operation at a time">
+    <figcaption>A single neuron with a squared error loss, drawn as a computational graph. Black numbers are forward values, orange ones marked &nabla; are gradients of the loss. Step through it, then apply the update and step through again: the loss shrinks. Notice the patterns: an addition copies its gradient to both inputs, a multiplication sends each input the gradient times the <em>other</em> input.</figcaption>
+  </figure>
+
+  <p>Frameworks like PyTorch and JAX build this graph automatically as your code runs (<strong>automatic differentiation</strong>), so you never derive gradients by hand. Understanding the mechanics still matters: it explains vanishing and exploding gradients, why some operations break training, and what <code>loss.backward()</code> actually does.</p>
+
+  <div class="note work" data-k="Build it yourself">
+    <p>Andrej Karpathy's free "Neural Networks: Zero to Hero" course begins by writing a tiny autograd engine (micrograd) in about 100 lines of Python. After that, nothing in PyTorch feels like magic. Highly recommended as your next step after this guide.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="PyTorch MLP"><pre><code>import torch
+from torch import nn
+
+model = nn.Sequential(
+    nn.Linear(2, 16), nn.ReLU(),        # hidden layer 1: h = relu(W1 x + b1)
+    nn.Linear(16, 16), nn.ReLU(),       # hidden layer 2
+    nn.Linear(16, 1),                   # output logit
+)
+loss_fn = nn.BCEWithLogitsLoss()        # sigmoid + log loss, numerically stable
+opt = torch.optim.Adam(model.parameters(), lr=0.01)
+
+for step in range(1000):
+    logits = model(X).squeeze(1)        # forward pass
+    loss = loss_fn(logits, y.float())
+    opt.zero_grad()
+    loss.backward()                      # backpropagation fills .grad on every weight
+    opt.step()                           # gradient descent update</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="3"><p>What happens if you stack many layers with no activation functions?</p>
+      <div class="opts"><button>The network becomes more powerful with each layer</button><button>Training becomes impossible</button><button>It becomes a decision tree</button><button>The whole network is equivalent to a single linear layer</button></div>
+      <div class="fb">A product of matrices is still a matrix. Without non-linearity, depth adds no expressive power.</div></div>
+    <div class="q" data-a="1"><p>In backpropagation, what does a multiplication node z = w &middot; x pass back to w?</p>
+      <div class="opts"><button>The upstream gradient unchanged</button><button>The upstream gradient times x</button><button>The upstream gradient times w</button><button>Zero</button></div>
+      <div class="fb">&part;z/&part;w = x, so by the chain rule w receives (upstream gradient) &times; x. Each input gets the other input as its local derivative.</div></div>
+    <div class="q" data-a="0"><p>Why did ReLU largely replace sigmoid in hidden layers?</p>
+      <div class="opts"><button>Its gradient does not shrink toward zero for positive inputs, which eases the vanishing gradient problem</button><button>It outputs probabilities</button><button>It is bounded between 0 and 1</button><button>It has no parameters</button></div>
+      <div class="fb">Sigmoid's derivative is at most 0.25, so gradients shrink exponentially through many layers. ReLU passes gradient 1 for positive inputs and is also cheaper to compute.</div></div>
+  </div>
+</section>

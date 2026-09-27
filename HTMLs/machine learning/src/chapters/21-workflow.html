@@ -1,0 +1,110 @@
+<section class="chapter" id="workflow" data-num="21" data-part="Working in ML" data-title="The project workflow">
+  <header class="ch-head">
+    <h2>The ML project workflow</h2>
+    <p class="lede">Training the model is maybe a fifth of a real project. The rest is framing the problem, wrangling data, evaluating honestly, shipping, and keeping it working.</p>
+  </header>
+
+  <figure class="fig" data-title="The lifecycle of an ML system">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 200" role="img" aria-label="A loop: frame the problem, collect data, explore, baseline, model and iterate, evaluate, deploy, monitor, and back to data.">
+        <g>
+          <rect x="0" y="20" width="136" height="44" rx="4" class="bx-a"/><text x="68" y="40" text-anchor="middle" class="t-ink">1 frame</text><text x="68" y="55" text-anchor="middle" class="t-mut">decision, metric</text>
+          <rect x="168" y="20" width="136" height="44" rx="4" class="bx"/><text x="236" y="40" text-anchor="middle" class="t-ink">2 data</text><text x="236" y="55" text-anchor="middle" class="t-mut">collect, label</text>
+          <rect x="336" y="20" width="136" height="44" rx="4" class="bx"/><text x="404" y="40" text-anchor="middle" class="t-ink">3 explore</text><text x="404" y="55" text-anchor="middle" class="t-mut">EDA, leakage hunt</text>
+          <rect x="504" y="20" width="136" height="44" rx="4" class="bx"/><text x="572" y="40" text-anchor="middle" class="t-ink">4 baseline</text><text x="572" y="55" text-anchor="middle" class="t-mut">simplest thing</text>
+          <rect x="504" y="136" width="136" height="44" rx="4" class="bx"/><text x="572" y="156" text-anchor="middle" class="t-ink">5 iterate</text><text x="572" y="171" text-anchor="middle" class="t-mut">features, models</text>
+          <rect x="336" y="136" width="136" height="44" rx="4" class="bx"/><text x="404" y="156" text-anchor="middle" class="t-ink">6 evaluate</text><text x="404" y="171" text-anchor="middle" class="t-mut">test set, slices, A/B</text>
+          <rect x="168" y="136" width="136" height="44" rx="4" class="bx"/><text x="236" y="156" text-anchor="middle" class="t-ink">7 deploy</text><text x="236" y="171" text-anchor="middle" class="t-mut">batch or real time</text>
+          <rect x="0" y="136" width="136" height="44" rx="4" class="bx-a"/><text x="68" y="156" text-anchor="middle" class="t-ink">8 monitor</text><text x="68" y="171" text-anchor="middle" class="t-mut">drift, decay</text>
+        </g>
+        <path class="ln" d="M136 42 H164 M304 42 H332 M472 42 H500 M572 64 V132 M504 158 H476 M336 158 H308 M168 158 H140" marker-end="url(#ah)"/>
+        <path class="ln-a" d="M68 136 C68 110 236 110 236 68" marker-end="url(#aha)"/><text x="150" y="104" text-anchor="middle" class="t-acc">retrain on new data</text>
+      </svg>
+    </div>
+    <figcaption>Real projects loop back constantly: error analysis sends you back to the data far more often than to a new algorithm.</figcaption>
+  </figure>
+
+  <h3>1. Frame the problem</h3>
+  <p>The most expensive mistakes happen before any code. Answer these in writing:</p>
+  <ul>
+    <li>What <strong>decision or action</strong> will the prediction change? Who uses it, and when?</li>
+    <li>What is the <strong>target</strong>, exactly? "Churn" meaning cancels within 30 days? 90? Precise definitions prevent months of confusion.</li>
+    <li>What <strong>metric</strong> reflects success, and what do false positives and false negatives each cost?</li>
+    <li>What would a <strong>non-ML solution</strong> achieve? That is your baseline to beat.</li>
+    <li>What data is <strong>available at prediction time</strong>? (Leakage prevention starts here.)</li>
+  </ul>
+
+  <h3>2 to 4. Data, exploration, baseline</h3>
+  <p>Gather data, and if you need labels, write labeling guidelines and measure how often two labelers agree: if humans disagree 20% of the time, no model will be 99% accurate. Explore distributions, missing values and relationships, and hunt for suspiciously predictive features. Then build the simplest possible end-to-end baseline, from raw data to a metric, so everything later is a measured improvement.</p>
+
+  <h3>5. Iterate with error analysis</h3>
+  <p>Do not just stare at the aggregate score. Pull 50 to 100 examples the model gets wrong and categorize them by hand. You will find label errors, missing features, confusing classes, and data quirks. This single habit separates effective practitioners from people who try random architectures. Track every experiment (parameters, data version, code version, metrics) so you can reproduce and compare.</p>
+
+  <h3>6. Evaluate like a skeptic</h3>
+  <ul>
+    <li>Report on the untouched test set once, at the end.</li>
+    <li>Break metrics down by <strong>slices</strong>: regions, device types, customer segments, demographic groups. A great average can hide a disaster in one slice.</li>
+    <li>Offline metrics are a proxy. The real test is an <strong>online experiment</strong> (A/B test) measuring the business outcome.</li>
+  </ul>
+
+  <h3>7. Deploy</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Mode</th><th>How</th><th>Good for</th></tr>
+    <tr><td><strong>Batch</strong></td><td>Score all records on a schedule, write results to a table</td><td>Daily churn scores, weekly forecasts, lead ranking</td></tr>
+    <tr><td><strong>Real time</strong></td><td>Model behind an API; predict per request in milliseconds</td><td>Fraud checks at payment, recommendations, search ranking</td></tr>
+    <tr><td><strong>On device</strong></td><td>Compressed model running on the phone or edge hardware</td><td>Keyboard prediction, camera effects, offline use</td></tr>
+  </table></div>
+  <p>Package preprocessing and model together (a scikit-learn Pipeline or an exported graph) so training and serving cannot drift apart, a bug called <strong>training-serving skew</strong>.</p>
+
+  <h3>8. Monitor, because the world moves</h3>
+  <ul>
+    <li><strong>Data drift:</strong> input distributions change (new customer types, a sensor replaced, a UI redesign).</li>
+    <li><strong>Concept drift:</strong> the relationship itself changes (fraudsters adapt, tastes shift, a pandemic hits).</li>
+    <li><strong>Feedback loops:</strong> the model's own decisions shape future training data (a recommender only learns about what it chose to show).</li>
+  </ul>
+  <p>Log inputs and predictions, compare live distributions with training ones, track performance as labels arrive, and schedule or trigger retraining.</p>
+
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>MLOps need</th><th>Common tools</th></tr>
+    <tr><td>Experiment tracking, model registry</td><td>MLflow, Weights &amp; Biases</td></tr>
+    <tr><td>Data and pipeline versioning</td><td>DVC, lakeFS, dbt</td></tr>
+    <tr><td>Orchestration</td><td>Airflow, Prefect, Dagster, Kubeflow</td></tr>
+    <tr><td>Serving</td><td>FastAPI, BentoML, TorchServe, managed cloud endpoints (SageMaker, Vertex AI, Azure ML)</td></tr>
+    <tr><td>Monitoring</td><td>Evidently, WhyLabs, Arize, plus ordinary dashboards</td></tr>
+  </table></div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="train, validate, save, serve"><pre><code># train.py
+import joblib
+from sklearn.model_selection import cross_val_score
+from lightgbm import LGBMClassifier
+from sklearn.pipeline import Pipeline
+
+pipe = Pipeline([("prep", prep), ("model", LGBMClassifier(n_estimators=400, learning_rate=0.05))])
+print(cross_val_score(pipe, X_train, y_train, cv=5, scoring="roc_auc").mean())
+pipe.fit(X_train, y_train)
+joblib.dump(pipe, "model.joblib")          # preprocessing + model in one artifact
+
+# serve.py  (run with: uvicorn serve:app)
+import joblib, pandas as pd
+from fastapi import FastAPI
+app = FastAPI()
+pipe = joblib.load("model.joblib")
+
+@app.post("/predict")
+def predict(record: dict):
+    p = pipe.predict_proba(pd.DataFrame([record]))[0, 1]
+    return {"churn_probability": float(p)}</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="0"><p>A model performs well offline but poorly in production. Preprocessing was reimplemented separately in the serving code. What is the likely culprit?</p>
+      <div class="opts"><button>Training-serving skew</button><button>Too few epochs</button><button>The learning rate</button><button>The test set was too large</button></div>
+      <div class="fb">Two implementations of the same transformation rarely match perfectly. Ship preprocessing and model as one artifact.</div></div>
+    <div class="q" data-a="2"><p>Which habit most improves a model in practice?</p>
+      <div class="opts"><button>Trying the newest architecture every week</button><button>Tuning random seeds</button><button>Manually inspecting and categorizing the model's errors</button><button>Increasing the number of epochs</button></div>
+      <div class="fb">Error analysis reveals label problems, missing features and data issues that no amount of blind tuning will fix.</div></div>
+    <div class="q" data-a="3"><p>A fraud model's precision slowly degrades over six months though nothing in the code changed. What is most likely?</p>
+      <div class="opts"><button>A bug in the metric</button><button>Overfitting during training</button><button>The GPU is wearing out</button><button>Concept drift: fraud patterns changed</button></div>
+      <div class="fb">Adversaries adapt. Monitoring and periodic retraining on recent data are essential for fraud and similar domains.</div></div>
+  </div>
+</section>

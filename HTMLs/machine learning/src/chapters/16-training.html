@@ -1,0 +1,119 @@
+<section class="chapter" id="training" data-num="16" data-part="Deep learning" data-title="Training deep networks">
+  <header class="ch-head">
+    <h2>Training deep networks</h2>
+    <p class="lede">A real neural network, training live in your browser. Then the practical craft: the settings, tricks and warning signs that decide whether a network learns or flails.</p>
+  </header>
+
+  <figure class="fig wide" data-demo="playground" data-title="Neural network playground">
+    <figcaption>Every square on the left is a neuron, showing how strongly it fires across the input plane. Lines are weights: teal positive, orange negative, thicker is stronger. Watch the first hidden layer learn simple edges and later layers combine them into curves. Everything here is the same math as PyTorch, just smaller.</figcaption>
+  </figure>
+
+  <h3>Experiments worth running</h3>
+  <ol class="steps">
+    <li><strong>Depth vs. no depth.</strong> Circle data with 0 hidden layers is logistic regression: it fails. Add one hidden layer with 3 or more neurons and it succeeds. Or keep 0 layers and turn on x&#8321;&sup2; and x&#8322;&sup2;: hand-made features do the same job.</li>
+    <li><strong>The spiral.</strong> Try it with 2 layers of 4: it struggles. Give it 3 or 4 layers of 8, or the sine features, and be patient.</li>
+    <li><strong>Linear activation.</strong> Choose "Linear" with 4 layers on the circle. No amount of depth helps, exactly as chapter 15 predicted.</li>
+    <li><strong>Learning rate.</strong> Set it to 1 with SGD and watch the loss thrash. Set it to 0.001 and watch it crawl.</li>
+    <li><strong>Overfitting.</strong> Noise at 0.8, 4 layers of 8 neurons, and let it run. Training loss keeps falling, test loss turns upward, and the boundary grows islands around individual noisy points. Now add L2 regularization.</li>
+    <li><strong>Dead ReLUs.</strong> Pick ReLU with a high learning rate and watch some neuron squares go blank: they output zero everywhere and have stopped learning.</li>
+  </ol>
+
+  <h3>Initialization</h3>
+  <p>Weights start random, never all zero: identical weights would make every neuron in a layer compute the same thing and receive the same gradient forever (the <em>symmetry</em> problem). The scale matters too. Too large and activations explode or saturate; too small and signals fade to nothing after a few layers. <strong>Xavier/Glorot</strong> initialization (for tanh) and <strong>He</strong> initialization (for ReLU) scale the random weights by the number of inputs so that signal strength stays roughly constant through the layers. Frameworks do this by default.</p>
+
+  <h3>Normalization layers</h3>
+  <p><strong>Batch normalization</strong> rescales each layer's outputs to zero mean and unit variance over the mini-batch, then lets the network learn its preferred scale and shift. It makes training faster and far less sensitive to initialization and learning rate. <strong>Layer normalization</strong> does the same across the features of a single example instead of across the batch, which is what transformers use.</p>
+
+  <h3>Regularization, deep learning style</h3>
+  <ul>
+    <li><strong>Weight decay:</strong> L2 regularization, usually via the AdamW optimizer.</li>
+    <li><strong>Dropout:</strong> during training, randomly switch off a fraction of neurons (say 10 to 50%) at each step. No neuron can rely on any specific other one, which forces redundant, robust features. At test time all neurons are active.</li>
+    <li><strong>Data augmentation:</strong> random crops, flips, color jitter, noise. Often the single biggest win for images.</li>
+    <li><strong>Early stopping:</strong> keep the checkpoint with the best validation loss.</li>
+  </ul>
+
+  <figure class="fig" data-title="Dropout">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 170" role="img" aria-label="Left: a fully connected network. Right: the same network with some neurons dropped and their connections removed.">
+        <g class="ln-m">
+          <path d="M60 40 L160 25 M60 40 L160 70 M60 40 L160 115 M60 40 L160 150 M60 95 L160 25 M60 95 L160 70 M60 95 L160 115 M60 95 L160 150 M60 140 L160 25 M60 140 L160 70 M60 140 L160 115 M60 140 L160 150"/>
+          <path d="M160 25 L260 50 M160 70 L260 50 M160 115 L260 50 M160 150 L260 50 M160 25 L260 120 M160 70 L260 120 M160 115 L260 120 M160 150 L260 120"/>
+          <path d="M400 40 L500 25 M400 40 L500 115 M400 95 L500 25 M400 95 L500 115 M400 140 L500 25 M400 140 L500 115 M500 25 L600 50 M500 115 L600 50 M500 25 L600 120 M500 115 L600 120"/>
+        </g>
+        <g class="bx-i"><circle cx="60" cy="40" r="11"/><circle cx="60" cy="95" r="11"/><circle cx="60" cy="140" r="11"/><circle cx="160" cy="25" r="11"/><circle cx="160" cy="70" r="11"/><circle cx="160" cy="115" r="11"/><circle cx="160" cy="150" r="11"/><circle cx="260" cy="50" r="11"/><circle cx="260" cy="120" r="11"/>
+          <circle cx="400" cy="40" r="11"/><circle cx="400" cy="95" r="11"/><circle cx="400" cy="140" r="11"/><circle cx="500" cy="25" r="11"/><circle cx="500" cy="115" r="11"/><circle cx="600" cy="50" r="11"/><circle cx="600" cy="120" r="11"/></g>
+        <g class="bx"><circle cx="500" cy="70" r="11" stroke-dasharray="3 3"/><circle cx="500" cy="150" r="11" stroke-dasharray="3 3"/></g>
+        <path class="ln-a" d="M493 63 L507 77 M507 63 L493 77 M493 143 L507 157 M507 143 L493 157"/>
+        <text x="160" y="168" text-anchor="middle" class="t-mut">full network</text><text x="500" y="168" text-anchor="middle" class="t-mut" dy="0">one training step with dropout</text>
+      </svg>
+    </div>
+  </figure>
+
+  <h3>Reading loss curves</h3>
+  <p>Always plot training and validation loss over time. Most problems announce themselves here:</p>
+  <figure class="fig" data-title="Four loss curves you will see">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 150" role="img" aria-label="Four small charts: healthy convergence, overfitting with validation loss rising, a learning rate that is too high with a jagged curve, and a learning rate that is too low with a slow decline.">
+        <g transform="translate(5 8)"><path class="ln-m" d="M0 0 V100 H140"/><path class="ln" d="M4 10 C30 60 70 82 138 88"/><path class="ln-a" d="M4 12 C30 62 70 80 138 82" stroke-dasharray="4 3"/><text x="70" y="124" text-anchor="middle" class="t-ink">healthy</text><text x="70" y="138" text-anchor="middle" class="t-mut">both fall, small gap</text></g>
+        <g transform="translate(167 8)"><path class="ln-m" d="M0 0 V100 H140"/><path class="ln" d="M4 10 C30 60 70 86 138 94"/><path class="ln-a" d="M4 12 C28 58 55 66 80 64 C100 62 120 52 138 40" stroke-dasharray="4 3"/><text x="70" y="124" text-anchor="middle" class="t-ink">overfitting</text><text x="70" y="138" text-anchor="middle" class="t-mut">stop at the valley</text></g>
+        <g transform="translate(329 8)"><path class="ln-m" d="M0 0 V100 H140"/><path class="ln" d="M4 30 L14 62 L22 40 L32 70 L40 34 L52 76 L60 24 L72 66 L82 18 L94 58 L104 8 L116 44 L126 2"/><text x="70" y="124" text-anchor="middle" class="t-ink">rate too high</text><text x="70" y="138" text-anchor="middle" class="t-mut">jagged, rising, NaN</text></g>
+        <g transform="translate(491 8)"><path class="ln-m" d="M0 0 V100 H140"/><path class="ln" d="M4 12 C50 22 100 30 138 36"/><path class="ln-a" d="M4 14 C50 24 100 32 138 38" stroke-dasharray="4 3"/><text x="70" y="124" text-anchor="middle" class="t-ink">rate too low</text><text x="70" y="138" text-anchor="middle" class="t-mut">or model too small</text></g>
+      </svg>
+    </div>
+    <figcaption>Solid: training loss. Dashed: validation loss.</figcaption>
+  </figure>
+
+  <h3>A practical recipe</h3>
+  <ol class="steps">
+    <li><strong>Look at the data</strong> for longer than feels necessary. Check labels, duplicates, class balance, weird values.</li>
+    <li><strong>Get a dumb baseline working end to end</strong>, including evaluation, before any cleverness.</li>
+    <li><strong>Overfit one small batch.</strong> A correct network must be able to drive loss near zero on 10 examples. If it cannot, you have a bug.</li>
+    <li><strong>Then scale up</strong> and add regularization only when validation loss says you need it.</li>
+    <li><strong>Change one thing at a time</strong> and keep a log of every run (tools like Weights &amp; Biases or MLflow help).</li>
+    <li><strong>Tune the learning rate first</strong>; it matters more than almost anything else.</li>
+  </ol>
+  <div class="note work" data-k="Hardware in one paragraph">
+    <p>Deep learning runs on GPUs because it is mostly matrix multiplication done in parallel. Larger batches use the GPU better but may need a larger learning rate. <strong>Mixed precision</strong> (16-bit floats where safe) roughly doubles speed and halves memory. When a model does not fit, reduce batch size, use gradient accumulation, or use a smaller model. Free notebooks (Google Colab, Kaggle) give you a GPU to learn with.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="PyTorch training loop with validation"><pre><code>import torch
+from torch import nn
+
+model = nn.Sequential(
+    nn.Linear(20, 128), nn.BatchNorm1d(128), nn.ReLU(), nn.Dropout(0.2),
+    nn.Linear(128, 64), nn.ReLU(), nn.Dropout(0.2),
+    nn.Linear(64, 1))
+opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=0.01)
+loss_fn = nn.BCEWithLogitsLoss()
+best, patience = float("inf"), 0
+
+for epoch in range(200):
+    model.train()                                  # dropout and batchnorm in training mode
+    for xb, yb in train_loader:
+        loss = loss_fn(model(xb).squeeze(1), yb)
+        opt.zero_grad(); loss.backward(); opt.step()
+
+    model.eval()                                   # dropout off, batchnorm uses running stats
+    with torch.no_grad():
+        val = sum(loss_fn(model(xb).squeeze(1), yb).item() for xb, yb in val_loader)
+    if val &lt; best:
+        best, patience = val, 0
+        torch.save(model.state_dict(), "best.pt")  # keep the best checkpoint
+    else:
+        patience += 1
+        if patience == 10:                         # early stopping
+            break</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>Why not initialize all weights to zero?</p>
+      <div class="opts"><button>Training would be too fast</button><button>Zero is not a valid float</button><button>Every neuron in a layer would stay identical, since they get identical gradients</button><button>It causes overfitting</button></div>
+      <div class="fb">Random initialization breaks symmetry so that neurons can learn different features.</div></div>
+    <div class="q" data-a="0"><p>Training loss keeps falling but validation loss has risen for 15 epochs. What should you do?</p>
+      <div class="opts"><button>Stop and use the checkpoint from the validation minimum, then add regularization</button><button>Raise the learning rate</button><button>Train for many more epochs</button><button>Remove the validation set</button></div>
+      <div class="fb">This is overfitting. Early stopping keeps the best model; dropout, weight decay, augmentation or more data address the cause.</div></div>
+    <div class="q" data-a="1"><p>Your network cannot get the loss near zero even on a batch of 10 examples. What does that suggest?</p>
+      <div class="opts"><button>It needs more data</button><button>There is likely a bug, or the model and learning rate are badly configured</button><button>It is overfitting</button><button>Everything is fine</button></div>
+      <div class="fb">Any reasonable network should memorize 10 examples. Failing to do so points to bugs in data, labels, loss or the training loop.</div></div>
+  </div>
+</section>

@@ -1,0 +1,49 @@
+<section class="chapter" id="choosing" data-num="22" data-part="Working in ML" data-title="Choosing an algorithm">
+  <header class="ch-head">
+    <h2>Choosing an algorithm</h2>
+    <p class="lede">There is no best algorithm, only a sensible first choice for your data, your constraints and your deadline. Here is how experienced people decide.</p>
+  </header>
+
+  <p>The <em>no free lunch</em> theorem says no single algorithm wins on every problem. In practice, though, a small set of defaults covers most real work, and the data type narrows the choice quickly. Answer the questions below for a starting point.</p>
+
+  <figure class="fig" data-demo="picker" data-title="Where should I start?">
+    <figcaption>A starting point, not a verdict. Whatever it suggests, keep a simple baseline next to it and let validation results decide.</figcaption>
+  </figure>
+
+  <h3>Cheat sheet</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Algorithm</th><th>Great at</th><th>Weak at</th><th>Scale features?</th><th>Explainable?</th></tr>
+    <tr><td><strong>Linear / logistic regression</strong></td><td>Baselines, small data, interpretability, sparse text</td><td>Non-linear patterns without feature engineering</td><td>Yes</td><td>Very</td></tr>
+    <tr><td><strong>k-NN</strong></td><td>Tiny datasets, similarity search</td><td>High dimensions, large data at prediction time</td><td>Yes</td><td>By example</td></tr>
+    <tr><td><strong>Naive Bayes</strong></td><td>Text baselines, very fast training</td><td>Calibrated probabilities, correlated features</td><td>No</td><td>Fairly</td></tr>
+    <tr><td><strong>Decision tree</strong></td><td>Human-readable rules</td><td>Accuracy and stability on its own</td><td>No</td><td>Very (if shallow)</td></tr>
+    <tr><td><strong>Random forest</strong></td><td>Robust default for tabular data, little tuning</td><td>Extrapolation, very large models</td><td>No</td><td>With tools</td></tr>
+    <tr><td><strong>Gradient boosting</strong></td><td>Best accuracy on tabular data</td><td>Needs tuning; unstructured data</td><td>No</td><td>With SHAP</td></tr>
+    <tr><td><strong>SVM</strong></td><td>Small to medium data, clear margins, text</td><td>Very large datasets; probability outputs</td><td>Yes</td><td>Limited</td></tr>
+    <tr><td><strong>Neural networks</strong></td><td>Images, audio, text, huge data, multimodal</td><td>Small tabular data, compute cost, interpretability</td><td>Yes</td><td>Hard</td></tr>
+    <tr><td><strong>k-means / DBSCAN</strong></td><td>Segmentation, exploration</td><td>Choosing k or eps; validating results</td><td>Yes</td><td>By cluster profile</td></tr>
+    <tr><td><strong>PCA / UMAP</strong></td><td>Compression, visualization</td><td>Interpretable components (PCA); faithful distances (UMAP)</td><td>Yes</td><td>Partly</td></tr>
+  </table></div>
+
+  <h3>A default playbook</h3>
+  <ol class="steps">
+    <li><strong>Establish a trivial baseline</strong> (majority class, mean, last value) and a <strong>simple model</strong> (linear/logistic regression).</li>
+    <li><strong>For tables</strong>, try a random forest, then gradient boosting with early stopping.</li>
+    <li><strong>For images, text and audio</strong>, start from a pretrained deep model and fine-tune, or call a foundation model.</li>
+    <li><strong>Improve the data before the algorithm</strong>: fix labels, add informative features, get more examples of the failure cases.</li>
+    <li><strong>Only then</strong> reach for stacking, custom architectures or heavy hyperparameter searches, and only if the extra accuracy is worth the added complexity.</li>
+  </ol>
+
+  <div class="note key" data-k="The real constraint list">
+    <p>Accuracy is one criterion among several. Latency (must it answer in 10 ms?), cost, the size of your team, explainability requirements, how often the model must be retrained, and who will maintain it next year often decide more than a 0.5% gain in AUC.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>You must predict loan default and explain each decision to regulators. What is a sensible first model?</p>
+      <div class="opts"><button>A 50-layer neural network</button><button>Regularized logistic regression with well-understood features</button><button>k-means</button><button>An unconstrained deep decision tree</button></div>
+      <div class="fb">Interpretability requirements favor linear models (or constrained trees). Compare against a boosted model to know what accuracy you are trading away.</div></div>
+    <div class="q" data-a="3"><p>Which step typically gives the biggest improvement once a baseline exists?</p>
+      <div class="opts"><button>Switching to the most recent research architecture</button><button>Tuning 20 hyperparameters at once</button><button>Ensembling ten models immediately</button><button>Improving the data: labels, features, and coverage of failure cases</button></div>
+      <div class="fb">Better data beats cleverer algorithms in most practical settings.</div></div>
+  </div>
+</section>

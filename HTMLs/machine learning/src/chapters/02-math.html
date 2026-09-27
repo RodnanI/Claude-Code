@@ -1,0 +1,103 @@
+<section class="chapter" id="math" data-num="02" data-part="Foundations" data-title="The math you actually need">
+  <header class="ch-head">
+    <h2>The math you actually need</h2>
+    <p class="lede">Four ideas carry almost all of machine learning: vectors, matrices, derivatives and probability. You need intuition for each, not a semester of proofs.</p>
+  </header>
+
+  <p>Libraries do the arithmetic for you. What they cannot do is tell you why training diverged, why two features should be scaled, or why a 99% accurate test can still be useless. That judgment comes from understanding what the math <em>means</em>. This chapter builds exactly that, with a figure for each idea.</p>
+
+  <h3>Vectors: data as arrows</h3>
+  <p>A <strong>vector</strong> is an ordered list of numbers. A house with 120 m&sup2;, 3 bedrooms and 15 years of age is the vector <span class="m">x = [120, 3, 15]</span>. In ML, every example becomes a vector, and a dataset becomes a cloud of points in a space with one axis per feature. Two features you can draw; a thousand features you cannot, but the geometry works exactly the same.</p>
+  <p>The most important operation on vectors is the <strong>dot product</strong>: multiply matching entries and add them up.</p>
+  <div class="eq">a &middot; b = a<sub>1</sub>b<sub>1</sub> + a<sub>2</sub>b<sub>2</sub> + &hellip; + a<sub>n</sub>b<sub>n</sub> = |a| |b| cos &theta;</div>
+  <p>The first form is how you compute it. The second tells you what it means: the dot product is large when two vectors point in the same direction, zero when they are perpendicular, and negative when they point apart.</p>
+
+  <figure class="fig" data-demo="vectors" data-title="Dot product and projection">
+    <figcaption>Drag the tips of a and b. Watch the dot product go to zero at 90&deg; and turn negative past it. The shaded bar shows the projection of a onto b.</figcaption>
+  </figure>
+
+  <div class="note key" data-k="Why this matters">
+    <p>A linear model's prediction is a dot product between a <strong>weight vector</strong> and a <strong>feature vector</strong>: <span class="m">&ycirc; = w &middot; x + b</span>. A neuron in a neural network computes the same thing. Search engines and chatbots compare meanings by taking the cosine between embedding vectors. You will see dot products in nearly every chapter.</p>
+  </div>
+
+  <h3>Matrices: many dot products at once</h3>
+  <p>A <strong>matrix</strong> is a grid of numbers. Your whole dataset is a matrix <span class="m">X</span> with one row per example and one column per feature. Multiplying a matrix by a vector computes one dot product per row, so <span class="m">X w</span> gives predictions for every example in one shot. That is why GPUs, which are built for matrix multiplication, made deep learning practical.</p>
+  <p>There is a second, geometric way to see a matrix: it is a <strong>transformation</strong> that moves every point in space. A 2&times;2 matrix tells you where the two basis arrows land, and everything else follows along.</p>
+
+  <figure class="fig" data-demo="matrix" data-title="A matrix reshapes space">
+    <figcaption>Each column of the matrix is where one basis arrow lands. Try the presets. The determinant is how much areas are scaled: at zero, space collapses onto a line and information is lost for good. A neural network layer is a matrix like this followed by a bend (an activation function).</figcaption>
+  </figure>
+
+  <h3>Derivatives: which way is downhill?</h3>
+  <p>Training a model means adjusting parameters to make the loss smaller. To do that you need to know, for each parameter: <em>if I nudge it a little, does the loss go up or down, and how quickly?</em> That rate is the <strong>derivative</strong>. Geometrically it is the slope of the tangent line.</p>
+  <div class="eq">f&prime;(x) = lim<sub class="r">h&rarr;0</sub> <span class="frac"><span>f(x + h) &minus; f(x)</span><span>h</span></span></div>
+
+  <figure class="fig" data-demo="derivative" data-title="The derivative is a slope">
+    <figcaption>Drag along the curve. Shrink the gap h and the dashed secant line turns into the tangent: that is the limit in the formula above. Press "Step downhill" a few times. You just ran gradient descent by hand, and you will notice it settles into whichever valley is nearest.</figcaption>
+  </figure>
+
+  <p>Models have many parameters, so we take a derivative with respect to each one while holding the others fixed. These are <strong>partial derivatives</strong>, and stacking them gives the <strong>gradient</strong>:</p>
+  <div class="eq">&nabla;L = [ &part;L/&part;w<sub>1</sub>, &part;L/&part;w<sub>2</sub>, &hellip;, &part;L/&part;w<sub>n</sub> ]<small>The gradient points in the direction of steepest increase. Step the opposite way to decrease the loss.</small></div>
+  <p>One more rule and you have everything deep learning needs. The <strong>chain rule</strong> says that when functions are nested, their rates of change multiply: if <span class="m">y = f(g(x))</span> then <span class="m">dy/dx = f&prime;(g(x)) &middot; g&prime;(x)</span>. A neural network is a long chain of nested functions, and backpropagation is simply the chain rule applied efficiently from the output backward.</p>
+
+  <h3>Probability: reasoning under uncertainty</h3>
+  <p>Data is noisy and predictions are uncertain, so ML speaks probability. The essentials:</p>
+  <ul>
+    <li><strong>Distribution:</strong> how likely each value is. The <em>normal</em> (Gaussian) bell curve shows up everywhere because sums of many small effects tend toward it.</li>
+    <li><strong>Mean</strong> <span class="m">&mu;</span>: the center. <strong>Variance</strong> <span class="m">&sigma;&sup2;</span>: the average squared distance from the mean. <strong>Standard deviation</strong> <span class="m">&sigma;</span>: its square root, in the original units.</li>
+    <li><strong>Conditional probability</strong> <span class="m">P(A | B)</span>: the probability of A given that B happened. Classifiers output exactly this: <span class="m">P(spam | the words in this email)</span>.</li>
+  </ul>
+  <p><strong>Bayes' rule</strong> lets you flip a conditional around:</p>
+  <div class="eq">P(A | B) = <span class="frac"><span>P(B | A) &middot; P(A)</span><span>P(B)</span></span></div>
+  <p>It sounds abstract until you try it. A disease affects 1% of people. A test catches 90% of sick people and falsely flags 5% of healthy ones. You test positive. What is the chance you are sick? Most people, including many doctors, guess around 90%. Count it out below.</p>
+
+  <figure class="fig" data-demo="bayes" data-title="1,000 people take a test">
+    <figcaption>Each square is one person. With the defaults only about 15% of positive results are real, because healthy people vastly outnumber sick ones. This is the <strong>base rate</strong> effect, and it is the same reason a fraud model that flags 5% of honest transactions will bury investigators in false alarms. Raise the prevalence and watch the answer change.</figcaption>
+  </figure>
+
+  <h3>Notation cheat sheet</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Symbol</th><th>Read as</th><th>Meaning</th></tr>
+    <tr><td><span class="m">x<sub>i</sub></span>, <span class="m">y<sub>i</sub></span></td><td>x sub i</td><td>Features and label of the i-th example</td></tr>
+    <tr><td><span class="m">&ycirc;</span></td><td>y hat</td><td>A prediction (hats mean "estimated")</td></tr>
+    <tr><td><span class="m">w</span>, <span class="m">b</span>, <span class="m">&theta;</span></td><td>weights, bias, theta</td><td>Model parameters; <span class="m">&theta;</span> often means "all of them"</td></tr>
+    <tr><td><span class="m">&Sigma;<sub>i</sub></span></td><td>sum over i</td><td>Add the expression up for every example</td></tr>
+    <tr><td><span class="m">&nabla;L</span></td><td>gradient of L</td><td>Vector of partial derivatives of the loss</td></tr>
+    <tr><td><span class="m">&eta;</span> or <span class="m">&alpha;</span></td><td>eta, alpha</td><td>Learning rate (step size)</td></tr>
+    <tr><td><span class="m">&lambda;</span></td><td>lambda</td><td>Regularization strength</td></tr>
+    <tr><td><span class="m">||w||</span></td><td>norm of w</td><td>Length of a vector</td></tr>
+    <tr><td><span class="m">argmin<sub>&theta;</sub> L</span></td><td>arg min</td><td>The parameter values that make L smallest</td></tr>
+    <tr><td><span class="m">E[X]</span></td><td>expected value</td><td>The long-run average of a random quantity</td></tr>
+  </table></div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="numpy basics"><pre><code>import numpy as np
+
+a = np.array([3.0, 1.0])
+b = np.array([1.0, 2.5])
+print(a @ b)                        # dot product: 5.5
+cos = a @ b / (np.linalg.norm(a) * np.linalg.norm(b))
+
+X = np.random.randn(100, 3)         # 100 examples, 3 features
+w = np.array([0.5, -1.0, 2.0])
+y_hat = X @ w                       # 100 predictions in one line
+
+M = np.array([[1.0, 0.5], [0.0, 1.0]])
+print(np.linalg.det(M))             # 1.0: shear keeps area</code></pre></div>
+
+  <div class="note work" data-k="How much math for a job?">
+    <p>For applied roles (data scientist, ML engineer) the intuition in this chapter plus comfort reading formulas is enough to start. Research roles expect fluent linear algebra, multivariable calculus and probability. If you want to go deeper later, 3Blue1Brown's "Essence of linear algebra" and "Essence of calculus" video series are excellent and free.</p>
+  </div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>Two embedding vectors have a cosine similarity close to 0. What does that suggest?</p>
+      <div class="opts"><button>They are nearly identical in meaning</button><button>They are opposites</button><button>They are unrelated</button><button>One of them is zero</button></div>
+      <div class="fb">A cosine near 0 means the vectors are close to perpendicular: they share little direction, which in embedding space means little related meaning.</div></div>
+    <div class="q" data-a="0"><p>The derivative of the loss with respect to a weight is positive. To reduce the loss you should:</p>
+      <div class="opts"><button>Decrease the weight</button><button>Increase the weight</button><button>Leave it, positive is good</button><button>Set it to zero</button></div>
+      <div class="fb">A positive slope means the loss rises as the weight rises, so move the weight the other way. That is the minus sign in gradient descent.</div></div>
+    <div class="q" data-a="1"><p>A classifier flags 2% of legitimate transactions as fraud and catches 95% of real fraud. Fraud is 1 in 1,000 transactions. Of the flagged transactions, roughly how many are real fraud?</p>
+      <div class="opts"><button>About 95%</button><button>About 5%</button><button>About 50%</button><button>About 98%</button></div>
+      <div class="fb">Per 100,000 transactions: 100 frauds, 95 caught. 99,900 legitimate, about 1,998 falsely flagged. 95 / (95 + 1,998) is roughly 4.5%. Base rates dominate.</div></div>
+  </div>
+</section>

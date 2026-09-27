@@ -1,0 +1,86 @@
+<section class="chapter" id="linear-regression" data-num="04" data-part="Supervised learning" data-title="Linear regression">
+  <header class="ch-head">
+    <h2>Linear regression</h2>
+    <p class="lede">The "hello world" of machine learning, and still one of the most used models in industry. Everything you learn here carries straight into neural networks.</p>
+  </header>
+
+  <h3>The model</h3>
+  <p>We want to predict a number <span class="m">y</span> (a house price) from a feature <span class="m">x</span> (its size). The simplest guess is a straight line:</p>
+  <div class="eq">&ycirc; = w x + b<small>w is the slope (price per extra square meter), b is the intercept (the baseline). These two numbers are the model's parameters.</small></div>
+  <p>With several features the line becomes a flat plane (or hyperplane), but the idea is identical: each feature gets its own weight and the prediction is a weighted sum, which is a dot product.</p>
+  <div class="eq">&ycirc; = w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + &hellip; + w<sub>n</sub>x<sub>n</sub> + b = <b>w</b> &middot; <b>x</b> + b</div>
+
+  <h3>The loss: how wrong is a line?</h3>
+  <p>For each example, the <strong>residual</strong> is the gap between truth and prediction: <span class="m">y<sub>i</sub> &minus; &ycirc;<sub>i</sub></span>. We need one number summarizing all residuals. The standard choice squares each one and averages them, the <strong>mean squared error</strong>:</p>
+  <div class="eq">MSE = <span class="frac"><span>1</span><span>n</span></span> &Sigma;<sub>i</sub> (y<sub>i</sub> &minus; &ycirc;<sub>i</sub>)&sup2;</div>
+  <p>Squaring does useful things: negatives cannot cancel positives, big misses are punished much more than small ones, and the result is a smooth bowl-shaped function of <span class="m">w</span> and <span class="m">b</span> that is easy to minimize. In the figure the squared errors are drawn as literal squares. Training means making their total area as small as possible.</p>
+
+  <figure class="fig" data-demo="linreg" data-title="Fit a line by hand">
+    <figcaption>Move the sliders to shrink the orange squares, then press "Best fit" to see the true optimum. Now turn on auto-fit and drag one point far away from the others: a single outlier drags the whole line, because its square grows with the square of its distance.</figcaption>
+  </figure>
+
+  <div class="note key" data-k="Key idea">
+    <p>You just did what every training algorithm does: adjust parameters, watch the loss, repeat. The only difference is that computers do it with calculus instead of sliders, and with millions of parameters instead of two.</p>
+  </div>
+
+  <h3>Solving it exactly</h3>
+  <p>For linear regression with MSE there is a closed-form answer, the <strong>normal equation</strong>. Put all examples in a matrix <span class="m">X</span> (with a column of ones for the intercept) and targets in <span class="m">y</span>:</p>
+  <div class="eq">&theta;* = (X<sup>T</sup>X)<sup>&minus;1</sup> X<sup>T</sup> y</div>
+  <p>This works well for thousands of features. For millions of rows or features, or for models without a closed form (almost all others), we use the iterative method in the next chapter: gradient descent.</p>
+
+  <h3>Reading the weights</h3>
+  <p>A weight says how much the prediction changes when its feature increases by one unit, <em>holding all other features fixed</em>. That makes linear models wonderfully interpretable, with caveats:</p>
+  <ul>
+    <li>Weights are only comparable if features share a scale. Standardize first if you want to rank feature importance by weight size.</li>
+    <li>If two features are strongly correlated (size in m&sup2; and in ft&sup2;), their weights become unstable and can take absurd opposite signs. This is <strong>multicollinearity</strong>.</li>
+    <li>A weight measures association in this dataset, not causation. Houses with pools cost more, but adding a pool does not add the whole difference.</li>
+  </ul>
+
+  <h3>Curves with a linear model</h3>
+  <p>"Linear" refers to the parameters, not the shape. Add features like <span class="m">x&sup2;</span>, <span class="m">x&sup3;</span> or <span class="m">log x</span> and the same machinery fits curves. This is <strong>polynomial regression</strong>, and it is also the perfect way to learn about overfitting, which is exactly what chapter 08 does.</p>
+
+  <h3>Measuring regression quality</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Metric</th><th>Formula idea</th><th>When to use</th></tr>
+    <tr><td><strong>MAE</strong></td><td>mean of |error|</td><td>Easy to explain ("off by $18k on average"); robust to outliers.</td></tr>
+    <tr><td><strong>MSE</strong></td><td>mean of error&sup2;</td><td>The usual training loss; punishes large errors hard.</td></tr>
+    <tr><td><strong>RMSE</strong></td><td>&radic;MSE</td><td>Like MSE but back in the target's units.</td></tr>
+    <tr><td><strong>R&sup2;</strong></td><td>1 &minus; MSE / variance of y</td><td>Fraction of variance explained. 1 is perfect, 0 is no better than always predicting the mean, negative is worse than that.</td></tr>
+  </table></div>
+
+  <div class="note warn" data-k="Pitfalls">
+    <ul>
+      <li><strong>Extrapolation:</strong> a line fitted on 50 to 150 m&sup2; homes knows nothing about 900 m&sup2; mansions. It will still happily answer.</li>
+      <li><strong>Outliers:</strong> MSE is sensitive to them, as the figure showed. Consider MAE or Huber loss if bad points are common.</li>
+      <li><strong>Non-linear reality:</strong> always plot residuals. A pattern in them means the model is missing structure.</li>
+    </ul>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, r2_score
+
+X = np.array([[50], [70], [85], [100], [120]])     # size in m2
+y = np.array([210, 265, 300, 350, 410])            # price in $1000s
+
+model = LinearRegression().fit(X, y)
+print(model.coef_, model.intercept_)               # slope w and intercept b
+print(model.predict([[90]]))                       # price for a 90 m2 home
+
+# The same fit via the normal equation
+Xb = np.c_[np.ones(len(X)), X]                     # add a column of ones for b
+theta = np.linalg.solve(Xb.T @ Xb, Xb.T @ y)        # [b, w]</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>Why is the error squared in MSE rather than just summed?</p>
+      <div class="opts"><button>To make the numbers bigger</button><button>Because squares are faster to compute</button><button>So positive and negative errors cannot cancel, and large errors count more</button><button>It is required for the line to pass through the origin</button></div>
+      <div class="fb">Summing raw residuals lets +10 and -10 cancel to zero. Squaring keeps everything positive and gives a smooth loss that heavily penalizes big misses.</div></div>
+    <div class="q" data-a="0"><p>A model has R&sup2; = 0 on the test set. What does that mean?</p>
+      <div class="opts"><button>It does no better than always predicting the average</button><button>It is perfect</button><button>It explains 0% of the training data only</button><button>All its weights are zero</button></div>
+      <div class="fb">R&sup2; compares your error to the error of the constant "predict the mean" baseline. Zero means no improvement over that baseline.</div></div>
+    <div class="q" data-a="3"><p>You add the feature x&sup2; to a linear regression. The model is now:</p>
+      <div class="opts"><button>No longer a linear model in any sense</button><button>A neural network</button><button>Unable to use the normal equation</button><button>Still linear in its parameters, but able to fit a curve</button></div>
+      <div class="fb">The prediction is still a weighted sum of features, so all the linear machinery works. The features are just non-linear transformations of x.</div></div>
+  </div>
+</section>

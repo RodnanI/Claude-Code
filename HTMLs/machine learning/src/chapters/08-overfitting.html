@@ -1,0 +1,101 @@
+<section class="chapter" id="overfitting" data-num="08" data-part="Supervised learning" data-title="Overfitting and regularization">
+  <header class="ch-head">
+    <h2>Overfitting and regularization</h2>
+    <p class="lede">The central tension of machine learning: a model flexible enough to capture real patterns is also flexible enough to memorize noise.</p>
+  </header>
+
+  <p>Imagine two students preparing for an exam with last year's questions. One memorizes every answer word for word. The other learns the underlying ideas. On last year's paper both score 100%. On this year's paper the memorizer collapses. A model that memorizes its training data is said to <strong>overfit</strong>; one too simple to capture the pattern at all <strong>underfits</strong>.</p>
+
+  <figure class="fig wide" data-demo="poly" data-title="Polynomial degree: from too simple to too clever">
+    <figcaption>Twelve noisy training points (orange) are sampled from the dashed curve. Degree 0 and 1 underfit: both errors are high. Somewhere around degree 3 to 5 the test error bottoms out. Push the degree past 10 and the curve threads every training point while swinging wildly in between: training error near zero, test error exploding. Now keep degree 14 and raise &lambda;: regularization tames the wiggles without changing the model's size.</figcaption>
+  </figure>
+
+  <div class="note key" data-k="Key idea">
+    <p>Training error always goes down as models get more flexible. Test error goes down, then up. <strong>Never judge a model by its training error.</strong> The gap between training and validation error is your overfitting gauge.</p>
+  </div>
+
+  <h3>Bias and variance</h3>
+  <p>Two different things can go wrong, and it helps to name them:</p>
+  <ul>
+    <li><strong>Bias</strong>: error from wrong assumptions. A straight line fit to a curve is wrong no matter how much data you give it. High bias means underfitting.</li>
+    <li><strong>Variance</strong>: error from sensitivity to the particular training sample. Press "New sample" at degree 12: the curve changes completely each time. High variance means overfitting.</li>
+  </ul>
+
+  <figure class="fig" data-title="Bias and variance as target practice">
+    <div class="fig-body static">
+      <svg class="dg" viewBox="0 0 640 196" role="img" aria-label="Four targets. Low bias low variance: tight cluster at center. Low bias high variance: scattered around center. High bias low variance: tight cluster off center. High bias high variance: scattered off center.">
+        <g transform="translate(80 84)"><circle r="62" class="bx"/><circle r="40" class="bx"/><circle r="18" class="bx-i"/>
+          <circle cx="3" cy="-2" r="4.5" class="f1"/><circle cx="-5" cy="4" r="4.5" class="f1"/><circle cx="6" cy="6" r="4.5" class="f1"/><circle cx="-2" cy="-7" r="4.5" class="f1"/><circle cx="-7" cy="-1" r="4.5" class="f1"/></g>
+        <g transform="translate(240 84)"><circle r="62" class="bx"/><circle r="40" class="bx"/><circle r="18" class="bx-i"/>
+          <circle cx="28" cy="-20" r="4.5" class="f1"/><circle cx="-34" cy="10" r="4.5" class="f1"/><circle cx="10" cy="36" r="4.5" class="f1"/><circle cx="-14" cy="-38" r="4.5" class="f1"/><circle cx="40" cy="18" r="4.5" class="f1"/></g>
+        <g transform="translate(400 84)"><circle r="62" class="bx"/><circle r="40" class="bx"/><circle r="18" class="bx-i"/>
+          <circle cx="30" cy="-30" r="4.5" class="f1"/><circle cx="36" cy="-24" r="4.5" class="f1"/><circle cx="26" cy="-22" r="4.5" class="f1"/><circle cx="34" cy="-36" r="4.5" class="f1"/><circle cx="40" cy="-30" r="4.5" class="f1"/></g>
+        <g transform="translate(560 84)"><circle r="62" class="bx"/><circle r="40" class="bx"/><circle r="18" class="bx-i"/>
+          <circle cx="44" cy="-6" r="4.5" class="f1"/><circle cx="10" cy="-50" r="4.5" class="f1"/><circle cx="50" cy="-40" r="4.5" class="f1"/><circle cx="18" cy="-18" r="4.5" class="f1"/><circle cx="-8" cy="-34" r="4.5" class="f1"/></g>
+        <text x="80" y="170" text-anchor="middle" class="t-ink">low bias</text><text x="80" y="186" text-anchor="middle" class="t-mut">low variance</text>
+        <text x="240" y="170" text-anchor="middle" class="t-ink">low bias</text><text x="240" y="186" text-anchor="middle" class="t-mut">high variance</text>
+        <text x="400" y="170" text-anchor="middle" class="t-ink">high bias</text><text x="400" y="186" text-anchor="middle" class="t-mut">low variance</text>
+        <text x="560" y="170" text-anchor="middle" class="t-ink">high bias</text><text x="560" y="186" text-anchor="middle" class="t-mut">high variance</text>
+      </svg>
+    </div>
+    <figcaption>Each dot is a model trained on a different sample of data; the bullseye is the truth. You want the first target. Simple models tend toward the third, over-flexible ones toward the second.</figcaption>
+  </figure>
+
+  <h3>How to fight overfitting</h3>
+  <ol class="steps">
+    <li><strong>Get more data.</strong> The most reliable fix. With enough points even a degree-14 polynomial is pinned down.</li>
+    <li><strong>Use a simpler model</strong> or fewer features. Match capacity to the amount of data.</li>
+    <li><strong>Regularize:</strong> add a penalty for complexity to the loss, so the model only uses large weights when the data truly demands it.</li>
+    <li><strong>Stop early:</strong> watch validation loss during training and stop when it starts rising.</li>
+    <li><strong>Augment:</strong> create more training examples by transforming existing ones (flip, crop, add noise). Standard for images and audio.</li>
+    <li><strong>Average many models:</strong> ensembles cancel out individual models' variance (chapter 10).</li>
+  </ol>
+
+  <h3>L2 and L1 regularization</h3>
+  <p>Regularization adds a term to the loss that grows with the size of the weights, controlled by strength <span class="m">&lambda;</span>:</p>
+  <div class="eq">L<sub class="r">ridge</sub> = MSE + &lambda; &Sigma; w<sub>j</sub>&sup2; &nbsp;&nbsp;&nbsp;&nbsp; L<sub class="r">lasso</sub> = MSE + &lambda; &Sigma; |w<sub>j</sub>|</div>
+  <ul>
+    <li><strong>L2 (ridge, weight decay)</strong> shrinks all weights smoothly toward zero. Wiggly curves need huge coefficients, so penalizing size penalizes wiggles. This is what the &lambda; slider does.</li>
+    <li><strong>L1 (lasso)</strong> pushes many weights to exactly zero, performing automatic feature selection. Useful when you suspect only a few of many features matter.</li>
+    <li><strong>Elastic net</strong> mixes both.</li>
+  </ul>
+  <p>&lambda; is a hyperparameter: too small and you still overfit, too large and you underfit. You choose it with the validation set or cross-validation.</p>
+
+  <h3>Diagnose with learning curves</h3>
+  <p>Plot training and validation error as the training set grows:</p>
+  <ul>
+    <li><strong>Both errors high and close together</strong>: high bias. More data will not help. Use a more flexible model or better features.</li>
+    <li><strong>Low training error, a big gap to validation</strong>: high variance. More data, regularization or a simpler model will help.</li>
+  </ul>
+
+  <div class="note" data-k="A modern twist">
+    <p>Huge neural networks have far more parameters than training examples, yet often generalize well. Researchers observed <strong>double descent</strong>: past the point where a model can exactly fit the training data, test error can fall again as size grows. Implicit regularization from gradient descent, plus explicit tricks like weight decay and data augmentation, explain much of it. The classic U-curve is still the right mental model for most everyday work.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn"><pre><code>from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.linear_model import Ridge, Lasso
+from sklearn.model_selection import GridSearchCV
+
+model = make_pipeline(PolynomialFeatures(degree=12), StandardScaler(), Ridge())
+search = GridSearchCV(model, {"ridge__alpha": [1e-4, 1e-3, 1e-2, 0.1, 1, 10]},
+                      cv=5, scoring="neg_mean_squared_error")
+search.fit(X_train, y_train)
+print(search.best_params_)            # the lambda (called alpha) that generalizes best
+
+lasso = Lasso(alpha=0.05).fit(X_train, y_train)
+print((lasso.coef_ == 0).sum(), "features dropped")</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="1"><p>Training accuracy 99%, validation accuracy 71%. What is the most likely diagnosis?</p>
+      <div class="opts"><button>Underfitting</button><button>Overfitting</button><button>A bug in the metric</button><button>Perfectly normal and healthy</button></div>
+      <div class="fb">A large gap between training and validation performance is the signature of high variance: the model memorized training specifics.</div></div>
+    <div class="q" data-a="3"><p>Training and validation error are both high and nearly equal. Which change is most likely to help?</p>
+      <div class="opts"><button>Collect much more data</button><button>Increase regularization</button><button>Use fewer features</button><button>Use a more flexible model or better features</button></div>
+      <div class="fb">High bias: the model cannot represent the pattern. More data or more regularization would not fix that; more capacity or better features would.</div></div>
+    <div class="q" data-a="0"><p>Which regularization tends to set some weights exactly to zero?</p>
+      <div class="opts"><button>L1 (lasso)</button><button>L2 (ridge)</button><button>Early stopping</button><button>Data augmentation</button></div>
+      <div class="fb">The L1 penalty's sharp corner at zero makes exact zeros optimal for weak features, which gives built-in feature selection.</div></div>
+  </div>
+</section>

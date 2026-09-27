@@ -1,0 +1,75 @@
+<section class="chapter" id="evaluation" data-num="07" data-part="Supervised learning" data-title="Measuring what matters">
+  <header class="ch-head">
+    <h2>Measuring what matters</h2>
+    <p class="lede">A model is only as good as the number you judge it by. Pick the wrong metric and you will optimize the wrong thing with great precision.</p>
+  </header>
+
+  <h3>Accuracy lies</h3>
+  <p>A fraud dataset has 1 fraudulent transaction per 100. A "model" that always answers "not fraud" scores 99% accuracy and catches nothing. Whenever classes are imbalanced, and in real problems they usually are, accuracy hides failure. You need to look at the kinds of mistakes separately.</p>
+
+  <h3>The confusion matrix</h3>
+  <p>Every binary prediction lands in one of four boxes:</p>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th></th><th>Predicted positive</th><th>Predicted negative</th></tr>
+    <tr><td><strong>Actually positive</strong></td><td><strong>True positive (TP)</strong><br><small>fraud, flagged</small></td><td><strong>False negative (FN)</strong><br><small>fraud, missed</small></td></tr>
+    <tr><td><strong>Actually negative</strong></td><td><strong>False positive (FP)</strong><br><small>honest, flagged</small></td><td><strong>True negative (TN)</strong><br><small>honest, left alone</small></td></tr>
+  </table></div>
+  <p>From these four counts come the metrics you will use daily:</p>
+  <ul>
+    <li><strong>Precision</strong> <span class="m">= TP / (TP + FP)</span>: when the model says positive, how often is it right? Low precision means false alarms.</li>
+    <li><strong>Recall</strong> (sensitivity, true positive rate) <span class="m">= TP / (TP + FN)</span>: of all real positives, how many did we catch? Low recall means misses.</li>
+    <li><strong>F1</strong> <span class="m">= 2PR / (P + R)</span>: the harmonic mean, high only when both are high.</li>
+    <li><strong>False positive rate</strong> <span class="m">= FP / (FP + TN)</span>: the share of negatives wrongly flagged.</li>
+  </ul>
+
+  <h3>The threshold trade-off</h3>
+  <p>A classifier outputs a score. You choose the threshold above which you call it positive. Move the threshold and you trade one kind of error for the other. There is no free lunch, only a business decision about which mistake costs more.</p>
+
+  <figure class="fig wide" data-demo="threshold" data-title="Threshold, confusion matrix, ROC and precision-recall">
+    <figcaption>Slide the threshold and watch errors move between the boxes. Lower the separation to simulate a weaker model: the curves collapse toward the dashed "random guessing" line. Then drop positives to 1% and switch to the precision-recall view: the ROC curve barely changes, but precision collapses, because a small false positive rate times a huge number of negatives is still a lot of false alarms.</figcaption>
+  </figure>
+
+  <div class="cards">
+    <div class="card"><span class="tag">Favor recall</span><h4>Cancer screening</h4><p>Missing a case is far worse than a false alarm followed by a second test. Use a low threshold.</p></div>
+    <div class="card"><span class="tag">Favor precision</span><h4>Spam filter</h4><p>Hiding a real email from your boss is worse than letting some spam through. Use a high threshold.</p></div>
+    <div class="card"><span class="tag">Explicit costs</span><h4>Fraud review</h4><p>Each flag costs analyst time; each miss costs money. Pick the threshold that minimizes total expected cost.</p></div>
+  </div>
+
+  <h3>ROC and AUC</h3>
+  <p>The <strong>ROC curve</strong> plots true positive rate against false positive rate across every threshold. The <strong>AUC</strong> (area under it) summarizes the model independent of threshold, and has a lovely meaning: <em>the probability that a randomly chosen positive gets a higher score than a randomly chosen negative</em>. 0.5 is coin-flipping, 1.0 is perfect ranking.</p>
+  <p>When positives are rare, prefer the <strong>precision-recall curve</strong> and its area (average precision). It exposes exactly the false-alarm flood the ROC curve hides.</p>
+
+  <h3>Probabilities should mean what they say</h3>
+  <p>If a model says "70% chance" for a thousand cases, about 700 should turn out positive. A model with this property is <strong>calibrated</strong>. Ranking metrics like AUC ignore calibration entirely, but it matters whenever probabilities feed decisions or pricing. Modern neural networks are often over-confident; techniques like Platt scaling, isotonic regression or temperature scaling fix calibration after training.</p>
+
+  <h3>Always have a baseline</h3>
+  <p>Before celebrating a score, compute what a trivial approach gets: predict the most common class, predict the mean, predict "same as last week". A model that barely beats its baseline is not worth its complexity. A shocking number of production projects never check.</p>
+
+  <div class="note warn" data-k="Is the difference real?">
+    <p>Validation scores are noisy. If model A scores 0.842 and B scores 0.838 on 500 examples, that gap is well inside the noise. Use cross-validation (look at the spread across folds) or bootstrap confidence intervals before declaring a winner.</p>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="scikit-learn metrics"><pre><code>from sklearn.metrics import (confusion_matrix, classification_report,
+                             roc_auc_score, average_precision_score)
+
+proba = clf.predict_proba(X_test)[:, 1]
+pred = (proba >= 0.3).astype(int)          # a custom threshold favoring recall
+
+print(confusion_matrix(y_test, pred))       # [[TN FP] [FN TP]]
+print(classification_report(y_test, pred))  # precision, recall, F1 per class
+print("ROC AUC:", roc_auc_score(y_test, proba))
+print("PR AUC: ", average_precision_score(y_test, proba))</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>A disease screening model has 99% precision but 20% recall. What does that mean?</p>
+      <div class="opts"><button>It catches almost every sick patient</button><button>It flags many healthy people</button><button>When it flags someone they are almost always sick, but it misses most sick people</button><button>It is useless</button></div>
+      <div class="fb">High precision: flags are trustworthy. Low recall: 80% of sick patients go undetected. For screening, that is a bad trade.</div></div>
+    <div class="q" data-a="0"><p>Lowering the classification threshold will usually:</p>
+      <div class="opts"><button>Increase recall and decrease precision</button><button>Increase precision and decrease recall</button><button>Increase both</button><button>Change the AUC</button></div>
+      <div class="fb">A lower threshold calls more things positive: you catch more real positives (recall up) and also more false alarms (precision down). AUC is threshold-independent.</div></div>
+    <div class="q" data-a="3"><p>A model has ROC AUC of 0.5. What does that indicate?</p>
+      <div class="opts"><button>Half its predictions are correct, which is good</button><button>It is perfectly calibrated</button><button>It is perfect on half the classes</button><button>It ranks positives and negatives no better than random</button></div>
+      <div class="fb">An AUC of 0.5 means a random positive is as likely to outscore a random negative as the reverse: no ranking ability at all.</div></div>
+  </div>
+</section>

@@ -1,0 +1,84 @@
+<section class="chapter" id="llms" data-num="19" data-part="Deep learning" data-title="Large language models">
+  <header class="ch-head">
+    <h2>Large language models</h2>
+    <p class="lede">A transformer trained to predict the next token, on a large fraction of the written internet, then taught to be a helpful assistant. Here is what is actually going on, and how people use them at work.</p>
+  </header>
+
+  <h3>Next-token prediction</h3>
+  <p>A large language model (LLM) is a decoder-only transformer (chapter 18) whose output layer is a softmax over its whole vocabulary, often 50,000 to 200,000 tokens. Given the text so far, it outputs a probability for every possible next token. To write a response it picks one token, appends it, and runs again. Every word you read from a chatbot was produced this way, one token at a time.</p>
+  <p>The training objective sounds almost trivially simple: predict the next token, measured by cross-entropy (chapter 06). But to predict text well across billions of documents, a model has to pick up grammar, facts, styles, the structure of code, and patterns of reasoning. That compression of the world's text into weights is what makes the result useful.</p>
+
+  <h3>Tokens</h3>
+  <p>Models do not see characters or words but <strong>tokens</strong>, produced by algorithms like byte-pair encoding that merge frequent character sequences. Common words are one token; rare words split into pieces: "unbelievably" might become <code>un</code> <code>believ</code> <code>ably</code>. In English a token averages roughly three quarters of a word. Tokens are the unit of everything practical: context window size, speed and price. They also explain some odd failures, like miscounting the letters in a word the model never sees letter by letter.</p>
+
+  <h3>Choosing the next token</h3>
+  <p>The model outputs probabilities; a <strong>decoding strategy</strong> turns them into a choice. Always taking the most likely token (greedy decoding) is repetitive and bland. Sampling adds variety, controlled by a few knobs you will see in every LLM API:</p>
+  <ul>
+    <li><strong>Temperature</strong> divides the scores before the softmax. Below 1 sharpens the distribution (more predictable), above 1 flattens it (more surprising, eventually incoherent).</li>
+    <li><strong>Top-k</strong> keeps only the k most likely tokens.</li>
+    <li><strong>Top-p</strong> (nucleus sampling) keeps the smallest set of tokens whose probabilities add up to p.</li>
+  </ul>
+
+  <figure class="fig" data-demo="sampling" data-title="Temperature, top-k and top-p">
+    <figcaption>The scores are made up but realistic. At temperature near 0 the top word wins every time. Raise it toward 2 and "moon" starts appearing. Top-p at 0.9 cuts the long tail of unlikely words while keeping variety. For factual answers or code, use low temperature; for brainstorming, higher. Sample 20 at a few settings to feel the difference.</figcaption>
+  </figure>
+
+  <h3>From text predictor to assistant</h3>
+  <ol class="steps">
+    <li><strong>Pretraining</strong>: next-token prediction on trillions of tokens of text and code. This is where nearly all knowledge and capability comes from, and nearly all the compute cost. The result, a <em>base model</em>, continues text but does not follow instructions reliably.</li>
+    <li><strong>Supervised fine-tuning</strong>: continued training on curated examples of instructions paired with high-quality responses. The model learns the format and behavior of an assistant.</li>
+    <li><strong>Preference tuning</strong>: people (or AI feedback guided by written principles) compare pairs of responses; the model is optimized toward the preferred ones. RLHF uses reinforcement learning (chapter 20) for this; methods like DPO optimize preferences directly.</li>
+  </ol>
+
+  <h3>Using LLMs in real work</h3>
+  <div class="cards">
+    <div class="card"><span class="tag">Prompting</span><h4>Say what you want</h4><p>Clear instructions, relevant context, examples of the desired output (few-shot), and a specified format. Cheapest lever; try it first.</p></div>
+    <div class="card"><span class="tag">RAG</span><h4>Retrieval-augmented generation</h4><p>Embed your documents, retrieve the most relevant chunks for each question (k-NN, chapter 09), and put them in the prompt. Grounds answers in your data and reduces made-up facts.</p></div>
+    <div class="card"><span class="tag">Fine-tuning</span><h4>Adjust the weights</h4><p>Train further on your examples to lock in a style, format or narrow skill. Parameter-efficient methods like LoRA train small add-on matrices instead of the whole model.</p></div>
+    <div class="card"><span class="tag">Agents</span><h4>Tools and loops</h4><p>Let the model call functions (search, code execution, databases) and iterate on the results. Powerful, and harder to test and secure.</p></div>
+  </div>
+
+  <div class="note warn" data-k="Known failure modes">
+    <ul>
+      <li><strong>Hallucination:</strong> fluent, confident, wrong. The model generates plausible text, not verified truth. Ground it with retrieval and check important outputs.</li>
+      <li><strong>Knowledge cutoff:</strong> it only knows what was in its training data unless you provide more in the context.</li>
+      <li><strong>Prompt injection:</strong> instructions hidden in documents or web pages the model reads can hijack its behavior. Treat model output that triggers actions as untrusted.</li>
+      <li><strong>Evaluation is hard:</strong> build a test set of real inputs with expected outputs (an "eval") before you change prompts or models, exactly like a validation set.</li>
+    </ul>
+  </div>
+
+  <h3>In code</h3>
+  <div class="code" data-title="Hugging Face: generate with sampling settings"><pre><code>from transformers import pipeline
+
+gen = pipeline("text-generation", model="gpt2")      # small, old, but runs anywhere
+out = gen("The best way to learn machine learning is",
+          max_new_tokens=30, do_sample=True,
+          temperature=0.7, top_k=50, top_p=0.9)
+print(out[0]["generated_text"])</code></pre></div>
+  <div class="code" data-title="the retrieval half of RAG"><pre><code>from sentence_transformers import SentenceTransformer
+import numpy as np
+
+docs = ["Refunds are processed within 5 business days.",
+        "Our office is closed on public holidays.",
+        "Premium members get free shipping."]
+enc = SentenceTransformer("all-MiniLM-L6-v2")
+D = enc.encode(docs, normalize_embeddings=True)
+
+q = enc.encode(["How long does a refund take?"], normalize_embeddings=True)
+best = np.argsort(-(D @ q.T).ravel())[:2]            # cosine similarity, top 2
+context = "\n".join(docs[i] for i in best)
+prompt = f"Answer using only this context:\n{context}\n\nQuestion: How long does a refund take?"
+# send `prompt` to the LLM of your choice</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>What is an LLM trained to do during pretraining?</p>
+      <div class="opts"><button>Answer questions correctly</button><button>Follow instructions</button><button>Predict the next token of text</button><button>Search the internet</button></div>
+      <div class="fb">Pretraining is self-supervised next-token prediction. Instruction following comes later from fine-tuning and preference tuning.</div></div>
+    <div class="q" data-a="0"><p>You need consistent, factual extraction of fields from invoices. How should you set temperature?</p>
+      <div class="opts"><button>Low, close to 0</button><button>High, around 1.5</button><button>It has no effect on consistency</button><button>Exactly 1 is required</button></div>
+      <div class="fb">Low temperature concentrates probability on the most likely tokens, giving more deterministic output. High temperature is for creative variety.</div></div>
+    <div class="q" data-a="3"><p>Your chatbot must answer questions about your company's internal policies, which change monthly. What is usually the best first approach?</p>
+      <div class="opts"><button>Pretrain a new model on the policies</button><button>Fine-tune monthly and hope</button><button>Raise the temperature</button><button>Retrieval-augmented generation over the current policy documents</button></div>
+      <div class="fb">RAG puts the latest relevant text into the prompt at question time, so updates only require re-indexing documents, not retraining.</div></div>
+  </div>
+</section>

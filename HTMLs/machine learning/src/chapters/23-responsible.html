@@ -1,0 +1,81 @@
+<section class="chapter" id="responsible" data-num="23" data-part="Working in ML" data-title="Responsible ML">
+  <header class="ch-head">
+    <h2>Responsible machine learning</h2>
+    <p class="lede">Models make decisions about loans, jobs, medical care and what billions of people see. Getting the math right is necessary, not sufficient.</p>
+  </header>
+
+  <p>This is not a soft topic bolted onto the technical ones. Bias, privacy failures and unexplainable decisions are engineering defects with legal, financial and human consequences, and regulation such as the EU AI Act now requires many teams to document and test for them. You will be expected to handle these issues at work.</p>
+
+  <h3>Where bias comes from</h3>
+  <ul>
+    <li><strong>Historical bias:</strong> the data faithfully records an unfair past. A hiring model trained on past hires learns past preferences.</li>
+    <li><strong>Representation bias:</strong> some groups are underrepresented, so the model is simply less accurate for them (face recognition error rates that differ by skin tone are a well-documented case).</li>
+    <li><strong>Measurement bias:</strong> the label is a flawed proxy. Using "arrests" as a proxy for "crime" bakes in policing patterns; using "healthcare spending" as a proxy for "health need" underestimates need for groups with less access to care.</li>
+    <li><strong>Feedback loops:</strong> predictions shape the future data that retrains the model.</li>
+  </ul>
+  <p>Removing a sensitive column (gender, ethnicity) does not remove the bias: zip code, name, school or shopping habits can act as proxies.</p>
+
+  <h3>Fairness has several definitions</h3>
+  <figure class="fig" data-demo="fairness" data-title="One threshold, two groups">
+    <figcaption>An approval model scores applicants from two groups. Its scores are less informative for group 2 (the curves overlap more), and fewer of group 2 are truly qualified. With one shared threshold, approval rates and error rates differ between groups. Untick the box and try to equalize the true positive rates, then the selection rates: you generally cannot equalize everything at once.</figcaption>
+  </figure>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Criterion</th><th>Asks that</th></tr>
+    <tr><td><strong>Demographic parity</strong></td><td>Each group is selected at the same rate.</td></tr>
+    <tr><td><strong>Equal opportunity</strong></td><td>Truly qualified people in each group are selected at the same rate (equal true positive rates).</td></tr>
+    <tr><td><strong>Equalized odds</strong></td><td>Both true positive and false positive rates match across groups.</td></tr>
+    <tr><td><strong>Calibration</strong></td><td>A score of 70% means 70% in every group.</td></tr>
+  </table></div>
+  <div class="note key" data-k="An impossibility result">
+    <p>When base rates differ between groups, it is mathematically impossible to satisfy calibration and equalized odds at the same time (except for a perfect model). Choosing a fairness criterion is therefore a value judgment about which errors matter most, to be made with domain experts and affected people, not silently by whoever writes the code.</p>
+  </div>
+
+  <h3>Explainability</h3>
+  <ul>
+    <li><strong>Global:</strong> which features matter overall (permutation importance, partial dependence plots).</li>
+    <li><strong>Local:</strong> why this particular prediction (SHAP values, LIME, counterfactuals like "approved if income were $4,000 higher").</li>
+    <li><strong>By design:</strong> when stakes are high, prefer models that are interpretable in the first place.</li>
+  </ul>
+  <p>Explanations are also a debugging tool. A famous example: a model separating wolves from huskies turned out to be detecting snow in the background.</p>
+
+  <h3>Privacy and security</h3>
+  <ul>
+    <li>Models can memorize and leak training data, including personal information. Minimize what you collect, anonymize carefully, and control access.</li>
+    <li><strong>Differential privacy</strong> adds calibrated noise so that no individual's presence in the data can be inferred. <strong>Federated learning</strong> trains across devices without centralizing raw data.</li>
+    <li><strong>Adversarial examples</strong> (tiny crafted input changes that flip predictions), data poisoning and prompt injection are real attacks. Threat-model ML systems like any other software.</li>
+  </ul>
+
+  <h3>A practical checklist</h3>
+  <ul class="checks">
+    <li><label><input type="checkbox" data-key="resp-1"><span>Write down who is affected by the model's decisions and how errors hurt them.</span></label></li>
+    <li><label><input type="checkbox" data-key="resp-2"><span>Report metrics sliced by relevant groups, not just overall.</span></label></li>
+    <li><label><input type="checkbox" data-key="resp-3"><span>Check features for proxies of sensitive attributes.</span></label></li>
+    <li><label><input type="checkbox" data-key="resp-4"><span>Document the model: intended use, data, limitations, evaluation (a "model card").</span></label></li>
+    <li><label><input type="checkbox" data-key="resp-5"><span>Keep a human in the loop and an appeal path for high-stakes decisions.</span></label></li>
+    <li><label><input type="checkbox" data-key="resp-6"><span>Monitor fairness and performance after deployment, not only before.</span></label></li>
+  </ul>
+
+  <h3>In code</h3>
+  <div class="code" data-title="sliced metrics and SHAP"><pre><code>import pandas as pd
+from sklearn.metrics import recall_score, precision_score
+import shap
+
+df = pd.DataFrame({"group": groups_test, "y": y_test, "pred": pred})
+for g, part in df.groupby("group"):
+    print(g, "selection", part.pred.mean().round(3),
+          "TPR", recall_score(part.y, part.pred).round(3),
+          "precision", precision_score(part.y, part.pred).round(3))
+
+explainer = shap.TreeExplainer(model)          # works for tree ensembles
+sv = explainer.shap_values(X_test)
+shap.summary_plot(sv, X_test)                    # global view of feature effects</code></pre></div>
+
+  <div class="quiz">
+    <div class="q" data-a="2"><p>You remove the "gender" column from a hiring dataset. Is the model now free of gender bias?</p>
+      <div class="opts"><button>Yes, the model cannot see gender</button><button>Yes, if accuracy is high</button><button>Not necessarily: other features can act as proxies for gender</button><button>Only if you also remove age</button></div>
+      <div class="fb">Correlated features (hobbies, schools, career gaps) can reconstruct the removed attribute. Bias must be measured, not assumed away.</div></div>
+    <div class="q" data-a="0"><p>"Qualified applicants in every group are approved at the same rate" describes which criterion?</p>
+      <div class="opts"><button>Equal opportunity</button><button>Demographic parity</button><button>Calibration</button><button>Accuracy parity</button></div>
+      <div class="fb">Equal opportunity equalizes true positive rates across groups.</div></div>
+  </div>
+</section>

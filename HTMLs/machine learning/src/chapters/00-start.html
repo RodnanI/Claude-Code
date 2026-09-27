@@ -1,0 +1,47 @@
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrow-m" d="M0 0L10 5L0 10z"/></marker>
+    <marker id="aha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path fill="var(--accent)" d="M0 0L10 5L0 10z"/></marker>
+  </defs>
+</svg>
+
+<section class="chapter hero" id="start" data-num="00" data-part="Start here" data-title="How to use this guide">
+  <header class="ch-head">
+    <div class="ch-kicker"><b>00</b>An interactive field guide</div>
+    <h1>Machine learning, <em>from zero</em> to working knowledge.</h1>
+    <p class="lede">Every idea in this guide comes with something you can poke. Drag the points, move the sliders, break the models on purpose. You will understand ML faster by watching it fail than by reading that it can.</p>
+  </header>
+
+  <div class="hero-grid">
+    <div><b data-count="chapters">25</b><span>Chapters</span></div>
+    <div><b data-count="figs">30</b><span>Live figures</span></div>
+    <div><b data-count="quiz">60</b><span>Quiz questions</span></div>
+    <div><b>0</b><span>Installs needed</span></div>
+  </div>
+
+  <h3>Who this is for</h3>
+  <p>You are curious about machine learning, maybe with an eye on working in it, and you want a real mental model instead of buzzwords. You do not need a math degree. You need to be comfortable with the idea of a function, a graph, and a little algebra. Where more math helps, it is introduced right when you need it, with a picture next to it.</p>
+
+  <h3>How to read it</h3>
+  <ol class="steps">
+    <li><strong>Go in order the first time.</strong> Each chapter leans on the one before. Later you can jump around using the chapter list.</li>
+    <li><strong>Play with every figure before reading its caption.</strong> Form a guess about what a slider does, then test it. Prediction followed by feedback is literally how models learn, and it works on people too.</li>
+    <li><strong>Answer the questions at the end of each chapter.</strong> They are short and they tell you whether the idea actually landed.</li>
+    <li><strong>Type out the code.</strong> Every algorithm comes with a short Python snippet using the libraries people use at work: NumPy, scikit-learn and PyTorch. Run them in a free notebook such as Google Colab.</li>
+    <li><strong>Mark chapters complete</strong> with the button at the end of each one. Your progress is saved in this browser.</li>
+  </ol>
+
+  <h3>The map</h3>
+  <div class="cards">
+    <div class="card"><span class="tag">Part I</span><h4>Foundations</h4><p>What ML is, the small amount of math it runs on, and why data matters more than algorithms.</p></div>
+    <div class="card"><span class="tag">Part II</span><h4>Supervised learning</h4><p>Regression, classification, gradient descent, evaluation, overfitting and the classic algorithm toolbox.</p></div>
+    <div class="card"><span class="tag">Part III</span><h4>Unsupervised learning</h4><p>Finding structure without labels: clustering and dimensionality reduction.</p></div>
+    <div class="card"><span class="tag">Part IV</span><h4>Deep learning</h4><p>Neural networks, backpropagation, CNNs, attention, transformers and large language models.</p></div>
+    <div class="card"><span class="tag">Part V</span><h4>Learning by doing</h4><p>Reinforcement learning: agents that learn from reward instead of answers.</p></div>
+    <div class="card"><span class="tag">Part VI</span><h4>Working in ML</h4><p>Project workflow, choosing algorithms, responsible ML, a career roadmap and a glossary.</p></div>
+  </div>
+
+  <div class="note key" data-k="The one idea to hold on to">
+    <p>Almost every method in this guide is the same four-part recipe: <strong>data</strong>, a <strong>model</strong> with adjustable numbers, a <strong>loss</strong> that scores how wrong the model is, and an <strong>optimizer</strong> that nudges the numbers to make the loss smaller. When a new technique looks intimidating, ask which of the four parts it changes.</p>
+  </div>
+</section>

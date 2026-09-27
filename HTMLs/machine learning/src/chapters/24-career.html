@@ -1,0 +1,101 @@
+<section class="chapter" id="career" data-num="24" data-part="Working in ML" data-title="Your roadmap into ML work">
+  <header class="ch-head">
+    <h2>Your roadmap into ML work</h2>
+    <p class="lede">What the jobs actually are, which skills they need, a realistic plan, and how to prove you can do the work. Tick items off as you go; your progress is saved in this browser.</p>
+  </header>
+
+  <h3>The roles</h3>
+  <div class="cards">
+    <div class="card"><span class="tag">Data scientist</span><h4>Questions to answers</h4><p>Analysis, experiments, statistical modeling, classic ML, communicating results to decision makers. Heavy on SQL, statistics and judgment.</p></div>
+    <div class="card"><span class="tag">ML engineer</span><h4>Models into products</h4><p>Builds training pipelines, deploys and scales models, owns reliability. Strong software engineering plus solid ML.</p></div>
+    <div class="card"><span class="tag">AI engineer</span><h4>Applications on foundation models</h4><p>Builds products on LLMs: prompting, retrieval, evaluation, agents, cost and latency. The fastest-growing role right now.</p></div>
+    <div class="card"><span class="tag">MLOps / platform</span><h4>Infrastructure for ML</h4><p>Feature stores, orchestration, serving, monitoring, GPU clusters. Mostly DevOps and cloud skills, applied to ML.</p></div>
+    <div class="card"><span class="tag">Data engineer</span><h4>The data under everything</h4><p>Pipelines, warehouses, data quality. Not modeling, but every ML team depends on this work.</p></div>
+    <div class="card"><span class="tag">Research scientist</span><h4>New methods</h4><p>Invents and publishes new techniques. Usually expects a PhD or an equivalent research track record, and strong math.</p></div>
+  </div>
+
+  <h3>Skills checklist</h3>
+  <h4>Foundations</h4>
+  <ul class="checks">
+    <li><label><input type="checkbox" data-key="sk-py"><span>Python fluently: functions, classes, virtual environments, reading tracebacks<small>The language of ML. Everything else builds on it.</small></span></label></li>
+    <li><label><input type="checkbox" data-key="sk-np"><span>NumPy and pandas: arrays, vectorized math, grouping, joining, cleaning</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-sql"><span>SQL: joins, aggregations, window functions<small>Asked in almost every data interview. Most company data lives in databases.</small></span></label></li>
+    <li><label><input type="checkbox" data-key="sk-stat"><span>Statistics: distributions, sampling, confidence intervals, hypothesis tests, A/B testing</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-math"><span>Linear algebra and calculus intuition (chapter 02 level, then a bit deeper)</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-git"><span>Git, the command line, and Jupyter notebooks</span></label></li>
+  </ul>
+  <h4>Core machine learning</h4>
+  <ul class="checks">
+    <li><label><input type="checkbox" data-key="sk-skl"><span>scikit-learn pipelines, cross-validation and hyperparameter search</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-eval"><span>Choosing and interpreting metrics; spotting leakage; error analysis</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-fe"><span>Feature engineering for tabular data</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-gbm"><span>Gradient boosting (LightGBM or XGBoost) with early stopping and SHAP</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-viz"><span>Data visualization for exploration and for communicating results</span></label></li>
+  </ul>
+  <h4>Deep learning and modern AI</h4>
+  <ul class="checks">
+    <li><label><input type="checkbox" data-key="sk-torch"><span>PyTorch: tensors, autograd, writing a training loop from scratch</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-cnn"><span>Fine-tuning a pretrained vision model</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-hf"><span>Hugging Face: tokenizers, pretrained transformers, fine-tuning</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-llm"><span>Building with LLM APIs: prompting, RAG with embeddings, evaluation sets</span></label></li>
+  </ul>
+  <h4>Engineering and delivery</h4>
+  <ul class="checks">
+    <li><label><input type="checkbox" data-key="sk-api"><span>Serving a model behind an API (FastAPI) and packaging it with Docker</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-cloud"><span>One cloud platform's basics (storage, compute, a managed ML service)</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-test"><span>Testing, logging and experiment tracking (pytest, MLflow or W&amp;B)</span></label></li>
+    <li><label><input type="checkbox" data-key="sk-comm"><span>Writing a clear one-page summary of a project: problem, approach, results, limits</span></label></li>
+  </ul>
+
+  <h3>A six-month plan (about 10 hours a week)</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Weeks</th><th>Focus</th><th>Output</th></tr>
+    <tr><td>1 to 4</td><td>Python, NumPy, pandas, SQL, plotting. Re-read chapters 01 to 03 of this guide.</td><td>Clean and analyze one public dataset; write up findings.</td></tr>
+    <tr><td>5 to 10</td><td>Supervised learning with scikit-learn: chapters 04 to 12. Metrics, validation, trees and boosting.</td><td>An end-to-end tabular project beating a documented baseline.</td></tr>
+    <tr><td>11 to 13</td><td>Unsupervised learning and statistics: clustering, PCA, A/B testing.</td><td>A customer segmentation or anomaly detection notebook.</td></tr>
+    <tr><td>14 to 20</td><td>Deep learning in PyTorch: MLPs, CNNs, transformers, fine-tuning (fast.ai or Karpathy's course).</td><td>A fine-tuned image or text classifier with an honest evaluation.</td></tr>
+    <tr><td>21 to 24</td><td>Deployment and LLM applications: FastAPI, Docker, RAG, evaluation.</td><td>A small deployed app that people can actually use.</td></tr>
+    <tr><td>25 to 26</td><td>Polish the portfolio, practice interviews, start applying.</td><td>Three strong projects with READMEs and write-ups.</td></tr>
+  </table></div>
+
+  <h3>Portfolio projects that impress</h3>
+  <p>Hiring managers see endless Titanic and MNIST notebooks. Stand out with projects that show judgment, not just code:</p>
+  <ul>
+    <li><strong>Your own data:</strong> collect or scrape a dataset about something you care about (sports, music, local housing, game telemetry). Collecting and cleaning is real-world skill.</li>
+    <li><strong>End to end:</strong> framing, baseline, model, evaluation, error analysis, and a deployed demo or API.</li>
+    <li><strong>An honest write-up:</strong> what failed, what you would do next, where the model should not be used.</li>
+    <li><strong>A RAG assistant</strong> over a real document collection, with an evaluation set measuring answer quality.</li>
+    <li><strong>A Kaggle competition</strong> where you reach a respectable rank and document what moved the score.</li>
+    <li><strong>A reimplementation</strong> of a classic algorithm or paper from scratch, compared with the library version.</li>
+  </ul>
+
+  <h3>Interview topics to rehearse</h3>
+  <div class="tbl-wrap"><table class="tbl">
+    <tr><th>Topic</th><th>Chapter</th></tr>
+    <tr><td>Bias-variance trade-off, overfitting, regularization (L1 vs L2)</td><td><a href="#overfitting">08</a></td></tr>
+    <tr><td>Precision, recall, ROC AUC, imbalanced data, choosing thresholds</td><td><a href="#evaluation">07</a></td></tr>
+    <tr><td>Train/validation/test splits, cross-validation, leakage</td><td><a href="#data">03</a></td></tr>
+    <tr><td>Gradient descent, learning rates, optimizers</td><td><a href="#gradient-descent">05</a></td></tr>
+    <tr><td>Random forests vs gradient boosting</td><td><a href="#trees">10</a></td></tr>
+    <tr><td>Backpropagation, vanishing gradients, dropout, batch norm</td><td><a href="#neural-networks">15</a>, <a href="#training">16</a></td></tr>
+    <tr><td>Attention and transformers, embeddings, RAG</td><td><a href="#transformers">18</a>, <a href="#llms">19</a></td></tr>
+    <tr><td>ML system design: "design a recommendation / fraud / search system"</td><td><a href="#workflow">21</a></td></tr>
+    <tr><td>SQL and probability puzzles</td><td>practice sites and <a href="#math">02</a></td></tr>
+  </table></div>
+
+  <h3>Where to go next</h3>
+  <div class="cards">
+    <div class="card"><span class="tag">Course, free</span><h4><a href="https://course.fast.ai" target="_blank" rel="noopener">fast.ai</a></h4><p>Practical Deep Learning for Coders. Top-down, code first, excellent for building intuition quickly.</p></div>
+    <div class="card"><span class="tag">Course, free</span><h4><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">Neural Networks: Zero to Hero</a></h4><p>Andrej Karpathy builds backprop, then a GPT, from scratch. The best way to truly understand transformers.</p></div>
+    <div class="card"><span class="tag">Book, free</span><h4><a href="https://www.statlearning.com" target="_blank" rel="noopener">An Introduction to Statistical Learning</a></h4><p>The classic, gentle and rigorous introduction to classic ML, with a Python edition.</p></div>
+    <div class="card"><span class="tag">Book, free</span><h4><a href="https://d2l.ai" target="_blank" rel="noopener">Dive into Deep Learning</a></h4><p>An interactive deep learning textbook with runnable code for every concept.</p></div>
+    <div class="card"><span class="tag">Book</span><h4>Hands-On Machine Learning</h4><p>Aur&eacute;lien G&eacute;ron's practical guide with scikit-learn and deep learning frameworks. A favorite first book.</p></div>
+    <div class="card"><span class="tag">Book</span><h4>Designing Machine Learning Systems</h4><p>Chip Huyen on everything around the model: data, deployment, monitoring. Great for ML engineering interviews.</p></div>
+    <div class="card"><span class="tag">Practice</span><h4><a href="https://www.kaggle.com/learn" target="_blank" rel="noopener">Kaggle</a></h4><p>Short courses, thousands of datasets, free GPUs and competitions to test yourself against others.</p></div>
+    <div class="card"><span class="tag">Practice</span><h4><a href="https://huggingface.co/learn" target="_blank" rel="noopener">Hugging Face courses</a></h4><p>Transformers, LLMs, fine-tuning and agents, with the most widely used open-source tools.</p></div>
+  </div>
+
+  <div class="note key" data-k="The honest advice">
+    <p>Consistency beats intensity: an hour a day for six months will take you further than a heroic weekend. Build things, finish them, and write about them. Read papers when a problem needs them, not to keep up with every headline. And never lose the habit this guide tried to build: form a guess, test it, look at the result honestly.</p>
+  </div>
+</section>
