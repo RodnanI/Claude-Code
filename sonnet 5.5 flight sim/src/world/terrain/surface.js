@@ -23,7 +23,17 @@ export function createSurface(seed, biomes, paint) {
     if (farm > 0.5) {
       const gx = Math.floor((x + 7000) / 210), gz = Math.floor((z + 5000) / 160);
       const r = hashUnit(hash2(gx, gz, seed));
-      return r < 0.22 ? M.FARM_WHEAT : r < 0.44 ? M.FARM_GREEN : r < 0.6 ? M.FARM_PLOW : r < 0.72 ? M.FARM_YELLOW : r < 0.86 ? M.FARM_STUBBLE : M.MEADOW;
+      const lx = x + 7000 - gx * 210, lz = z + 5000 - gz * 160;
+      // hedge line along each field edge, crop rows inside (direction varies per field)
+      if (cell <= 4 && (lx < 1.6 || lz < 1.6)) return cell <= 1.5 ? M.HEDGE : M.FOREST_FLOOR;
+      const dir = hash2(gx, gz, seed + 9) & 1;
+      const rows = cell <= 2 ? Math.floor((dir ? lx : lz) / 2.5) & 1 : 0;
+      if (r < 0.22) return rows ? M.FARM_WHEAT_B : M.FARM_WHEAT;
+      if (r < 0.44) return rows ? M.FARM_GREEN_B : M.FARM_GREEN;
+      if (r < 0.6) return rows ? M.FARM_PLOW_B : M.FARM_PLOW;
+      if (r < 0.72) return rows ? M.FARM_YELLOW_B : M.FARM_YELLOW;
+      if (r < 0.86) return rows ? M.FARM_STUBBLE_B : M.FARM_STUBBLE;
+      return M.MEADOW;
     }
     const forest = biomes.forest(x, z, h, m, farm);
     if (forest > 0.5) return h > 380 ? M.PINE_FLOOR : M.FOREST_FLOOR;

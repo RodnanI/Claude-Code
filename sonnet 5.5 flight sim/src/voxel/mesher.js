@@ -1,8 +1,6 @@
-import { PALETTE_RGB, PALETTE_FLAGS } from './palette.js';
-
-/* Vertex layout, 12 bytes: i16 x, y, z, face | u8 r, g, b, a
-   a = ambient occlusion (bits 0..1) | material flags (bits 2..7). */
-export const VERTEX_STRIDE = 12;
+/* Vertex layout, 8 bytes: i16 x, y, z, w where w packs face (3 bits) | ambient occlusion (2 bits) | material id (8 bits).
+   Colors and every other material property come from the palette texture in the shader. */
+export const VERTEX_STRIDE = 8;
 
 /** Growable interleaved mesh builder shared by every mesher in the project. */
 export class MeshBuilder {
@@ -10,7 +8,6 @@ export class MeshBuilder {
     this.cap = Math.max(256, quadHint * 4);
     this.buf = new ArrayBuffer(this.cap * VERTEX_STRIDE);
     this.i16 = new Int16Array(this.buf);
-    this.u8 = new Uint8Array(this.buf);
     this.vc = 0;
     this.icap = this.cap * 2;
     this.idx = new Uint32Array(this.icap);
@@ -22,10 +19,9 @@ export class MeshBuilder {
   _growV() {
     this.cap *= 2;
     const nb = new ArrayBuffer(this.cap * VERTEX_STRIDE);
-    new Uint8Array(nb).set(this.u8);
+    new Uint8Array(nb).set(new Uint8Array(this.buf));
     this.buf = nb;
     this.i16 = new Int16Array(nb);
-    this.u8 = new Uint8Array(nb);
   }
   _growI() {
     this.icap *= 2;
@@ -34,14 +30,11 @@ export class MeshBuilder {
     this.idx = n;
   }
 
-  vert(x, y, z, face, r, g, b, a) {
+  vert(x, y, z, face, mat, ao) {
     if (this.vc >= this.cap) this._growV();
-    const o = this.vc * 6;
+    const o = this.vc * 4;
     const i16 = this.i16;
-    i16[o] = x; i16[o + 1] = y; i16[o + 2] = z; i16[o + 3] = face;
-    const u = this.vc * 12 + 8;
-    const u8 = this.u8;
-    u8[u] = r; u8[u + 1] = g; u8[u + 2] = b; u8[u + 3] = a;
+    i16[o] = x; i16[o + 1] = y; i16[o + 2] = z; i16[o + 3] = face | (ao << 3) | (mat << 5);
     if (x < this.minx) this.minx = x; if (x > this.maxx) this.maxx = x;
     if (y < this.miny) this.miny = y; if (y > this.maxy) this.maxy = y;
     if (z < this.minz) this.minz = z; if (z > this.maxz) this.maxz = z;
@@ -50,12 +43,10 @@ export class MeshBuilder {
 
   /** Corners must be counter-clockwise as seen from the outside (normal side). */
   quad(x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, face, mat, a0 = 3, a1 = 3, a2 = 3, a3 = 3) {
-    const r = PALETTE_RGB[mat * 3], g = PALETTE_RGB[mat * 3 + 1], b = PALETTE_RGB[mat * 3 + 2];
-    const fl = PALETTE_FLAGS[mat];
-    const v0 = this.vert(x0, y0, z0, face, r, g, b, fl | a0);
-    const v1 = this.vert(x1, y1, z1, face, r, g, b, fl | a1);
-    const v2 = this.vert(x2, y2, z2, face, r, g, b, fl | a2);
-    const v3 = this.vert(x3, y3, z3, face, r, g, b, fl | a3);
+    const v0 = this.vert(x0, y0, z0, face, mat, a0);
+    const v1 = this.vert(x1, y1, z1, face, mat, a1);
+    const v2 = this.vert(x2, y2, z2, face, mat, a2);
+    const v3 = this.vert(x3, y3, z3, face, mat, a3);
     if (this.ic + 6 > this.icap) this._growI();
     const idx = this.idx;
     let n = this.ic;
@@ -70,17 +61,14 @@ export class MeshBuilder {
   /** Copy another finished mesh in, offset by integer cell coordinates. */
   append(mesh, dx = 0, dy = 0, dz = 0) {
     if (!mesh || !mesh.vertexCount) return;
-    const src16 = new Int16Array(mesh.vertexData);
-    const src8 = new Uint8Array(mesh.vertexData);
+    const src = new Int16Array(mesh.vertexData);
     while (this.vc + mesh.vertexCount > this.cap) this._growV();
     while (this.ic + mesh.indexCount > this.icap) this._growI();
     const base = this.vc;
     for (let i = 0; i < mesh.vertexCount; i++) {
-      const o = base * 6 + i * 6, s = i * 6;
-      const x = src16[s] + dx, y = src16[s + 1] + dy, z = src16[s + 2] + dz;
-      this.i16[o] = x; this.i16[o + 1] = y; this.i16[o + 2] = z; this.i16[o + 3] = src16[s + 3];
-      const uo = (base + i) * 12 + 8, us = i * 12 + 8;
-      this.u8[uo] = src8[us]; this.u8[uo + 1] = src8[us + 1]; this.u8[uo + 2] = src8[us + 2]; this.u8[uo + 3] = src8[us + 3];
+      const o = (base + i) * 4, s = i * 4;
+      const x = src[s] + dx, y = src[s + 1] + dy, z = src[s + 2] + dz;
+      this.i16[o] = x; this.i16[o + 1] = y; this.i16[o + 2] = z; this.i16[o + 3] = src[s + 3];
       if (x < this.minx) this.minx = x; if (x > this.maxx) this.maxx = x;
       if (y < this.miny) this.miny = y; if (y > this.maxy) this.maxy = y;
       if (z < this.minz) this.minz = z; if (z > this.maxz) this.maxz = z;
@@ -118,6 +106,7 @@ export function meshVolume(vol, opts = {}) {
   const data = vol.data;
   const sc = new Int32Array(12);
   const off = opts.offset || [0, 0, 0];
+  const scale = opts.scale || 1;
 
   for (let d = 0; d < 3; d++) {
     const u = (d + 1) % 3, v = (d + 2) % 3;
@@ -180,7 +169,7 @@ export function meshVolume(vol, opts = {}) {
           const face = d * 2 + back;
           // corners in (u,v) space, written straight into scratch without allocating
           const cu0 = i, cu1 = i + w, cv0 = j, cv1 = j + h;
-          const kd = k + off[d], u0 = cu0 + off[u], u1 = cu1 + off[u], v0 = cv0 + off[v], v1 = cv1 + off[v];
+          const kd = k * scale + off[d], u0 = cu0 * scale + off[u], u1 = cu1 * scale + off[u], v0 = cv0 * scale + off[v], v1 = cv1 * scale + off[v];
           sc[d] = kd; sc[u] = u0; sc[v] = v0;
           sc[3 + d] = kd; sc[3 + u] = u1; sc[3 + v] = v0;
           sc[6 + d] = kd; sc[6 + u] = u1; sc[6 + v] = v1;

@@ -23,9 +23,9 @@ export function createTerrain(seed, mods = []) {
     const r = Math.sqrt(u * u + v * v);
     if (r >= 1.12) return 0;
     const prof = Math.pow(Math.max(0, 1 - r / 1.12), 1.55);
-    const rid = nMtn.ridged2(x / 2500 + 9.3, z / 2500 - 4.1, 5, 2.1, 0.55, cell);
+    const rid = nMtn.ridged2(x / 2500 + 9.3, z / 2500 - 4.1, 5, 2.1, 0.42, cell / 2500);
     const shoulder = smoothstep(1.12, 0.35, r);
-    return prof * (0.55 + 0.75 * rid) + 0.12 * shoulder * nMtn.fbm2(x / 1400, z / 1400, 3, 2, 0.5, cell);
+    return prof * (0.55 + 0.75 * rid) + 0.12 * shoulder * nMtn.fbm2(x / 1400, z / 1400, 3, 2, 0.5, cell / 1400);
   }
   const out0 = { h: 0, m: 0 };
   function natural(x, z, cell = 0, o = out0) {
@@ -38,11 +38,11 @@ export function createTerrain(seed, mods = []) {
     } else {
       const land = smoothstep(0, 0.09, m);
       const up = smoothstep(0.05, 0.7, m);
-      const hill = 0.5 + 0.5 * nHill.fbm2(x / 3800 + 3.1, z / 3800 - 1.7, 5, 2, 0.5, cell);
+      const hill = 0.5 + 0.5 * nHill.fbm2(x / 3800 + 3.1, z / 3800 - 1.7, 5, 2, 0.5, cell / 3800);
       const plains = smoothstep(-0.25, 0.35, nHill.n2(x / 7000 + 8, z / 7000));
       const amp = 95 * (0.4 + 0.6 * (1 - plains * 0.85));
       h = 2.5 * land + up * (10 + hill * hill * amp);
-      if (cell < 40) h += 2.4 * nDet.fbm2(x / 70, z / 70, 3, 2, 0.5, cell) * land;
+      if (cell < 40) h += 2.4 * nDet.fbm2(x / 70, z / 70, 3, 2, 0.5, cell / 70) * land;
       const mt = mountainRaw(x, z, cell) * mtnScale * smoothstep(0.08, 0.32, m);
       h += mt;
       o.mtn = mt;

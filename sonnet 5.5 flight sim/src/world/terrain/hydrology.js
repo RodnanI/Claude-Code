@@ -1,55 +1,83 @@
-import { distToSegment, smoothstep, lerp, clamp } from '../../core/util.js';
+import { distToSegment, smoothstep, lerp } from '../../core/util.js';
+import { SpatialGrid } from '../spatial.js';
 import { RIVERS, LAKES } from '../layout.js';
 
-/** Rivers as polylines with monotonically falling water levels, lakes as ellipses with a raised rim. */
+function catmull(p0, p1, p2, p3, t) {
+  const t2 = t * t, t3 = t2 * t;
+  const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+  return [f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])];
+}
+
+/** Smooth polyline through control points, resampled to roughly `step` meters. */
+function densify(pts, step) {
+  const out = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const n = Math.max(2, Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / step));
+    for (let k = 0; k < n; k++) out.push(catmull(p0, p1, p2, p3, k / n));
+  }
+  out.push(pts[pts.length - 1].slice());
+  return out;
+}
+
+/**
+ * Rivers follow the ground: the water level is a running minimum of the terrain along the smoothed centerline, so a
+ * river only ever flows downhill and never floats above the land or digs a gorge. Lakes are ellipses with a raised rim.
+ */
 export function createHydrology(naturalAt) {
+  const grid = new SpatialGrid(256);
   const rivers = RIVERS.map((r) => {
-    const pts = r.pts;
+    const pts = densify(r.pts, 60);
     const lens = [0];
     for (let i = 1; i < pts.length; i++) lens.push(lens[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
     let level = Infinity;
     const levels = pts.map((p) => {
-      level = Math.min(level, naturalAt(p[0], p[1]) - 1.4);
-      return Math.max(level, 0.6);
+      level = Math.min(level, naturalAt(p[0], p[1]) - 1.3);
+      return Math.max(level, 0.5);
     });
-    let minx = 1e9, minz = 1e9, maxx = -1e9, maxz = -1e9;
-    for (const p of pts) { minx = Math.min(minx, p[0]); maxx = Math.max(maxx, p[0]); minz = Math.min(minz, p[1]); maxz = Math.max(maxz, p[1]); }
-    const pad = Math.max(r.w0, r.w1) + 40;
-    return { ...r, lens, levels, total: lens[lens.length - 1], aabb: [minx - pad, minz - pad, maxx + pad, maxz + pad] };
+    const rec = { ...r, pts, lens, levels, total: lens[lens.length - 1], segs: [] };
+    const pad = Math.max(r.w0, r.w1) + 24;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const seg = { r: rec, i };
+      rec.segs.push(seg);
+      grid.insert(seg, Math.min(pts[i][0], pts[i + 1][0]) - pad, Math.min(pts[i][1], pts[i + 1][1]) - pad, Math.max(pts[i][0], pts[i + 1][0]) + pad, Math.max(pts[i][1], pts[i + 1][1]) + pad);
+    }
+    return rec;
   });
   const lakes = LAKES.map((l) => ({ ...l, level: Math.max(0.8, naturalAt(l.x, l.z) - 0.6) }));
   const seg = { t: 0 };
-  const res = { level: NaN, bed: 0, bank: 0 };
 
   /**
-   * Applies rivers and lakes to natural height h. Writes out.water (surface level or NaN) and returns new height.
+   * Applies rivers and lakes to natural height h. Writes out.water (surface level or NaN) and returns the new height.
    * cell lets very coarse levels drop thin rivers instead of turning them into fat blue slabs.
    */
   function apply(x, z, h, cell, out) {
     out.water = NaN;
     out.hydro = 0;
-    for (let i = 0; i < rivers.length; i++) {
-      const r = rivers[i];
-      const a = r.aabb;
-      if (x < a[0] || x > a[2] || z < a[1] || z > a[3]) continue;
-      if (cell > 24) continue;
-      let best = 1e9, bt = 0, bs = 0;
-      for (let s = 0; s < r.pts.length - 1; s++) {
-        const p = r.pts[s], q = r.pts[s + 1];
+    if (cell <= 24) {
+      const cand = grid.at(x, z);
+      let best = 1e9, bi = -1, bt = 0, br = null;
+      for (let k = 0; k < cand.length; k++) {
+        const s = cand[k], r = s.r;
+        const p = r.pts[s.i], q = r.pts[s.i + 1];
         const d = distToSegment(x, z, p[0], p[1], q[0], q[1], seg);
-        if (d < best) { best = d; bt = seg.t; bs = s; }
+        if (d < best) { best = d; bi = s.i; bt = seg.t; br = r; }
       }
-      const along = (r.lens[bs] + (r.lens[bs + 1] - r.lens[bs]) * bt) / r.total;
-      const w = Math.max(lerp(r.w0, r.w1, along), cell * 0.55) * 0.5;
-      if (best > w + 16) continue;
-      const level = lerp(r.levels[bs], r.levels[bs + 1], bt);
-      if (best <= w) {
-        h = Math.min(h, level - 0.8);
-        out.water = level;
-        out.hydro = 1;
-      } else {
-        const bank = level + (best - w) * 0.42;
-        if (bank < h) h = bank;
+      if (br) {
+        const along = (br.lens[bi] + (br.lens[bi + 1] - br.lens[bi]) * bt) / br.total;
+        const w = Math.max(lerp(br.w0, br.w1, along), cell * 0.55) * 0.5;
+        if (best <= w + 16) {
+          const level = lerp(br.levels[bi], br.levels[bi + 1], bt);
+          if (best <= w) {
+            const surf = Math.max(0.3, Math.min(level, h - 0.6));
+            h = Math.min(h, surf - 0.8);
+            out.water = surf;
+            out.hydro = 1;
+          } else {
+            const bank = level + (best - w) * 0.42;
+            if (bank < h) h = bank;
+          }
+        }
       }
     }
     for (let i = 0; i < lakes.length; i++) {

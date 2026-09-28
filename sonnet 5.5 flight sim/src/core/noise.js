@@ -103,8 +103,8 @@ export class Noise {
   }
 
   /**
-   * Fractal Brownian motion. `minWavelength` lets callers skip octaves finer than a
-   * sampling cell, which is both faster and free of aliasing at coarse LODs.
+   * Fractal Brownian motion. `minWavelength` is in the same units as the input coordinates (callers divide the sampling
+   * cell by their noise scale). Octaves finer than twice that are skipped: faster, and free of aliasing at coarse LODs.
    */
   fbm2(x, y, octaves = 5, lacunarity = 2, gain = 0.5, minWavelength = 0) {
     let amp = 1, freq = 1, sum = 0, norm = 0;

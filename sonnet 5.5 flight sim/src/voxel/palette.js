@@ -89,6 +89,8 @@ const TABLE = [
   // aggregate tints for coarse LOD painting of urban areas
   ['URBAN_DENSE', 0x7d7a76, 0], ['URBAN_RESIDENTIAL', 0x8a7a68, 0], ['URBAN_INDUSTRIAL', 0x6d6d68, 0], ['URBAN_LOWRISE', 0x928878, 0],
   ['URBAN_GREEN', 0x6a8a48, F],
+  // appended: crop rows and hedges
+  ['FARM_WHEAT_B', 0xb8a04e, F], ['FARM_GREEN_B', 0x54903a, F], ['FARM_PLOW_B', 0x5a3d29, 0], ['FARM_YELLOW_B', 0xc6a532, F], ['FARM_STUBBLE_B', 0xa48c4a, F], ['HEDGE', 0x35592a, F],
 ];
 
 export const M = {};
@@ -109,6 +111,64 @@ TABLE.forEach(([name, hex, flags], i) => {
   PALETTE_FLAGS[id] = flags;
 });
 Object.freeze(M);
+
+/* Physically based properties per material. Defaults come from flags; overrides by name:
+   [roughness, metallic, emissiveIntensity, translucency, variation] (any may be null to keep the default). */
+const OVERRIDES = {
+  STEEL: [0.42, 1], STEEL_DARK: [0.5, 0.85], STEEL_BRIGHT: [0.16, 1], AC_METAL: [0.24, 1], ROOF_TIN: [0.38, 0.95], ROOF_RED_METAL: [0.42, 0.7],
+  FENCE: [0.5, 0.9], CAR_SILVER: [0.22, 0.9], TRAIN_SILVER: [0.28, 0.9], RADAR_WHITE: [0.35, 0], TANK_WHITE: [0.4, 0.4], TANK_GRAY: [0.4, 0.7],
+  MARBLE: [0.22, 0], GRANITE: [0.3, 0], ICE: [0.08, 0], SNOW: [0.55, 0, null, 0.3, 0.05], SAND: [0.95, 0, null, null, 0.1], SAND_WET: [0.55, 0, null, null, 0.1],
+  ASPHALT: [0.78, 0, null, null, 0.1], ASPHALT_WORN: [0.86, 0, null, null, 0.12], RUNWAY: [0.72, 0, null, null, 0.08], CONCRETE: [0.82, 0], APRON: [0.8, 0],
+  WINDOW_LIT: [0.2, 0, 2.6], WINDOW_LIT_COOL: [0.2, 0, 2.6], WINDOW_LIT_DIM: [0.2, 0, 1.8], LAMP_SODIUM: [0.4, 0, 9], LAMP_WHITE: [0.4, 0, 9],
+  BEACON_RED: [0.4, 0, 9], RWY_LIGHT_WHITE: [0.4, 0, 10], RWY_LIGHT_GREEN: [0.4, 0, 10], RWY_LIGHT_RED: [0.4, 0, 10], RWY_LIGHT_AMBER: [0.4, 0, 10],
+  SIGNAL_RED: [0.4, 0, 7], SIGNAL_AMBER: [0.4, 0, 7], SIGNAL_GREEN: [0.4, 0, 7], HEADLIGHT: [0.2, 0, 14], TAILLIGHT: [0.3, 0, 6],
+  NEON_ORANGE: [0.3, 0, 8], NEON_WHITE: [0.3, 0, 8], NAV_RED: [0.3, 0, 9], NAV_GREEN: [0.3, 0, 9], STROBE: [0.3, 0, 20], AC_GLOW: [0.5, 0, 6],
+  LEAF_PINE: [0.9, 0, null, 0.35], LEAF_PINE_L: [0.9, 0, null, 0.35], LEAF_OAK: [0.85, 0, null, 0.45], LEAF_OAK_L: [0.85, 0, null, 0.5],
+  LEAF_BIRCH: [0.85, 0, null, 0.5], LEAF_AUTUMN: [0.85, 0, null, 0.5], LEAF_PALM: [0.7, 0, null, 0.45], BUSH: [0.9, 0, null, 0.4],
+  GRASS: [0.94, 0, null, 0.22], GRASS_LUSH: [0.94, 0, null, 0.25], MEADOW: [0.94, 0, null, 0.22],
+  CAR_PAINT: [0.28, 0.15], CAR_BLACK: [0.26, 0.1], CAR_RED: [0.28, 0.1], CAR_WHITE: [0.3, 0.1], CAR_TAXI: [0.3, 0.1], BUS_YELLOW: [0.32, 0.1],
+  AC_WHITE: [0.3, 0.2], AC_RED: [0.3, 0.2], AC_ORANGE: [0.3, 0.2], AC_YELLOW: [0.3, 0.2], AC_GRAY_LIGHT: [0.32, 0.4], AC_GRAY: [0.34, 0.45], AC_GRAY_DARK: [0.38, 0.4],
+  AC_BLACK: [0.35, 0.2], AC_CREAM: [0.32, 0.15], AC_TEAL: [0.3, 0.2], HUD_GLASS: [0.04, 0], SOLAR_PANEL: [0.15, 0.3], GLASS_BLEND_DARK: [0.35, 0], GLASS_BLEND_LIGHT: [0.4, 0],
+};
+
+export const PALETTE_ROUGH = new Float32Array(256).fill(0.88);
+export const PALETTE_METAL = new Float32Array(256);
+export const PALETTE_EMIT = new Float32Array(256);
+export const PALETTE_TRANS = new Float32Array(256);
+export const PALETTE_VAR = new Float32Array(256).fill(0.16);
+const EMIT_ALWAYS = new Set(['BEACON_RED', 'RWY_LIGHT_WHITE', 'RWY_LIGHT_GREEN', 'RWY_LIGHT_RED', 'RWY_LIGHT_AMBER', 'SIGNAL_RED', 'SIGNAL_AMBER', 'SIGNAL_GREEN', 'NAV_RED', 'NAV_GREEN', 'STROBE', 'AC_GLOW', 'HEADLIGHT', 'TAILLIGHT']);
+for (let id = 1; id < MATERIAL_COUNT; id++) {
+  const f = PALETTE_FLAGS[id];
+  if (f & FL.GLOSSY) PALETTE_ROUGH[id] = 0.14;
+  if (f & FL.FLAT) PALETTE_VAR[id] = 0;
+  if (f & FL.FOLIAGE) { PALETTE_VAR[id] = 0.24; PALETTE_TRANS[id] = 0.3; }
+  if (f & FL.EMISSIVE) PALETTE_EMIT[id] = 4;
+  const o = OVERRIDES[MATERIAL_NAMES[id]];
+  if (o) {
+    if (o[0] != null) PALETTE_ROUGH[id] = o[0];
+    if (o[1] != null) PALETTE_METAL[id] = o[1];
+    if (o[2] != null) PALETTE_EMIT[id] = o[2];
+    if (o[3] != null) PALETTE_TRANS[id] = o[3];
+    if (o[4] != null) PALETTE_VAR[id] = o[4];
+  }
+}
+
+/** RGBA8 texels for the 256x3 palette texture. Row 0: albedo + roughness. Row 1: emissive + intensity/24.
+    Row 2: metallic, variation, translucency, flags (bit 0 = emission ignores night). */
+export function buildPaletteTexels() {
+  const t = new Uint8Array(256 * 3 * 4);
+  for (let id = 0; id < 256; id++) {
+    const o0 = id * 4, o1 = (256 + id) * 4, o2 = (512 + id) * 4;
+    t[o0] = PALETTE_RGB[id * 3]; t[o0 + 1] = PALETTE_RGB[id * 3 + 1]; t[o0 + 2] = PALETTE_RGB[id * 3 + 2]; t[o0 + 3] = Math.round(PALETTE_ROUGH[id] * 255);
+    const em = PALETTE_EMIT[id] > 0;
+    t[o1] = em ? PALETTE_RGB[id * 3] : 0; t[o1 + 1] = em ? PALETTE_RGB[id * 3 + 1] : 0; t[o1 + 2] = em ? PALETTE_RGB[id * 3 + 2] : 0;
+    t[o1 + 3] = Math.round(Math.min(1, PALETTE_EMIT[id] / 24) * 255);
+    t[o2] = Math.round(PALETTE_METAL[id] * 255); t[o2 + 1] = Math.round(Math.min(1, PALETTE_VAR[id] / 0.5) * 255);
+    t[o2 + 2] = Math.round(PALETTE_TRANS[id] * 255);
+    t[o2 + 3] = PALETTE_FLAGS[id] | (EMIT_ALWAYS.has(MATERIAL_NAMES[id]) ? 1 : 0);
+  }
+  return t;
+}
 
 export const materialName = (id) => MATERIAL_NAMES[id] || 'UNKNOWN';
 export const isWaterMat = (id) => (PALETTE_FLAGS[id] & FL.WATER) !== 0;

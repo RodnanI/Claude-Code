@@ -52,8 +52,10 @@ export class Camera {
   }
   /** Projection scale in pixels for a 1 meter object at 1 meter distance. */
   get projScale() { return this.height / (2 * Math.tan(this.fov / 2)); }
-  buildVP(near, far, out = this.vp) {
+  /** Build projection * view. jx, jy are sub-pixel jitter offsets in pixels (temporal AA). */
+  buildVP(near, far, out = this.vp, jx = 0, jy = 0) {
     mat4.perspective(this.proj, this.fov, this.aspect, near, far);
+    if (jx || jy) { this.proj[8] += (2 * jx) / this.width; this.proj[9] += (2 * jy) / this.height; }
     return mat4.multiply(out, this.proj, this.view);
   }
 }

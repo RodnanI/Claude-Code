@@ -51,17 +51,27 @@ export function createNodeBuilder(world) {
         for (const d of descs) {
           const ext = Math.max(d.w, d.d, d.h * 0.5);
           if (ext < cell * 1.4) continue;
+          const kit = world.kits.get(d.kind);
+          if (kit && kit.maxCell && cell > kit.maxCell) continue;
           const recipe = world.recipeFor(d);
-          const anchorY = Math.floor(d.y / cell + 1e-6) * cell;
-          const r = rasterize(recipe, { cell, anchor: [d.x, anchorY, d.z], rot: d.rot || 0, conservative: cell >= 3 });
+          // Very large structures are rasterized coarser so a single tower never needs a gigantic volume.
+          let f = 1;
+          const rb = recipe.bounds(cell);
+          if (rb) {
+            const cells = ((rb[3] - rb[0]) * (rb[4] - rb[1]) * (rb[5] - rb[2])) / (cell * cell * cell);
+            while (cells / (f * f * f) > 26e6) f *= 2;
+          }
+          const cu = cell * f;
+          const anchorY = Math.floor(d.y / cu + 1e-6) * cu;
+          const r = rasterize(recipe, { cell: cu, anchor: [d.x, anchorY, d.z], rot: d.rot || 0, conservative: cu >= 3 || !!(kit && kit.conservative) });
           if (!r) continue;
           const before = builder.quadCount;
-          meshVolume(r.vol, { ao: cfg.ao && cell <= 2, builder, offset: [r.i0 - off[0], r.j0, r.k0 - off[2]] });
+          meshVolume(r.vol, { ao: cfg.ao && cu <= 2, builder, scale: f, offset: [r.i0 * f - off[0], r.j0 * f, r.k0 * f - off[2]] });
           structQuads += builder.quadCount - before;
           structures++;
-          const top = (r.j0 + r.vol.ny) * cell;
+          const top = (r.j0 + r.vol.ny) * cu;
           if (top > maxY) maxY = top;
-          if (r.j0 * cell < minY) minY = r.j0 * cell;
+          if (r.j0 * cu < minY) minY = r.j0 * cu;
         }
         // scenery and props
         scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets);

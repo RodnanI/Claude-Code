@@ -13,8 +13,10 @@ document.getElementById('boot').remove();
 const preset = params.get('preset') || 'medium';
 const s = { ...PRESETS[preset] };
 if (params.get('w')) s.workers = +params.get('w');
+for (const [k, v] of params) if (k in s && k !== 'preset') s[k] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) ? v : +v;
+if (params.get('grade')) s.grade = params.get('grade');
 const d = derive(s);
-const renderer = new Renderer(canvas, { antialias: s.msaa > 0 });
+const renderer = new Renderer(canvas, {});
 renderer.configure(d.render);
 const world = createWorld({ seed: WORLD_SEED });
 const models = new ModelRegistry(renderer, world);
@@ -51,7 +53,7 @@ function frame(t) {
   cam.setPose(st.x, st.y, st.z, fx, fy, fz);
   env.update(dt);
   const list = nodes.update(cam, dt * 1000);
-  renderer.render({ env, time: t / 1000, viewDistance: s.viewDistance, nodes: list, models: [] });
+  renderer.render({ env, time: t / 1000, dt, viewDistance: s.viewDistance, nodes: list, models: [] });
   frames++;
   requestAnimationFrame(frame);
 }
