@@ -19,10 +19,10 @@ export async function launch(pw) {
 }
 
 /** Wait until a predicate evaluated in the page returns truthy, with a timeout and periodic progress. */
-export async function waitFor(page, fn, { timeout = 60000, poll = 250 } = {}) {
+export async function waitFor(page, fn, { timeout = 60000, poll = 250, arg } = {}) {
   const t0 = Date.now();
   for (;;) {
-    const v = await page.evaluate(fn);
+    const v = await page.evaluate(fn, arg);
     if (v) return v;
     if (Date.now() - t0 > timeout) throw new Error('timeout waiting for condition');
     await new Promise((r) => setTimeout(r, poll));

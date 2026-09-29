@@ -91,6 +91,8 @@ const TABLE = [
   ['URBAN_GREEN', 0x6a8a48, F],
   // appended: crop rows and hedges
   ['FARM_WHEAT_B', 0xb8a04e, F], ['FARM_GREEN_B', 0x54903a, F], ['FARM_PLOW_B', 0x5a3d29, 0], ['FARM_YELLOW_B', 0xc6a532, F], ['FARM_STUBBLE_B', 0xa48c4a, F], ['HEDGE', 0x35592a, F],
+  // appended: rock variety for cliff strata
+  ['ROCK_PALE', 0xa9a49a, 0], ['ROCK_RED', 0x8b5a46, 0],
 ];
 
 export const M = {};

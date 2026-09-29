@@ -7,6 +7,18 @@ import { SEA_LEVEL } from '../config.js';
 export function createSurface(seed, biomes, paint) {
   const nS = new Noise(seed ^ 0xa0a), nR = new Noise(seed ^ 0xb0b), nD = new Noise(seed ^ 0xc0c);
 
+  /** Cliff faces read as layered rock: bands by absolute height (so they survive every LOD) drifting slowly sideways, broken up by patches. */
+  function rockFace(x, z, h) {
+    const drift = nR.n2(x / 260, z / 260) * 16;
+    const hh = h + drift;
+    const band = Math.sin(hh / 11) + 0.55 * Math.sin(hh / 4.1 + 1.7);
+    const v = band * 0.62 + nR.n2(x / 80, z / 80) * 0.55 + nR.n2(x / 23, z / 23) * 0.22;
+    if (v > 1.05) return M.ROCK_RED;
+    if (v > 0.5) return M.ROCK_WARM;
+    if (v < -0.6) return M.ROCK_DARK;
+    return h > 700 && v > 0.05 ? M.ROCK_PALE : M.ROCK;
+  }
+
   function natural(x, z, h, slope, cell, s) {
     const m = s ? s.m : 1;
     const hb = s ? s.bed : h;
@@ -16,7 +28,7 @@ export function createSurface(seed, biomes, paint) {
     const snowLine = 1010 + 70 * nS.n2(x / 320 + 2, z / 320);
     if (h > snowLine) return slope > 1.25 ? M.ROCK_DARK : M.SNOW;
     if (h > snowLine - 90 && nS.n2(x / 60, z / 60) > 0.15 - (h - (snowLine - 90)) / 300) return slope > 1.1 ? M.ROCK : M.SNOW;
-    if (slope > 0.95) return nR.n2(x / 40, z / 40) > 0 ? M.ROCK : M.ROCK_DARK;
+    if (slope > 0.95) return rockFace(x, z, h);
     if (h > 760) return slope > 0.6 ? M.ROCK : (nR.n2(x / 55, z / 55) > 0.2 ? M.SCREE : M.ALPINE);
     if (slope > 0.62) return nR.n2(x / 30, z / 30) > -0.1 ? M.ROCK_WARM : M.DIRT;
     const farm = biomes.farmland(x, z, h, m);
@@ -70,7 +82,7 @@ export function createSurface(seed, biomes, paint) {
       switch (mat) {
         case M.SAND: case M.SAND_WET: return M.SAND_WET;
         case M.SNOW: case M.ICE: case M.ALPINE: case M.SCREE: return M.ROCK;
-        case M.ROCK: case M.ROCK_DARK: case M.ROCK_WARM: return mat;
+        case M.ROCK: case M.ROCK_DARK: case M.ROCK_WARM: case M.ROCK_PALE: case M.ROCK_RED: return mat;
         case M.ASPHALT: case M.ASPHALT_WORN: case M.ROAD_LINE_W: case M.ROAD_LINE_Y: case M.SIDEWALK: case M.CURB: return M.CONCRETE_DARK;
         case M.RUNWAY: case M.RUNWAY_MARK: case M.TAXI_LINE: case M.APRON: case M.CONCRETE: return M.CONCRETE;
         default:

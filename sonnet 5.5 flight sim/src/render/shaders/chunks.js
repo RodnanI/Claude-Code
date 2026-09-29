@@ -62,11 +62,15 @@ vec3 sunTransmittance(vec3 p, vec3 sun) {
   vec2 a = raySphere(p, sun, RA);
   float len = a.y;
   if (len <= 0.0) return vec3(1.0);
-  float ds = len / 8.0;
+  // quadratic spacing: dense air near p dominates, and a low sun crosses hundreds of kilometers
   vec3 od = vec3(0.0);
+  float tp = 0.0;
   for (int i = 0; i < 8; i++) {
-    vec3 q = p + sun * ((float(i) + 0.5) * ds);
+    float t1 = len * float((i + 1) * (i + 1)) / 64.0;
+    float ds = t1 - tp;
+    vec3 q = p + sun * (tp + 0.5 * ds);
     od += extinctionAt(length(q) - RG) * ds;
+    tp = t1;
   }
   return exp(-od);
 }
@@ -79,28 +83,37 @@ vec3 skyRadiance(vec3 rd, vec3 sun, float alt, float sunI) {
   if (hitGround) tmax = ga.x;
   if (tmax <= 0.0) return vec3(0.0);
   const int N = 20;
-  float ds = tmax / float(N);
-  vec3 od = vec3(0.0);
+  vec3 T = vec3(1.0);
   vec3 sum = vec3(0.0);
   float mu = dot(rd, sun);
   float pr = phaseR(mu), pm = phaseM(mu);
+  float tp = 0.0;
   for (int i = 0; i < N; i++) {
-    float t = (float(i) + 0.5) * ds;
-    vec3 p = ro + rd * t;
+    // quadratic spacing keeps the dense air near the camera finely sampled, which matters for horizon rays that run hundreds of kilometers
+    float t1 = tmax * float((i + 1) * (i + 1)) / float(N * N);
+    float ds = t1 - tp;
+    vec3 p = ro + rd * (tp + 0.5 * ds);
+    tp = t1;
     float h = length(p) - RG;
     float dR = exp(-h / HR), dM = exp(-h / HM);
-    od += extinctionAt(h) * ds;
-    vec3 T = exp(-od);
+    vec3 ext = extinctionAt(h);
     vec3 sT = sunTransmittance(p, sun);
-    sum += T * sT * (BR * dR * pr + BMS * dM * pm) * ds;
-    // crude multiple scattering: isotropic fill proportional to local single scattering
-    sum += T * sT * (BR * dR + BMS * dM) * 0.6 * (1.0 / (4.0 * PI)) * ds;
+    // single scattering plus a crude isotropic fill for multiple scattering, integrated analytically over the segment
+    vec3 src = sT * (BR * dR * pr + BMS * dM * pm + (BR * dR + BMS * dM) * (0.6 / (4.0 * PI)));
+    vec3 Ts = exp(-ext * ds);
+    sum += T * src * (vec3(1.0) - Ts) / max(ext, vec3(1e-9));
+    T *= Ts;
   }
   if (hitGround) {
     vec3 p = ro + rd * ga.x;
     vec3 n = normalize(p);
-    sum += exp(-od) * sunTransmittance(p, sun) * max(dot(n, sun), 0.0) * 0.2 / PI;
+    sum += T * sunTransmittance(p, sun) * max(dot(n, sun), 0.0) * 0.2 / PI;
   }
-  return sum * sunI;
+  sum *= sunI;
+  // The multiple scattering fill is crude and leaves the daytime horizon greenish. Restore the pale blue of a clear horizon,
+  // only while the sun is high so that sunsets keep their warmth.
+  float dayW = smoothstep(0.25, 0.6, sun.y);
+  sum *= mix(vec3(1.0), vec3(0.9, 1.0, 1.16), dayW * exp(-max(rd.y, 0.0) * 6.0) * 0.85);
+  return sum;
 }
 `;

@@ -1,4 +1,5 @@
 // Places the player aircraft anywhere and shoots it from a chosen camera. For visual checks of places and light.
+// Setting overrides: OVR='{"shadows":2}' node tools/hero-shot.mjs ...
 // Usage: node tools/hero-shot.mjs out.png preset plane hour x z agl heading fov [camDist camHeight camYawOffsetDeg] [w h]
 import { loadPlaywright, launch, waitFor } from '../tests/browser/harness.mjs';
 import { PRESETS } from '../src/settings/presets.js';
@@ -9,7 +10,7 @@ const [out, preset = 'high', plane = 'skylark', hour = '10.5', x = '4300', z = '
 const pw = loadPlaywright();
 const browser = await launch(pw);
 const ctx = await browser.newContext({ viewport: { width: +w, height: +h } });
-await ctx.addInitScript((values) => { localStorage.setItem('flyhigh.settings.v1', JSON.stringify({ v: 1, values })); }, { ...PRESETS[preset], preset, timeOfDay: +hour, traffic: 100, cloudCover: 0.45 });
+await ctx.addInitScript((values) => { localStorage.setItem('flyhigh.settings.v1', JSON.stringify({ v: 1, values })); }, { ...PRESETS[preset], preset, timeOfDay: +hour, traffic: 100, cloudCover: 0.45, ...JSON.parse(process.env.OVR || '{}') });
 const page = await ctx.newPage();
 const errs = [];
 page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
@@ -30,11 +31,14 @@ await page.evaluate(([plane, x, z, agl, heading, fov, dist, camH, yawOff]) => {
   g.hud.visible = false;
 }, [plane, x, z, agl, heading, fov, dist, camH, yawOff]);
 await waitFor(page, () => window.__fh.nodes.settled, { timeout: 500000, poll: 800 }).catch(() => errs.push('terrain never settled'));
-await new Promise((r) => setTimeout(r, 3500));
+// let auto exposure and temporal history converge: a number of frames, not a duration, so slow software rendering still settles
+const f0 = await page.evaluate(() => window.__fh.frames);
+await waitFor(page, (n) => window.__fh.frames >= n, { arg: f0 + +(process.env.FRAMES || 40), timeout: 400000, poll: 500 }).catch(() => errs.push('frame wait timed out'));
 await page.evaluate(() => window.__fh.pause());
+const expo = await page.evaluate(() => { const r = window.__fh.game.renderer; return r.post && r.post.readExposure ? r.post.readExposure().exposure : null; });
 await new Promise((r) => setTimeout(r, 800));
 await page.evaluate(() => { for (const el of document.querySelectorAll('.screen, .hint')) el.style.display = 'none'; });
 mkdirSync(dirname(resolve(out)), { recursive: true });
 await page.screenshot({ path: resolve(out), timeout: 400000 });
-console.log(out, errs.length ? errs.slice(0, 4) : 'ok');
+console.log(out, 'exposure', expo && expo.toFixed(3), errs.length ? errs.slice(0, 4) : 'ok');
 await browser.close();

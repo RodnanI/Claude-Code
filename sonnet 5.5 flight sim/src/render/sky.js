@@ -86,12 +86,12 @@ export class Environment {
     this.sunDir[0] = sx; this.sunDir[1] = sy; this.sunDir[2] = sz;
     if (e < -0.02) {
       this.sunDir[0] = -sx; this.sunDir[1] = -sy; this.sunDir[2] = -sz;
-      sc = [0.5 * moon, 0.62 * moon, 0.95 * moon];
+      sc = [0.085 * moon, 0.105 * moon, 0.18 * moon]; // moonlight: a sliver of daylight, blue, lifted by the auto exposure
     }
     const nf = this.night;
     for (let k = 0; k < 3; k++) {
       this.sunColor[k] = sc[k];
-      this.ambSky[k] = ambSky[k] + [0.05, 0.065, 0.11][k] * nf + [0.16, 0.15, 0.13][k] * smoothstep(-0.05, 0.16, e);
+      this.ambSky[k] = ambSky[k] + [0.011, 0.015, 0.03][k] * nf + [0.16, 0.15, 0.13][k] * smoothstep(-0.05, 0.16, e);
       this.zenith[k] = zen[k] + [0.006, 0.008, 0.02][k] * nf;
       this.horizon[k] = hor[k];
       this.fog[k] = hor[k] * 0.92 + ambSky[k] * 0.08;

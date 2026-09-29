@@ -6,9 +6,9 @@ import { M } from '../../voxel/palette.js';
    Output is instance buckets per (type, variant): 24 bytes each: f32 x, y, z, yaw, scale, u8 tint rgba. */
 
 const NATURAL = new Uint8Array(256);
-for (const n of ['GRASS', 'GRASS_LUSH', 'GRASS_DRY', 'MEADOW', 'FOREST_FLOOR', 'PINE_FLOOR', 'DIRT', 'DIRT_DARK', 'SAND', 'SAND_WET', 'ROCK', 'ROCK_WARM', 'ROCK_DARK', 'SCREE', 'ALPINE', 'MOSS', 'GRAVEL']) NATURAL[M[n]] = 1;
+for (const n of ['GRASS', 'GRASS_LUSH', 'GRASS_DRY', 'MEADOW', 'FOREST_FLOOR', 'PINE_FLOOR', 'DIRT', 'DIRT_DARK', 'SAND', 'SAND_WET', 'ROCK', 'ROCK_WARM', 'ROCK_DARK', 'ROCK_PALE', 'ROCK_RED', 'SCREE', 'ALPINE', 'MOSS', 'GRAVEL']) NATURAL[M[n]] = 1;
 const ROCKY = new Uint8Array(256);
-for (const n of ['ROCK', 'ROCK_WARM', 'ROCK_DARK', 'SCREE']) ROCKY[M[n]] = 1;
+for (const n of ['ROCK', 'ROCK_WARM', 'ROCK_DARK', 'ROCK_PALE', 'ROCK_RED', 'SCREE']) ROCKY[M[n]] = 1;
 const SANDY = new Uint8Array(256);
 SANDY[M.SAND] = 1; SANDY[M.SAND_WET] = 1;
 

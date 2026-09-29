@@ -371,6 +371,9 @@ void main() {
 #endif
 
   col *= exposure;
+  // scotopic shift: dim scenes lose saturation and lean blue at night, bright lights keep their color
+  float lm = luma(col);
+  col = mix(col, vec3(lm) * vec3(0.8, 0.96, 1.2), u_night * (1.0 - smoothstep(0.2, 1.4, lm)) * 0.7);
   float vig = 1.0 - u_fx.x * smoothstep(0.30, 1.15, length(dc * vec2(aspect * 0.85, 1.0)) * 1.6);
   col *= vig;
 

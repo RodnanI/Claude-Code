@@ -223,6 +223,7 @@ export class PostChain {
     p.f1('u_alt', Math.max(1, altitude));
     p.f3('u_atmSun', env.sunTrue[0], env.sunTrue[1], env.sunTrue[2]);
     p.f1('u_sunI', 30);
+    p.f1('u_night', env.night);
     p.f1('u_sunAz', env.sunAz);
     this._draw();
   }
@@ -312,9 +313,9 @@ export class PostChain {
     }
     const resolved = this.tex.taa[write];
 
-    // --- bloom
+    // --- bloom. The downsample chain always runs because exposure metering reads its smallest level.
     let bloomTex = null;
-    if (q.bloom && this.tex.bloom.length) {
+    if (this.tex.bloom.length) {
       const n = this.tex.bloom.length;
       let p = P.bloomDown;
       for (let i = 0; i < n; i++) {
@@ -327,7 +328,7 @@ export class PostChain {
         this._draw();
       }
       p = P.bloomUp;
-      for (let i = n - 2; i >= 0; i--) {
+      for (let i = q.bloom ? n - 2 : -1; i >= 0; i--) {
         const [bw, bh] = this.bloomSizes[i];
         const [lw, lh] = this.bloomSizes[i + 1];
         this._pass(p, this.fbo.bloom[i], bw, bh);
@@ -338,7 +339,7 @@ export class PostChain {
         this._draw();
         gl.disable(gl.BLEND);
       }
-      bloomTex = this.tex.bloom[0];
+      if (q.bloom) bloomTex = this.tex.bloom[0];
     }
 
     // --- exposure
@@ -353,7 +354,7 @@ export class PostChain {
       const l = p.loc('u_size');
       if (l) gl.uniform2i(l, Math.min(mw, 32), Math.min(mh, 32));
       p.f1('u_dt', Math.min(dt, 0.25));
-      p.f4('u_range', 0.004, 2.4, 0.27, Math.pow(2, q.exposureBias || 0));
+      p.f4('u_range', 0.004, 8, 0.36, Math.pow(2, q.exposureBias || 0));
       p.f3('u_sun', sunScreen.x, sunScreen.y, sunScreen.on ? 1 : 0);
       p.f1('u_lock', q.exposureLock ? 1 : 0);
       this._draw();
@@ -369,7 +370,7 @@ export class PostChain {
       p.i1('u_scene', 0); p.i1('u_bloom', 1); p.i1('u_exp', 2); p.i1('u_dist', 3); p.i1('u_lut', 4); p.i1('u_normal', 5);
       p.f2('u_res', w, h);
       p.f1('u_time', clean.time);
-      p.f4('u_fx', q.vignette || 0, q.grain || 0, q.chromatic || 0, q.bloomStrength ?? 0.08);
+      p.f4('u_fx', q.vignette || 0, q.grain || 0, q.chromatic || 0, q.bloom ? (q.bloomStrength ?? 0.08) : 0);
       p.f4('u_fx2', q.sharpen || 0, q.flare || 0, q.godRays ? (q.godRayStrength ?? 1) : 0, LUT_SIZE);
       p.f3('u_sun', sunScreen.x, sunScreen.y, sunScreen.on ? 1 : 0);
       p.f3('u_sunColor', env.sunColor[0], env.sunColor[1], env.sunColor[2]);
@@ -385,6 +386,16 @@ export class PostChain {
     for (let i = 0; i < 16; i++) this.prevVP[i] = vp[i];
     this.prevPos[0] = cam.pos[0]; this.prevPos[1] = cam.pos[1]; this.prevPos[2] = cam.pos[2];
     this.hasHistory = true;
+  }
+
+  /** Current auto-exposure multiplier and sun visibility. A blocking readback, meant for tools and tests only. */
+  readExposure() {
+    const gl = this.gl;
+    const out = new Float32Array(4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo.exp[this.expIdx]);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.FLOAT, out);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { exposure: out[0], sunVisible: out[1] };
   }
 
   dispose() {

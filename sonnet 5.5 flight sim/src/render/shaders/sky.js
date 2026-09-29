@@ -17,13 +17,16 @@ uniform float u_alt;
 uniform vec3 u_atmSun;
 uniform float u_sunI;
 uniform float u_sunAz;
+uniform float u_night;
 void main() {
   float s = 2.0 * (v_uv.y - 0.5);
   float l = sign(s) * s * s * 1.5707963;
   float phi = v_uv.x * PI;
   float ang = u_sunAz + phi;
   vec3 rd = vec3(cos(ang) * cos(l), sin(l), sin(ang) * cos(l));
-  o = vec4(skyRadiance(rd, u_atmSun, u_alt, u_sunI), 1.0);
+  // airglow and starlight: a deep blue floor, brightest at the horizon, so a moonless sky is not flat grey after grading
+  vec3 col = skyRadiance(rd, u_atmSun, u_alt, u_sunI) + u_night * vec3(0.0011, 0.0019, 0.0046) * (0.55 + 1.6 * exp(-max(rd.y, 0.0) * 5.0));
+  o = vec4(col, 1.0);
 }
 `;
 
@@ -86,7 +89,8 @@ void main() {
 #ifdef REFLECT
   d.y = -d.y;
 #endif
-  vec3 col = skyBase(d);
+  // Below the horizon the terrain fog converges to the horizon glow at the view distance, so the sky must continue with the same color.
+  vec3 col = skyBase(normalize(vec3(d.x, max(d.y, 0.015), d.z)));
   // sun
   float sd = dot(d, u_atmSun);
   float disc = smoothstep(0.9999865, 0.9999892, sd);
