@@ -206,7 +206,9 @@ export class NodeManager {
     if (result.instances.length) {
       const list = [];
       for (const inst of result.instances) {
-        const model = this.models.scenery(inst.type, inst.variant, result.cell);
+        // small props get finer voxels than the terrain around them so a car is a car, not a block
+        const rules = (this.world.scenery.get(inst.type) || {}).rules || {};
+        const model = this.models.scenery(inst.type, inst.variant, rules.fine ? Math.max(result.cell * 0.25, 0.125) : result.cell);
         if (model.empty) continue;
         list.push(r.uploadInstances(inst.data, inst.count, model));
       }

@@ -1,5 +1,5 @@
 // Bundles the game into ONE standalone HTML file: CSS, main bundle and the inlined worker source.
-// Usage: node build/build.mjs [--entry main|viewer] [--no-minify]
+// Usage: node build/build.mjs [--entry main|viewer|aircraft] [--no-minify]
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +15,7 @@ const minify = !args.includes('--no-minify');
 const ENTRIES = {
   main: { file: 'main.js', out: 'fly-high.html', title: 'Fly High' },
   viewer: { file: 'test-scenes/viewer.js', out: 'test-viewer.html', title: 'Fly High: viewer' },
+  aircraft: { file: 'test-scenes/aircraft.js', out: 'test-aircraft.html', title: 'Fly High: aircraft' },
 };
 const entry = ENTRIES[entryName];
 if (!entry) throw new Error('unknown entry ' + entryName);

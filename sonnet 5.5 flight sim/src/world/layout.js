@@ -10,7 +10,7 @@ export const SITES = {
   saltmarsh:  { name: 'Saltmarsh', kind: 'town', x: 13400, z: 5000, elev: 6 },
   cutbank:    { name: 'Cutbank', kind: 'town', x: 1800, z: 600, elev: 62 },
   airport:    { name: 'Meridian International', kind: 'airfield', x: 10200, z: -1800, elev: 28, heading: 90 },
-  fortTalon:  { name: 'Fort Talon Air Base', kind: 'airfield', x: -10800, z: 5200, elev: 96, heading: 70 },
+  fortTalon:  { name: 'Fort Talon Air Base', kind: 'airfield', x: -10800, z: 5200, elev: 56, heading: 70 },
   hollow:     { name: "Hollerin' Hollow Strip", kind: 'airfield', x: -800, z: 3400, elev: 88, heading: 350 },
   corvus:     { name: 'Mount Corvus', kind: 'mountain', x: -5200, z: 2200, peak: 1560 },
 };

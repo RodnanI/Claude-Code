@@ -16,26 +16,18 @@ const noiseFor = (seed) => {
   return n;
 };
 
-const ROT = [
-  { ia: 1, ib: 0, ic: 0, id: 1 },   // rot 0: lx = a, lz = b
-  { ia: 0, ib: 1, ic: -1, id: 0 },  // rot 1: lx = b, lz = -a
-  { ia: -1, ib: 0, ic: 0, id: -1 }, // rot 2
-  { ia: 0, ib: -1, ic: 1, id: 0 },  // rot 3: lx = -b, lz = a
-];
-
-function fwd(rot, x, z) {
-  switch (rot & 3) {
-    case 0: return [x, z];
-    case 1: return [-z, x];
-    case 2: return [-x, -z];
-    default: return [z, -x];
-  }
+/* Transforms are a translation plus a rotation about +Y by `ang` radians (quarter turns stay exact). */
+const snapc = (v) => (Math.abs(v) < 1e-9 ? 0 : Math.abs(Math.abs(v) - 1) < 1e-9 ? Math.sign(v) : v);
+function fwd(ang, x, z) {
+  const c = snapc(Math.cos(ang)), s = snapc(Math.sin(ang));
+  return [x * c - z * s, x * s + z * c];
 }
 function composeXf(p, c) {
-  const [tx, tz] = fwd(p.rot, c.tx, c.tz);
-  return { tx: tx + p.tx, ty: c.ty + p.ty, tz: tz + p.tz, rot: (p.rot + c.rot) & 3 };
+  const [tx, tz] = fwd(p.ang, c.tx, c.tz);
+  return { tx: tx + p.tx, ty: c.ty + p.ty, tz: tz + p.tz, ang: p.ang + c.ang };
 }
-const IDENT = { tx: 0, ty: 0, tz: 0, rot: 0 };
+const IDENT = { tx: 0, ty: 0, tz: 0, ang: 0 };
+const QUARTER = Math.PI / 2;
 
 export class Recipe {
   constructor() { this.ops = []; }
@@ -45,6 +37,7 @@ export class Recipe {
       if (o.md !== undefined) op.md = o.md;
       if (o.mn !== undefined) op.mn = o.mn;
       if (o.bb !== undefined) op.bb = o.bb;
+      if (o.thin) op.thin = true;
     }
     this.ops.push(op);
     return this;
@@ -75,6 +68,8 @@ export class Recipe {
   }
   /** Arbitrary per-voxel function over an AABB (meters). fn(lx, ly, lz, cell) returns material or 0 to skip. */
   fn(x0, y0, z0, x1, y1, z1, fn, o) { return this._push({ t: 'fn', x0, y0, z0, x1, y1, z1, fn }, o); }
+  /** Recolor voxels that are already solid: fn(lx, ly, lz, cell) returns a material or 0 to keep. Ops before it define the shape. */
+  paint(x0, y0, z0, x1, y1, z1, fn, o) { return this._push({ t: 'paint', x0, y0, z0, x1, y1, z1, fn }, o); }
 
   /**
    * Window pattern on the faces of a building box. Modifies voxels that are already solid in the outer layer.
@@ -151,7 +146,7 @@ export class Recipe {
 
   /** Copy another recipe in at a translation and 90-degree rotation. */
   stamp(other, tx = 0, ty = 0, tz = 0, rot = 0, o) {
-    const p = { tx, ty, tz, rot: rot & 3 };
+    const p = { tx, ty, tz, ang: (rot & 3) * QUARTER };
     for (const op of other.ops) {
       const c = Object.assign({}, op);
       c.xf = composeXf(p, op.xf || IDENT);
@@ -184,7 +179,7 @@ function passes(op, cell) {
 function opAabb(op, cell = 0) {
   if (op.bb) return op.bb(cell);
   switch (op.t) {
-    case 'box': case 'fn': case 'wedge': return [op.x0, op.y0, op.z0, op.x1, op.y1, op.z1];
+    case 'box': case 'fn': case 'wedge': case 'paint': return [op.x0, op.y0, op.z0, op.x1, op.y1, op.z1];
     case 'ell': case 'blob': {
       const k = op.t === 'blob' ? 1 + op.rough + 0.05 : 1;
       return [op.cx - op.rx * k, op.cy - op.ry * k, op.cz - op.rz * k, op.cx + op.rx * k, op.cy + op.ry * k, op.cz + op.rz * k];
@@ -211,7 +206,7 @@ function opAabb(op, cell = 0) {
     case 'wing': {
       const z0 = op.rz, z1 = op.rz + op.side * op.span;
       const xmax = op.rx, xmin = op.rx - Math.max(op.cr, op.sweep + op.ct);
-      const th = Math.max(op.tr * op.cr, op.tt * op.ct);
+      const th = Math.max(op.tr * op.cr, op.tt * op.ct, cell * 0.5);
       const ylo = Math.min(op.ry, op.ry + op.dih) - th, yhi = Math.max(op.ry, op.ry + op.dih) + th;
       const xmaxAll = Math.max(op.rx, op.rx - op.sweep);
       return [Math.min(xmin, op.rx - op.sweep - op.ct), ylo, Math.min(z0, z1), Math.max(xmax, xmaxAll), yhi, Math.max(z0, z1)];
@@ -221,14 +216,35 @@ function opAabb(op, cell = 0) {
 }
 
 function transformAabb(a, xf) {
-  const c = [fwd(xf.rot, a[0], a[2]), fwd(xf.rot, a[3], a[5]), fwd(xf.rot, a[0], a[5]), fwd(xf.rot, a[3], a[2])];
+  const c = [fwd(xf.ang, a[0], a[2]), fwd(xf.ang, a[3], a[5]), fwd(xf.ang, a[0], a[5]), fwd(xf.ang, a[3], a[2])];
   let x0 = 1e18, x1 = -1e18, z0 = 1e18, z1 = -1e18;
   for (const [x, z] of c) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
   return [x0 + xf.tx, a[1] + xf.ty, z0 + xf.tz, x1 + xf.tx, a[4] + xf.ty, z1 + xf.tz];
 }
 
+/** Membership test for a lofted body: (x, y, z) => boolean. e grows the shape (positive) or shrinks it (negative). */
+export function loftTest(st, axis, e = 0) {
+  st = st.slice().sort((p, q) => p.a - q.a);
+  return (x, y, z) => {
+    let a, p, q;
+    if (axis === 'x') { a = x; p = y; q = z; } else if (axis === 'y') { a = y; p = x; q = z; } else { a = z; p = x; q = y; }
+    if (a < st[0].a - e || a > st[st.length - 1].a + e) return false;
+    let i = 0;
+    while (i < st.length - 2 && a > st[i + 1].a) i++;
+    const s0 = st[i], s1 = st[i + 1];
+    const t = s1.a === s0.a ? 0 : Math.min(1, Math.max(0, (a - s0.a) / (s1.a - s0.a)));
+    const c1 = s0.c1 + (s1.c1 - s0.c1) * t, c2 = s0.c2 + (s1.c2 - s0.c2) * t;
+    const r1 = s0.r1 + (s1.r1 - s0.r1) * t + e, r2 = s0.r2 + (s1.r2 - s0.r2) * t + e;
+    const n = (s0.n ?? 2) + ((s1.n ?? 2) - (s0.n ?? 2)) * t;
+    if (r1 <= 0 || r2 <= 0) return false;
+    const u = Math.abs(p - c1) / r1, v = Math.abs(q - c2) / r2;
+    return n === 2 ? u * u + v * v <= 1 : Math.pow(u, n) + Math.pow(v, n) <= 1;
+  };
+}
+
 function makeTest(op, e, cell) {
   switch (op.t) {
+    case 'box': return (x, y, z) => x >= op.x0 - e && x <= op.x1 + e && y >= op.y0 - e && y <= op.y1 + e && z >= op.z0 - e && z <= op.z1 + e;
     case 'ell': {
       const rx = op.rx + e, ry = op.ry + e, rz = op.rz + e;
       return (x, y, z) => { const a = (x - op.cx) / rx, b = (y - op.cy) / ry, c = (z - op.cz) / rz; return a * a + b * b + c * c <= 1; };
@@ -287,24 +303,7 @@ function makeTest(op, e, cell) {
         return y <= op.y0 + (op.y1 - op.y0) * f + e;
       };
     }
-    case 'loft': {
-      const st = op.st, axis = op.axis;
-      return (x, y, z) => {
-        let a, p, q;
-        if (axis === 'x') { a = x; p = y; q = z; } else if (axis === 'y') { a = y; p = x; q = z; } else { a = z; p = x; q = y; }
-        if (a < st[0].a - e || a > st[st.length - 1].a + e) return false;
-        let i = 0;
-        while (i < st.length - 2 && a > st[i + 1].a) i++;
-        const s0 = st[i], s1 = st[i + 1];
-        const t = s1.a === s0.a ? 0 : Math.min(1, Math.max(0, (a - s0.a) / (s1.a - s0.a)));
-        const c1 = s0.c1 + (s1.c1 - s0.c1) * t, c2 = s0.c2 + (s1.c2 - s0.c2) * t;
-        const r1 = s0.r1 + (s1.r1 - s0.r1) * t + e, r2 = s0.r2 + (s1.r2 - s0.r2) * t + e;
-        const n = (s0.n ?? 2) + ((s1.n ?? 2) - (s0.n ?? 2)) * t;
-        if (r1 <= 0 || r2 <= 0) return false;
-        const u = Math.abs(p - c1) / r1, v = Math.abs(q - c2) / r2;
-        return n === 2 ? u * u + v * v <= 1 : Math.pow(u, n) + Math.pow(v, n) <= 1;
-      };
-    }
+    case 'loft': return loftTest(op.st, op.axis, e);
     case 'wing': {
       const s = op.side;
       return (x, y, z) => {
@@ -323,6 +322,7 @@ function makeTest(op, e, cell) {
       };
     }
     case 'fn': return (x, y, z) => op.fn(x, y, z, cell) !== 0;
+    case 'paint': return () => false;
     default: throw new Error('no test for ' + op.t);
   }
 }
@@ -335,7 +335,7 @@ function makeTest(op, e, cell) {
 export function rasterize(recipe, o) {
   const cell = o.cell;
   const anchor = o.anchor || [0, 0, 0];
-  const S = { tx: anchor[0], ty: anchor[1], tz: anchor[2], rot: (o.rot || 0) & 3 };
+  const S = { tx: anchor[0], ty: anchor[1], tz: anchor[2], ang: ((o.rot || 0) & 3) * QUARTER + (o.yaw || 0) };
   const cons = !!o.conservative;
   const e = cons ? cell * 0.5 : 0;
   const prepared = [];
@@ -344,6 +344,7 @@ export function rasterize(recipe, o) {
     if (!passes(op, cell)) continue;
     const F = composeXf(S, op.xf || IDENT);
     const wa = transformAabb(opAabb(op, cell), F);
+    if (op.thin && !cons) { const h = cell * 0.5; wa[0] -= h; wa[1] -= h; wa[2] -= h; wa[3] += h; wa[4] += h; wa[5] += h; }
     prepared.push({ op, F, wa });
     ux0 = Math.min(ux0, wa[0]); uy0 = Math.min(uy0, wa[1]); uz0 = Math.min(uz0, wa[2]);
     ux1 = Math.max(ux1, wa[3]); uy1 = Math.max(uy1, wa[4]); uz1 = Math.max(uz1, wa[5]);
@@ -363,9 +364,11 @@ export function rasterize(recipe, o) {
 
   for (const { op, F, wa } of prepared) {
     const m = op.m ?? 0;
+    const oc = cons || !!op.thin;
+    const eo = oc ? cell * 0.5 : 0;
     // world voxel index range of this op
     let a0, a1, b0, b1, c0, c1;
-    if (cons) {
+    if (oc) {
       a0 = Math.floor(wa[0] / cell - 1e-9); a1 = Math.ceil(wa[3] / cell + 1e-9) - 1;
       b0 = Math.floor(wa[1] / cell - 1e-9); b1 = Math.ceil(wa[4] / cell + 1e-9) - 1;
       c0 = Math.floor(wa[2] / cell - 1e-9); c1 = Math.ceil(wa[5] / cell + 1e-9) - 1;
@@ -378,14 +381,17 @@ export function rasterize(recipe, o) {
     b0 = Math.max(b0, j0); b1 = Math.min(b1, j1 - 1);
     c0 = Math.max(c0, k0); c1 = Math.min(c1, k1 - 1);
     if (a1 < a0 || b1 < b0 || c1 < c0) continue;
-    if (op.t === 'box') {
+    const cs = snapc(Math.cos(F.ang)), sn = snapc(Math.sin(F.ang));
+    const axisAligned = sn === 0 || cs === 0;
+    if (op.t === 'box' && axisAligned) {
       vol.fillBox(a0 - i0, b0 - j0, c0 - k0, a1 - i0 + 1, b1 - j0 + 1, c1 - k0 + 1, m);
       continue;
     }
     const opCopy = op;
-    const test = makeTest(opCopy, e, cell);
-    const R = ROT[F.rot];
+    const test = makeTest(opCopy, eo, cell);
+    const R = { ia: cs, ib: sn, ic: -sn, id: cs };
     const isFn = op.t === 'fn';
+    const isPaint = op.t === 'paint';
     const isBlob = op.t === 'blob';
     for (let k = c0; k <= c1; k++) {
       const wz = (k + 0.5) * cell - F.tz;
@@ -395,7 +401,9 @@ export function rasterize(recipe, o) {
         for (let i = a0; i <= a1; i++, di++) {
           const wx = (i + 0.5) * cell - F.tx;
           const lx = R.ia * wx + R.ib * wz, lz = R.ic * wx + R.id * wz;
-          if (isFn) {
+          if (isPaint) {
+            if (data[di]) { const r = op.fn(lx, ly, lz, cell); if (r > 0) data[di] = r; }
+          } else if (isFn) {
             const r = op.fn(lx, ly, lz, cell);
             if (r === -1) data[di] = 0;
             else if (r) data[di] = r;
@@ -414,6 +422,7 @@ export function rasterize(recipe, o) {
 export function meshRecipe(recipe, o) {
   const r = rasterize(recipe, o);
   if (!r) return null;
+  if (o.remap) { const d = r.vol.data, t = o.remap; for (let i = 0; i < d.length; i++) d[i] = t[d[i]]; }
   const mesh = meshVolume(r.vol, { ao: o.ao !== false });
   mesh.i0 = r.i0; mesh.j0 = r.j0; mesh.k0 = r.k0; mesh.cell = r.cell;
   mesh.dims = [r.vol.nx, r.vol.ny, r.vol.nz];

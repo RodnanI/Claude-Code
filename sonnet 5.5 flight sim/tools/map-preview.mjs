@@ -40,6 +40,23 @@ for (let j = 0; j < size; j++) {
     rgb[k + 2] = Math.min(255, PALETTE_RGB[mat * 3 + 2] * shade);
   }
 }
+// structure footprints (quarter-turn aware, ignores fine yaw)
+if (half <= 8000) {
+  const COL = { skyscraper: [250, 250, 250], midrise: [225, 215, 200], house: [230, 130, 60], lowrise: [200, 170, 130], warehouse: [120, 130, 140], factory: [90, 90, 100], hangar: [200, 200, 210], terminal: [240, 240, 255], tower: [255, 60, 60] };
+  for (const r of world.regionsList) {
+    const b = r.bounds;
+    if (b[2] < cx - half || b[0] > cx + half || b[3] < cz - half || b[1] > cz + half) continue;
+    const L = world.layoutOf(r);
+    for (const d of L.structures) {
+      const swap = (d.rot & 1) === 1;
+      const w = swap ? d.d : d.w, dd = swap ? d.w : d.d;
+      const c = COL[d.kind] || [90, 70, 60];
+      const i0 = Math.floor((d.x - w / 2 - (cx - half)) / step), i1 = Math.floor((d.x + w / 2 - (cx - half)) / step);
+      const j0 = Math.floor((d.z - dd / 2 - (cz - half)) / step), j1 = Math.floor((d.z + dd / 2 - (cz - half)) / step);
+      for (let j = Math.max(0, j0); j <= Math.min(size - 1, j1); j++) for (let i = Math.max(0, i0); i <= Math.min(size - 1, i1); i++) { const k = (j * size + i) * 3; rgb[k] = c[0]; rgb[k + 1] = c[1]; rgb[k + 2] = c[2]; }
+    }
+  }
+}
 // site markers
 for (const s of Object.values(SITES)) {
   const px = Math.round((s.x - (cx - half)) / step), pz = Math.round((s.z - (cz - half)) / step);

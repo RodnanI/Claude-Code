@@ -32,13 +32,14 @@ const keys = new Set();
 addEventListener('keydown', (e) => keys.add(e.code));
 addEventListener('keyup', (e) => keys.delete(e.code));
 let last = performance.now();
-let frames = 0;
+let frames = 0, paused = false;
 
 function resize() { renderer.resize(innerWidth, innerHeight, +(params.get('dpr') || 1), s.resolutionScale); }
 addEventListener('resize', resize);
 resize();
 
 function frame(t) {
+  if (paused) return;
   const dt = Math.min(0.1, (t - last) / 1000);
   last = t;
   const sp = (keys.has('ShiftLeft') ? 800 : 120) * dt;
@@ -61,6 +62,8 @@ requestAnimationFrame(frame);
 
 window.__fh = {
   st, nodes, renderer, world, env, cam,
+  pause() { paused = true; },
+  resume() { if (paused) { paused = false; last = performance.now(); requestAnimationFrame(frame); } },
   get frames() { return frames; },
   stats() { return { ...nodes.stats, draws: renderer.stats.draws, tris: renderer.stats.tris, nodesDrawn: renderer.stats.nodes, settled: nodes.settled, frames }; },
   set(x, y, z, yaw, pitch) { st.x = x; st.y = y; st.z = z; st.yaw = yaw; st.pitch = pitch; },

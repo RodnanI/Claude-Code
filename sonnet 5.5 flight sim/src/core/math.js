@@ -208,3 +208,37 @@ export const mat4 = {
   },
   toFloat32(out, m) { for (let i = 0; i < 16; i++) out[i] = m[i]; return out; },
 };
+
+/** 3x3 column-major rotation helpers used by the renderer for aircraft parts. */
+export const mat3 = {
+  create: () => { const m = new Float64Array(9); m[0] = m[4] = m[8] = 1; return m; },
+  fromQuat(o, q) {
+    const x = q[0], y = q[1], z = q[2], w = q[3];
+    const x2 = x + x, y2 = y + y, z2 = z + z;
+    const xx = x * x2, yx = y * x2, yy = y * y2, zx = z * x2, zy = z * y2, zz = z * z2, wx = w * x2, wy = w * y2, wz = w * z2;
+    o[0] = 1 - yy - zz; o[1] = yx + wz; o[2] = zx - wy;
+    o[3] = yx - wz; o[4] = 1 - xx - zz; o[5] = zy + wx;
+    o[6] = zx + wy; o[7] = zy - wx; o[8] = 1 - xx - yy;
+    return o;
+  },
+  fromAxisAngle(o, ax, ay, az, angle) {
+    const l = Math.hypot(ax, ay, az) || 1;
+    ax /= l; ay /= l; az /= l;
+    const c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+    o[0] = t * ax * ax + c; o[1] = t * ax * ay + s * az; o[2] = t * ax * az - s * ay;
+    o[3] = t * ax * ay - s * az; o[4] = t * ay * ay + c; o[5] = t * ay * az + s * ax;
+    o[6] = t * ax * az + s * ay; o[7] = t * ay * az - s * ax; o[8] = t * az * az + c;
+    return o;
+  },
+  /** o = a * b */
+  mul(o, a, b) {
+    for (let c = 0; c < 3; c++) {
+      for (let r = 0; r < 3; r++) o[c * 3 + r] = a[r] * b[c * 3] + a[3 + r] * b[c * 3 + 1] + a[6 + r] * b[c * 3 + 2];
+    }
+    return o;
+  },
+  mulVec(o, m, x, y, z) {
+    o[0] = m[0] * x + m[3] * y + m[6] * z; o[1] = m[1] * x + m[4] * y + m[7] * z; o[2] = m[2] * x + m[5] * y + m[8] * z;
+    return o;
+  },
+};

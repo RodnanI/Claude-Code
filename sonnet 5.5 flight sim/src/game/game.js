@@ -1,0 +1,345 @@
+import { Emitter } from '../core/events.js';
+import { Rolling, now } from '../core/perf.js';
+import { DEG } from '../core/util.js';
+import { Renderer } from '../render/renderer.js';
+import { NodeManager } from '../lod/node-manager.js';
+import { ModelRegistry } from '../render/models.js';
+import { Environment } from '../render/sky.js';
+import { createWorld } from '../world/index.js';
+import { WORLD_SEED } from '../world/config.js';
+import { derive, PRESETS } from '../settings/presets.js';
+import { Governor } from '../settings/governor.js';
+import { probeHardware } from '../settings/probe.js';
+import { AIRCRAFT, VEHICLES } from '../generated/registry.js';
+import { Input } from '../input/input.js';
+import { AircraftEntity } from './aircraft-entity.js';
+import { makeGround } from './ground.js';
+import { CameraRig, Flyover } from './camera-rig.js';
+import { Hud } from './hud.js';
+import { StructureCollider } from './collision.js';
+import { TrafficSystem } from '../traffic/traffic.js';
+
+const STEP = 1 / 240;
+const MAX_STEPS = 16;
+const FLAP_NOTCHES = 3;
+
+/**
+ * The running game: owns the renderer, world, streaming, traffic, the player aircraft and the frame loop.
+ * States: 'menu' (flyover or hangar showcase), 'flying', 'paused'. The UI layer drives it and listens to its events:
+ * 'state', 'crash', 'toast', 'progress'.
+ */
+export class Game extends Emitter {
+  constructor({ canvas, hudCanvas, store }) {
+    super();
+    this.canvas = canvas;
+    this.store = store;
+    this.state = 'loading';
+    this.menuView = 'flyover';
+    this.time = 0;
+    this.acc = 0;
+    this.ent = null;
+    this.preview = null;
+    this.frameMs = new Rolling(90);
+    this.cpuMs = new Rolling(90);
+    this.last = 0;
+    this.lastFrameT = 0;
+    this.governor = new Governor();
+    this.hud = new Hud(hudCanvas);
+    this.flapNotch = 0;
+    this.crashed = false;
+    this.showStats = false;
+    this.shot = false;
+    this.settingsDirty = true;
+    this.pending = new Set();
+    this.lookBack = false;
+  }
+
+  // ------------------------------------------------------------------ setup
+  async init(progress = () => {}) {
+    const step = async (frac, text) => { progress(frac, text); await new Promise((r) => setTimeout(r, 0)); };
+    await step(0.04, 'Starting renderer');
+    this.renderer = new Renderer(this.canvas, {});
+    // first run: pick a preset from the hardware, keep Auto so the governor can adapt
+    if (!this.store.loaded && this.store.get('preset') === 'auto') {
+      const probe = probeHardware({ renderer: this.renderer.info.renderer || '' });
+      this.store.applyGraphics(PRESETS[probe.tier]);
+      this.probe = probe;
+    }
+    const d = this.store.derived();
+    this.renderer.configure(d.render);
+    await step(0.14, 'Generating the island');
+    this.world = createWorld({ seed: WORLD_SEED });
+    this.ground = makeGround(this.world);
+    this.models = new ModelRegistry(this.renderer, this.world);
+    this.nodes = new NodeManager({ renderer: this.renderer, models: this.models, world: this.world, seed: WORLD_SEED, settings: d.lod });
+    this.env = new Environment();
+    await step(0.3, 'Laying out cities and roads');
+    this.traffic = new TrafficSystem({ world: this.world, models: this.models, vehicles: VEHICLES, seed: WORLD_SEED });
+    this.traffic.init();
+    this.collider = new StructureCollider(this.world);
+    await step(0.5, 'Warming up aircraft');
+    this.input = new Input(window, this.canvas).attach();
+    this.rig = new CameraRig(this.renderer.camera, this.ground);
+    this.flyover = new Flyover(this.world, this.ground);
+    this.starts = this.world.spawns();
+    this.store.on('change', (k) => { this.settingsDirty = true; if (k === 'timeOfDay') this.env.setHour(this.store.get('timeOfDay')); });
+    this.applySettings();
+    this.env.setHour(this.store.get('timeOfDay'));
+    addEventListener('resize', () => this.resize());
+    this.resize();
+    await step(0.62, 'Streaming terrain');
+    // let the first ring of terrain arrive before the curtain lifts
+    const t0 = now();
+    this.state = 'menu';
+    this.flyover.update(0.016, this.renderer.camera, 60);
+    while (now() - t0 < 25000) {
+      this._renderOnce(0.016);
+      const st = this.nodes.stats;
+      const frac = st.loaded + st.pending ? st.loaded / (st.loaded + st.pending) : 0;
+      progress(0.62 + 0.36 * frac, `Streaming terrain ${Math.round(frac * 100)}%`);
+      if (this.nodes.settled && st.loaded > 20) break;
+      await new Promise((r) => setTimeout(r, 40));
+    }
+    progress(1, 'Ready');
+    this.setState('menu');
+  }
+
+  setState(s) {
+    if (this.state === s) return;
+    this.state = s;
+    this.emit('state', s);
+  }
+
+  applySettings() {
+    this.settingsDirty = false;
+    const v = this.store.all();
+    const d = this.store.derived();
+    this.renderer.configure(d.render);
+    this.nodes.applySettings(d.lod);
+    this.traffic.setMax(d.traffic.maxVehicles);
+    this.env.cover = v.cloudCover;
+    this.env.timeSpeed = v.timeSpeed;
+    this.frameCap = v.frameCap ? 1000 / v.frameCap : 0;
+    this.governor.enabled = v.preset === 'auto';
+    this.showStats = !!v.showStats || this.showStats;
+    this.resize();
+  }
+
+  resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const s = this.store.get('resolutionScale');
+    this.renderer.resize(innerWidth, innerHeight, dpr, s);
+    this.hud.resize(innerWidth, innerHeight, dpr);
+  }
+
+  // ------------------------------------------------------------------ catalog
+  get planes() { return AIRCRAFT; }
+
+  /** Cruise speed used for airborne starts: comfortably above the stall. */
+  cruiseFor(spec) {
+    const W = (spec.mass.empty + spec.mass.fuel * spec.fuelDefault + (spec.mass.payload || 0)) * 9.81;
+    return 1.9 * Math.sqrt((2 * W) / (1.225 * spec.wing.area * spec.aero.CLmax));
+  }
+
+  // ------------------------------------------------------------------ flow
+  /** Show an aircraft standing on a start area, with an orbiting camera. */
+  showcase(planeId, startId, livery = 'default') {
+    const spec = AIRCRAFT.find((a) => a.id === planeId);
+    const start = this.starts.find((s) => s.id === startId) || this.starts[0];
+    if (!spec || !start) return;
+    this.preview = new AircraftEntity(spec, { ground: this.ground, registry: this.models, livery });
+    this.preview.placeOnGround(start.x, start.z, start.heading);
+    this.preview.instance.prewarm([0], false);
+    this.previewStart = start;
+    this.orbitAz = 0.7;
+    this.menuView = 'showcase';
+  }
+
+  showFlyover() { this.menuView = 'flyover'; this.preview = null; }
+
+  startFlight({ planeId, startId, livery = 'default', airborne = false }) {
+    const spec = AIRCRAFT.find((a) => a.id === planeId) || AIRCRAFT[0];
+    const start = this.starts.find((s) => s.id === startId) || this.starts[0];
+    this.lastStart = { planeId: spec.id, startId: start.id, livery, airborne };
+    this.ent = new AircraftEntity(spec, { ground: this.ground, registry: this.models, livery });
+    if (airborne) {
+      const agl = spec.propulsion.type === 'jet' ? 900 : 350;
+      this.ent.placeAirborne({ x: start.x, y: this.ground.h(start.x, start.z) + agl, z: start.z, headingDeg: start.heading, ias: this.cruiseFor(spec), gear: spec.gear.retractable ? 0 : 1 });
+      this.input.throttle = this.ent.model.input.throttle;
+    } else {
+      this.ent.placeOnGround(start.x, start.z, start.heading);
+      this.input.throttle = 0;
+    }
+    this.ent.instance.prewarm([0, 1], true);
+    this.flapNotch = 0;
+    this.input.trim = airborne ? this.ent.model.input.trim : 0;
+    this.crashed = false;
+    this.preview = null;
+    this.collider.reset();
+    this.rig.setMode(spec.cameras.defaultView || 'chase');
+    this.rig.reset(this.ent);
+    this.acc = 0;
+    this.setState('flying');
+    this.hud.toast(`${spec.name} at ${start.name}`, 3400);
+  }
+
+  restart() { if (this.lastStart) this.startFlight(this.lastStart); }
+  pause() { if (this.state === 'flying') this.setState('paused'); }
+  resume() { if (this.state === 'paused') this.setState('flying'); }
+  toMenu() { this.ent = null; this.crashed = false; this.menuView = 'flyover'; this.preview = null; this.setState('menu'); }
+
+  // ------------------------------------------------------------------ loop
+  _controls(dt, inp) {
+    const m = this.ent.model, v = this.store.all();
+    m.input.pitch = inp.pitch; m.input.roll = inp.roll; m.input.yaw = inp.yaw;
+    m.input.throttle = inp.throttle; m.input.brake = inp.brake; m.input.airbrake = inp.airbrake; m.input.trim = inp.trim;
+    m.input.flaps = this.flapNotch / FLAP_NOTCHES;
+    // wind and turbulence
+    const a = (v.windDir + 180) * DEG;                   // direction the wind blows toward
+    m.wind[0] = Math.sin(a) * v.windSpeed; m.wind[2] = -Math.cos(a) * v.windSpeed;
+    m.turbulence = v.turbulence;
+  }
+
+  _discrete() {
+    const inp = this.input, m = this.ent && this.ent.model;
+    if (inp.pressed('pause')) { if (this.state === 'flying') this.pause(); else if (this.state === 'paused') this.resume(); }
+    if (inp.pressed('debug')) { this.showStats = !this.showStats; this.emit('stats', this.showStats); }
+    if (inp.pressed('screenshot')) this.shot = true;
+    if (this.state === 'paused' || !m) return;
+    if (inp.pressed('view')) { const v = this.rig.cycle(true); this.hud.toast(`${v} view`, 1200); }
+    if (inp.pressed('hud')) this.hud.visible = !this.hud.visible;
+    if (inp.pressed('map')) this.emit('map');
+    if (inp.pressed('reset')) this.restart();
+    if (inp.pressed('flapsDown') && this.flapNotch < FLAP_NOTCHES) { this.flapNotch++; this.hud.toast(`Flaps ${this.flapNotch}`, 1100); }
+    if (inp.pressed('flapsUp') && this.flapNotch > 0) { this.flapNotch--; this.hud.toast(`Flaps ${this.flapNotch}`, 1100); }
+    if (inp.pressed('gear') && this.ent.spec.gear.retractable) {
+      if (m.onGround && m.input.gear >= 0.5) this.hud.toast('Gear locked on the ground', 1500, 'bad');
+      else { m.input.gear = m.input.gear >= 0.5 ? 0 : 1; this.hud.toast(m.input.gear ? 'Gear down' : 'Gear up', 1200); }
+    }
+    this.lookBack = inp.held('lookBack');
+    inp.clearEdges();
+  }
+
+  _events() {
+    const m = this.ent.model;
+    for (const e of m.events) {
+      if (e.type === 'touchdown') {
+        const q = e.vs < 0.8 ? 'Greased it' : e.vs < 2 ? 'Smooth landing' : e.vs < 3.5 ? 'Firm landing' : 'Hard landing';
+        this.hud.toast(`${q}, ${e.vs.toFixed(1)} m/s down`, 3600, e.vs < 2 ? 'good' : e.vs < 3.5 ? 'info' : 'bad');
+      } else if (e.type === 'hardLanding') this.hud.toast('Hard landing, check the airframe', 3000, 'bad');
+      else if (e.type === 'crash' && !this.crashed) { this.crashed = true; this.emit('crash', e.reason); }
+    }
+    m.events.length = 0;
+  }
+
+  _flight(dt, inp) {
+    const ent = this.ent, m = ent.model;
+    this._controls(dt, inp);
+    this.acc += dt;
+    let n = 0;
+    while (this.acc >= STEP && n < MAX_STEPS) { ent.step(STEP); this.acc -= STEP; n++; }
+    if (n === MAX_STEPS) this.acc = 0;
+    ent.interpolate(this.acc / STEP);
+    if (!m.crashed) {
+      const hit = this.collider.test(ent, dt);
+      if (hit) m._crash(`collision with a ${String(hit.kind).replace(/[-_]/g, ' ')}`);
+    }
+    this._events();
+  }
+
+  _renderOnce(dt) {
+    const cam = this.renderer.camera;
+    const list = this.nodes.update(cam, dt * 1000);
+    this.renderer.render({ env: this.env, time: this.time, dt, viewDistance: this.store.get('viewDistance'), nodes: list, models: [], cockpit: [] });
+  }
+
+  frame(t) {
+    if (this.frameCap && t - this.lastFrameT < this.frameCap - 1.5) return;
+    const started = now();
+    let dt = Math.min(0.1, (t - (this.last || t)) / 1000);
+    if (this.last) this.frameMs.push(t - this.last);
+    this.last = t; this.lastFrameT = t;
+    this.time += dt;
+    if (this.settingsDirty) this.applySettings();
+    const v = this.store.all();
+    const cam = this.renderer.camera;
+    const models = [], cockpit = [];
+    const px = () => cam.projScale;
+
+    const inp = this.input.update(dt, { sensitivity: v.sensitivity, invertPitch: v.invertPitch, mouseFlight: v.mouseFlight && this.state === 'flying', deadzone: v.deadzone });
+    if (this.state === 'flying' || this.state === 'paused') this._discrete();
+    else this.input.clearEdges();
+    const wheel = this.input.wheelDelta || 0; this.input.wheelDelta = 0;
+
+    let view = 'external';
+    if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
+      const ent = this.ent;
+      if (this.state === 'flying') this._flight(dt, inp);
+      else ent.interpolate(this.acc / STEP);
+      const look = this.lookBack ? { x: Math.PI, y: 0 } : this.input.look;
+      this.rig.update(this.state === 'paused' ? 0 : dt, ent, look, { fov: v.fov, wheel });
+      view = this.rig.mode === 'cockpit' ? 'cockpit' : 'external';
+      this.traffic.update(this.state === 'paused' ? 0 : dt, cam.pos);
+      ent.emit(models, cockpit, { mode: view, camPos: cam.pos, pxPerRad: px() });
+    } else if (this.menuView === 'showcase' && this.preview) {
+      const e = this.preview;
+      this.orbitAz += dt * 0.22;
+      const c = e.worldPoint(new Float64Array(3), 0, 0.5, 0);
+      const size = Math.max(e.spec.wing.span, 8) * 1.55;
+      const hd = (this.previewStart.heading || 0) * DEG;
+      const az = hd + this.orbitAz, el = 0.2;
+      const x = c[0] + Math.sin(az) * Math.cos(el) * size, z = c[2] - Math.cos(az) * Math.cos(el) * size;
+      const y = Math.max(c[1] + Math.sin(el) * size, this.ground.h(x, z) + 1.2);
+      cam.fov = (46 * Math.PI) / 180;
+      cam.setPose(x, y, z, c[0] - x, c[1] - y, c[2] - z);
+      e.emit(models, cockpit, { mode: 'external', camPos: cam.pos, pxPerRad: px() });
+      this.traffic.update(dt, cam.pos);
+    } else {
+      this.flyover.update(dt, cam, 62);
+      this.traffic.update(dt, cam.pos);
+    }
+    if (this.camOverride) { const o = this.camOverride; cam.fov = ((o.fov || 60) * Math.PI) / 180; cam.setPose(o.x, o.y, o.z, o.fx, o.fy, o.fz); }
+    this.traffic.emit(models, cam, px());
+
+    this.env.update(dt);
+    const nodes = this.nodes.update(cam, dt * 1000);
+    this.renderer.render({ env: this.env, time: this.time, dt, viewDistance: v.viewDistance, nodes, models, cockpit });
+    if (this.shot) { this.shot = false; this._screenshot(); }
+
+    if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
+      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt });
+    } else this.hud.draw({ ent: null, cam, view: 'menu', units: v.units, scale: v.hudScale, dt, hideAll: true });
+
+    this.cpuMs.push(now() - started);
+    // Auto mode: trade quality for frame time
+    if (v.preset === 'auto' && this.frameMs.count > 45 && this.state !== 'loading') {
+      const change = this.governor.step(this.frameMs.avg, v, dt * 1000);
+      if (change) this.store.applyGraphics(change);
+    }
+  }
+
+  _screenshot() {
+    this.canvas.toBlob((b) => {
+      if (!b) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = `fly-high-${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      this.hud.toast('Screenshot saved', 1600, 'good');
+    }, 'image/png');
+  }
+
+  /** Numbers for the performance overlay. */
+  getStats() {
+    const ns = this.nodes.stats, r = this.renderer.stats, ms = this.frameMs.avg || 16;
+    const m = this.ent && this.ent.model;
+    return {
+      fps: 1000 / ms, frameMs: ms, p95: this.frameMs.percentile(0.95), cpuMs: this.cpuMs.avg,
+      draws: r.draws, tris: r.tris, nodesDrawn: ns.drawn, loaded: ns.loaded, pending: ns.pending, gpuMB: ns.gpuMB, workers: ns.mode, buildMs: ns.avgBuildMs,
+      traffic: this.traffic.stats.count, preset: this.store.get('preset'), scale: this.store.get('resolutionScale'), viewKm: this.store.get('viewDistance') / 1000,
+      alt: m ? m.pos[1] : 0, ias: m ? m.ias : 0, agl: m ? m.agl : 0,
+    };
+  }
+}
+

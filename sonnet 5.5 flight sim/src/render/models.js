@@ -15,7 +15,7 @@ export class ModelRegistry {
   fromRecipe(key, recipe, cell, opts = {}) {
     let m = this.cache.get(key);
     if (m) return m;
-    const mesh = meshRecipe(recipe, { cell, conservative: !!opts.conservative, ao: opts.ao !== false, anchor: opts.anchor, rot: 0 });
+    const mesh = meshRecipe(recipe, { cell, conservative: !!opts.conservative, ao: opts.ao !== false, anchor: opts.anchor, remap: opts.remap, rot: 0 });
     if (!mesh || !mesh.indexCount) {
       m = { gpu: null, cell, off: [0, 0, 0], tris: 0, empty: true };
     } else {

@@ -94,7 +94,8 @@ export function createTerrain(seed, mods = []) {
     }
     return c;
   });
-  flat.sort((a, b) => (b.order ?? 0) - (a.order ?? 0) || (b.r ?? b.hw) - (a.r ?? a.hw));
+  // lowest order first, bigger footprints first within an order, so small specific pads are applied last and win
+flat.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (b.r ?? b.hw) - (a.r ?? a.hw));
 
   const scratch = { h: 0, m: 0, mtn: 0, land: 0, water: NaN, hydro: 0 };
 

@@ -3,7 +3,7 @@ import { SITES } from './layout.js';
 import { createTerrain } from './terrain/terrain.js';
 import { createSurface } from './terrain/surface.js';
 import { createBiomes } from './scatter/biomes.js';
-import { RoadIndex } from './roads/network.js';
+import { RoadIndex, ROAD_KINDS } from './roads/network.js';
 import { buildHighways } from './roads/highways.js';
 import { SpatialGrid } from './spatial.js';
 import { Rng } from '../core/rng.js';
@@ -34,6 +34,7 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
   for (const r of regions) regionGrid.insert(r, r.bounds[0], r.bounds[1], r.bounds[2], r.bounds[3]);
 
   const layouts = new Map();
+  let highwayGrid = null;
   const structGrid = new SpatialGrid(128);
   const propGrid = new SpatialGrid(128);
   let highwayInfo = null;
@@ -53,9 +54,32 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
     };
   }
 
+  /**
+   * True when a structure footprint (oriented box) or a prop overlaps an inter-city road. Region layouts do not know
+   * about the highways that cross them, so the filter runs here, identically on the main thread and in workers.
+   */
+  function onHighway(x, z, hw, hd, ang, margin) {
+    if (!highwayGrid) return false;
+    const c = Math.cos(ang), sn = Math.sin(ang);
+    const rad = Math.hypot(hw, hd) + margin + 12;
+    for (const s of highwayGrid.query(x - rad, z - rad, x + rad, z + rad)) {
+      const half = s.hw + margin;
+      // segment in the box frame, clipped against the expanded rectangle (Liang-Barsky)
+      const ax = s.ax - x, az = s.az - z, bx = s.bx - x, bz = s.bz - z;
+      const p0x = c * ax + sn * az, p0z = -sn * ax + c * az, p1x = c * bx + sn * bz, p1z = -sn * bx + c * bz;
+      const dx = p1x - p0x, dz = p1z - p0z;
+      const bxm = hw + half, bzm = hd + half;
+      let t0 = 0, t1 = 1;
+      const clip = (p, q) => { if (p === 0) return q >= 0; const r = q / p; if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; } return true; };
+      if (clip(-dx, p0x + bxm) && clip(dx, bxm - p0x) && clip(-dz, p0z + bzm) && clip(dz, bzm - p0z)) return true;
+    }
+    return false;
+  }
+
   function layoutOf(region) {
     let L = layouts.get(region.id);
     if (L) return L;
+    world.ensureHighways();
     L = { structures: [], roads: [], props: [], lots: [], lotGrid: new SpatialGrid(64) };
     layouts.set(region.id, L);
     if (region.layout) {
@@ -64,6 +88,7 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
       for (const s of res.structures || []) {
         if (!kitMap.has(s.kind)) throw new Error(`region ${region.id}: unknown kit ${s.kind}`);
         const d = { w: 8, d: 8, h: 8, ...s, region: region.id };
+        if (region.kind !== 'airfield' && onHighway(d.x, d.z, d.w / 2, d.d / 2, ((d.rot || 0) & 3) * Math.PI / 2 + (d.yaw || 0), 1.5)) continue;
         if (d.y === undefined) d.y = terrain.heightAt(d.x, d.z, 0);
         d.id = `${region.id}#${L.structures.length}`;
         L.structures.push(d);
@@ -72,6 +97,7 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
       for (const p of res.props || []) {
         if (!sceneryMap.has(p.type)) throw new Error(`region ${region.id}: unknown scenery ${p.type}`);
         const q = { yaw: 0, scale: 1, ...p, region: region.id };
+        if (region.kind !== 'airfield' && onHighway(q.x, q.z, 0.6, 0.6, 0, 0.5)) continue;
         L.props.push(q);
         propGrid.insert(q, q.x, q.z, q.x, q.z);
       }
@@ -100,36 +126,55 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
     for (const r of regions) if (r.access) for (const [k, v] of Object.entries(r.access)) access[k] = v;
     highwayInfo = buildHighways(terrain, access);
     roads.addAll(highwayInfo.segments);
+    highwayGrid = new SpatialGrid(128);
+    for (const seg of highwayInfo.segments) {
+      const k = ROAD_KINDS[seg.kind];
+      const hw = (seg.w ?? k.w) / 2 + (seg.sw ?? k.sw);
+      highwayGrid.insert({ ax: seg.ax, az: seg.az, bx: seg.bx, bz: seg.bz, hw }, Math.min(seg.ax, seg.bx) - hw - 4, Math.min(seg.az, seg.bz) - hw - 4, Math.max(seg.ax, seg.bx) + hw + 4, Math.max(seg.az, seg.bz) + hw + 4);
+    }
     world.highway = highwayInfo;
   }
   world.ensureHighways = ensureHighways;
 
-  /** Surface paint from regions and roads. Returns a material or 0. Hot path. */
+  /**
+   * Surface paint. Priority: region custom paint (runway markings), lots flagged `over`, roads, ordinary lots
+   * (block paving, lawns, parking), then the coarse district tint. Returns a material or 0. Hot path.
+   */
   function paint(x, z, cell, h) {
     const rs = regionsAt(x, z);
     if (rs) {
       for (let i = 0; i < rs.length; i++) {
         const r = rs[i];
         const L = layoutOf(r);
-        const lots = L.lotGrid.at(x, z);
-        for (let j = lots.length - 1; j >= 0; j--) {
-          const l = lots[j];
-          if (x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1) {
-            const m = l.fn ? l.fn(x, z, cell) : l.mat;
-            if (m) return m;
-          }
-        }
         if (r.paint) {
           const m = r.paint(x, z, cell, h, world);
           if (m) return m;
+        }
+        const lots = L.lotGrid.at(x, z);
+        for (let j = lots.length - 1; j >= 0; j--) {
+          const l = lots[j];
+          if (l.over && x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1) {
+            const m = l.fn ? l.fn(x, z, cell) : l.mat;
+            if (m) return m;
+          }
         }
       }
     }
     ensureHighways();
     const rm = roads.paint(x, z, cell);
     if (rm) return rm;
-    if (rs && cell >= 8) {
-      for (let i = 0; i < rs.length; i++) if (rs[i].tint) return rs[i].tint;
+    if (rs) {
+      for (let i = 0; i < rs.length; i++) {
+        const lots = layoutOf(rs[i]).lotGrid.at(x, z);
+        for (let j = lots.length - 1; j >= 0; j--) {
+          const l = lots[j];
+          if (!l.over && x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1) {
+            const m = l.fn ? l.fn(x, z, cell) : l.mat;
+            if (m) return m;
+          }
+        }
+      }
+      if (cell >= 8) for (let i = 0; i < rs.length; i++) if (rs[i].tint) return rs[i].tint;
     }
     return 0;
   }

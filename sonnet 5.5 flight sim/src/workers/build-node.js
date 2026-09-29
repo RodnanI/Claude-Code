@@ -63,7 +63,7 @@ export function createNodeBuilder(world) {
           }
           const cu = cell * f;
           const anchorY = Math.floor(d.y / cu + 1e-6) * cu;
-          const r = rasterize(recipe, { cell: cu, anchor: [d.x, anchorY, d.z], rot: d.rot || 0, conservative: cu >= 3 || !!(kit && kit.conservative) });
+          const r = rasterize(recipe, { cell: cu, anchor: [d.x, anchorY, d.z], rot: d.rot || 0, yaw: d.yaw || 0, conservative: cu >= 3 || !!(kit && kit.conservative) });
           if (!r) continue;
           const before = builder.quadCount;
           meshVolume(r.vol, { ao: cfg.ao && cu <= 2, builder, scale: f, offset: [r.i0 * f - off[0], r.j0 * f, r.k0 * f - off[2]] });

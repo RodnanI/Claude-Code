@@ -47,6 +47,9 @@ export const SCHEMA = [
 
   { key: 'timeOfDay', group: 'World', label: 'Time of day', type: 'range', min: 0, max: 24, step: 0.25, default: 10.5, apply: 'live', format: (v) => `${String(Math.floor(v)).padStart(2, '0')}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}` },
   { key: 'timeSpeed', group: 'World', label: 'Time speed', type: 'select', default: 0, apply: 'live', options: opt([0, 60, 300, 1200], ['Frozen', 'x60', 'x300', 'x1200']) },
+  { key: 'windSpeed', group: 'World', label: 'Wind speed', type: 'range', min: 0, max: 25, step: 1, default: 3, apply: 'live', format: (v) => (v ? v + ' m/s' : 'Calm') },
+  { key: 'windDir', group: 'World', label: 'Wind from', type: 'range', min: 0, max: 355, step: 5, default: 250, apply: 'live', format: (v) => String(v).padStart(3, '0') + ' deg' },
+  { key: 'turbulence', group: 'World', label: 'Turbulence', type: 'range', min: 0, max: 1, step: 0.05, default: 0.2, apply: 'live', format: (v) => (v ? Math.round(v * 100) + '%' : 'Off') },
   { key: 'cloudCover', group: 'World', label: 'Cloud cover', type: 'range', min: 0, max: 1, step: 0.05, default: 0.5, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
 
   { key: 'fov', group: 'Controls', label: 'Field of view', type: 'range', min: 50, max: 110, step: 1, default: 70, apply: 'live', format: (v) => v + ' deg' },
