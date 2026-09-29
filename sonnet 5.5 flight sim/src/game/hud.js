@@ -228,7 +228,7 @@ export class Hud {
     const bx = cx - W * 0.35, by = cy + H * 0.2;
     rd('M', m.mach.toFixed(2), bx, by);
     rd('G', m.gLoad.toFixed(1), bx, by + 22 * k, m.gLoad > spec.limits.maxG * 0.85);
-    rd('AOA', (m.alpha * 57.2958).toFixed(1), bx, by + 44 * k, m.stallWarn > 0.5);
+    rd('AOA', (m.ias > 12 ? m.alpha * 57.2958 : 0).toFixed(1), bx, by + 44 * k, m.stallWarn > 0.5); // meaningless at walking pace, where wind alone gives huge angles
     const rx = cx + W * 0.3;
     rd('THR', m.afterburner ? 'AB' : String(Math.round(m.c.thr * 100)), rx, by);
     rd('V/S', u.vs(m.vel[1]).toFixed(u.vsDigits), rx, by + 22 * k);
