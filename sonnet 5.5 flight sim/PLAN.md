@@ -262,6 +262,8 @@ Water is baked into the terrain function: ocean at Y = 0, rivers and lakes at th
 
 Each airfield region carries an `info` block (label and blurb) that the hangar screen shows, so a new start area brings its own description.
 
+Scenery never grows within 26 m of a start position, so the first frame is not a tree filling the screen.
+
 Paved airfields paint their whole footprint as mown grass in wide stripes (`Airfield.fieldLot`, an ordinary lot that ranks below roads and pavement). Without it the natural biome put woodland between the two runways of Meridian. A test samples the ground beside both runways and fails on any forest floor.
 
 ## 10. Region file contract

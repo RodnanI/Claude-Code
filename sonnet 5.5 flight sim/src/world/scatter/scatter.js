@@ -34,6 +34,14 @@ export class InstanceBuckets {
 
 const packTint = (r, g, b) => (255 << 24) | (b << 16) | (g << 8) | r;
 
+const SPAWN_CLEAR = 26;
+const spawnCache = new WeakMap();
+const spawnPoints = (world) => {
+  let list = spawnCache.get(world);
+  if (!list) { list = world.spawns().map((s) => [s.x, s.z]); spawnCache.set(world, list); }
+  return list;
+};
+
 export function scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets) {
   if (level > cfg.sceneryMaxLevel || cfg.sceneryDensity <= 0) return;
   const defs = [...world.scenery.values()].filter((d) => d.rules);
@@ -48,6 +56,8 @@ export function scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets) {
   const gz0 = Math.floor(z0 / spacing), gz1 = Math.ceil((z0 + size) / spacing);
   const dens = cfg.sceneryDensity;
   const { biomes } = world;
+  // nothing grows on top of a start position, so the first frame is never a tree filling the screen
+  const clear = spawnPoints(world).filter((p) => p[0] > x0 - SPAWN_CLEAR && p[0] < x0 + size + SPAWN_CLEAR && p[1] > z0 - SPAWN_CLEAR && p[1] < z0 + size + SPAWN_CLEAR);
   const pick = (list, h, slope, r) => {
     let total = 0;
     for (const d of list) {
@@ -71,6 +81,11 @@ export function scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets) {
       const px = (gx + 0.5 + (((h1 & 255) / 255) - 0.5) * 0.9) * spacing;
       const pz = (gz + 0.5 + ((((h1 >> 8) & 255) / 255) - 0.5) * 0.9) * spacing;
       if (px < x0 || px >= x0 + size || pz < z0 || pz >= z0 + size) continue;
+      if (clear.length) {
+        let near = false;
+        for (const p of clear) if ((px - p[0]) * (px - p[0]) + (pz - p[1]) * (pz - p[1]) < SPAWN_CLEAR * SPAWN_CLEAR) { near = true; break; }
+        if (near) continue;
+      }
       const i = Math.floor((px - x0) / cell), j = Math.floor((pz - z0) / cell);
       const a = (j + 1) * W + i + 1;
       const mat = buf.mat[a];
