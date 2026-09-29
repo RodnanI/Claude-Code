@@ -83,6 +83,9 @@ export class App {
     this.hourSlider.addEventListener('input', () => { g.store.set('timeOfDay', +this.hourSlider.value); this.hourVal.textContent = this._fmtHour(+this.hourSlider.value); });
     this.cloudSlider = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: g.store.get('cloudCover') });
     this.cloudSlider.addEventListener('input', () => g.store.set('cloudCover', +this.cloudSlider.value));
+    this.challengeSelect = h('select', { onchange: (e) => g.store.set('challenge', e.target.value) },
+      h('option', { value: 'off' }, 'Free flight'), h('option', { value: 'skyline' }, 'Skyline run over Meridian'));
+    this.challengeSelect.value = g.store.get('challenge');
     hangar.append(
       h('div', { class: 'hangar-left' }, h('h2', null, 'Aircraft'), this.aircraftList, h('button', { class: 'btn small', style: { marginTop: '8px' }, onclick: () => this.showMenu() }, 'Back')),
       h('div', { class: 'hangar-right' },
@@ -91,6 +94,7 @@ export class App {
         h('div', { class: 'field' }, h('div', { class: 'row' }, h('span', { class: 'label' }, 'Time of day'), this.hourVal), this.hourSlider),
         h('div', { class: 'field' }, h('span', { class: 'label' }, 'Cloud cover'), this.cloudSlider),
         h('div', { class: 'row' }, h('span', { class: 'label' }, 'Start in the air'), this.airborneBtn),
+        h('div', { class: 'field' }, h('span', { class: 'label' }, 'Challenge'), this.challengeSelect),
         h('div', { class: 'grow' }),
         h('button', { class: 'btn primary', onclick: () => this.fly() }, 'Take off')));
     // pause
@@ -189,6 +193,7 @@ export class App {
 
   showHangar() {
     this._fillAircraft(); this._fillStarts();
+    this.challengeSelect.value = this.game.store.get('challenge');
     this.show('hangar');
     this._preview();
   }
