@@ -50,7 +50,7 @@ function frame(t) {
   if (keys.has('KeyD')) { st.x -= fz * sp; st.z += fx * sp; }
   if (keys.has('ArrowLeft')) st.yaw -= dt; if (keys.has('ArrowRight')) st.yaw += dt;
   if (keys.has('ArrowUp')) st.pitch += dt * 0.7; if (keys.has('ArrowDown')) st.pitch -= dt * 0.7;
-  cam.fov = (+(params.get('fov') || 70) * Math.PI) / 180;
+  cam.fov = (((window.__fh && window.__fh.fovDeg) || +(params.get('fov') || 70)) * Math.PI) / 180;
   cam.setPose(st.x, st.y, st.z, fx, fy, fz);
   env.update(dt);
   const list = nodes.update(cam, dt * 1000);

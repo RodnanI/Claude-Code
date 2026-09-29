@@ -1,4 +1,5 @@
 import { HEAD, NOISE } from './chunks.js';
+import { NODE_CELLS } from '../../world/config.js';
 
 /* Voxel geometry shaders. Vertex: ivec4 (x, y, z, w) with w = face | ao << 3 | material << 5 | soft << 13 | bank << 14.
    Defines: INSTANCED, MODEL, DEPTH_ONLY, POST (HDR + MRT outputs), SHADOWS, EDGES, MACRO, WATER_Q, REFLECT,
@@ -37,6 +38,7 @@ flat out vec3 v_nrm;
 flat out vec3 v_lnrm;
 flat out vec3 v_tintc;
 flat out float v_seed;
+flat out int v_soft;
 out float v_wy;
 #endif
 void main() {
@@ -50,6 +52,7 @@ void main() {
   vec3 nrm = ln;
   vec3 tint = vec3(1.0);
   float seed = 0.0;
+  int soft = 0;
 #if defined(INSTANCED)
   vec3 m = (p * u_cell + u_modelOff) * a_iScale;
   float fl = texelFetch(u_palette, ivec2(mat, 2), 0).a * 255.0;
@@ -74,7 +77,8 @@ void main() {
   tint = u_tint;
 #else
   rel = u_origin + p * u_cell;
-  if (((w >> 13) & 1) != 0) nrm = normalize(mix(ln, vec3(0.0, 1.0, 0.0), 0.72));
+  soft = (w >> 13) & 1;
+  if (soft != 0) nrm = normalize(mix(ln, vec3(0.0, 1.0, 0.0), 0.72));
 #endif
 #ifdef REFLECT
   float wyr = rel.y + u_camY;
@@ -92,6 +96,7 @@ void main() {
   v_lnrm = ln;
   v_tintc = tint;
   v_seed = seed;
+  v_soft = soft;
 #ifdef REFLECT
   v_wy = wyr;
 #else
@@ -172,6 +177,7 @@ flat in vec3 v_nrm;
 flat in vec3 v_lnrm;
 flat in vec3 v_tintc;
 flat in float v_seed;
+flat in int v_soft;
 in float v_wy;
 #ifdef POST
 layout(location=0) out vec4 outColor;
@@ -194,6 +200,10 @@ uniform float u_camY;
 uniform float u_noPost;
 uniform sampler2D u_palette;
 uniform vec2 u_res;
+#ifdef TNORM
+uniform sampler2D u_tnorm;
+uniform float u_tnormOn;
+#endif
 #ifdef REFL_TEX
 uniform sampler2D u_refl;
 #endif
@@ -409,6 +419,18 @@ void main() {
 #endif
 
   vec3 N = normalize(v_nrm);
+  float tcav = 1.0;
+#ifdef TNORM
+  // ground: light from the smooth normal of the height field, not from the stepped voxel faces
+  if (v_soft == 1 && u_tnormOn > 0.5 && !water) {
+    vec4 tn = texture(u_tnorm, v_local.xz * (1.0 / ${NODE_CELLS}.0));
+    vec3 Ns = vec3(tn.r * 2.0 - 1.0, 0.0, tn.g * 2.0 - 1.0);
+    Ns.y = sqrt(max(1.0 - dot(Ns.xz, Ns.xz), 0.04));
+    Ns = normalize(Ns);
+    N = v_face == 2 ? Ns : normalize(mix(N, Ns, 0.72));
+    tcav = tn.b;
+  }
+#endif
   vec3 albedo = pow(p0.rgb, vec3(2.2));
   float dist = length(v_rel);
   vec3 V = -v_rel / max(dist, 1e-4);
@@ -469,7 +491,7 @@ void main() {
 #ifdef CLOUD_SHADOWS
   shadow *= cloudShadowAt(vec3(wpos.x, v_wy, wpos.z));
 #endif
-  float ao = mix(1.0, 0.42 + 0.58 * v_ao, u_aoStrength);
+  float ao = mix(1.0, 0.42 + 0.58 * v_ao, u_aoStrength) * tcav;
   vec3 irr = mix(u_ambGround, u_ambSky, N.y * 0.5 + 0.5);
   vec3 col;
 

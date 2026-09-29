@@ -17,6 +17,8 @@ export class ColumnBuf {
     this.hydro = new Uint8Array(W * W);
     this.mm = new Float32Array(W * W);
     this.bed = new Float64Array(W * W);
+    /** Smooth surface normal (r = x, g = z, both biased) and open-sky share (b) per cell, N by N, for the shader. */
+    this.tn = new Uint8Array(N * N * 4);
   }
 }
 
@@ -61,6 +63,38 @@ export function sampleColumns(world, x0, z0, cell, N, buf) {
   const eps = 1e-6;
   for (let a = 0; a < W * W; a++) buf.hq[a] = Math.floor(buf.surf[a] / cell + eps);
   buf.minH = minH; buf.maxH = maxH;
+  terrainNormals(buf, N, cell);
+}
+
+/**
+ * Smooth shading data for the ground. The voxel columns are stepped, but the height function under them is not, so the
+ * shader takes the light from a Sobel normal of the true heights (bilinear across the node) instead of from flat treads
+ * and dark risers: hills read as hills at every level of detail and gentle slopes lose their contour lines.
+ * The blue channel is a cheap cavity term from the same heights: valley floors are a little darker, ridges stay open.
+ */
+export function terrainNormals(buf, N, cell) {
+  const W = buf.W, h = buf.surf, out = buf.tn;
+  const k = 1 / (8 * cell), maxSlope = 2.2;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      const a = (j + 1) * W + i + 1;
+      const gx = ((h[a - W + 1] + 2 * h[a + 1] + h[a + W + 1]) - (h[a - W - 1] + 2 * h[a - 1] + h[a + W - 1])) * k;
+      const gz = ((h[a + W - 1] + 2 * h[a + W] + h[a + W + 1]) - (h[a - W - 1] + 2 * h[a - W] + h[a - W + 1])) * k;
+      const gl = Math.sqrt(gx * gx + gz * gz);
+      const sc = gl > maxSlope ? maxSlope / gl : 1;
+      const ex = gx * sc, ez = gz * sc;
+      const inv = 1 / Math.sqrt(1 + ex * ex + ez * ez);
+      const nx = -ex * inv, nz = -ez * inv;
+      // concavity: how far the four neighbors sit above this cell, in cells (positive in a hollow)
+      const lap = (h[a - 1] + h[a + 1] + h[a - W] + h[a + W]) * 0.25 - h[a];
+      const cav = Math.max(0, Math.min(1, lap / cell));
+      const o = (j * N + i) * 4;
+      out[o] = Math.round((nx * 0.5 + 0.5) * 255);
+      out[o + 1] = Math.round((nz * 0.5 + 0.5) * 255);
+      out[o + 2] = Math.round((1 - 0.5 * cav) * 255);
+      out[o + 3] = 255;
+    }
+  }
 }
 
 /** Emits a wall quad. dir: 0 +x, 1 -x, 2 +z, 3 -z. (a0..a1) is the run along the wall, plane is the wall coordinate. */
@@ -94,7 +128,7 @@ export function meshTerrain(buf, N, builder) {
       outer: for (; j + h < N; h++) for (let q = 0; q < w; q++) if (mask[(j + h) * N + i + q] !== key) break outer;
       for (let l = 0; l < h; l++) mask.fill(0, (j + l) * N + i, (j + l) * N + i + w);
       const y = Math.floor((key - 1) / 256), m = (key - 1) & 255;
-      builder.quad(i, y, j, i, y, j + h, i + w, y, j + h, i + w, y, j, 2, m);
+      builder.quad(i, y, j, i, y, j + h, i + w, y, j + h, i + w, y, j, 2, m, 3, 3, 3, 3, 1);
       i += w;
     }
   }

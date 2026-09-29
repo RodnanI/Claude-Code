@@ -36,7 +36,7 @@ export function createNodeBuilder(world) {
       const builder = new MeshBuilder(2048);
       const buckets = new InstanceBuckets();
       let structures = 0, structQuads = 0;
-      let minY = 0, maxY = 0;
+      let minY = 0, maxY = 0, tnorm = null;
 
       if (isDeepOcean(x0, z0, size, cell)) {
         meshOceanTile(builder, N, M.WATER_5);
@@ -44,6 +44,7 @@ export function createNodeBuilder(world) {
         sampleColumns(world, x0, z0, cell, N, buf);
         meshTerrain(buf, N, builder);
         minY = buf.minH; maxY = buf.maxH;
+        tnorm = buf.tn.slice();
 
         // structures anchored in this node
         const descs = world.structuresIn(x0, z0, x0 + size, z0 + size);
@@ -88,7 +89,7 @@ export function createNodeBuilder(world) {
         vertexData: mesh.vertexData, vertexCount: mesh.vertexCount,
         indexData: mesh.indexData, indexCount: mesh.indexCount,
         bounds,
-        instances,
+        instances, tnorm,
         stats: { ms: now() - t0, quads: mesh.indexCount / 6, structures, structQuads, instances: instances.reduce((s, i) => s + i.count, 0) },
       };
     },
@@ -97,6 +98,7 @@ export function createNodeBuilder(world) {
 
 export function transferListOf(result) {
   const list = [result.vertexData, result.indexData.buffer];
+  if (result.tnorm) list.push(result.tnorm.buffer);
   for (const i of result.instances) list.push(i.data);
   return list;
 }

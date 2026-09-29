@@ -56,6 +56,12 @@ export class Renderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    // unit 4 always holds a valid texture: the ground normal texture of the node being drawn, or this flat one
+    this.dummyTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.dummyTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 255, 255]));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   }
 
   // ------------------------------------------------------------------ configuration
@@ -79,7 +85,7 @@ export class Renderer {
       if (this.progs) for (const p of Object.values(this.progs)) p.dispose();
       const mk = (vs, fs, extra, label) => new Program(gl, vs, fs, { ...defs, ...extra }, label);
       this.progs = {
-        node: mk(voxVert, voxFrag, {}, 'node'),
+        node: mk(voxVert, voxFrag, { TNORM: true }, 'node'),
         inst: mk(voxVert, voxFrag, { INSTANCED: true }, 'inst'),
         model: mk(voxVert, voxFrag, { MODEL: true }, 'model'),
         dNode: new Program(gl, voxVert, depthFrag, { DEPTH_ONLY: true }, 'dNode'),
@@ -87,6 +93,7 @@ export class Renderer {
         dModel: new Program(gl, voxVert, depthFrag, { DEPTH_ONLY: true, MODEL: true }, 'dModel'),
         sky: new Program(gl, fullscreenVert, skyFrag, skyDefs, 'sky'),
       };
+      this.progs.node.tn = true;
       if (reflOn) {
         const r = { ...defs, POST: false, HDR1: true, REFLECT: true, REFL_TEX: false, SHADOWS: false, CLOUD_SHADOWS: false };
         this.progs.nodeR = new Program(gl, voxVert, voxFrag, r, 'nodeR');
@@ -156,6 +163,20 @@ export class Renderer {
     this.gpuBytes += bytes;
     return { vao, vbo, ibo, indexCount: m.indexCount, indexType: m.indexData instanceof Uint16Array ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT, bytes };
   }
+  /** Small RGBA8 texture with bilinear filtering (the ground normals of one node). */
+  uploadTex(data, w, h) {
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.gpuBytes += data.byteLength;
+    return { tex, bytes: data.byteLength };
+  }
+  freeTex(t) { this.gl.deleteTexture(t.tex); this.gpuBytes -= t.bytes; }
   freeMesh(g) {
     const gl = this.gl;
     gl.deleteVertexArray(g.vao); gl.deleteBuffer(g.vbo); gl.deleteBuffer(g.ibo);
@@ -226,6 +247,8 @@ export class Renderer {
     p.f2('u_res', this.canvas.width, this.canvas.height);
     this._bindTex(1, this.gl.TEXTURE_2D, this.paletteTex);
     p.i1('u_palette', 1);
+    p.i1('u_tnorm', 4);
+    this._bindTex(4, this.gl.TEXTURE_2D, this.dummyTex);
     if (this.usePost) { this._bindTex(2, this.gl.TEXTURE_2D, this.post.tex.skyLut); p.i1('u_skyLut', 2); }
     if (!reflect && this.refl && q.reflections) { this._bindTex(3, this.gl.TEXTURE_2D, this.refl.tex); p.i1('u_refl', 3); }
     if (q.shadows > 0 && !reflect) {
@@ -268,6 +291,10 @@ export class Renderer {
     p.f1('u_cell', n.cell);
     p.i3('u_cellOrigin', n.ix * NODE_CELLS, 0, n.iz * NODE_CELLS);
     p.f3('u_worldOrigin', n.x0, 0, n.z0);
+    if (p.tn) {
+      if (n.tex) { this._bindTex(4, gl.TEXTURE_2D, n.tex.tex); p.f1('u_tnormOn', 1); }
+      else p.f1('u_tnormOn', 0);
+    }
     gl.bindVertexArray(g.vao);
     gl.drawElements(gl.TRIANGLES, g.indexCount, g.indexType, 0);
     this.stats.draws++; this.stats.tris += g.indexCount / 3;

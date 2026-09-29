@@ -4,6 +4,7 @@ import { makeLodConfig, nodeKey } from './lod-config.js';
 import { NodePool } from '../workers/pool.js';
 import { now } from '../core/perf.js';
 import { Rolling } from '../core/perf.js';
+import { NODE_CELLS } from '../world/config.js';
 
 const NONE = 0, PENDING = 1, READY = 2;
 
@@ -71,6 +72,7 @@ export class NodeManager {
 
   _free(n) {
     if (n.gpu) { this.renderer.freeMesh(n.gpu); n.gpu = null; }
+    if (n.tex) { this.renderer.freeTex(n.tex); n.tex = null; }
     if (n.batches) { for (const b of n.batches) this.renderer.freeInstances(b); n.batches = null; }
   }
 
@@ -84,7 +86,7 @@ export class NodeManager {
     const [lo, hi] = this.world.heightRange(x0, z0, size);
     n = {
       key, level, ix, iz, size, cell: cfg.cell(level), x0, z0,
-      state: NONE, gpu: null, batches: null, exact: false,
+      state: NONE, gpu: null, tex: null, batches: null, exact: false,
       bounds: [0, lo, 0, size, hi, size],
       lastUsed: 0, wantedFrame: 0, bytes: 0, failedFrame: -999, dMin: 0, dMax: 0, _rel: null,
     };
@@ -202,6 +204,7 @@ export class NodeManager {
     this.buildMs.push(result.stats.ms);
     const r = this.renderer;
     if (result.indexCount > 0) n.gpu = r.uploadMesh(result);
+    if (result.tnorm) n.tex = r.uploadTex(result.tnorm, NODE_CELLS, NODE_CELLS);
     n.batches = null;
     if (result.instances.length) {
       const list = [];
@@ -220,7 +223,7 @@ export class NodeManager {
     n.exact = true;
     n.state = READY;
     n.lastUsed = this.frame;
-    n.bytes = (n.gpu ? n.gpu.bytes : 0) + (n.batches ? n.batches.reduce((s, b) => s + b.bytes, 0) : 0);
+    n.bytes = (n.gpu ? n.gpu.bytes : 0) + (n.tex ? n.tex.bytes : 0) + (n.batches ? n.batches.reduce((s, b) => s + b.bytes, 0) : 0);
     n.stats = result.stats;
   }
 
