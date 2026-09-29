@@ -1,4 +1,5 @@
-/* Vertex layout, 8 bytes: i16 x, y, z, w where w packs face (3 bits) | ambient occlusion (2 bits) | material id (8 bits).
+/* Vertex layout, 8 bytes: i16 x, y, z, w where w packs face (3 bits) | ambient occlusion (2 bits) | material id (8 bits) | flags (bit 13).
+   Flag 1 marks terrain step walls, which the shader lights with a normal leaning toward the sky so gentle slopes do not show contour lines.
    Colors and every other material property come from the palette texture in the shader. */
 export const VERTEX_STRIDE = 8;
 
@@ -30,11 +31,11 @@ export class MeshBuilder {
     this.idx = n;
   }
 
-  vert(x, y, z, face, mat, ao) {
+  vert(x, y, z, face, mat, ao, flags = 0) {
     if (this.vc >= this.cap) this._growV();
     const o = this.vc * 4;
     const i16 = this.i16;
-    i16[o] = x; i16[o + 1] = y; i16[o + 2] = z; i16[o + 3] = face | (ao << 3) | (mat << 5);
+    i16[o] = x; i16[o + 1] = y; i16[o + 2] = z; i16[o + 3] = face | (ao << 3) | (mat << 5) | (flags << 13);
     if (x < this.minx) this.minx = x; if (x > this.maxx) this.maxx = x;
     if (y < this.miny) this.miny = y; if (y > this.maxy) this.maxy = y;
     if (z < this.minz) this.minz = z; if (z > this.maxz) this.maxz = z;
@@ -42,11 +43,11 @@ export class MeshBuilder {
   }
 
   /** Corners must be counter-clockwise as seen from the outside (normal side). */
-  quad(x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, face, mat, a0 = 3, a1 = 3, a2 = 3, a3 = 3) {
-    const v0 = this.vert(x0, y0, z0, face, mat, a0);
-    const v1 = this.vert(x1, y1, z1, face, mat, a1);
-    const v2 = this.vert(x2, y2, z2, face, mat, a2);
-    const v3 = this.vert(x3, y3, z3, face, mat, a3);
+  quad(x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3, face, mat, a0 = 3, a1 = 3, a2 = 3, a3 = 3, flags = 0) {
+    const v0 = this.vert(x0, y0, z0, face, mat, a0, flags);
+    const v1 = this.vert(x1, y1, z1, face, mat, a1, flags);
+    const v2 = this.vert(x2, y2, z2, face, mat, a2, flags);
+    const v3 = this.vert(x3, y3, z3, face, mat, a3, flags);
     if (this.ic + 6 > this.icap) this._growI();
     const idx = this.idx;
     let n = this.ic;

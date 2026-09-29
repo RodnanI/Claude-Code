@@ -64,13 +64,13 @@ export function sampleColumns(world, x0, z0, cell, N, buf) {
 }
 
 /** Emits a wall quad. dir: 0 +x, 1 -x, 2 +z, 3 -z. (a0..a1) is the run along the wall, plane is the wall coordinate. */
-function wall(b, dir, plane, a0, a1, yb, yt, mat) {
+function wall(b, dir, plane, a0, a1, yb, yt, mat, soft = 0) {
   if (yt <= yb) return;
   switch (dir) {
-    case 0: b.quad(plane, yb, a0, plane, yt, a0, plane, yt, a1, plane, yb, a1, 0, mat); break;
-    case 1: b.quad(plane, yb, a0, plane, yb, a1, plane, yt, a1, plane, yt, a0, 1, mat); break;
-    case 2: b.quad(a0, yb, plane, a1, yb, plane, a1, yt, plane, a0, yt, plane, 4, mat); break;
-    default: b.quad(a0, yb, plane, a0, yt, plane, a1, yt, plane, a1, yb, plane, 5, mat);
+    case 0: b.quad(plane, yb, a0, plane, yt, a0, plane, yt, a1, plane, yb, a1, 0, mat, 3, 3, 3, 3, soft); break;
+    case 1: b.quad(plane, yb, a0, plane, yb, a1, plane, yt, a1, plane, yt, a0, 1, mat, 3, 3, 3, 3, soft); break;
+    case 2: b.quad(a0, yb, plane, a1, yb, plane, a1, yt, plane, a0, yt, plane, 4, mat, 3, 3, 3, 3, soft); break;
+    default: b.quad(a0, yb, plane, a0, yt, plane, a1, yt, plane, a1, yb, plane, 5, mat, 3, 3, 3, 3, soft);
   }
 }
 
@@ -108,10 +108,11 @@ export function meshTerrain(buf, N, builder) {
     return { yb, top, mt: mat[a], ms: sub[a] };
   };
   const emit = (dir, plane, a0, a1, k) => {
+    // the top cell of every step is lit as if it leaned toward the sky, so one-cell steps on gentle slopes blend into the ground
     if (k.top - k.yb >= 2) {
       wall(builder, dir, plane, a0, a1, k.yb, k.top - 1, k.ms);
-      wall(builder, dir, plane, a0, a1, k.top - 1, k.top, k.mt);
-    } else wall(builder, dir, plane, a0, a1, k.yb, k.top, k.mt);
+      wall(builder, dir, plane, a0, a1, k.top - 1, k.top, k.mt, 1);
+    } else wall(builder, dir, plane, a0, a1, k.yb, k.top, k.mt, 1);
   };
   const same = (p, q) => p && q && p.yb === q.yb && p.top === q.top && p.mt === q.mt && p.ms === q.ms;
   // +x and -x walls: lines indexed by i, runs along j

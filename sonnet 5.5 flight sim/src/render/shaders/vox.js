@@ -71,6 +71,7 @@ void main() {
   tint = u_tint;
 #else
   rel = u_origin + p * u_cell;
+  if (((w >> 13) & 1) != 0) nrm = normalize(mix(ln, vec3(0.0, 1.0, 0.0), 0.72));
 #endif
 #ifdef REFLECT
   float wyr = rel.y + u_camY;
