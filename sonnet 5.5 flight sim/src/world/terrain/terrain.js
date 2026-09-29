@@ -1,6 +1,6 @@
 import { Noise } from '../../core/noise.js';
 import { smoothstep, lerp } from '../../core/util.js';
-import { SITES } from '../layout.js';
+import { SITES, MASSIFS } from '../layout.js';
 import { createIsland } from './island.js';
 import { createHydrology } from './hydrology.js';
 import { SEA_LEVEL } from '../config.js';
@@ -15,7 +15,10 @@ const MC = Math.cos(-0.44), MS = Math.sin(-0.44);
 export function createTerrain(seed, mods = []) {
   const island = createIsland(seed);
   const nHill = new Noise(seed ^ 0x303), nMtn = new Noise(seed ^ 0x404), nDet = new Noise(seed ^ 0x505), nWarp = new Noise(seed ^ 0x606);
+  const nRidge = new Noise(seed ^ 0x717), nMesa = new Noise(seed ^ 0x828), nCliff = new Noise(seed ^ 0x939), nStack = new Noise(seed ^ 0xa4a), nGully = new Noise(seed ^ 0xb5b);
+  const siteList = Object.values(SITES).filter((q) => q.kind !== 'mountain');
   let mtnScale = 1;
+  const massifs = MASSIFS.map((q) => ({ ...q, c: Math.cos(q.rot), s: Math.sin(q.rot), scale: 0 }));
 
   function mountainRaw(x, z, cell) {
     const dx = x - MT.x, dz = z - MT.z;
@@ -27,6 +30,29 @@ export function createTerrain(seed, mods = []) {
     const shoulder = smoothstep(1.12, 0.35, r);
     return prof * (0.55 + 0.75 * rid) + 0.12 * shoulder * nMtn.fbm2(x / 1400, z / 1400, 3, 2, 0.5, cell / 1400);
   }
+
+  /** A smaller massif: an elliptical profile carved into ridges, the same recipe as Corvus at another size. */
+  function massifRaw(q, x, z, cell) {
+    const dx = x - q.x, dz = z - q.z;
+    if (dx > q.ru * 1.2 || dx < -q.ru * 1.2 || dz > q.ru * 1.2 || dz < -q.ru * 1.2) return 0;
+    const u = (dx * q.c + dz * q.s) / q.ru, v = (-dx * q.s + dz * q.c) / q.rv;
+    const r = Math.sqrt(u * u + v * v);
+    if (r >= 1.1) return 0;
+    const prof = Math.pow(1 - r / 1.1, 1.6);
+    const rid = nMtn.ridged2(x / q.ridge + 3.7, z / q.ridge - 8.2, 5, 2.1, 0.42, cell / q.ridge);
+    return prof * (0.5 + 0.8 * rid);
+  }
+
+  /** 0 next to a settlement or airfield, 1 well away from all of them: dramatic relief stays out of the towns and off the runways. */
+  function siteFar(x, z) {
+    let d2 = 1e18;
+    for (let i = 0; i < siteList.length; i++) {
+      const q = siteList[i], dx = x - q.x, dz = z - q.z, dd = dx * dx + dz * dz;
+      if (dd < d2) d2 = dd;
+    }
+    return smoothstep(1700, 4300, Math.sqrt(d2));
+  }
+
   const out0 = { h: 0, m: 0 };
   function natural(x, z, cell = 0, o = out0) {
     const m = island.mask(x, z, cell);
@@ -34,6 +60,17 @@ export function createTerrain(seed, mods = []) {
     let h;
     if (m <= 0) {
       h = -3 - 130 * smoothstep(0, 0.45, -m);
+      // sea stacks and rocky islets, most of them under the cliff coasts
+      if (m > -0.07 && cell < 90) {
+        const cl = smoothstep(0.2, 0.55, nCliff.n2(x / 2500 + 1.7, z / 2500 - 9.1));
+        const thr = 0.66 - 0.24 * cl;
+        const sn = nStack.n2(x / 170 + 5.5, z / 170 - 3.3);
+        if (sn > thr) {
+          const st = smoothstep(thr, thr + 0.2, sn) * smoothstep(-0.07, -0.012, m);
+          const top = st * (12 + 32 * (0.5 + 0.5 * nStack.n2(x / 80 + 1.1, z / 80 + 7.9))) - 3;
+          if (top > h) h = top;
+        }
+      }
       o.land = 0;
     } else {
       const land = smoothstep(0, 0.09, m);
@@ -42,24 +79,57 @@ export function createTerrain(seed, mods = []) {
       const plains = smoothstep(-0.25, 0.35, nHill.n2(x / 7000 + 8, z / 7000));
       const amp = 95 * (0.4 + 0.6 * (1 - plains * 0.85));
       h = 2.5 * land + up * (10 + hill * hill * amp);
+      const hc = up * (1 - plains);                      // hill country: where the ground may be dramatic
+      let far = -1;
+      if (hc > 0.03) {
+        far = siteFar(x, z);
+        const w = hc * far;
+        if (w > 0.02) {
+          // ridges and hollows, and in patches a stepped mesa country with cliff bands
+          const rd = nRidge.ridged2(x / 1250 + 2.2, z / 1250 - 7.7, 4, 2.05, 0.5, cell / 1250);
+          h += w * (rd - 0.42) * 85;
+          let mesa = smoothstep(0.36, 0.62, nMesa.n2(x / 4600 + 6.1, z / 4600 - 2.4)) * w;
+          if (mesa > 0.02) {
+            // the mountains carve their own cliffs; a mesa country belongs to the open hills between them
+            mesa *= 1 - smoothstep(0.0, 0.06, mountainRaw(x, z, cell));
+            const step = 26, t = h / step, fl = Math.floor(t);
+            h += (step * (fl + smoothstep(0.84, 0.9, t - fl)) - h) * mesa * 0.88;
+          }
+        }
+      }
       if (cell < 40) h += 2.4 * nDet.fbm2(x / 70, z / 70, 3, 2, 0.5, cell / 70) * land;
+      // inland the ground never sinks to sea level by accident: a hollow bottoms out as a flat valley floor, and the ponds that
+      // belong there are lakes placed on purpose
+      const inland = smoothstep(0.1, 0.34, m);
+      if (inland > 0) { const d = h - 7; h += ((d + Math.sqrt(d * d + 36)) * 0.5 + 7 - h) * inland; }
+      // headlands: stretches of coast where the land stands up out of the sea in a cliff
+      if (m < 0.32) {
+        const cl = smoothstep(0.28, 0.6, nCliff.n2(x / 2500 + 1.7, z / 2500 - 9.1));
+        if (cl > 0.01) {
+          if (far < 0) far = siteFar(x, z);
+          const wc = cl * far;
+          if (wc > 0.01) h += wc * 36 * (0.75 + 0.25 * nCliff.n2(x / 310, z / 310)) * smoothstep(0.0, 0.006, m) * (1 - 0.6 * smoothstep(0.03, 0.26, m));
+        }
+      }
       const mt = mountainRaw(x, z, cell) * mtnScale * smoothstep(0.08, 0.32, m);
-      h += mt;
-      o.mtn = mt;
+      let mm = 0;
+      for (let i = 0; i < massifs.length; i++) { const q = massifs[i]; if (q.scale > 0) mm += massifRaw(q, x, z, cell) * q.scale; }
+      h += mt + mm * smoothstep(0.08, 0.32, m);
+      o.mtn = mt + mm;
       o.land = land;
     }
     o.h = h;
     return h;
   }
 
-  // Calibrate so the highest point of the finished terrain matches the declared peak.
-  {
-    mtnScale = 0;
+  // Calibrate so the highest point of each mountain matches its declared peak.
+  const calibrate = (rawAt, peak, cx, cz, span) => {
     const raws = [], bases = [];
-    for (let i = -32; i <= 32; i++) {
-      for (let j = -32; j <= 32; j++) {
-        const x = MT.x + i * 70, z = MT.z + j * 70;
-        const raw = mountainRaw(x, z, 0);
+    const stepN = 32;
+    for (let i = -stepN; i <= stepN; i++) {
+      for (let j = -stepN; j <= stepN; j++) {
+        const x = cx + (i * span) / stepN, z = cz + (j * span) / stepN;
+        const raw = rawAt(x, z);
         if (raw < 0.05) continue;
         raws.push(raw);
         bases.push(natural(x, z, 0, { h: 0, m: 0 }));
@@ -70,10 +140,13 @@ export function createTerrain(seed, mods = []) {
       const mid = (lo + hi) / 2;
       let mx = 0;
       for (let k = 0; k < raws.length; k++) mx = Math.max(mx, bases[k] + mid * raws[k]);
-      if (mx > MT.peak) hi = mid; else lo = mid;
+      if (mx > peak) hi = mid; else lo = mid;
     }
-    mtnScale = lo;
-  }
+    return lo;
+  };
+  mtnScale = 0;
+  mtnScale = calibrate((x, z) => mountainRaw(x, z, 0), MT.peak, MT.x, MT.z, 2240);
+  for (const q of massifs) q.scale = calibrate((x, z) => massifRaw(q, x, z, 0), q.peak, q.x, q.z, q.ru * 1.05);
 
   const hydro = createHydrology((x, z) => natural(x, z, 0, { h: 0, m: 0 }));
 
@@ -145,5 +218,5 @@ flat.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (b.r ?? b.hw) - (a.r ?? a
     return sample(x, z, cell, scratch);
   }
 
-  return { island, natural, sample, heightAt, hydro, mods: flat, mountainPeak: MT.peak, mtnScale };
+  return { island, natural, sample, heightAt, hydro, mods: flat, mountainPeak: MT.peak, mtnScale, massifs };
 }

@@ -27,6 +27,9 @@ export const VIEWS = {
   river: [-3600, -3600, 90, 200, -0.18, 65],
   hollow: [-800, 3000, 40, 350, -0.1, 65],
   port: [5600, 7400, 200, 0, -0.2, 65],
+  cliffs: [10300, 10330, 60, 318, -0.08, 65],
+  cliffs2: [9980, -9973, 50, 222, -0.08, 65],
+  beach2: [12175, -4290, 30, 249, -0.05, 70],
 };
 
 const [outDir = 'out/tour', preset = 'medium', which = 'forest,mountain,coast', W = '960', H = '540'] = process.argv.slice(2);

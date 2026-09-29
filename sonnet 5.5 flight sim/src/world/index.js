@@ -1,5 +1,5 @@
 import { WORLD_SEED } from './config.js';
-import { SITES } from './layout.js';
+import { SITES, MASSIFS } from './layout.js';
 import { createTerrain } from './terrain/terrain.js';
 import { createSurface } from './terrain/surface.js';
 import { createBiomes } from './scatter/biomes.js';
@@ -238,11 +238,12 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
       if (h < lo) lo = h;
       if (h > hi) hi = h;
     }
-    const margin = size * 0.05 + 4;
+    const margin = size * 0.06 + 12;
     lo -= margin; hi += margin;
     for (const r of regionGrid.query(x0, z0, x0 + size, z0 + size)) hi = Math.max(hi, hi + r.maxHeight);
     const m = SITES.corvus;
     if (x0 < m.x + 6500 && x0 + size > m.x - 6500 && z0 < m.z + 6500 && z0 + size > m.z - 6500) hi = Math.max(hi, m.peak + 30);
+    for (const q of MASSIFS) if (x0 < q.x + q.ru * 1.2 && x0 + size > q.x - q.ru * 1.2 && z0 < q.z + q.ru * 1.2 && z0 + size > q.z - q.ru * 1.2) hi = Math.max(hi, q.peak + 30);
     return [Math.min(lo, 0), hi];
   };
 

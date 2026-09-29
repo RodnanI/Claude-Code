@@ -9,15 +9,17 @@ export const FL = Object.freeze({
   FOLIAGE: 32,
   FLAT: 64,   // no per-voxel variation
   TINT: 128,  // multiplied by the instance tint (car paint, leaf hue shift)
+  ROUND: 2,   // foliage models: centred on their origin, drawn as a rounded crown with a spherical normal.
+              // ground materials: forest floor, over which the shader draws a canopy of tree crowns far from the camera
 });
 
-const E = FL.EMISSIVE, G = FL.GLOSSY, W = FL.WATER, F = FL.FOLIAGE, N = FL.FLAT, T = FL.TINT;
+const E = FL.EMISSIVE, G = FL.GLOSSY, W = FL.WATER, F = FL.FOLIAGE, N = FL.FLAT, T = FL.TINT, C = FL.ROUND;
 
 // [name, hex, flags]
 const TABLE = [
   // terrain surface
   ['GRASS', 0x648f3c, F], ['GRASS_LUSH', 0x4a8032, F], ['GRASS_DRY', 0x9a9c50, F], ['MEADOW', 0x7f9f46, F],
-  ['FOREST_FLOOR', 0x3b5a2a, F], ['PINE_FLOOR', 0x34502f, F], ['DIRT', 0x7a5a3c, 0], ['DIRT_DARK', 0x5b4530, 0],
+  ['FOREST_FLOOR', 0x3b5a2a, F | C], ['PINE_FLOOR', 0x34502f, F | C], ['DIRT', 0x7a5a3c, 0], ['DIRT_DARK', 0x5b4530, 0],
   ['SAND', 0xd8c48b, 0], ['SAND_WET', 0xb9a574, 0], ['GRAVEL', 0x8d8a82, 0],
   ['ROCK', 0x7a7772, 0], ['ROCK_DARK', 0x5b5955, 0], ['ROCK_WARM', 0x8a7560, 0], ['SNOW', 0xf2f4f6, 0],
   ['ICE', 0xcfe2ea, G], ['ALPINE', 0x8c9a6a, F], ['SCREE', 0x9a948a, 0], ['MOSS', 0x5d7a3a, F],
@@ -54,9 +56,9 @@ const TABLE = [
   ['PAINT_ORANGE', 0xd9772b, 0], ['PAINT_BLUEGRAY', 0x6c7b86, 0], ['TARP_BLUE', 0x3b6ea5, 0], ['TARP_ORANGE', 0xd6791f, 0],
   ['RUST', 0x8a4b2d, 0], ['RUST_DARK', 0x5f3522, 0], ['HAY', 0xd1b25a, F], ['TIRE', 0x1c1c1e, N],
   // foliage
-  ['LEAF_PINE', 0x2d5a34, F], ['LEAF_PINE_L', 0x3b6f3f, F], ['LEAF_OAK', 0x4b7f34, F], ['LEAF_OAK_L', 0x62963f, F],
-  ['LEAF_BIRCH', 0x7fae45, F], ['LEAF_AUTUMN', 0xc1782b, F], ['LEAF_PALM', 0x3f8a3a, F], ['TRUNK', 0x5b4127, 0],
-  ['TRUNK_BIRCH', 0xd8d4c8, 0], ['BUSH', 0x3f7532, F], ['FLOWER_YELLOW', 0xe0b83a, F],
+  ['LEAF_PINE', 0x2d5a34, F | C], ['LEAF_PINE_L', 0x3b6f3f, F | C], ['LEAF_OAK', 0x4b7f34, F | C], ['LEAF_OAK_L', 0x62963f, F | C],
+  ['LEAF_BIRCH', 0x7fae45, F | C], ['LEAF_AUTUMN', 0xc1782b, F | C], ['LEAF_PALM', 0x3f8a3a, F], ['TRUNK', 0x5b4127, 0],
+  ['TRUNK_BIRCH', 0xd8d4c8, 0], ['BUSH', 0x3f7532, F | C], ['FLOWER_YELLOW', 0xe0b83a, F],
   // lights
   ['LAMP_SODIUM', 0xffb760, E | N], ['LAMP_WHITE', 0xfff4dc, E | N], ['BEACON_RED', 0xff3b2f, E | N], ['RWY_LIGHT_WHITE', 0xfff6e0, E | N],
   ['RWY_LIGHT_GREEN', 0x3fd27a, E | N], ['RWY_LIGHT_RED', 0xff4b3a, E | N], ['RWY_LIGHT_AMBER', 0xffa630, E | N], ['SIGNAL_RED', 0xff2a1f, E | N],
@@ -148,6 +150,13 @@ const BANK_COLORS = {
   GLASS_CLEAR: [0x8ab0c4, 0x9ab8ae, 0xb0b8bc], GLASS_BRONZE: [0x7a6444, 0x5a5048, 0x6f5f52], GLASS_GREEN: [0x45806f, 0x3f7a80, 0x5a7a62],
   GLASS_BLUE: [0x3268a0, 0x4a7ab0, 0x3d5f86], GLASS_SILVER: [0x94a8b8, 0xb2bcc2, 0x8a9aa0], GLASS_GOLD: [0x9a8a5a, 0x7f7a52, 0xa08e66],
 };
+/* Whole-tree color banks, picked per instance by the scatter: autumn, gold and a deep dark green for broadleaf crowns, blue spruce,
+   olive and snow-dusted for conifers, and a pale birch, dark and weathered trunk. */
+Object.assign(BANK_COLORS, {
+  LEAF_OAK: [0xb4632a, 0xc8a13a, 0x34602a], LEAF_OAK_L: [0xd58a36, 0xe2c24c, 0x4b7534], LEAF_BIRCH: [0xe0a63e, 0xa9c852, 0xc48f36],
+  LEAF_AUTUMN: [0xa8442a, 0xd09a30, 0x8a5a2a], LEAF_PINE: [0x2c5560, 0x4a5a2a, 0xc9d4d6], LEAF_PINE_L: [0x3a6a70, 0x5f6e33, 0xdfe6e8],
+  TRUNK: [0xd8d4c8, 0x3a2f26, 0x8c8478], BUSH: [0x5b7a30, 0x8a7a2e, 0x2f5a3a],
+});
 const BANK_AUTO = ['BRICK_RED', 'BRICK_BROWN', 'BRICK_DARK', 'PLASTER_WHITE', 'PLASTER_CREAM', 'PLASTER_GRAY', 'PLASTER_TERRA', 'STONE_LIGHT', 'CONCRETE_BLDG',
   'CONCRETE_PANEL', 'CLADDING_GRAY', 'CLADDING_SAND', 'SIDING_WHITE', 'SIDING_BLUE', 'SIDING_GREEN', 'SIDING_YELLOW', 'SIDING_RED', 'SIDING_GRAY', 'ROOF_TERRACOTTA',
   'ROOF_SLATE', 'ROOF_SHINGLE_BROWN', 'ROOF_SHINGLE_GRAY', 'ROOF_GREEN', 'PAINT_BARN_RED', 'PAINT_YELLOW', 'PAINT_GREEN', 'PAINT_ORANGE', 'PAINT_BLUEGRAY',
@@ -240,6 +249,10 @@ for (const f of FACADE_DEFS) {
 }
 Object.freeze(FACADE_INFO);
 PAT_A[M.BEACON_RED * 4] = PAT.BLINK;
+/* Canopy parameters of forest ground live in row 3 (no pattern bits, so the facade code never looks at them): g is the crown
+   size in 1/32 of the texture scale, b is 0 for broadleaf and 255 for conifer. */
+PAT_A[M.FOREST_FLOOR * 4 + 1] = 32;
+PAT_A[M.PINE_FLOOR * 4 + 1] = 21; PAT_A[M.PINE_FLOOR * 4 + 2] = 255;
 
 const hexRgb = (h) => [(h >> 16) & 255, (h >> 8) & 255, h & 255];
 function shiftHsv(rgb, [dh, ds, dv]) {

@@ -39,6 +39,7 @@ flat out vec3 v_lnrm;
 flat out vec3 v_tintc;
 flat out float v_seed;
 flat out int v_soft;
+out vec3 v_sn;
 out float v_wy;
 #endif
 void main() {
@@ -53,22 +54,41 @@ void main() {
   vec3 tint = vec3(1.0);
   float seed = 0.0;
   int soft = 0;
+  int bank = (w >> 14) & 3;
+  vec3 smn = vec3(0.0);
 #if defined(INSTANCED)
-  vec3 m = (p * u_cell + u_modelOff) * a_iScale;
-  float fl = texelFetch(u_palette, ivec2(mat, 2), 0).a * 255.0;
-  if ((int(fl + 0.5) & 32) != 0) {
-    float hgt = max(m.y, 0.0);
+  vec3 mp = p * u_cell + u_modelOff;
+  int fli = int(texelFetch(u_palette, ivec2(mat, 2), 0).a * 255.0 + 0.5);
+  bool fol = (fli & 32) != 0;
+  // yaw carries the height of a crown above its tree's foot in the whole part (8 rad steps of a quarter meter), for the sway
+  float yawIn = a_iPos.w;
+  float hq = floor(yawIn * 0.125);
+  float yaw = yawIn - hq * 8.0;
+  vec3 sn = ln;
+  if (fol && (fli & 2) != 0) {
+    // a rounded crown: the model is a voxel ball around its origin. Corners are pulled toward the sphere and the normal
+    // follows it, so a handful of big voxels reads as a soft mass of leaves
+    float rl = length(mp);
+    mp *= mix(1.0, 1.0 / max(rl, 0.3), 0.62 * smoothstep(0.45, 0.85, rl));
+    sn = mp / max(length(mp), 1e-4);
+    soft = 1;
+  }
+  vec3 m = mp * a_iScale;
+  if (fol) {
+    float hgt = max(m.y + hq * 0.25, 0.0);
     float ph = a_iPos.x * 0.21 + a_iPos.z * 0.17;
     float sway = 0.6 * sin(u_time * 1.3 + ph) + 0.4 * sin(u_time * 2.9 + ph * 1.7);
     float gust = 0.5 + 0.5 * sin(u_time * 0.35 + a_iPos.x * 0.004);
     m.x += sway * hgt * hgt * 0.0036 * (0.5 + gust);
     m.z += sway * hgt * hgt * 0.0016 * (0.5 + gust);
   }
-  float c = cos(a_iPos.w), s = sin(a_iPos.w);
+  float c = cos(yaw), s = sin(yaw);
   mat3 R = mat3(c, 0.0, -s, 0.0, 1.0, 0.0, s, 0.0, c);
   rel = u_origin + a_iPos.xyz + R * m;
   nrm = R * ln;
+  smn = R * sn;
   tint = a_iTint.rgb;
+  bank = (int(a_iTint.a * 255.0 + 0.5) + 1) & 3;
   seed = a_iPos.x * 0.173 + a_iPos.z * 0.291;
 #elif defined(MODEL)
   vec3 m = p * u_cell + u_modelOff;
@@ -91,12 +111,13 @@ void main() {
   v_ao = float(ao) * (1.0 / 3.0);
   v_face = face;
   v_mat = mat;
-  v_bank = (w >> 14) & 3;
+  v_bank = bank;
   v_nrm = nrm;
   v_lnrm = ln;
   v_tintc = tint;
   v_seed = seed;
   v_soft = soft;
+  v_sn = smn;
 #ifdef REFLECT
   v_wy = wyr;
 #else
@@ -178,6 +199,7 @@ flat in vec3 v_lnrm;
 flat in vec3 v_tintc;
 flat in float v_seed;
 flat in int v_soft;
+in vec3 v_sn;
 in float v_wy;
 #ifdef POST
 layout(location=0) out vec4 outColor;
@@ -203,6 +225,10 @@ uniform vec2 u_res;
 #ifdef TNORM
 uniform sampler2D u_tnorm;
 uniform float u_tnormOn;
+#endif
+#ifdef CANOPY
+uniform sampler2D u_canopy;
+uniform float u_canopyNear;
 #endif
 #ifdef REFL_TEX
 uniform sampler2D u_refl;
@@ -420,6 +446,7 @@ void main() {
 
   vec3 N = normalize(v_nrm);
   float tcav = 1.0;
+  float aoV = v_ao;
 #ifdef TNORM
   // ground: light from the smooth normal of the height field, not from the stepped voxel faces
   if (v_soft == 1 && u_tnormOn > 0.5 && !water) {
@@ -427,8 +454,21 @@ void main() {
     vec3 Ns = vec3(tn.r * 2.0 - 1.0, 0.0, tn.g * 2.0 - 1.0);
     Ns.y = sqrt(max(1.0 - dot(Ns.xz, Ns.xz), 0.04));
     Ns = normalize(Ns);
-    N = v_face == 2 ? Ns : normalize(mix(N, Ns, 0.72));
+    // treads take the smooth normal outright; a riser leans on it by how small the step is (its ao value, see the terrain mesher)
+    N = v_face == 2 ? Ns : normalize(mix(N, Ns, mix(0.35, 0.97, v_ao)));
     tcav = tn.b;
+    aoV = v_face == 2 ? v_ao : 1.0;
+  }
+#endif
+  float roundAO = 1.0;
+  bool isRound = false;
+#ifdef INSTANCED
+  if (v_soft == 1) {
+    isRound = true;
+    // rounded crown: light it as the ball it stands for, darker toward its underside where the leaves shade each other
+    vec3 sn = normalize(v_sn);
+    N = normalize(mix(N, sn, 0.88));
+    roundAO = mix(0.56, 1.0, smoothstep(-0.95, 0.3, sn.y));
   }
 #endif
   vec3 albedo = pow(p0.rgb, vec3(2.2));
@@ -439,25 +479,32 @@ void main() {
   ivec3 vox = ivec3(floor(inside));
   uvec3 vh = uvec3(vox + u_cellOrigin) ^ uvec3(floatBitsToUint(v_seed));
   float vr = hash13(vh);
-  albedo *= 1.0 + (vr - 0.5) * 2.0 * varAmp;
+  albedo *= 1.0 + (vr - 0.5) * 2.0 * varAmp * (isRound ? 0.5 : 1.0);
   if (foliage || tintf) albedo *= v_tintc;
   // real leaves and turf are darker and less saturated than the palette swatches, which read as lime over a whole forest
   if (foliage) albedo = mix(vec3(luma(albedo)), albedo, 0.84) * 0.9;
 
   vec3 wpos = u_worldOrigin + v_local * u_cell;
   vec3 dW = fwidth(wpos);
+#ifdef CANOPY
+  // derivatives are taken here, in uniform control flow, and handed to textureGrad below: sampling inside the branch with
+  // implicit derivatives smears the mip levels along quad borders
+  vec2 wgx = dFdx(wpos.xz), wgy = dFdy(wpos.xz);
+#endif
   float glassM = 0.0, winOn = 0.0;
   vec3 winL = vec3(0.0);
   if (pat != 0 && !water) glassM = surfacePattern(pat, wpos, dW, dist, albedo, rough, winL, winOn);
 #ifdef DETAIL
-  float detailFade = 1.0 - smoothstep(30.0, 110.0, dist);
+  float detailFade = 1.0 - smoothstep(isRound ? 45.0 : 30.0, isRound ? 170.0 : 110.0, dist);
   if (detailFade > 0.0 && varAmp > 0.0 && !water && pat == 0) {
-    vec3 sub = floor(inside * 3.0);
+    // sub-voxel grain: thirds of a voxel on ground and props, quarters on leaf crowns, where it stands for the leaves themselves
+    float dsub = isRound ? 4.0 : 3.0;
+    vec3 sub = floor(inside * dsub);
     uvec3 sh = uvec3(ivec3(sub) + u_cellOrigin * 3) ^ uvec3(floatBitsToUint(v_seed));
     float g = hash13(sh);
-    albedo *= 1.0 + (g - 0.5) * 0.16 * detailFade;
+    albedo *= 1.0 + (g - 0.5) * (isRound ? 0.34 : 0.16) * detailFade;
     vec3 jn = vec3(hash13(sh ^ 0x9e3779b9u), hash13(sh ^ 0x7f4a7c15u), hash13(sh ^ 0x85ebca6bu)) - 0.5;
-    N = normalize(N + jn * 0.16 * detailFade * (foliage ? 1.5 : 1.0) * (1.0 - metal * 0.6));
+    N = normalize(N + jn * (isRound ? 0.34 : 0.16) * detailFade * (foliage && !isRound ? 1.5 : 1.0) * (1.0 - metal * 0.6));
   }
 #endif
 
@@ -471,13 +518,42 @@ void main() {
   }
 #endif
 
+  float canopyAO = 1.0;
+#ifdef CANOPY
+  if (v_soft == 1 && v_face == 2 && (fl & 2) != 0 && !water) {
+    // forest ground beyond the reach of the tree models: a canopy of sunlit crowns and dark gaps, lit like the real thing
+    float cw = smoothstep(u_canopyNear, u_canopyNear * 2.4 + 1.0, dist);
+    if (cw > 0.002) {
+      vec4 cp = texelFetch(u_palette, ivec2(v_mat, 3), 0);
+      float csc = max(cp.g * 255.0 * (1.0 / 32.0), 0.3);
+      bool pineC = cp.b > 0.5;
+      float warp = vnoise(wpos.xz * 0.0065);
+      vec2 cq = (wpos.xz + vec2(warp, warp * 0.7 + 0.3) * 34.0) * (1.0 / (128.0 * csc));
+      float isc = 1.0 / (128.0 * csc);
+      vec4 c = textureGrad(u_canopy, cq, wgx * isc, wgy * isc);
+      float hh = c.r;
+      vec3 Nc = vec3(c.g * 2.0 - 1.0, 0.0, c.b * 2.0 - 1.0);
+      Nc.y = sqrt(max(1.0 - dot(Nc.xz, Nc.xz), 0.05));
+      vec3 lit = pineC ? vec3(0.04, 0.105, 0.05) : mix(vec3(0.078, 0.19, 0.04), vec3(0.15, 0.27, 0.055), c.a);
+      vec3 crownCol = lit * (0.78 + 0.44 * fract(c.a * 7.31));
+      vec3 gapCol = albedo * 0.5;
+      float crownM = smoothstep(0.03, 0.26, hh);
+      albedo = mix(albedo, mix(gapCol, crownCol, crownM), cw);
+      vec3 Nn = normalize(vec3(N.x + Nc.x * 1.25, N.y * 0.9 + 0.25, N.z + Nc.z * 1.25));
+      N = normalize(mix(N, Nn, cw * crownM));
+      canopyAO = mix(1.0, 0.34 + 0.66 * smoothstep(0.0, 0.5, hh), cw);
+      rough = mix(rough, 0.9, cw);
+    }
+  }
+#endif
+
 #ifdef EDGES
   if (u_edge > 0.0 && !water) {
     vec3 fr = fract(inside) - 0.5;
     vec2 e = v_face < 2 ? fr.yz : (v_face < 4 ? fr.xz : fr.xy);
     float ed = smoothstep(0.40, 0.5, max(abs(e.x), abs(e.y)));
     float fade = 1.0 - smoothstep(u_cell * 50.0, u_cell * 130.0, dist);
-    albedo *= 1.0 - ed * 0.30 * u_edge * fade;
+    albedo *= 1.0 - ed * (foliage ? 0.10 : 0.30) * u_edge * fade;
   }
 #endif
 
@@ -491,7 +567,7 @@ void main() {
 #ifdef CLOUD_SHADOWS
   shadow *= cloudShadowAt(vec3(wpos.x, v_wy, wpos.z));
 #endif
-  float ao = mix(1.0, 0.42 + 0.58 * v_ao, u_aoStrength) * tcav;
+  float ao = mix(1.0, 0.42 + 0.58 * aoV, u_aoStrength) * tcav * canopyAO * roundAO;
   vec3 irr = mix(u_ambGround, u_ambSky, N.y * 0.5 + 0.5);
   vec3 col;
 

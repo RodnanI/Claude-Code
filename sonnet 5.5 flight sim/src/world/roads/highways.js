@@ -89,6 +89,27 @@ export function buildHighways(terrain, access = {}) {
 
   const segs = [];
   const routes = [];
+  // Routes that share a corridor share its vertices too. Two polylines that run side by side a few meters apart never merge into
+  // one intersection in the drivable graph, so a later route snaps to the vertices of the earlier ones and adds only new pieces.
+  const VG = 64, vgrid = new Map(), vertices = [];
+  const vcell = (i, j) => (i + 4096) * 8192 + (j + 4096);
+  const addVertex = (x, z) => {
+    const v = [x, z]; v.id = vertices.length; vertices.push(v);
+    const k = vcell(Math.floor(x / VG), Math.floor(z / VG));
+    (vgrid.get(k) || vgrid.set(k, []).get(k)).push(v);
+    return v;
+  };
+  const nearestVertex = (x, z, R) => {
+    let best = null, bd = R * R;
+    const ci = Math.floor(x / VG), cj = Math.floor(z / VG);
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      const list = vgrid.get(vcell(ci + di, cj + dj));
+      if (!list) continue;
+      for (const v of list) { const d = (v[0] - x) * (v[0] - x) + (v[1] - z) * (v[1] - z); if (d < bd) { bd = d; best = v; } }
+    }
+    return best;
+  };
+  const edgeSeen = new Set();
   for (const [a, b, kind] of ROUTES) {
     const sa = access[a] || [SITES[a].x, SITES[a].z], sb = access[b] || [SITES[b].x, SITES[b].z];
     let [si, sj] = cellOf(sa[0], sa[1]);
@@ -100,21 +121,35 @@ export function buildHighways(terrain, access = {}) {
     path[0] = [sa[0], sa[1]]; path[path.length - 1] = [sb[0], sb[1]];
     path = chaikin(path, 3);
     // resample every ~60 m
-    const pts = [path[0]];
+    const raw = [path[0]];
     let acc = 0;
     for (let i = 1; i < path.length; i++) {
       const d = Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
       acc += d;
-      if (acc >= 60) { pts.push(path[i]); acc = 0; }
+      if (acc >= 60) { raw.push(path[i]); acc = 0; }
     }
-    pts.push(path[path.length - 1]);
+    raw.push(path[path.length - 1]);
+    const pts = [];
+    for (let i = 0; i < raw.length; i++) {
+      const end = i === 0 || i === raw.length - 1;
+      let v = nearestVertex(raw[i][0], raw[i][1], end ? 1.5 : 46);
+      if (!v) v = addVertex(raw[i][0], raw[i][1]);
+      if (pts.length && pts[pts.length - 1] === v) continue;
+      if (pts.length >= 2 && pts[pts.length - 2] === v) { pts.pop(); continue; }
+      pts.push(v);
+    }
+    if (pts.length < 2) continue;
     let off = 0;
     for (let i = 0; i < pts.length - 1; i++) {
-      const s = { ax: pts[i][0], az: pts[i][1], bx: pts[i + 1][0], bz: pts[i + 1][1], kind, off };
-      off += Math.hypot(s.bx - s.ax, s.bz - s.az);
-      segs.push(s);
+      const len = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+      const ek = pts[i].id < pts[i + 1].id ? pts[i].id * 65536 + pts[i + 1].id : pts[i + 1].id * 65536 + pts[i].id;
+      if (!edgeSeen.has(ek)) {
+        edgeSeen.add(ek);
+        segs.push({ ax: pts[i][0], az: pts[i][1], bx: pts[i + 1][0], bz: pts[i + 1][1], kind, off });
+      }
+      off += len;
     }
-    routes.push({ a, b, kind, points: pts });
+    routes.push({ a, b, kind, points: pts.map((p) => [p[0], p[1]]) });
   }
   return { segments: segs, routes };
 }

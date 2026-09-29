@@ -109,9 +109,10 @@ export function measure(presetName, x, z, agl, heading, fovDeg = 60, w = 1920, h
     const lv = out.byLevel[l.level] || (out.byLevel[l.level] = { n: 0, ms: 0, tris: 0, inst: 0 });
     lv.n++; lv.ms += r.stats.ms; lv.tris += r.indexCount / 3;
     for (const inst of r.instances) {
-      const rules = (world.scenery.get(inst.type) || {}).rules || {};
+      const sdef = world.scenery.get(inst.type) || {};
+      const rules = sdef.rules || {};
       const cell = r.cell;
-      const mc = rules.fine ? Math.max(cell * 0.25, 0.125) : l.level >= 1 ? cell * 1.5 : cell;
+      const mc = sdef.unitCells ? sdef.unitCells[Math.min(l.level, sdef.unitCells.length - 1)] : rules.fine ? Math.max(cell * 0.25, 0.125) : l.level >= 1 ? cell * 1.5 : cell;
       const t = triCount(inst.type, inst.variant, mc, rules);
       if (!t) continue;
       out.sceneryTris += t * inst.count;

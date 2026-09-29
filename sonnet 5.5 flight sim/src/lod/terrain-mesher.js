@@ -97,14 +97,16 @@ export function terrainNormals(buf, N, cell) {
   }
 }
 
-/** Emits a wall quad. dir: 0 +x, 1 -x, 2 +z, 3 -z. (a0..a1) is the run along the wall, plane is the wall coordinate. */
-function wall(b, dir, plane, a0, a1, yb, yt, mat, soft = 0) {
+/** Emits a wall quad. dir: 0 +x, 1 -x, 2 +z, 3 -z. (a0..a1) is the run along the wall, plane is the wall coordinate. A soft wall
+    is lit from the smooth ground normal; its ao value is not occlusion but how far to trust that normal (3 for a small step that
+    belongs to the slope, 0 for a real cliff face). */
+function wall(b, dir, plane, a0, a1, yb, yt, mat, soft = 0, aoc = 3) {
   if (yt <= yb) return;
   switch (dir) {
-    case 0: b.quad(plane, yb, a0, plane, yt, a0, plane, yt, a1, plane, yb, a1, 0, mat, 3, 3, 3, 3, soft); break;
-    case 1: b.quad(plane, yb, a0, plane, yb, a1, plane, yt, a1, plane, yt, a0, 1, mat, 3, 3, 3, 3, soft); break;
-    case 2: b.quad(a0, yb, plane, a1, yb, plane, a1, yt, plane, a0, yt, plane, 4, mat, 3, 3, 3, 3, soft); break;
-    default: b.quad(a0, yb, plane, a0, yt, plane, a1, yt, plane, a1, yb, plane, 5, mat, 3, 3, 3, 3, soft);
+    case 0: b.quad(plane, yb, a0, plane, yt, a0, plane, yt, a1, plane, yb, a1, 0, mat, aoc, aoc, aoc, aoc, soft); break;
+    case 1: b.quad(plane, yb, a0, plane, yb, a1, plane, yt, a1, plane, yt, a0, 1, mat, aoc, aoc, aoc, aoc, soft); break;
+    case 2: b.quad(a0, yb, plane, a1, yb, plane, a1, yt, plane, a0, yt, plane, 4, mat, aoc, aoc, aoc, aoc, soft); break;
+    default: b.quad(a0, yb, plane, a0, yt, plane, a1, yt, plane, a1, yb, plane, 5, mat, aoc, aoc, aoc, aoc, soft);
   }
 }
 
@@ -142,11 +144,14 @@ export function meshTerrain(buf, N, builder) {
     return { yb, top, mt: mat[a], ms: sub[a] };
   };
   const emit = (dir, plane, a0, a1, k) => {
-    // the top cell of every step is lit as if it leaned toward the sky, so one-cell steps on gentle slopes blend into the ground
-    if (k.top - k.yb >= 2) {
+    // a step of up to three cells is part of the slope: it wears the surface material and is lit like the ground beside it, so a
+    // gentle hillside has no contour lines. Taller drops are cliffs: rock below, a softened cap above.
+    const hgt = k.top - k.yb;
+    if (hgt <= 3) wall(builder, dir, plane, a0, a1, k.yb, k.top, k.mt, 1, 3);
+    else {
       wall(builder, dir, plane, a0, a1, k.yb, k.top - 1, k.ms);
-      wall(builder, dir, plane, a0, a1, k.top - 1, k.top, k.mt, 1);
-    } else wall(builder, dir, plane, a0, a1, k.yb, k.top, k.mt, 1);
+      wall(builder, dir, plane, a0, a1, k.top - 1, k.top, k.mt, 1, 1);
+    }
   };
   const same = (p, q) => p && q && p.yb === q.yb && p.top === q.top && p.mt === q.mt && p.ms === q.ms;
   // +x and -x walls: lines indexed by i, runs along j

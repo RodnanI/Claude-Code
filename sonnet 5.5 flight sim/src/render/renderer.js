@@ -7,6 +7,7 @@ import { PostChain } from './post.js';
 import { mat4 } from '../core/math.js';
 import { NODE_CELLS } from '../world/config.js';
 import { buildPaletteTexels, PALETTE_ROWS } from '../voxel/palette.js';
+import { buildCanopyTexels } from './canopy-tex.js';
 
 /** Depth is split between a far pass and a near pass so one 24-bit buffer covers 0.3 m to tens of kilometers. */
 export const NEAR_SPLIT = 1500;
@@ -62,6 +63,15 @@ export class Renderer {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128, 128, 255, 255]));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    // tileable tree crowns for the far forest, mipmapped so distance averages it away
+    this.canopyTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.canopyTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 256, 256, 0, gl.RGBA, gl.UNSIGNED_BYTE, buildCanopyTexels(256));
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
   }
 
   // ------------------------------------------------------------------ configuration
@@ -85,7 +95,7 @@ export class Renderer {
       if (this.progs) for (const p of Object.values(this.progs)) p.dispose();
       const mk = (vs, fs, extra, label) => new Program(gl, vs, fs, { ...defs, ...extra }, label);
       this.progs = {
-        node: mk(voxVert, voxFrag, { TNORM: true }, 'node'),
+        node: mk(voxVert, voxFrag, { TNORM: true, CANOPY: true }, 'node'),
         inst: mk(voxVert, voxFrag, { INSTANCED: true }, 'inst'),
         model: mk(voxVert, voxFrag, { MODEL: true }, 'model'),
         dNode: new Program(gl, voxVert, depthFrag, { DEPTH_ONLY: true }, 'dNode'),
@@ -249,6 +259,8 @@ export class Renderer {
     p.i1('u_palette', 1);
     p.i1('u_tnorm', 4);
     this._bindTex(4, this.gl.TEXTURE_2D, this.dummyTex);
+    p.i1('u_canopy', 5);
+    this._bindTex(5, this.gl.TEXTURE_2D, this.canopyTex);
     if (this.usePost) { this._bindTex(2, this.gl.TEXTURE_2D, this.post.tex.skyLut); p.i1('u_skyLut', 2); }
     if (!reflect && this.refl && q.reflections) { this._bindTex(3, this.gl.TEXTURE_2D, this.refl.tex); p.i1('u_refl', 3); }
     if (q.shadows > 0 && !reflect) {
@@ -294,6 +306,7 @@ export class Renderer {
     if (p.tn) {
       if (n.tex) { this._bindTex(4, gl.TEXTURE_2D, n.tex.tex); p.f1('u_tnormOn', 1); }
       else p.f1('u_tnormOn', 0);
+      p.f1('u_canopyNear', n.scenery ? 150 : 0);
     }
     gl.bindVertexArray(g.vao);
     gl.drawElements(gl.TRIANGLES, g.indexCount, g.indexType, 0);

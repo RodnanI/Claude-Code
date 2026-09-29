@@ -5,6 +5,7 @@ import { NodePool } from '../workers/pool.js';
 import { now } from '../core/perf.js';
 import { Rolling } from '../core/perf.js';
 import { NODE_CELLS } from '../world/config.js';
+import { TREE_MAX_LEVEL } from '../world/scatter/scatter.js';
 
 const NONE = 0, PENDING = 1, READY = 2;
 
@@ -86,7 +87,7 @@ export class NodeManager {
     const [lo, hi] = this.world.heightRange(x0, z0, size);
     n = {
       key, level, ix, iz, size, cell: cfg.cell(level), x0, z0,
-      state: NONE, gpu: null, tex: null, batches: null, exact: false,
+      state: NONE, gpu: null, tex: null, batches: null, exact: false, scenery: level <= Math.min(cfg.sceneryMaxLevel, TREE_MAX_LEVEL) && cfg.sceneryDensity > 0,
       bounds: [0, lo, 0, size, hi, size],
       lastUsed: 0, wantedFrame: 0, bytes: 0, failedFrame: -999, dMin: 0, dMax: 0, _rel: null,
     };
@@ -210,10 +211,13 @@ export class NodeManager {
       const list = [];
       for (const inst of result.instances) {
         // small props get finer voxels than the terrain around them so a car is a car, not a block
-        const rules = (this.world.scenery.get(inst.type) || {}).rules || {};
+        const sdef = this.world.scenery.get(inst.type) || {};
+        const rules = sdef.rules || {};
         // props are voxelized a little coarser than the ground once the node is past the finest level: a tree is a few hundred
         // triangles at half a meter and there are thousands of them in a suburb, so the triangle count is what limits the frame
-        const model = this.models.scenery(inst.type, inst.variant, rules.fine ? Math.max(result.cell * 0.25, 0.125) : result.level >= 1 ? result.cell * 1.5 : result.cell);
+        // unit models (a tree crown of radius 1, a trunk of height 1) have their own voxel size per level, in model units
+        const mcell = sdef.unitCells ? sdef.unitCells[Math.min(result.level, sdef.unitCells.length - 1)] : rules.fine ? Math.max(result.cell * 0.25, 0.125) : result.level >= 1 ? result.cell * 1.5 : result.cell;
+        const model = this.models.scenery(inst.type, inst.variant, mcell);
         if (model.empty) continue;
         list.push(r.uploadInstances(inst.data, inst.count, model));
       }
