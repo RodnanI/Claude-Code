@@ -17,7 +17,7 @@ export default defineAircraft({
   tags: ['Afterburner', 'Fly-by-wire', 'Cannon', 'Missiles', 'Rockets', 'Bombs'],
   description: 'Single engine, afterburning, fly-by-wire. A 9 G airframe that will happily fly faster than sound and land exactly as carefully as you make it. Cannon, heat seekers, rocket pods and bombs.',
   voxel: 0.0625,
-  interiorVoxel: 0.02,
+  interiorVoxel: 0.012,
   lodLevels: 4,
   mass: { empty: 8570, fuel: 3200, payload: 240 },
   inertia: [12875, 85552, 75674],
@@ -213,7 +213,7 @@ export default defineAircraft({
     }
   },
   interior(k) {
-    // ------------------------------------------------------------------ cockpit tub (2 cm voxels)
+    // ------------------------------------------------------------------ cockpit tub (1.2 cm voxels)
     const c = k.interior('cabin');
     c.box(1.0, -0.3, -0.42, 3.6, 0.48, 0.42, M.COCKPIT_TRIM);
     c.carve(1.4, -0.25, -0.34, 3.4, 0.5, 0.34);

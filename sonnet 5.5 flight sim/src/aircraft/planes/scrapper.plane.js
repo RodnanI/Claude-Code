@@ -24,7 +24,7 @@ export default defineAircraft({
   tags: ['Tailwheel', 'STOL', 'Open cockpit', 'Bites back'],
   description: 'Fabric, chrome-moly tube and a converted car engine. Lands on a road, a pasture or a sandbar. Spins if you look at it wrong. The only aircraft the hillbilly strip was built for.',
   voxel: 0.0625,
-  interiorVoxel: 0.025,
+  interiorVoxel: 0.015,
   lodLevels: 3,
   mass: { empty: 360, fuel: 50, payload: 95 },
   inertia: [470, 900, 640],
