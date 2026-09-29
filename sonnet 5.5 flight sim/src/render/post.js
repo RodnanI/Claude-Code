@@ -390,6 +390,7 @@ export class PostChain {
 
   /** Current auto-exposure multiplier and sun visibility. A blocking readback, meant for tools and tests only. */
   readExposure() {
+    if (!this.fbo.exp) return { exposure: null, sunVisible: null };
     const gl = this.gl;
     const out = new Float32Array(4);
     gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo.exp[this.expIdx]);

@@ -137,6 +137,8 @@ void main() {
   outColor = vec4(col, 1.0);
 #else
   col *= u_exposure;
+  float lm = luma(col);
+  col = mix(col, vec3(lm) * vec3(0.8, 0.96, 1.2), u_night * (1.0 - smoothstep(0.2, 1.4, lm)) * 0.7);
   col = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0);
   col = mix(vec3(luma(col)), col, 1.2);
   outColor = vec4(pow(col, vec3(1.0 / 2.2)), 1.0);

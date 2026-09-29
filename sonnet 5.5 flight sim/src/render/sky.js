@@ -92,9 +92,9 @@ export class Environment {
     for (let k = 0; k < 3; k++) {
       this.sunColor[k] = sc[k];
       this.ambSky[k] = ambSky[k] + [0.011, 0.015, 0.03][k] * nf + [0.16, 0.15, 0.13][k] * smoothstep(-0.05, 0.16, e);
-      this.zenith[k] = zen[k] + [0.006, 0.008, 0.02][k] * nf;
-      this.horizon[k] = hor[k];
-      this.fog[k] = hor[k] * 0.92 + ambSky[k] * 0.08;
+      this.zenith[k] = zen[k] + [0.0006, 0.001, 0.0025][k] * nf;   // same airglow floor as the sky LUT, horizon brighter than zenith
+      this.horizon[k] = hor[k] + [0.0018, 0.003, 0.0074][k] * nf;
+      this.fog[k] = this.horizon[k] * 0.92 + ambSky[k] * 0.08;
       this.fogSun[k] = horSun[k] * 0.7 + hor[k] * 0.3;
     }
     const bounceTint = [1.0, 0.9, 0.74];
@@ -107,6 +107,6 @@ export class Environment {
     this.haze[2] = (3.31e-5 * 2.0 + 1.5e-5 * (0.4 + 0.6 * (1 - dayLight))) * h;
     // fallback (no post) exposure prior
     const lum = (c) => c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722;
-    this.exposure = clamp(0.42 / (lum(this.sunColor) * Math.max(0.25, e) * 0.5 + lum(this.ambSky) + 0.02), 0.03, 9);
+    this.exposure = clamp(0.42 / (lum(this.sunColor) * Math.max(0.25, e) * 0.5 + lum(this.ambSky) + 0.02), 0.03, 9) * (1 - 0.45 * this.night);
   }
 }

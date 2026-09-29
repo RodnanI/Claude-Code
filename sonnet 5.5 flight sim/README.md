@@ -42,7 +42,7 @@ A gamepad works too (sticks, triggers for throttle, face buttons for brakes, gea
 ## Test it
 
 ```
-npm test                 # 86 unit tests, about three seconds, no dependencies
+npm test                 # 93 unit tests, about three seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```

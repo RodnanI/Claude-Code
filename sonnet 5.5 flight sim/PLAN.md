@@ -29,7 +29,7 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Traffic: road graph split at every crossing, signals, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision, crash and restart flow.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 86 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 93 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -135,7 +135,9 @@ One 24-bit depth buffer cannot cover 0.3 m to 60 km. The frame is drawn as a far
 ### 6.4 Shading and the HDR chain
 
 - Surfaces: GGX specular with roughness and metallic from the palette, wrap diffuse, cascaded shadow maps, hemisphere ambient, baked vertex AO, screen-space AO on higher tiers.
-- Atmosphere: single scattering evaluated on the CPU for sun, ambient and haze colors, and into a sky-view LUT on the GPU. Aerial perspective applies per-channel haze so distance reads blue and warm at sunset.
+- Atmosphere: single scattering with a crude isotropic fill for multiple scattering, integrated analytically per segment with quadratic step spacing (horizon rays run hundreds of kilometers, and uniform steps starved the blue channel). The same function runs on the CPU for sun, ambient and haze colors and on the GPU into a sky-view LUT. A daytime horizon tint restores the pale blue the fill leaves greenish. Aerial perspective applies per-channel haze so distance reads blue and warm at sunset, and below the horizon the sky continues the terrain fog color so there is no seam at the view distance.
+- Night: dim blue moonlight, a deep blue airglow floor in the sky LUT, and a scotopic shift in the composite (dim pixels lose saturation and lean blue, bright lights keep their color). The auto exposure ceiling is high enough to lift the scene without turning it into day.
+- Exposure: center-weighted log-average metering of the smallest level of the downsample chain, which therefore always runs, even with bloom off. The metering key is 0.36 and `exposureBias` is in stops around it.
 - Clouds: raymarched in half resolution from a 3D Perlin-Worley volume, with shadows cast on the terrain. Cheaper tiers use sky layers.
 - Water is a terrain material, not a separate plane. Ocean columns merge into a few huge quads. The shader adds wave normals, Fresnel, sun glint and, on Ultra, real planar reflections from a mirrored geometry pass.
 - Post: temporal anti-aliasing with camera reprojection (FXAA as a fallback), dual-filter bloom, auto exposure without CPU readback, filmic tone mapping with a log-encoded 48^3 LUT for cinematic grading, chromatic aberration, sharpening, lens flare, light shafts, motion blur, film grain, vignette.
@@ -366,7 +368,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 
 ## 17. Testing
 
-`npm test` runs 86 tests in about three seconds:
+`npm test` runs 93 tests in about three seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
@@ -375,6 +377,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Aircraft: every part builds at every LOD, dimensions match the specification, liveries and stations resolve, validation rejects broken specs.
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.
 - Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance.
+- Render: the atmosphere gives a blue noon sky with a pale horizon and an orange sunset side, never negative or non-finite, black at night; sun transmittance reddens and dims monotonically; moonlight is a sliver of daylight; the cinematic grade keeps blacks dark.
 - Build: registry covers every content file, the output is one self-contained file under budget, no em dashes anywhere.
 
 `npm run test:browser` boots the built file in headless Chromium and walks menu, hangar, takeoff, throttle, pause, settings, map, F3 overlay, a forced crash and a restart, failing on any console error.

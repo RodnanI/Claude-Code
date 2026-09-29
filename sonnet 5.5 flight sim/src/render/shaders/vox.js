@@ -295,6 +295,8 @@ void main() {
   float vr = hash13(vh);
   albedo *= 1.0 + (vr - 0.5) * 2.0 * varAmp;
   if (foliage || tintf) albedo *= v_tintc;
+  // real leaves and turf are darker and less saturated than the palette swatches, which read as lime over a whole forest
+  if (foliage) albedo = mix(vec3(luma(albedo)), albedo, 0.84) * 0.9;
 
   vec3 wpos = u_worldOrigin + v_local * u_cell;
 #ifdef DETAIL
@@ -412,6 +414,8 @@ void main() {
   outColor = vec4(col, 1.0);
 #else
   col *= u_exposure;
+  float lm = luma(col);
+  col = mix(col, vec3(lm) * vec3(0.8, 0.96, 1.2), u_night * (1.0 - smoothstep(0.2, 1.4, lm)) * 0.7);
   vec3 x = col;
   col = clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
   col = mix(vec3(luma(col)), col, 1.2);
