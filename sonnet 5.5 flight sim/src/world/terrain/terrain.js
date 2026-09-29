@@ -69,8 +69,9 @@ export function createTerrain(seed, mods = [], macro = createMacro(seed)) {
         const sn = nStack.n2(x / 170 + 5.5, z / 170 - 3.3);
         if (sn > thr) {
           const st = smoothstep(thr, thr + 0.2, sn) * smoothstep(-0.07, -0.012, m);
-          const top = st * (12 + 32 * (0.5 + 0.5 * nStack.n2(x / 80 + 1.1, z / 80 + 7.9))) - 3;
-          if (top > h) h = top;
+          // rises from the sea floor itself, so there is no flat shelf and no underwater cliff around the foot of a stack
+          const top = 12 + 32 * (0.5 + 0.5 * nStack.n2(x / 80 + 1.1, z / 80 + 7.9)) - 3;
+          h += (top - h) * st;
         }
       }
       o.land = 0;

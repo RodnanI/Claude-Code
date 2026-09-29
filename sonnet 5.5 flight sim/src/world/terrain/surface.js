@@ -16,11 +16,12 @@ export function createSurface(seed, biomes, paint) {
     // a band or a patch is drawn only where a cell can resolve it: sampled at 16 m the fine ones alias into camouflage
     const b1 = Math.max(0, 1 - cell / 6), b2 = Math.max(0, 1 - cell / 2.2);
     const band = Math.sin(hh / 11) * b1 + 0.55 * Math.sin(hh / 4.1 + 1.7) * b2;
-    const v = band * 0.62 + nR.n2(x / 80, z / 80) * 0.55 + nR.n2(x / 23, z / 23) * 0.22 * Math.max(0, 1 - cell / 10);
-    if (v > 1.05) return M.ROCK_RED;
-    if (v > 0.5) return M.ROCK_WARM;
-    if (v < -0.6) return M.ROCK_DARK;
-    return h > 700 && v > 0.05 ? M.ROCK_PALE : M.ROCK;
+    const v = band * 0.5 + nR.n2(x / 80, z / 80) * 0.42 + nR.n2(x / 23, z / 23) * 0.2 * Math.max(0, 1 - cell / 10);
+    // the kinds of rock differ by a few tens of percent, not by half: two strongly different tones split 50/50 read as camouflage
+    if (v > 1.0) return M.ROCK_RED;
+    if (v > 0.55) return M.ROCK_WARM;
+    if (v < -0.7) return M.ROCK_DARK;
+    return h > 700 && v > 0.28 ? M.ROCK_PALE : M.ROCK;
   }
 
   function natural(x, z, h, slope, cell, s) {

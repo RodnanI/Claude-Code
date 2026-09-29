@@ -21,7 +21,7 @@ const TABLE = [
   ['GRASS', 0x648f3c, F], ['GRASS_LUSH', 0x4a8032, F], ['GRASS_DRY', 0x9a9c50, F], ['MEADOW', 0x7f9f46, F],
   ['FOREST_FLOOR', 0x3b5a2a, F | C], ['PINE_FLOOR', 0x34502f, F | C], ['DIRT', 0x7a5a3c, 0], ['DIRT_DARK', 0x5b4530, 0],
   ['SAND', 0xd8c48b, 0], ['SAND_WET', 0xb9a574, 0], ['GRAVEL', 0x8d8a82, 0],
-  ['ROCK', 0x7a7772, 0], ['ROCK_DARK', 0x5b5955, 0], ['ROCK_WARM', 0x8a7560, 0], ['SNOW', 0xf2f4f6, 0],
+  ['ROCK', 0x7a7772, 0], ['ROCK_DARK', 0x615e59, 0], ['ROCK_WARM', 0x8a7560, 0], ['SNOW', 0xf2f4f6, 0],
   ['ICE', 0xcfe2ea, G], ['ALPINE', 0x8c9a6a, F], ['SCREE', 0x9a948a, 0], ['MOSS', 0x5d7a3a, F],
   ['FARM_WHEAT', 0xc8b05a, F], ['FARM_GREEN', 0x5f9c40, F], ['FARM_PLOW', 0x6b4a32, 0], ['FARM_YELLOW', 0xd6b53a, F],
   ['FARM_STUBBLE', 0xb59d55, F], ['LAWN', 0x74a845, F], ['MOWN_STRIP', 0x8ab34e, F],
@@ -91,7 +91,7 @@ const TABLE = [
   // appended: crop rows and hedges
   ['FARM_WHEAT_B', 0xb8a04e, F], ['FARM_GREEN_B', 0x54903a, F], ['FARM_PLOW_B', 0x5a3d29, 0], ['FARM_YELLOW_B', 0xc6a532, F], ['FARM_STUBBLE_B', 0xa48c4a, F], ['HEDGE', 0x35592a, F],
   // appended: rock variety for cliff strata
-  ['ROCK_PALE', 0xa9a49a, 0], ['ROCK_RED', 0x8b5a46, 0],
+  ['ROCK_PALE', 0x968f85, 0], ['ROCK_RED', 0x8b5a46, 0],
   // appended: asphalt that glows warm at night, painted in pools along lit streets at coarse detail
   ['ASPHALT_LIT', 0x3a3b3e, E],
   // appended: city palette. More glass tints, stone, dark metal, colored neon, a green roof

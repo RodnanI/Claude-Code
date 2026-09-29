@@ -73,6 +73,7 @@ export function sampleColumns(world, x0, z0, cell, N, buf) {
  * shader takes the light from a Sobel normal of the true heights (bilinear across the node) instead of from flat treads
  * and dark risers: hills read as hills at every level of detail and gentle slopes lose their contour lines.
  * The blue channel is a cheap cavity term from the same heights: valley floors are a little darker, ridges stay open.
+ * The alpha channel is the depth of the water over the column (0 on land), for the smooth color of the sea.
  */
 export function terrainNormals(buf, N, cell) {
   const W = buf.W, h = buf.surf, out = buf.tn;
@@ -94,7 +95,9 @@ export function terrainNormals(buf, N, cell) {
       out[o] = Math.round((nx * 0.5 + 0.5) * 255);
       out[o + 1] = Math.round((nz * 0.5 + 0.5) * 255);
       out[o + 2] = Math.round((1 - 0.5 * cav) * 255);
-      out[o + 3] = 255;
+      // water depth, square-root coded over 100 m: the sea shader blends the shallows smoothly instead of in depth bands
+      const wl = buf.water[a];
+      out[o + 3] = wl === wl ? Math.round(255 * Math.sqrt(Math.min(1, Math.max(0, wl - buf.bed[a]) * 0.01))) : 0;
     }
   }
 }

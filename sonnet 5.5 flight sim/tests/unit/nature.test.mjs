@@ -34,6 +34,21 @@ test('ground normals: a ramp tilts the normal against the slope, a plain stays u
   assert.ok(buf.tn[o + 2] < 250, `pit cavity ${buf.tn[o + 2]}`);
 });
 
+test('the alpha of the ground texture is the depth of the water over the column, square-root coded over 100 m', () => {
+  const N = NODE_CELLS, cell = 2, buf = new ColumnBuf(N), W = buf.W;
+  buf.surf.fill(0); buf.bed.fill(-25); buf.water.fill(0);
+  const o = (10 * N + 10) * 4;
+  terrainNormals(buf, N, cell);
+  assert.equal(buf.tn[o + 3], Math.round(255 * Math.sqrt(0.25)), 'a bed 25 m down');
+  buf.bed.fill(-400);
+  terrainNormals(buf, N, cell);
+  assert.equal(buf.tn[o + 3], 255, 'saturates at 100 m');
+  buf.water.fill(NaN); buf.bed.fill(30);
+  terrainNormals(buf, N, cell);
+  assert.equal(buf.tn[o + 3], 0, 'dry land has no depth');
+  void W;
+});
+
 test('every land node ships a ground normal texture and an ocean tile does not', () => {
   const size = NODE_CELLS * 4;
   const land = builder.build(3, Math.floor(1800 / size), Math.floor(600 / size), CFG);
@@ -142,6 +157,27 @@ test('the land has ridges, mesas, headlands, two more massifs and real lakes, an
     if (o.m > 0.36) { n++; if (h < 5.5) bad++; }
   }
   assert.ok(n > 300 && bad === 0, `${bad} of ${n} inland points below the valley floor`);
+});
+
+test('the shore of a lake away from any town climbs at a walking slope: no pit walls, no dam on the far side', () => {
+  const o = {};
+  for (const l of LAKES) {
+    const R = Math.max(l.rx, l.rz);
+    if (Object.values(SITES).some((s) => s.kind !== 'mountain' && Math.hypot(s.x - l.x, s.z - l.z) < R * 2.6)) continue;
+    let steepest = 0;
+    for (let a = 0; a < 360; a += 20) {
+      const ca = Math.cos((a * Math.PI) / 180), sa = Math.sin((a * Math.PI) / 180);
+      let prev = NaN, px = 0, pz = 0;
+      for (let q = 0.9; q <= 1.3; q += 0.01) {
+        const x = l.x + ca * l.rx * q, z = l.z + sa * l.rz * q;
+        world.terrain.sample(x, z, 2, o);
+        if (!Number.isNaN(prev)) steepest = Math.max(steepest, Math.abs(o.bed - prev) / Math.hypot(x - px, z - pz));
+        prev = o.bed; px = x; pz = z;
+      }
+    }
+    // the cap is a slope of 0.65; the pits this replaced had walls of 3 to 40
+    assert.ok(steepest < 1.2, `${l.id}: the shore climbs at slope ${steepest.toFixed(2)}`);
+  }
 });
 
 test('the cached macro fields agree with the exact function to a few centimeters and never change the world between threads', () => {

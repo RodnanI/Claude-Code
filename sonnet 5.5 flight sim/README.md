@@ -1,6 +1,6 @@
 # Fly High
 
-A voxel flight simulator on one island: a metropolis, two cities, four towns, a mountain, three places to start (an international airport, a military air base and a hillbilly strip) and three aircraft that could not be more different. Everything you see is voxels, from the terrain to the needles in the cockpit gauges. The finished game is one HTML file with no network access.
+A voxel flight simulator on one island: a metropolis, two cities, four towns, a mountain and two more massifs, lakes, rivers, farmland with herds and flocks of birds, three places to start (an international airport, a military air base and a hillbilly strip) and three aircraft that could not be more different. Everything you see is voxels, from the terrain to the needles in the cockpit gauges. The finished game is one HTML file with no network access.
 
 `PLAN.md` explains the design and the reasons. This file is about working in the repository.
 
@@ -8,7 +8,7 @@ A voxel flight simulator on one island: a metropolis, two cities, four towns, a 
 
 ```
 npm install          # esbuild only
-npm run build        # writes dist/fly-high.html, about 650 KB
+npm run build        # writes dist/fly-high.html, about 715 KB
 ```
 
 Open `dist/fly-high.html` in a current Chrome, Edge or Firefox with WebGL 2. Nothing else is needed and nothing is fetched.
@@ -44,7 +44,7 @@ Settings, World, Challenge switches on the Skyline run: a ring beside the crown 
 ## Test it
 
 ```
-npm test                 # 121 unit tests, about fifteen seconds, no dependencies
+npm test                 # 123 unit tests, about fifteen seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```

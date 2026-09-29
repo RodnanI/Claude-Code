@@ -1,6 +1,6 @@
 import { distToSegment, smoothstep, lerp } from '../../core/util.js';
 import { SpatialGrid } from '../spatial.js';
-import { RIVERS, LAKES } from '../layout.js';
+import { RIVERS, LAKES, SITES } from '../layout.js';
 
 function catmull(p0, p1, p2, p3, t) {
   const t2 = t * t, t3 = t2 * t;
@@ -44,7 +44,21 @@ export function createHydrology(naturalAt) {
     }
     return rec;
   });
-  const lakes = LAKES.map((l) => ({ ...l, level: Math.max(0.8, naturalAt(l.x, l.z) - 0.6) }));
+  const lakes = LAKES.map((l) => {
+    // A lake fills its basin up to the lowest bank: any higher and the far shore would need a dam. Lakes beside a settlement keep the
+    // fixed level and the old shore, so the ground the town stands on is left alone.
+    const town = Object.values(SITES).some((s) => s.kind !== 'mountain' && Math.hypot(s.x - l.x, s.z - l.z) < Math.max(l.rx, l.rz) * 2.6);
+    let level = Math.max(0.8, naturalAt(l.x, l.z) - 0.6);
+    if (!town) {
+      let low = Infinity;
+      for (let k = 0; k < 24; k++) {
+        const a = (k / 24) * Math.PI * 2;
+        low = Math.min(low, naturalAt(l.x + Math.cos(a) * l.rx * 1.02, l.z + Math.sin(a) * l.rz * 1.02));
+      }
+      level = Math.max(0.8, Math.min(level, low - 0.15));
+    }
+    return { ...l, level, town, bankR: Math.min(l.rx, l.rz) };
+  });
   const seg = { t: 0 };
 
   /**
@@ -92,6 +106,11 @@ export function createHydrology(naturalAt) {
       } else {
         const rim = l.level + 1.6 * (1 - smoothstep(1.0, 1.9, q));
         if (h < rim) h = rim;
+        if (!l.town) {
+          // the ground climbs from the water at a walking slope instead of standing round it as a cliff
+          const cap = l.level + 0.4 + (q - 1) * l.bankR * 0.65;
+          if (h > cap) h += (cap - h) * (1 - smoothstep(1.45, 1.9, q));
+        }
       }
     }
     return h;

@@ -1,5 +1,12 @@
 import { HEAD, NOISE } from './chunks.js';
 import { NODE_CELLS } from '../../world/config.js';
+import { M, PALETTE_RGB } from '../../voxel/palette.js';
+
+/** The colors of the six depth bands of the sea, linear, so the shader can blend them by the true depth of the water. */
+const WATER_LIN = [0, 1, 2, 3, 4, 5].map((k) => {
+  const id = M['WATER_' + k], c = [0, 1, 2].map((q) => Math.pow(PALETTE_RGB[id * 3 + q] / 255, 2.2).toFixed(5));
+  return `vec3(${c.join(', ')})`;
+});
 
 /* Voxel geometry shaders. Vertex: ivec4 (x, y, z, w) with w = face | ao << 3 | material << 5 | soft << 13 | bank << 14.
    Defines: INSTANCED, MODEL, DEPTH_ONLY, POST (HDR + MRT outputs), SHADOWS, EDGES, MACRO, WATER_Q, REFLECT,
@@ -297,7 +304,9 @@ float shadowFactor(vec3 rel, vec3 N, float ndl) {
 }
 #endif
 
-vec3 waveNormal(vec2 p, float dist) {
+// pw: how much water one pixel covers. A ripple much shorter than that cannot be resolved and only makes moire arcs and glitter,
+// so each of the small ones fades out as the pixels outgrow it
+vec3 waveNormal(vec2 p, float dist, float pw) {
   vec2 g = vec2(0.0);
   float t = u_time;
 #if WATER_Q >= 1
@@ -305,14 +314,24 @@ vec3 waveNormal(vec2 p, float dist) {
   g += vec2(-0.5, 0.86) * cos(dot(vec2(-0.5, 0.86), p) * 0.62 + t * 1.3) * 0.62 * 0.07;
 #endif
 #if WATER_Q >= 2
-  g += vec2(0.25, -0.97) * cos(dot(vec2(0.25, -0.97), p) * 1.35 + t * 1.9) * 1.35 * 0.035;
-  g += vec2(-0.9, -0.43) * cos(dot(vec2(-0.9, -0.43), p) * 2.9 + t * 2.7) * 2.9 * 0.016;
-  g += vec2(0.6, 0.8) * cos(dot(vec2(0.6, 0.8), p) * 6.3 + t * 3.6) * 6.3 * 0.006;
+  g += vec2(0.25, -0.97) * cos(dot(vec2(0.25, -0.97), p) * 1.35 + t * 1.9) * 1.35 * 0.035 * (1.0 - smoothstep(0.8, 2.6, pw));
+  g += vec2(-0.9, -0.43) * cos(dot(vec2(-0.9, -0.43), p) * 2.9 + t * 2.7) * 2.9 * 0.016 * (1.0 - smoothstep(0.35, 1.2, pw));
+  g += vec2(0.6, 0.8) * cos(dot(vec2(0.6, 0.8), p) * 6.3 + t * 3.6) * 6.3 * 0.006 * (1.0 - smoothstep(0.16, 0.55, pw));
 #endif
   g *= exp(-dist * 0.0009);
   return normalize(vec3(-g.x, 1.0, -g.y));
 }
 
+#ifdef TNORM
+// the sea's color by the true depth of the water (meters): the six band colors, blended between the band centers
+vec3 waterDepthColor(float d) {
+  vec3 c = mix(${WATER_LIN[0]}, ${WATER_LIN[1]}, smoothstep(0.75, 2.75, d));
+  c = mix(c, ${WATER_LIN[2]}, smoothstep(2.75, 7.0, d));
+  c = mix(c, ${WATER_LIN[3]}, smoothstep(7.0, 17.0, d));
+  c = mix(c, ${WATER_LIN[4]}, smoothstep(17.0, 39.0, d));
+  return mix(c, ${WATER_LIN[5]}, smoothstep(39.0, 70.0, d));
+}
+#endif
 float D_GGX(float ndh, float a) { float a2 = a * a; float d = ndh * ndh * (a2 - 1.0) + 1.0; return a2 / (PI * d * d + 1e-6); }
 float V_Smith(float ndl, float ndv, float rough) {
   float k = (rough + 1.0) * (rough + 1.0) * 0.125;
@@ -603,11 +622,20 @@ void main() {
   if (water) {
     vec3 Nw = normalize(v_nrm);
 #if WATER_Q >= 1
-    Nw = waveNormal(wpos.xz, dist);
+    Nw = waveNormal(wpos.xz, dist, max(dW.x, dW.z));
 #endif
     float cosv = max(dot(Nw, V), 0.0);
     float fr = 0.02 + 0.98 * pow(1.0 - cosv, 5.0);
     vec3 refl = skyColor(reflect(-V, Nw));
+    float shoreD = 99.0;
+#ifdef TNORM
+    if (u_tnormOn > 0.5 && v_mat >= ${M.WATER_0} && v_mat <= ${M.WATER_5}) {
+      // open sea over a node that has its ground texture: the shallows grade smoothly from turquoise to deep blue
+      float dc = texture(u_tnorm, v_local.xz * (1.0 / ${NODE_CELLS}.0)).a;
+      shoreD = 100.0 * dc * dc;
+      albedo = waterDepthColor(shoreD);
+    }
+#endif
 #ifdef REFL_TEX
     if (abs(v_wy) < 0.6) {
       vec2 suv = gl_FragCoord.xy / u_res;
@@ -624,9 +652,16 @@ void main() {
     col = mix(base, refl, clamp(fr * 1.05 + 0.035, 0.0, 0.95)) + u_sunColor * spec * (1.0 - u_night);
 #if WATER_Q >= 2
     vec2 fp = wpos.xz * 0.55 + vec2(u_time * 0.35, -u_time * 0.2);
-    float crest = smoothstep(0.62, 0.86, vnoise(fp) * 0.6 + vnoise(fp * 2.3 + 5.0) * 0.4);
-    float shallow = float(albedo.g > 0.32 && albedo.r > 0.09);
-    col += vec3(0.9, 0.95, 1.0) * crest * shallow * (irr.g + u_sunColor.g * 0.12 * shadow) * 0.5;
+    float crest = smoothstep(0.62, 0.86, vnoise(fp) * 0.6 + vnoise(fp * 2.3 + 5.0) * 0.4) * (1.0 - smoothstep(0.5, 2.0, max(dW.x, dW.z)));
+    float shallow = shoreD < 90.0 ? 1.0 - smoothstep(1.5, 6.0, shoreD) : float(albedo.g > 0.32 && albedo.r > 0.09);
+    vec3 foamC = vec3(0.9, 0.95, 1.0) * (irr.g + u_sunColor.g * 0.12 * shadow);
+    col += foamC * crest * shallow * 0.5;
+    // surf: bands of foam that roll in and break where the water gets thin
+    if (shoreD < 1.2 && dist < 2500.0) {
+      float roll = 0.5 + 0.5 * sin(shoreD * 7.0 - u_time * 1.3 + vnoise(wpos.xz * 0.35) * 4.0);
+      float surf = smoothstep(0.7, 0.0, shoreD) * (0.35 + 0.65 * roll) * (1.0 - smoothstep(900.0, 2500.0, dist));
+      col = mix(col, foamC * 0.9, clamp(surf * 0.8, 0.0, 0.85));
+    }
 #endif
   } else {
     vec3 diffC = albedo * (1.0 - metal);
