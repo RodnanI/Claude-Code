@@ -21,7 +21,7 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 
 - Build pipeline: registry discovery, esbuild bundle, worker inlining, single-file output of about 510 KB, dev server with native modules.
 - Core: math, seeded RNG, noise, events, perf counters.
-- Voxel toolkit: palette of 237 materials with PBR properties, dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
+- Voxel toolkit: palette of 238 materials with PBR properties, dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
 - WebGL2 renderer with an HDR pipeline: camera-relative rendering, split-depth passes, single-scattering atmosphere with a sky-view LUT and aerial perspective, volumetric clouds with cloud shadows, cascaded shadows, planar water reflections, SSAO, temporal anti-aliasing, bloom, GPU auto exposure, a 3D LUT color grade (six looks), lens effects, motion blur, light shafts. A direct forward path with no post at all serves the Potato tier.
 - Smart LOD: screen-space-error quadtree, worker pool with Blob workers in the single file, streaming, LRU eviction, skirts, adaptive governor.
 - Whole island: terrain, coast, Mount Corvus, rivers, a lake, a highway network, 21 region files (metropolis in nine, two cities, four towns, three airfields, three features), 35 building and prop kits, 11 scenery types, about 11,000 structures.
@@ -29,7 +29,7 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision, crash and restart flow.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 95 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 96 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -142,6 +142,7 @@ One 24-bit depth buffer cannot cover 0.3 m to 60 km. The frame is drawn as a far
 - Water is a terrain material, not a separate plane. Ocean columns merge into a few huge quads. The shader adds wave normals, Fresnel, sun glint and, on Ultra, real planar reflections from a mirrored geometry pass.
 - Post: temporal anti-aliasing with camera reprojection (FXAA as a fallback), dual-filter bloom, auto exposure without CPU readback, filmic tone mapping with a log-encoded 48^3 LUT for cinematic grading, chromatic aberration, sharpening, lens flare, light shafts, motion blur, film grain, vignette.
 - Emissive voxels (windows, lamps, runway lights, nav lights) glow through bloom, and windows vary per pane.
+- Night city glow at a distance: fine detail has real lamp props, and coarse road cells on avenues, streets and highways paint pools of `ASPHALT_LIT` (warm emissive color, night only) every few dozen meters, so a lit street grid reads from kilometers away.
 
 ### 6.5 Draw budget
 
@@ -368,11 +369,11 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 
 ## 17. Testing
 
-`npm test` runs 95 tests in about three seconds:
+`npm test` runs 96 tests in about three seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
-- World: every region lays out with known kits and inside its bounds, deterministic terrain, a mountain of the right height, all three start areas on land with flat runways (the strip smooth but sloping), a connected road graph, no building on a highway, LOD configuration, deterministic node builds.
+- World: lit streets glow only on coarse avenues, streets and highways; every region lays out with known kits and inside its bounds, deterministic terrain, a mountain of the right height, all three start areas on land with flat runways (the strip smooth but sloping), a connected road graph, no building on a highway, LOD configuration, deterministic node builds.
 - Settings and input: presets, schema coverage, sanitizing, persistence and corrupt storage, governor behavior, hardware probe, key ramps, throttle lever, edge presses.
 - Aircraft: every part builds at every LOD, dimensions match the specification, the exterior extent agrees with the wing span, liveries and stations resolve, validation rejects broken specs.
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.

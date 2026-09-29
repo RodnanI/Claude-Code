@@ -154,3 +154,22 @@ test('water is a terrain material and rivers carry water names', () => {
   assert.match(materialName(s.mat), /WATER/);
   assert.ok(M.WATER_RIVER && M.WATER_LAKE);
 });
+
+test('lit streets: coarse asphalt on avenues and streets carries night glow pools, dirt and fine cells never do', async () => {
+  const { RoadIndex } = await import('../../src/world/roads/network.js');
+  const { M, buildPaletteTexels, PALETTE_FLAGS, FL } = await import('../../src/voxel/palette.js');
+  const idx = new RoadIndex();
+  idx.add({ ax: 0, az: 0, bx: 600, bz: 0, kind: 'avenue' });
+  idx.add({ ax: 0, az: 200, bx: 600, bz: 200, kind: 'lane' });
+  idx.add({ ax: 0, az: 400, bx: 600, bz: 400, kind: 'dirt' });
+  const count = (z, cell) => { const seen = {}; for (let x = 1; x < 600; x += cell) { const m = idx.paint(x, z, cell); seen[m] = (seen[m] || 0) + 1; } return seen; };
+  const av = count(0, 4);
+  assert.ok(av[M.ASPHALT_LIT] > 10 && av[M.ASPHALT] > av[M.ASPHALT_LIT], 'pools of light, mostly dark road between them');
+  assert.equal(count(0, 0.5)[M.ASPHALT_LIT] || 0, 0, 'fine cells use real lamps, not painted glow');
+  assert.equal(count(0, 64)[M.ASPHALT_LIT] || 0, 0, 'very coarse cells stay plain');
+  assert.equal(count(200, 4)[M.ASPHALT_LIT] || 0, 0, 'lanes are not lit');
+  assert.equal(count(400, 4)[M.ASPHALT_LIT] || 0, 0, 'dirt roads are not lit');
+  assert.ok(PALETTE_FLAGS[M.ASPHALT_LIT] & FL.EMISSIVE);
+  const tex = buildPaletteTexels(), o = (256 + M.ASPHALT_LIT) * 4;
+  assert.ok(tex[o] > tex[o + 2] * 1.4, 'the glow is warm sodium, not the grey of the asphalt');
+});

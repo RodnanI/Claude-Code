@@ -83,7 +83,7 @@ export function createSurface(seed, biomes, paint) {
         case M.SAND: case M.SAND_WET: return M.SAND_WET;
         case M.SNOW: case M.ICE: case M.ALPINE: case M.SCREE: return M.ROCK;
         case M.ROCK: case M.ROCK_DARK: case M.ROCK_WARM: case M.ROCK_PALE: case M.ROCK_RED: return mat;
-        case M.ASPHALT: case M.ASPHALT_WORN: case M.ROAD_LINE_W: case M.ROAD_LINE_Y: case M.SIDEWALK: case M.CURB: return M.CONCRETE_DARK;
+        case M.ASPHALT: case M.ASPHALT_WORN: case M.ASPHALT_LIT: case M.ROAD_LINE_W: case M.ROAD_LINE_Y: case M.SIDEWALK: case M.CURB: return M.CONCRETE_DARK;
         case M.RUNWAY: case M.RUNWAY_MARK: case M.TAXI_LINE: case M.APRON: case M.CONCRETE: return M.CONCRETE;
         default:
           if (PALETTE_FLAGS[mat] & FL.WATER) return mat;

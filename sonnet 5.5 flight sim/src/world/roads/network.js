@@ -54,7 +54,14 @@ export class RoadIndex {
     const k = best.k;
     if (k.surface === 'dirt') return M.DIRT_ROAD;
     if (k.surface === 'gravel') return M.GRAVEL_ROAD;
-    if (roadHits > 1 || cell > 1.2 || k.marks === 'none') return M.ASPHALT;
+    if (roadHits > 1 || cell > 1.2 || k.marks === 'none') {
+      // lit streets: pools of sodium light every few dozen meters, spaced wider as the cell grows so the pattern survives coarse sampling
+      if (cell >= 2 && cell <= 32 && (k.marks === 'avenue' || k.marks === 'street' || k.marks === 'highway')) {
+        const pool = Math.max(36, cell * 3.5);
+        if ((((best.t * best.len + best.off) % pool) + pool) % pool < Math.max(9, cell * 1.2)) return M.ASPHALT_LIT;
+      }
+      return M.ASPHALT;
+    }
     // markings on a single road: lateral offset from the centerline
     const dx = best.bx - best.ax, dz = best.bz - best.az;
     const l = best.len || 1;
