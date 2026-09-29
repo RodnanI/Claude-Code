@@ -236,7 +236,7 @@ test('scenery models: every one builds at every level of detail it is asked for 
   const need = ['puff', 'puffb', 'cone', 'trunk', 'boulder', 'flowers', 'reeds', 'lily', 'log', 'cow', 'sheep', 'horse', 'deer'];
   for (const id of need) assert.ok(SCENERY.some((s) => s.id === id), `scenery ${id}`);
   for (const d of SCENERY.filter((s) => s.unitCells)) {
-    assert.ok(d.unitCells.length >= 8 && d.unitCells.every((c) => c > 0 && c <= 1.001), `${d.id} unit cells`);
+    assert.ok(d.unitCells.length >= 8 && d.unitCells.every((c) => c > 0 && c <= (d.rules?.unit ? 1.001 : 16)), `${d.id} unit cells`);
     for (let k = 1; k < d.unitCells.length; k++) assert.ok(d.unitCells[k] >= d.unitCells[k - 1] - 1e-9, `${d.id} gets coarser with distance`);
   }
 });

@@ -1,4 +1,5 @@
 import { M } from '../../voxel/palette.js';
+import { strut } from '../../aircraft/builders/parts.js';
 
 /** Helpers shared by kits. Files starting with an underscore are never auto-registered. */
 
@@ -36,3 +37,20 @@ export const GLASS_SETS = {
   bronze: [M.GLASS_BRONZE, M.GLASS_DARK],
   green: [M.GLASS_GREEN, M.GLASS_TEAL],
 };
+
+/** Handrail along any straight run at height y: posts, a top rail and a mid rail. Fine detail only. */
+export function rails(b, x0, z0, x1, z1, y, h = 1.05, mat = M.STEEL, step = 2.4) {
+  const len = Math.hypot(x1 - x0, z1 - z0);
+  const n = Math.max(1, Math.round(len / step));
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
+    b.box(x - 0.04, y, z - 0.04, x + 0.04, y + h, z + 0.04, mat, { md: 0.6 });
+  }
+  for (const k of [h, h * 0.5]) strut(b, [x0, y + k, z0], [x1, y + k, z1], 0.07, mat, { md: 0.6 });
+}
+
+/** Vertical door leaves in two tones, side by side: a big sliding door part way along its travel. */
+export function leaves(b, x0, x1, y0, y1, z, depth, n, a = M.STEEL_BRIGHT, c = M.STEEL) {
+  const w = (x1 - x0) / n;
+  for (let i = 0; i < n; i++) b.box(x0 + i * w, y0, z, x0 + (i + 1) * w - 0.05, y1, z + depth, i & 1 ? a : c, { md: 0.9 });
+}

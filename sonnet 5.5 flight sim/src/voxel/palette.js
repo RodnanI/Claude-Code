@@ -101,6 +101,8 @@ const TABLE = [
   ['GREEN_ROOF', 0x6f8f4e, F], ['STEAM', 0xe6ecef, F],
   // appended: animal coats that take the instance tint (cattle, horses, deer)
   ['FUR', 0xd9d3c6, T],
+  // appended: blue taxiway edge lights (the last free slot of the 255 the shader can address)
+  ['RWY_LIGHT_BLUE', 0x3b78ff, E | N],
 ];
 
 /* Procedural surface patterns. The fragment shader draws them in world space from the palette texture (rows 3 to 5), so a
@@ -206,7 +208,7 @@ const OVERRIDES = {
   NEON_RED: [0.3, 0, 4.5], NEON_CYAN: [0.3, 0, 4.5], NEON_MAGENTA: [0.3, 0, 4.5],
   ASPHALT: [0.78, 0, null, null, 0.1], ASPHALT_WORN: [0.86, 0, null, null, 0.12], RUNWAY: [0.72, 0, null, null, 0.08], CONCRETE: [0.82, 0], APRON: [0.8, 0],
   WINDOW_LIT: [0.2, 0, 2.6], WINDOW_LIT_COOL: [0.2, 0, 2.6], WINDOW_LIT_DIM: [0.2, 0, 1.8], LAMP_SODIUM: [0.4, 0, 9], LAMP_WHITE: [0.4, 0, 9],
-  BEACON_RED: [0.4, 0, 9], RWY_LIGHT_WHITE: [0.4, 0, 10], RWY_LIGHT_GREEN: [0.4, 0, 10], RWY_LIGHT_RED: [0.4, 0, 10], RWY_LIGHT_AMBER: [0.4, 0, 10],
+  BEACON_RED: [0.4, 0, 9], RWY_LIGHT_WHITE: [0.4, 0, 10], RWY_LIGHT_GREEN: [0.4, 0, 10], RWY_LIGHT_RED: [0.4, 0, 10], RWY_LIGHT_AMBER: [0.4, 0, 10], RWY_LIGHT_BLUE: [0.4, 0, 10],
   ASPHALT_LIT: [0.78, 0, 1.6, null, 0.1, 0xffb060],
   SIGNAL_RED: [0.4, 0, 3.2], SIGNAL_AMBER: [0.4, 0, 3.2], SIGNAL_GREEN: [0.4, 0, 3.2], HEADLIGHT: [0.2, 0, 14], TAILLIGHT: [0.3, 0, 6],
   NEON_ORANGE: [0.3, 0, 4.5], NEON_WHITE: [0.3, 0, 4.5], NAV_RED: [0.3, 0, 9], NAV_GREEN: [0.3, 0, 9], STROBE: [0.3, 0, 20],
@@ -224,7 +226,7 @@ export const PALETTE_EMIT = new Float32Array(256);
 export const PALETTE_TRANS = new Float32Array(256);
 export const PALETTE_VAR = new Float32Array(256).fill(0.16);
 export const PALETTE_EMIT_RGB = new Uint8Array(PALETTE_RGB);
-const EMIT_ALWAYS = new Set(['BEACON_RED', 'RWY_LIGHT_WHITE', 'RWY_LIGHT_GREEN', 'RWY_LIGHT_RED', 'RWY_LIGHT_AMBER', 'SIGNAL_RED', 'SIGNAL_AMBER', 'SIGNAL_GREEN', 'NAV_RED', 'NAV_GREEN', 'STROBE', 'HEADLIGHT', 'TAILLIGHT']);
+const EMIT_ALWAYS = new Set(['BEACON_RED', 'RWY_LIGHT_WHITE', 'RWY_LIGHT_GREEN', 'RWY_LIGHT_RED', 'RWY_LIGHT_AMBER', 'RWY_LIGHT_BLUE', 'SIGNAL_RED', 'SIGNAL_AMBER', 'SIGNAL_GREEN', 'NAV_RED', 'NAV_GREEN', 'STROBE', 'HEADLIGHT', 'TAILLIGHT']);
 for (let id = 1; id < MATERIAL_COUNT; id++) {
   const f = PALETTE_FLAGS[id];
   if (f & FL.GLOSSY) PALETTE_ROUGH[id] = 0.14;
