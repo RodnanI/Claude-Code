@@ -234,29 +234,40 @@ export default defineAircraft({
     for (const s of [-1, 1]) c.box(1.78, -0.05, s * 0.24 - 0.02, 2.4, 0.06, s * 0.24 + 0.02, M.AC_BLACK, { md: 0.03 });
     // canopy frame: sills, bow arch and a rear bow behind the headrest
     for (const s of [-1, 1]) c.box(1.3, 0.5, s * 0.5 - 0.03, 3.6, 0.58, s * 0.5 + 0.03, M.COCKPIT_TRIM);
-    c.box(3.55, 0.5, -0.5, 3.65, 0.6, 0.5, M.COCKPIT_TRIM);
+    for (const s of [-1, 1]) c.box(3.55, 0.5, s * 0.41 - 0.09, 3.65, 0.6, s * 0.41 + 0.09, M.COCKPIT_TRIM);
     ringYZ(c, 3.5, 3.6, 0.55, 0, 0.5, 0.045, M.COCKPIT_TRIM);
     ringYZ(c, 1.55, 1.63, 0.55, 0, 0.48, 0.04, M.COCKPIT_TRIM);
 
     // ------------------------------------------------------------------ instrument panel and HUD (6 mm voxels)
     const pn = k.interior('panel', { voxel: 0.006 });
-    pn.box(3.62, 0.22, -0.4, 3.9, 0.9, 0.4, M.COCKPIT_PANEL);
-    pn.box(3.5, 0.9, -0.42, 4.1, 1.0, 0.42, M.COCKPIT_TRIM);                    // glare shield
-    pn.box(3.4, 0.98, -0.16, 3.76, 1.02, 0.16, M.COCKPIT_TRIM);                 // HUD housing
-    pn.box(3.42, 1.0, -0.17, 3.5, 1.02, 0.17, M.COCKPIT_TRIM);
+    pn.box(3.62, 0.44, -0.4, 3.9, 0.9, 0.4, M.COCKPIT_TRIM);                    // panel face, above the tub rim
+    pn.box(3.5, 0.9, -0.42, 4.1, 1.0, 0.42, M.COCKPIT_PANEL);                   // glare shield
+    pn.box(3.4, 0.98, -0.16, 3.76, 1.02, 0.16, M.COCKPIT_PANEL);                // HUD housing
+    pn.box(3.42, 1.0, -0.17, 3.5, 1.02, 0.17, M.COCKPIT_PANEL);
     // combiner: an open frame, the symbology itself is drawn by the HUD overlay
-    pn.box(3.47, 1.0, -0.16, 3.49, 1.3, -0.145, M.COCKPIT_TRIM, { thin: true });
-    pn.box(3.47, 1.0, 0.145, 3.49, 1.3, 0.16, M.COCKPIT_TRIM, { thin: true });
-    pn.box(3.46, 1.28, -0.16, 3.5, 1.32, 0.16, M.COCKPIT_TRIM);
+    pn.box(3.47, 1.0, -0.16, 3.49, 1.3, -0.145, M.COCKPIT_PANEL, { thin: true });
+    pn.box(3.47, 1.0, 0.145, 3.49, 1.3, 0.16, M.COCKPIT_PANEL, { thin: true });
+    pn.box(3.46, 1.28, -0.16, 3.5, 1.32, 0.16, M.COCKPIT_PANEL);
     pn.box(3.47, 1.15, -0.15, 3.485, 1.16, 0.15, M.HUD_GLASS, { thin: true });
-    // multifunction displays, warning lights and backup gauges
-    for (const [z, y] of [[-0.26, 0.55], [0.0, 0.55], [0.26, 0.55], [-0.13, 0.33], [0.13, 0.33]]) {
-      pn.box(3.6, y - 0.1, z - 0.1, 3.63, y + 0.1, z + 0.1, M.AC_BLACK);
-      pn.box(3.585, y - 0.085, z - 0.085, 3.6, y + 0.085, z + 0.085, M.GAUGE_FACE);
-      for (let i = 0; i < 5; i++) pn.box(3.58, y - 0.07 + i * 0.03, z - 0.06, 3.585, y - 0.06 + i * 0.03, z + 0.04 - (i % 2) * 0.05, M.NAV_GREEN, { md: 0.02 });
-    }
-    gauge(pn, 3.62, 0.8, -0.3, 0.045); gauge(pn, 3.62, 0.8, 0.3, 0.045);
-    for (let i = 0; i < 8; i++) pn.box(3.58, 0.86, -0.12 + i * 0.03, 3.62, 0.89, -0.1 + i * 0.03, i % 3 ? M.SWITCH_GRAY : i % 2 ? M.SWITCH_RED : M.AC_YELLOW, { md: 0.02 });
+    // three displays: a metal rim, a dark glass face and thin bright symbology
+    const mfd = (z, y, w, h) => {
+      pn.box(3.6, y - h / 2 - 0.01, z - w / 2 - 0.01, 3.625, y + h / 2 + 0.01, z + w / 2 + 0.01, M.AC_GRAY_DARK);
+      pn.box(3.585, y - h / 2, z - w / 2, 3.6, y + h / 2, z + w / 2, M.GAUGE_FACE);
+    };
+    const line = (x0, y0, z0, x1, y1, z1, m) => pn.box(x0, y0, z0, x1, y1, z1, m, { thin: true, md: 0.02 });
+    mfd(-0.26, 0.64, 0.19, 0.17);                                              // tactical: range rings and a contact
+    for (let i = 1; i <= 3; i++) ringYZ(pn, 3.578, 3.584, 0.64, -0.26, 0.022 * i, 0.004, M.NAV_GREEN);
+    line(3.578, 0.575, -0.34, 3.584, 0.705, -0.338, M.NAV_GREEN);
+    line(3.576, 0.66, -0.235, 3.584, 0.675, -0.22, M.AC_YELLOW);
+    mfd(0.26, 0.64, 0.19, 0.17);                                               // systems: engine and fuel bars
+    for (let i = 0; i < 6; i++) line(3.578, 0.57, 0.19 + i * 0.026, 3.584, 0.57 + 0.03 + ((i * 5) % 4) * 0.018, 0.196 + i * 0.026, i === 4 ? M.AC_YELLOW : M.NAV_GREEN);
+    pn.box(3.6, 0.53, -0.09, 3.625, 0.75, 0.09, M.AC_GRAY_DARK);               // centre well behind the attitude ball
+    pn.box(3.59, 0.54, -0.08, 3.6, 0.74, 0.08, M.GAUGE_FACE);
+    // round gauges, warning lights and rocker switches
+    gauge(pn, 3.62, 0.795, -0.32, 0.045); gauge(pn, 3.62, 0.795, 0.32, 0.045);
+    gauge(pn, 3.62, 0.795, -0.19, 0.03); gauge(pn, 3.62, 0.795, 0.19, 0.03);
+    for (let i = 0; i < 8; i++) pn.box(3.58, 0.84, -0.12 + i * 0.03, 3.62, 0.87, -0.1 + i * 0.03, i % 3 ? M.SWITCH_GRAY : i % 2 ? M.SWITCH_RED : M.AC_YELLOW, { md: 0.02 });
+    for (let i = 0; i < 9; i++) pn.box(3.6, 0.47, -0.36 + i * 0.045, 3.63, 0.5, -0.34 + i * 0.045, i % 4 === 1 ? M.SWITCH_RED : M.SWITCH_GRAY, { md: 0.02 });
 
     // ------------------------------------------------------------------ animated controls
     const stick = k.interior('stick', { pivot: [2.6, -0.18, 0.36], local: true, voxel: 0.01 });
@@ -271,8 +282,8 @@ export default defineAircraft({
       p.box(-0.02, -0.08, -0.07, 0.02, 0.1, 0.07, M.STEEL_DARK);
     }
     for (const [n, cz] of [['nASI', -0.3], ['nALT', 0.3]]) needle(k.interior(n, { pivot: [3.596, 0.8, cz], local: true, voxel: 0.004 }), 0.04, M.NEEDLE_ORANGE);
-    const ai = k.interior('attitude', { pivot: [3.612, 0.55, 0.0], local: true, voxel: 0.004 });
-    const R = 0.05;
+    const ai = k.interior('attitude', { pivot: [3.6, 0.64, 0.0], local: true, voxel: 0.004 });
+    const R = 0.065;
     ai.fn(-R, -R, -R, R, R, R, (x, y, z) => {
       if (x * x + y * y + z * z > R * R) return 0;
       if (Math.abs(y) < 0.0035) return M.GAUGE_WHITE;

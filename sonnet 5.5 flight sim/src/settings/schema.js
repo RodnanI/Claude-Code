@@ -41,7 +41,7 @@ export const SCHEMA = [
   { key: 'bloomStrength', group: 'Cinematic', label: 'Bloom strength', type: 'range', min: 0, max: 0.4, step: 0.01, default: 0.09, apply: 'live', format: (v) => v.toFixed(2) },
   { key: 'filmGrain', group: 'Cinematic', label: 'Film grain', type: 'range', min: 0, max: 1, step: 0.05, default: 0.3, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
   { key: 'vignette', group: 'Cinematic', label: 'Vignette', type: 'range', min: 0, max: 1, step: 0.05, default: 0.3, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
-  { key: 'chromatic', group: 'Cinematic', label: 'Lens fringing', type: 'range', min: 0, max: 1, step: 0.05, default: 0.15, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
+  { key: 'chromatic', group: 'Cinematic', label: 'Lens fringing', type: 'range', min: 0, max: 1, step: 0.05, default: 0.08, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
   { key: 'lensFlare', group: 'Cinematic', label: 'Lens flare', type: 'range', min: 0, max: 1, step: 0.05, default: 0.6, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
   { key: 'sharpen', group: 'Cinematic', label: 'Sharpening', type: 'range', min: 0, max: 1, step: 0.05, default: 0.25, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
 

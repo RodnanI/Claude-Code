@@ -219,7 +219,7 @@ export default defineAircraft({
       p.box(-0.02, -0.1, -0.09, 0.02, 0.1, 0.09, M.STEEL_DARK);
       p.box(-0.02, -0.14, -0.09, 0.0, -0.1, 0.09, M.AC_BLACK, { md: 0.03 });
     }
-    const gx2 = 1.084;
+    const gx2 = 1.068; // in front of the gauge face (its front is at 1.074), otherwise the needles are buried
     for (const [n, cy, cz, len] of [['nASI', 0.44, -0.44, 0.06], ['nALT', 0.44, -0.1, 0.06], ['nVSI', 0.26, -0.1, 0.055], ['nRPM', 0.44, 0.22, 0.07]]) {
       needle(k.interior(n, { pivot: [gx2, cy, cz], local: true, voxel: 0.00390625 }), len, M.NEEDLE_ORANGE);
     }

@@ -66,7 +66,7 @@ export function derive(s) {
         grade: s.grade || 'cinematic',
         vignette: s.vignette ?? 0.3,
         grain: s.filmGrain ?? 0.3,
-        chromatic: s.chromatic ?? 0.15,
+        chromatic: s.chromatic ?? 0.08,
         sharpen: s.sharpen ?? 0.25,
         flare: s.lensFlare ?? 0.6,
         bloomStrength: s.bloomStrength ?? 0.09,

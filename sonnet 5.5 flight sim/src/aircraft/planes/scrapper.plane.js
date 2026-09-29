@@ -45,7 +45,7 @@ export default defineAircraft({
   },
   skids: [{ p: [0.0, 1.1, 4.8], kind: 'tip' }, { p: [0.0, 1.1, -4.8], kind: 'tip' }, { p: [2.05, 0.05, 0], kind: 'nose' }, { p: [0.2, -0.45, 0], kind: 'belly' }, { p: [-4.4, 1.35, 0], kind: 'tail' }],
   limits: { vne: 55, maxG: 4, minG: 1.5, flapSpeed: 30, gearSpeed: 999, crashVs: 6 },
-  cameras: { cockpit: [0.05, 0.72, 0], chase: { distance: 12, height: 3 } },
+  cameras: { cockpit: [0.05, 0.76, 0], chase: { distance: 12, height: 3 } },
   liveries: [
     { id: 'default', name: 'Barn find patchwork' },
     { id: 'mailbox', name: 'Mailbox red', remap: { FABRIC_TAN: 'AC_RED', PATCH_A: 'AC_CREAM', PATCH_B: 'AC_ORANGE' } },
@@ -188,14 +188,14 @@ export default defineAircraft({
 
     // plywood instrument board with a few mismatched gauges (8 mm voxels)
     const pn = k.interior('panel', { voxel: 0.008 });
-    pn.box(0.55, 0.12, -0.3, 0.62, 0.55, 0.3, M.WOOD_MID);
-    pn.box(0.5, 0.55, -0.32, 0.72, 0.6, 0.32, M.WOOD_DARK);
-    gauge(pn, 0.55, 0.42, -0.16, 0.055); gauge(pn, 0.55, 0.42, 0.0, 0.055); gauge(pn, 0.55, 0.42, 0.16, 0.055, M.GAUGE_FACE);
-    gauge(pn, 0.55, 0.25, -0.08, 0.04); gauge(pn, 0.55, 0.25, 0.1, 0.04);
-    pn.box(0.5, 0.2, -0.22, 0.55, 0.24, -0.16, M.SWITCH_RED, { md: 0.03 });
-    pn.box(0.5, 0.2, 0.2, 0.55, 0.24, 0.26, M.SWITCH_GRAY, { md: 0.03 });
-    pn.cyl('x', 0.16, 0.22, 0.02, 0.02, 0.47, 0.55, M.STEEL_BRIGHT, { md: 0.03 });             // ignition, a bottle cap
-    pn.box(0.5, 0.5, -0.03, 0.55, 0.53, 0.03, M.STEEL, { md: 0.03 });                             // compass
+    pn.box(0.55, 0.16, -0.3, 0.62, 0.63, 0.3, M.WOOD_MID);
+    pn.box(0.5, 0.63, -0.32, 0.72, 0.68, 0.32, M.WOOD_DARK);
+    gauge(pn, 0.55, 0.5, -0.16, 0.055); gauge(pn, 0.55, 0.5, 0.0, 0.055); gauge(pn, 0.55, 0.5, 0.16, 0.055, M.GAUGE_FACE);
+    gauge(pn, 0.55, 0.33, -0.08, 0.04); gauge(pn, 0.55, 0.33, 0.1, 0.04);
+    pn.box(0.5, 0.26, -0.22, 0.55, 0.3, -0.16, M.SWITCH_RED, { md: 0.03 });
+    pn.box(0.5, 0.26, 0.2, 0.55, 0.3, 0.26, M.SWITCH_GRAY, { md: 0.03 });
+    pn.cyl('x', 0.22, 0.26, 0.02, 0.02, 0.47, 0.55, M.STEEL_BRIGHT, { md: 0.03 });             // ignition, a bottle cap
+    pn.box(0.5, 0.57, -0.03, 0.55, 0.6, 0.03, M.STEEL, { md: 0.03 });                             // compass
 
     // ------------------------------------------------------------------ animated controls
     const st = k.interior('stick', { pivot: [0.15, -0.42, 0], local: true, voxel: 0.0125 });
@@ -208,8 +208,8 @@ export default defineAircraft({
       const p = k.interior(n, { pivot: [0.45, -0.34, z], local: true, voxel: 0.0125 });
       p.box(-0.02, -0.06, -0.07, 0.02, 0.12, 0.07, M.STEEL_DARK);
     }
-    needle(k.interior('nASI', { pivot: [0.535, 0.42, -0.16], local: true, voxel: 0.004 }), 0.045, M.NEEDLE_ORANGE);
-    needle(k.interior('nALT', { pivot: [0.535, 0.42, 0.0], local: true, voxel: 0.004 }), 0.045, M.NEEDLE_ORANGE);
-    needle(k.interior('nRPM', { pivot: [0.535, 0.42, 0.16], local: true, voxel: 0.004 }), 0.045, M.NEEDLE_ORANGE);
+    needle(k.interior('nASI', { pivot: [0.516, 0.5, -0.16], local: true, voxel: 0.004 }), 0.045, M.NEEDLE_ORANGE);
+    needle(k.interior('nALT', { pivot: [0.516, 0.5, 0.0], local: true, voxel: 0.004 }), 0.045, M.NEEDLE_ORANGE);
+    needle(k.interior('nRPM', { pivot: [0.516, 0.5, 0.16], local: true, voxel: 0.004 }), 0.045, M.NEEDLE_ORANGE);
   },
 });

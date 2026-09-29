@@ -313,6 +313,9 @@ void main() {
   if (foliage && v_face == 2) {
     float mv = vnoise(wpos.xz * 0.045) * 0.65 + vnoise(wpos.xz * 0.012) * 0.35;
     albedo *= 0.84 + 0.32 * mv;
+    // broad sun-scorched patches so large fields and lawns are not one flat green
+    float dry = vnoise(wpos.xz * 0.0065 + 11.0);
+    albedo *= mix(vec3(1.0), vec3(1.16, 1.0, 0.7), smoothstep(0.55, 0.8, dry) * 0.6);
   }
 #endif
 

@@ -20,6 +20,8 @@ function put(ctx, out, kind, cx, cz, w, d, h, rot, seed, style) {
 }
 const lot = (out, x0, z0, x1, z1, mat, fn) => out.lots.push({ x0, z0, x1, z1, mat, fn });
 const grow = (r, g) => [r.x0 - g, r.z0 - g, r.x1 + g, r.z1 + g];
+/** Ground cover for a residential block. Neighbouring blocks differ, so a suburb is not one flat green. */
+const yardMat = (rng) => { const u = rng.range(0, 1); return u < 0.4 ? M.LAWN : u < 0.66 ? M.GRASS : u < 0.86 ? M.MEADOW : M.GRASS_DRY; };
 
 function trees(ctx, rng, out, r, n, type = 'street-tree', scale = [0.8, 1.15]) {
   for (let i = 0; i < n; i++) {
@@ -111,7 +113,7 @@ export const BLOCKS = {
   },
 
   houses(ctx, rng, r, st, out) {
-    lot(out, ...grow(r, 4), M.LAWN);
+    lot(out, ...grow(r, 4), yardMat(rng));
     const n = Math.max(2, Math.floor(r.w / 24));
     const lw = r.w / n;
     const dep = 8 + 10.5;
