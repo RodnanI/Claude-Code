@@ -2,7 +2,7 @@
    Axes: +x east, +z south (north is -z). Units are meters. */
 
 export const SITES = {
-  meridian:   { name: 'Meridian', kind: 'metropolis', x: 4300, z: -8000, elev: 14 },
+  meridian:   { name: 'Meridian', kind: 'metropolis', x: 4300, z: -8000, elev: 14.4 },
   portHalden: { name: 'Port Halden', kind: 'city', x: 5600, z: 9300, elev: 9 },
   ironford:   { name: 'Ironford', kind: 'city', x: -6400, z: -5600, elev: 46 },
   dunmore:    { name: 'Dunmore', kind: 'town', x: -1900, z: -9100, elev: 7 },

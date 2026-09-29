@@ -50,6 +50,7 @@ export const SCHEMA = [
   { key: 'windSpeed', group: 'World', label: 'Wind speed', type: 'range', min: 0, max: 25, step: 1, default: 3, apply: 'live', format: (v) => (v ? v + ' m/s' : 'Calm') },
   { key: 'windDir', group: 'World', label: 'Wind from', type: 'range', min: 0, max: 355, step: 5, default: 250, apply: 'live', format: (v) => String(v).padStart(3, '0') + ' deg' },
   { key: 'turbulence', group: 'World', label: 'Turbulence', type: 'range', min: 0, max: 1, step: 0.05, default: 0.2, apply: 'live', format: (v) => (v ? Math.round(v * 100) + '%' : 'Off') },
+  { key: 'challenge', group: 'World', label: 'Challenge', type: 'select', default: 'off', apply: 'live', options: [{ value: 'off', label: 'Free flight' }, { value: 'skyline', label: 'Skyline run over Meridian' }], help: 'Fly a ring at the crown of each of the tallest towers. The clock starts at the first gate.' },
   { key: 'cloudCover', group: 'World', label: 'Cloud cover', type: 'range', min: 0, max: 1, step: 0.05, default: 0.5, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
 
   { key: 'fov', group: 'Controls', label: 'Field of view', type: 'range', min: 50, max: 110, step: 1, default: 70, apply: 'live', format: (v) => v + ' deg' },

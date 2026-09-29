@@ -110,7 +110,8 @@ export function scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets) {
       }
       if (!def) continue;
       const nv = def.variants || 1;
-      const variant = Math.floor(r3 * nv) % nv;
+      // from one meter a cell the variants cannot be told apart, and one batch per type is far fewer draw calls
+      const variant = cell >= 1 ? 0 : Math.floor(r3 * nv) % nv;
       const scale = (def.rules.scale ?? 1) * (0.78 + 0.5 * hashUnit(hash2(gx, gz, seed ^ 0xdd)));
       const yaw = hashUnit(hash2(gx, gz, seed ^ 0xee)) * 6.2831853;
       const tv = hashUnit(hash2(gx, gz, seed ^ 0xff));
@@ -129,7 +130,7 @@ export function placeProps(world, x0, z0, cell, N, cfg, buckets) {
     if (!def || (def.rules?.size ?? 2) < cell * 0.9) continue;
     const y = p.y !== undefined ? p.y : world.terrain.heightAt(p.x, p.z, cell);
     const nv = def.variants || 1;
-    const variant = p.variant !== undefined ? p.variant % nv : hash2(Math.floor(p.x), Math.floor(p.z), 7) % nv;
+    const variant = cell >= 1 ? 0 : p.variant !== undefined ? p.variant % nv : hash2(Math.floor(p.x), Math.floor(p.z), 7) % nv;
     buckets.add(p.type, variant, p.x - x0, Math.floor(y / cell + 1e-6) * cell, p.z - z0, p.yaw, p.scale, p.tint ?? 0xffffffff);
   }
 }

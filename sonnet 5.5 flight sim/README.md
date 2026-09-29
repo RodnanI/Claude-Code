@@ -8,7 +8,7 @@ A voxel flight simulator on one island: a metropolis, two cities, four towns, a 
 
 ```
 npm install          # esbuild only
-npm run build        # writes dist/fly-high.html, about 510 KB
+npm run build        # writes dist/fly-high.html, about 650 KB
 ```
 
 Open `dist/fly-high.html` in a current Chrome, Edge or Firefox with WebGL 2. Nothing else is needed and nothing is fetched.
@@ -39,10 +39,12 @@ For development, `npm run dev` serves `src/` with native modules on http://local
 
 A gamepad works too (sticks, triggers for throttle, face buttons for brakes, gear and flaps). The full list is under Controls in the menu.
 
+Settings, World, Challenge switches on the Skyline run: a ring beside the crown of each of the tallest towers in Meridian, flown in order, with a timer and a pointer to the next gate.
+
 ## Test it
 
 ```
-npm test                 # 97 unit tests, about three seconds, no dependencies
+npm test                 # 104 unit tests, about four seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```
@@ -55,6 +57,9 @@ Handy tools (the aircraft sheet renders `dist/test-aircraft.html`, so run `npm r
 node tools/flight-shot.mjs out/a.png ultra shrike airport-09R cockpit 10.5 1 600   # screenshot of a flight
 node tools/aircraft-sheet.mjs skylark low                                          # front, rear, side, top and cockpit views
 node tools/map-preview.mjs out/map.png 1024 17000                                  # top-down PNG of the island
+node tools/kit-shot.mjs out/k.png '[["skyscraper",{"w":44,"d":44,"h":260,"seed":1}]]' el=12 dist=420   # kits on a flat pad (needs build:all)
+node tools/ambient-shot.mjs out/s.png cargo-ship medium 14 260 14 40 0 0           # a ship, boat or airliner from a chosen offset
+node tools/bench.mjs dist/fly-high.html high 4300 -7300 250 0 60                    # CPU frame cost, for A/B between two builds
 node tools/hero-shot.mjs out/h.png high shrike 15.5 -8800 3400 900 75              # aircraft placed anywhere: preset plane hour x z agl heading
 OVR='{"exposureBias":0.4}' FRAMES=60 node tools/hero-shot.mjs ...                  # setting overrides, frames to let exposure and TAA settle
 ```
@@ -70,7 +75,7 @@ src/lod/      screen-space-error quadtree, streaming, terrain mesher
 src/workers/  node builder and worker pool
 src/world/    the island: terrain, roads, scatter, kits, scenery, regions
 src/aircraft/ contract, flight model, planes (one file each)
-src/traffic/  road graph, simulation, vehicles (one file per family)
+src/traffic/  road graph, simulation, vehicles (one file per family), ambient ships and airliner
 src/game/     game loop, cameras, HUD, collision
 src/input/    bindings and input
 src/ui/       menu, hangar, settings, map
@@ -89,6 +94,10 @@ Every kind of content is one file found by its suffix. After adding a file run `
 **An airfield**: a region with `spawns` and an `info` block. Its start areas appear in the hangar screen on their own.
 
 **A building type or prop**: `src/world/kits/name.kit.js` exports `defineKit({ id, build(desc, recipe, rng, ctx) })`. Recipes are lists of shape operations in meters, so the same kit produces a 4 m voxel skyline and a 25 cm facade with window frames.
+
+**A skyscraper or facade**: tower kits live in `skyline.kit.js` and build on the helpers in `_tower.js` (floor grid, setbacks, crowns). A wall material with a window pattern is a `FACADE_DEFS` entry in `src/voxel/palette.js`: bay width, floor height, window size, glass tint, lit share at night. The shader draws it, so the kit only places the wall. Keep floors at 3.6 m and bays at multiples of 1.2 m (a test checks).
+
+**Ships and aircraft that move by themselves**: `src/traffic/ambient/name.ambient.js` exports `defineAmbient({...})`: a model per variant and a path that is a pure function of a clock, so it costs nothing to store. See `ships.ambient.js` and the airport circuit in `aircraft.ambient.js`.
 
 **A tree, rock or lamp**: `src/world/scenery/name.scenery.js` with `defineScenery`. Rules say where it grows.
 

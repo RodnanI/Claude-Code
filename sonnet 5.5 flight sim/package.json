@@ -11,7 +11,7 @@
     "preview-map": "node tools/map-preview.mjs",
     "test": "node tests/run-unit.mjs",
     "test:browser": "node build/build.mjs && node tests/browser/smoke.mjs",
-    "build:all": "node build/build.mjs --entry main && node build/build.mjs --entry viewer && node build/build.mjs --entry aircraft"
+    "build:all": "node build/build.mjs --entry main && node build/build.mjs --entry viewer && node build/build.mjs --entry aircraft && node build/build.mjs --entry kits"
   },
   "devDependencies": {
     "esbuild": "^0.28.0"

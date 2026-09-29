@@ -12,11 +12,13 @@ const NONE = 0, PENDING = 1, READY = 2;
  * ancestors first, so the world never has holes), upload finished builds under a time budget, evict by LRU.
  */
 export class NodeManager {
-  constructor({ renderer, models, world, seed, settings }) {
+  constructor({ renderer, models, world, seed, settings, inline = false, inlineBurst = 1 }) {
     this.renderer = renderer;
     this.models = models;
     this.world = world;
     this.seed = seed;
+    this.inlineWorld = inline ? world : null;
+    this.inlineBurst = inlineBurst;
     this.nodes = new Map();
     this.epoch = 0;
     this.frame = 0;
@@ -47,7 +49,7 @@ export class NodeManager {
       this.workerCount = s.workers;
       this.flush();
       this.pool = new NodePool({
-        workers: s.workers, seed: this.seed,
+        workers: s.workers, seed: this.seed, inlineWorld: this.inlineWorld, inlineBurst: this.inlineBurst,
         onResult: (id, epoch, result) => this.inbox.push({ id, epoch, result }),
         onError: (id, epoch, msg) => { console.error('node build failed', msg); this._fail(id, epoch); },
       });
@@ -206,7 +208,9 @@ export class NodeManager {
       for (const inst of result.instances) {
         // small props get finer voxels than the terrain around them so a car is a car, not a block
         const rules = (this.world.scenery.get(inst.type) || {}).rules || {};
-        const model = this.models.scenery(inst.type, inst.variant, rules.fine ? Math.max(result.cell * 0.25, 0.125) : result.cell);
+        // props are voxelized a little coarser than the ground once the node is past the finest level: a tree is a few hundred
+        // triangles at half a meter and there are thousands of them in a suburb, so the triangle count is what limits the frame
+        const model = this.models.scenery(inst.type, inst.variant, rules.fine ? Math.max(result.cell * 0.25, 0.125) : result.level >= 1 ? result.cell * 1.5 : result.cell);
         if (model.empty) continue;
         list.push(r.uploadInstances(inst.data, inst.count, model));
       }

@@ -10,7 +10,7 @@ import { WORLD_SEED } from '../world/config.js';
 import { PRESETS } from '../settings/presets.js';
 import { Governor } from '../settings/governor.js';
 import { probeHardware } from '../settings/probe.js';
-import { AIRCRAFT, VEHICLES } from '../generated/registry.js';
+import { AIRCRAFT, VEHICLES, AMBIENT } from '../generated/registry.js';
 import { Input } from '../input/input.js';
 import { AircraftEntity } from './aircraft-entity.js';
 import { makeGround } from './ground.js';
@@ -18,6 +18,8 @@ import { CameraRig, Flyover } from './camera-rig.js';
 import { Hud } from './hud.js';
 import { StructureCollider } from './collision.js';
 import { TrafficSystem } from '../traffic/traffic.js';
+import { AmbientSystem } from '../traffic/ambient.js';
+import { Course, formatTime } from './course.js';
 
 const STEP = 1 / 240;
 const MAX_STEPS = 16;
@@ -52,6 +54,7 @@ export class Game extends Emitter {
     this.settingsDirty = true;
     this.pending = new Set();
     this.lookBack = false;
+    this.course = null;
   }
 
   // ------------------------------------------------------------------ setup
@@ -76,6 +79,8 @@ export class Game extends Emitter {
     await step(0.3, 'Laying out cities and roads');
     this.traffic = new TrafficSystem({ world: this.world, models: this.models, vehicles: VEHICLES, seed: WORLD_SEED });
     this.traffic.init();
+    this.ambient = new AmbientSystem({ world: this.world, models: this.models, defs: AMBIENT, seed: WORLD_SEED });
+    this.ambient.init();
     this.collider = new StructureCollider(this.world);
     await step(0.5, 'Warming up aircraft');
     this.input = new Input(window, this.canvas).attach();
@@ -117,6 +122,7 @@ export class Game extends Emitter {
     this.renderer.configure(d.render);
     this.nodes.applySettings(d.lod);
     this.traffic.setMax(d.traffic.maxVehicles);
+    this.ambient.setMax(d.traffic.maxVehicles > 0 ? 1 : 0);
     this.env.cover = v.cloudCover;
     this.env.timeSpeed = v.timeSpeed;
     this.frameCap = v.frameCap ? 1000 / v.frameCap : 0;
@@ -176,6 +182,7 @@ export class Game extends Emitter {
     this.crashed = false;
     this.preview = null;
     this.collider.reset();
+    if (this.course) this.course.reset();
     this.rig.setMode(spec.cameras.defaultView || 'chase');
     this.rig.reset(this.ent);
     this.acc = 0;
@@ -230,6 +237,24 @@ export class Game extends Emitter {
       else if (e.type === 'crash' && !this.crashed) { this.crashed = true; this.emit('crash', e.reason); }
     }
     m.events.length = 0;
+  }
+
+  /** The Skyline run challenge: created the first time it is switched on, advanced while flying, drawn while flying or paused. */
+  _course(dt, v, models, cam, pxPerRad) {
+    if (v.challenge !== 'skyline' || !this.ent || (this.state !== 'flying' && this.state !== 'paused')) return;
+    if (!this.course) {
+      this.course = new Course({ world: this.world, models: this.models, collider: this.collider });
+      this.course.build();
+      this.hud.toast('Skyline run: ring the towers of Meridian, first gate marked', 4200);
+    }
+    const c = this.course;
+    if (this.state === 'flying' && !this.ent.model.crashed) {
+      const ev = c.update(dt, this.ent.model.pos);
+      if (ev && ev.type === 'gate') this.hud.toast(`Gate ${ev.index} of ${ev.total}   ${formatTime(ev.time)}`, 1700, 'good');
+      else if (ev && ev.type === 'miss') this.hud.toast(`Missed gate ${ev.index}, fly back through the ring`, 2200, 'bad');
+      else if (ev && ev.type === 'finish') this.hud.toast(ev.isBest ? `Run complete ${formatTime(ev.time)}, a new best` : `Run complete ${formatTime(ev.time)}, best ${formatTime(ev.best)}`, 6500, 'good');
+    }
+    c.emit(models, cam, pxPerRad);
   }
 
   _flight(dt, inp) {
@@ -303,7 +328,10 @@ export class Game extends Emitter {
       this.traffic.update(dt, cam.pos);
     }
     if (this.camOverride) { const o = this.camOverride; cam.fov = ((o.fov || 60) * Math.PI) / 180; cam.setPose(o.x, o.y, o.z, o.fx, o.fy, o.fz); }
+    this.ambient.update(this.state === 'paused' ? 0 : dt);
+    this._course(dt, v, models, cam, px());
     this.traffic.emit(models, cam, px());
+    this.ambient.emit(models, cam, px());
 
     this.env.update(dt);
     const nodes = this.nodes.update(cam, dt * 1000);
@@ -311,7 +339,7 @@ export class Game extends Emitter {
     if (this.shot) { this.shot = false; this._screenshot(); }
 
     if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
-      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt });
+      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, course: v.challenge === 'skyline' && this.course ? this.course.status() : null });
     } else this.hud.draw({ ent: null, cam, view: 'menu', units: v.units, scale: v.hudScale, dt, hideAll: true });
 
     this.cpuMs.push(now() - started);

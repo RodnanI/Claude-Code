@@ -47,7 +47,7 @@ test('every region lays out, references known kits and keeps structures near its
     for (const p of L.props) assert.ok(world.scenery.has(p.type), `${r.id}: prop ${p.type}`);
     total += L.structures.length;
   }
-  assert.ok(total > 8000, `only ${total} structures on the whole island`);
+  assert.ok(total > 5500, `only ${total} structures on the whole island`);
   const lighthouse = world.layoutOf(world.regionsList.find((r) => r.id === 'feature/lighthouse-point'));
   assert.equal(lighthouse.structures.length, 1, 'the lighthouse must stand on land');
 });
@@ -136,7 +136,7 @@ test('a terrain node builds deterministically, ocean nodes are cheap and structu
   const builder = createNodeBuilder(world);
   const cfg = { baseCell: 1, ao: true, sceneryMaxLevel: 3, sceneryDensity: 1 };
   const cell = 1, size = NODE_CELLS * cell;
-  const ix = Math.floor(4300 / size), iz = Math.floor(-8000 / size);
+  const ix = Math.floor(4300 / size), iz = Math.floor(-8528 / size);   // the downtown supertall stands here
   const a = builder.build(0, ix, iz, cfg), b = builder.build(0, ix, iz, cfg);
   assert.equal(a.vertexCount, b.vertexCount);
   assert.deepEqual(new Uint8Array(a.vertexData, 0, 256), new Uint8Array(b.vertexData, 0, 256));

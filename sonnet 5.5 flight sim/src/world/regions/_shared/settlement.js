@@ -2,6 +2,7 @@ import { defineRegion } from '../../region.js';
 import { SITES } from '../../layout.js';
 import { makeLattice, latticeRoads } from './lattice.js';
 import { newOut, fillBlocks, roadProps, snap } from './zoning.js';
+import { snapY } from './urban.js';
 
 /**
  * Builds a whole town or city region from a compact config. Extend with `extras(ctx, { out, lat, rng, blocks })`
@@ -23,7 +24,7 @@ export function settlement(cfg) {
     tint: cfg.tint,
     access: { [cfg.key]: [lat.lineX(-0.5), lat.lineZ(-0.5)] },
     terrain: () => ({
-      flatten: [{ type: 'circle', x: S.x, z: S.z, r: flatR, blend: cfg.blend ?? 260, y: cfg.elev ?? 'auto', order: 4 }],
+      flatten: [{ type: 'circle', x: S.x, z: S.z, r: flatR, blend: cfg.blend ?? 260, y: cfg.elev ?? 'auto', snap: cfg.snap ?? 3.6, order: 4 }],
     }),
     layout(ctx) {
       const rng = ctx.rng('layout');
@@ -40,4 +41,4 @@ export function settlement(cfg) {
 }
 
 export const put = (ctx, out, kind, x, z, w, d, h, rot, seed, style, extra = {}) =>
-  out.structures.push(ctx.kit(kind, { x: snap(x), z: snap(z), w, d, h, rot, seed, style, ...extra }));
+  out.structures.push(ctx.kit(kind, { x: snap(x), z: snap(z), y: snapY(ctx.heightAt(x, z)), w, d, h, rot, seed, style, ...(style && style.bank !== undefined ? { bank: style.bank } : {}), ...extra }));

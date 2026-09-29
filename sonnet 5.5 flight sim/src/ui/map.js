@@ -4,9 +4,12 @@ import { SEA_LEVEL } from '../world/config.js';
 
 const RES = 384;
 const HALF = 17500;   // the map covers the island with a margin
+const URB = 140;      // built-up layer resolution
+const NOT_BUILT = new Set(['fence', 'windturbine', 'pier', 'crane', 'windsock', 'beacon', 'lighthouse', 'tank', 'containers', 'hayrolls', 'junkpile']);
 
 /**
  * Island map. The terrain is shaded in slices between frames (the first opening shows it filling in), then cached.
+ * Built-up areas are summed from the structures, a strip at a time, and tinted darker where the towers are tall.
  * Roads come from the highway list and the airfields and towns from the site table.
  */
 export class IslandMap {
@@ -18,6 +21,12 @@ export class IslandMap {
     this.base.width = RES; this.base.height = RES;
     this.row = 0;
     this.done = false;
+    this.urbRow = 0;
+    this.urban = new Float32Array(URB * URB);
+    this.tall = new Float32Array(URB * URB);
+    this.urbCanvas = document.createElement('canvas');
+    this.urbCanvas.width = URB; this.urbCanvas.height = URB;
+    this.urbImg = this.urbCanvas.getContext('2d').createImageData(URB, URB);
     this.root = h('div', { class: 'map-wrap', onclick: (e) => { if (e.target === this.root) onClose(); } },
       this.canvas, h('div', { class: 'map-bar' }, h('span', { class: 'label' }, 'Island map    North is up'), h('button', { class: 'btn small', onclick: onClose }, 'Close (M)')));
     this.img = this.base.getContext('2d').createImageData(RES, RES);
@@ -49,9 +58,36 @@ export class IslandMap {
     if (this.row >= RES) this.done = true;
   }
 
+  /** Adds the structures of a few strips of the island to the built-up layer and repaints it. */
+  _scanUrban(strips) {
+    const world = this.game.world, cell = (HALF * 2) / URB, list = [];
+    const end = Math.min(URB, this.urbRow + strips);
+    for (let j = this.urbRow; j < end; j++) {
+      list.length = 0;
+      world.structuresIn(-HALF, -HALF + j * cell, HALF, -HALF + (j + 1) * cell, list);
+      for (const d of list) {
+        if (NOT_BUILT.has(d.kind)) continue;
+        const i = Math.min(URB - 1, Math.max(0, Math.floor((d.x + HALF) / cell)));
+        this.urban[j * URB + i] += (d.w || 6) * (d.d || 6);
+        if (d.h > this.tall[j * URB + i]) this.tall[j * URB + i] = d.h;
+      }
+      const dat = this.urbImg.data;
+      for (let i = 0; i < URB; i++) {
+        const cov = this.urban[j * URB + i] / (cell * cell), o = (j * URB + i) * 4;
+        if (cov < 0.02) { dat[o + 3] = 0; continue; }
+        const k = Math.min(1, this.tall[j * URB + i] / 160);
+        dat[o] = 204 - 96 * k; dat[o + 1] = 184 - 92 * k; dat[o + 2] = 150 - 78 * k;
+        dat[o + 3] = Math.min(240, 120 + cov * 800);
+      }
+    }
+    this.urbRow = end;
+    this.urbCanvas.getContext('2d').putImageData(this.urbImg, 0, 0);
+  }
+
   open() {
     const step = () => {
       if (!this.done) this._shade(6);
+      else if (this.urbRow < URB) this._scanUrban(3);
       this.draw();
       this.raf = requestAnimationFrame(step);
     };
@@ -66,6 +102,7 @@ export class IslandMap {
     const X = (x) => (x + HALF) * s, Z = (z) => (z + HALF) * s;
     c.imageSmoothingEnabled = false;
     c.drawImage(this.base, 0, 0, W, W);
+    if (this.urbRow > 0) c.drawImage(this.urbCanvas, 0, 0, W, W);
     const world = this.game.world;
     // roads
     c.lineCap = 'round';
@@ -77,14 +114,14 @@ export class IslandMap {
     c.font = '700 22px "Bahnschrift", "Arial Narrow", Arial, sans-serif'; c.textBaseline = 'middle';
     for (const k of Object.keys(SITES)) {
       const p = SITES[k], x = X(p.x), z = Z(p.z);
-      const big = p.kind === 'metropolis' ? 15 : p.kind === 'city' ? 11 : p.kind === 'town' ? 7 : 0;
+      const big = p.kind === 'metropolis' ? 10 : p.kind === 'city' ? 8 : p.kind === 'town' ? 5 : 0;
       if (p.kind === 'airfield') { c.fillStyle = '#15120e'; c.fillRect(x - 12, z - 12, 24, 24); c.fillStyle = '#ff5a1f'; c.fillRect(x - 9, z - 9, 18, 18); c.fillStyle = '#15120e'; c.fillRect(x - 2, z - 9, 4, 18); }
       else if (p.kind === 'mountain') { c.fillStyle = '#15120e'; c.beginPath(); c.moveTo(x, z - 14); c.lineTo(x + 14, z + 10); c.lineTo(x - 14, z + 10); c.closePath(); c.fill(); c.fillStyle = '#ece3cf'; c.beginPath(); c.moveTo(x, z - 9); c.lineTo(x + 8, z + 6); c.lineTo(x - 8, z + 6); c.closePath(); c.fill(); }
       else { c.fillStyle = '#15120e'; c.fillRect(x - big - 2, z - big - 2, big * 2 + 4, big * 2 + 4); c.fillStyle = '#ece3cf'; c.fillRect(x - big, z - big, big * 2, big * 2); }
       c.fillStyle = 'rgba(21,18,14,0.85)'; const w = c.measureText(p.name).width;
       const left = x + w + 40 > W;
-      c.fillRect(left ? x - 16 - w - 12 : x + 16, z - 13, w + 12, 26);
-      c.fillStyle = '#ece3cf'; c.textAlign = 'left'; c.fillText(p.name, left ? x - 10 - w - 12 : x + 22, z + 1);
+      c.fillRect(left ? x - 16 - w - 12 : x + 12, z - 13, w + 12, 26);
+      c.fillStyle = '#ece3cf'; c.textAlign = 'left'; c.fillText(p.name, left ? x - 10 - w - 12 : x + 18, z + 1);
     }
     const ent = this.game.ent;
     if (ent) {

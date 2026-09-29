@@ -2,23 +2,25 @@ import { M } from '../../../voxel/palette.js';
 import { settlement, put } from '../_shared/settlement.js';
 import { landOK } from '../_shared/zoning.js';
 
-/* Port Halden: harbor city on the south coast. Towers and mid-rises around a compact center, houses on the
-   outskirts, container terminal and piers along the water. */
+/* Port Halden: harbor city on the south coast. Glass and brick towers around a compact center, old town rows
+   and apartments around it, houses on the outskirts, container terminal and piers along the water. */
 export default settlement({
-  key: 'portHalden', kind: 'city', block: 100, street: 20, i: [-9, 9], j: [-7, 6], maxHeight: 150, tint: M.URBAN_DENSE, blend: 320,
+  key: 'portHalden', kind: 'city', block: 100, street: 20, i: [-9, 9], j: [-7, 6], maxHeight: 300, tint: M.URBAN_DENSE, blend: 320,
   style: {
-    types: { midrise: 3, lowrise: 3, houses: 2, park: 0.5, tower: 0.5, plaza: 0.4, parking: 0.4 },
-    mid: [16, 46], low: [7, 13],
-    height: (rng, r) => 60 + 70 * Math.max(0, 1 - Math.hypot(r.i, r.j) / 3) * rng.range(0.6, 1),
-    tower: { lit: 0.3 }, midrise: { balconies: true },
+    types: { midrise: 3, oldtown: 1.4, lowrise: 2, houses: 2, park: 0.5, tower: 0.5, plaza: 0.4, parking: 0.4, apartments: 0.8, civic: 0.3 },
+    mid: [24, 62], low: [9, 18], apt: [14, 34],
+    height: (rng, r) => 80 + 150 * Math.max(0, 1 - Math.hypot(r.i, r.j) / 3.4) * rng.range(0.6, 1),
+    towerFac: [['FAC_CURTAIN_TEAL', 2], ['FAC_CURTAIN_BLUE', 2], ['FAC_CURTAIN_SILVER', 1.4], ['FAC_RIBBON_WHITE', 1.6], ['FAC_CURTAIN_DARK', 1]],
+    midFac: [['FAC_BRICK_RED', 2], ['FAC_PLASTER_CREAM', 2], ['FAC_APT_RIBBON', 2], ['FAC_PLASTER_TERRA', 1.2], ['FAC_GRID_WHITE', 1]],
+    midrise: { balconies: true },
   },
   blockFor(r, rng) {
     const d = Math.hypot(r.i, r.j);
     if (r.j >= 4) return rng.chance(0.6) ? 'harbor' : 'industrial';
-    if (d < 1.6) return rng.chance(0.6) ? 'tower' : 'plaza';
-    if (d < 3.6) return rng.weighted([['midrise', 4], ['lowrise', 2], ['tower', 0.6], ['park', 0.5]]);
-    if (Math.abs(r.i) >= 6) return rng.weighted([['houses', 6], ['park', 0.6], ['lowrise', 0.5]]);
-    return rng.weighted([['lowrise', 3], ['midrise', 2], ['houses', 3], ['parking', 0.5]]);
+    if (d < 1.6) return rng.chance(0.7) ? 'tower' : 'plaza';
+    if (d < 3.6) return rng.weighted([['midrise', 3], ['oldtown', 2], ['tower', 1.2], ['park', 0.5], ['civic', 0.3]]);
+    if (Math.abs(r.i) >= 6) return rng.weighted([['houses', 6], ['park', 0.6], ['apartments', 0.8], ['strip', 0.3]]);
+    return rng.weighted([['lowrise', 3], ['midrise', 2], ['houses', 3], ['apartments', 1], ['parking', 0.5]]);
   },
   extras(ctx, { out, lat, rng, blocks }) {
     // piers and cranes where the south blocks meet water

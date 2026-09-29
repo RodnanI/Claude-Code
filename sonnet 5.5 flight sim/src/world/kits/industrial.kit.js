@@ -1,6 +1,7 @@
 import { defineKit } from '../region.js';
 import { M } from '../../voxel/palette.js';
 import { pick, roofClutter, foundation } from './_util.js';
+import { Facade } from './_tower.js';
 
 /* Industry and harbor: warehouses, factories, tanks, silos, water towers, cranes, container yards, piers. */
 
@@ -173,4 +174,36 @@ const pier = defineKit({
   },
 });
 
-export default [warehouse, factory, tank, silo, watertower, crane, containers, pier];
+/** Power station: a turbine hall, hyperbolic cooling towers, a tall stack and fuel tanks. Steam plumes are props placed by the region. */
+const powerplant = defineKit({
+  id: 'powerplant',
+  build(d, b, rng) {
+    const w = d.w, dp = d.d;
+    foundation(b, -w / 2, -dp / 2, w / 2, dp / 2, 3, M.CONCRETE_DARK);
+    const T = new Facade(d, b, 'FAC_CORR_GRAY');
+    const hall = T.wall(-w * 0.1, -dp * 0.42, w / 2 - 4, -dp * 0.08, 0, T.Y(6));
+    b.box(hall[0] - 0.3, T.Y(6), hall[1] - 0.3, hall[2] + 0.3, T.Y(6) + 0.6, hall[3] + 0.3, M.CONCRETE_DARK);
+    b.gable(hall[0], hall[1], hall[2], hall[3], T.Y(6) + 0.6, 3, 'x', M.ROOF_TIN);
+    const boiler = T.wall(hall[0] + 6, hall[3], hall[0] + 30, hall[3] + 22, 0, T.Y(9));
+    b.box(boiler[0] - 0.3, T.Y(9), boiler[1] - 0.3, boiler[2] + 0.3, T.Y(9) + 0.5, boiler[3] + 0.3, M.STEEL_DARK);
+    // hyperbolic cooling towers
+    const prof = [[0, 17], [8, 14.6], [24, 11.8], [40, 11], [54, 11.8], [62, 12.6]];
+    for (const [cx, cz] of [[-w * 0.3, -dp * 0.15], [-w * 0.3, dp * 0.3]]) {
+      b.loft('y', prof.map(([y, r]) => ({ a: y, c1: cx, c2: cz, r1: r, r2: r, n: 2 })), M.CONCRETE_PANEL);
+      b.loft('y', prof.map(([y, r], i) => ({ a: i === 0 ? -1 : i === prof.length - 1 ? y + 1 : y, c1: cx, c2: cz, r1: r - 0.9, r2: r - 0.9, n: 2 })), 0);
+      b.cyl('y', cx, cz, 12.9, 12.9, 62, 62.5, M.CONCRETE_DARK, { md: 4 });
+      b.box(cx - 0.5, 62.5, cz + 12.4, cx + 0.5, 64, cz + 13.4, M.BEACON_RED, { md: 4 });
+    }
+    // the stack: red and white bands, a lit tip
+    const sx = hall[2] - 8, sz = hall[1] - 12;
+    for (let i = 0; i < 9; i++) {
+      const t0 = i / 9, t1 = (i + 1) / 9;
+      b.cyl('y', sx, sz, 4.6 - 2 * t0, 4.6 - 2 * t1, t0 * 96, t1 * 96, i % 2 ? M.PAINT_WHITE : M.SMOKE_STACK_RED);
+    }
+    b.cyl('y', sx, sz, 2.9, 2.9, 95.6, 96.6, M.STEEL_DARK, { md: 2 });
+    b.box(sx - 0.6, 96.6, sz - 0.6, sx + 0.6, 98, sz + 0.6, M.BEACON_RED, { md: 6 });
+    for (let k = 0; k < 2; k++) b.cyl('y', w * 0.3 + k * 27, dp * 0.34, 12, 12, 0, rng.range(11, 14), M.TANK_GRAY);
+  },
+});
+
+export default [warehouse, factory, tank, silo, watertower, crane, containers, pier, powerplant];

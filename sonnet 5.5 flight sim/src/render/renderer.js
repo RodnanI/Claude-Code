@@ -6,7 +6,7 @@ import { CascadedShadows } from './shadows.js';
 import { PostChain } from './post.js';
 import { mat4 } from '../core/math.js';
 import { NODE_CELLS } from '../world/config.js';
-import { buildPaletteTexels } from '../voxel/palette.js';
+import { buildPaletteTexels, PALETTE_ROWS } from '../voxel/palette.js';
 
 /** Depth is split between a far pass and a near pass so one 24-bit buffer covers 0.3 m to tens of kilometers. */
 export const NEAR_SPLIT = 1500;
@@ -32,6 +32,8 @@ export class Renderer {
     this.gpuBytes = 0;
     this.stats = { draws: 0, tris: 0, nodes: 0, batches: 0, models: 0 };
     this.emptyVao = gl.createVertexArray();
+    this._visible = [];
+    this._shadowNodes = [];
     this.scale = 1;
     this.cullFrustum = new Frustum();
     this._vp = mat4.create();
@@ -46,10 +48,10 @@ export class Renderer {
     this.cockpitVP = mat4.create();
     this.refl = null;
     this.frameNo = 0;
-    // palette texture: 256 x 3 RGBA8
+    // palette texture: 256 x PALETTE_ROWS RGBA8 (albedo, emissive, physics, surface patterns, color banks)
     this.paletteTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.paletteTex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 256, 3, 0, gl.RGBA, gl.UNSIGNED_BYTE, buildPaletteTexels());
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 256, PALETTE_ROWS, 0, gl.RGBA, gl.UNSIGNED_BYTE, buildPaletteTexels());
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -254,7 +256,8 @@ export class Renderer {
     n.dMin = Math.sqrt(dx * dx + dy * dy + dz * dz);
     const fx = Math.max(Math.abs(x0), Math.abs(x1)), fy = Math.max(Math.abs(y0), Math.abs(y1)), fz = Math.max(Math.abs(z0), Math.abs(z1));
     n.dMax = Math.sqrt(fx * fx + fy * fy + fz * fz);
-    n._rel = [x0, y0, z0, x1, y1, z1];
+    const r = n._rel || (n._rel = new Float64Array(6));
+    r[0] = x0; r[1] = y0; r[2] = z0; r[3] = x1; r[4] = y1; r[5] = z1;
   }
 
   _drawNode(p, n, cam) {
@@ -330,11 +333,16 @@ export class Renderer {
       }
       P.dInst.f3('u_tint', 1, 1, 1);
       P.dNode.use();
-      for (const n of visibleForShadow) if (n.dMin < reach && n.level <= (this.q.shadowMaxLevel ?? 4)) this._drawNode(P.dNode, n, cam);
+      const maxLevel = this.q.shadowMaxLevel ?? 4;
+      for (const n of visibleForShadow) if (n.dMin < reach && n.level <= maxLevel && inLightView(n._rel, vp)) this._drawNode(P.dNode, n, cam);
       P.dInst.use();
-      for (const n of visibleForShadow) if (n.dMin < reach && n.batches && n.batches.length) this._drawBatches(P.dInst, n, cam);
+      for (const n of visibleForShadow) if (n.dMin < reach && n.batches && n.batches.length && inLightView(n._rel, vp)) this._drawBatches(P.dInst, n, cam);
       P.dModel.use();
-      for (const m of f.models) this._drawModel(P.dModel, m, cam);
+      const mreach = (reach + 300) * (reach + 300);
+      for (const m of f.models) {
+        const dx = m.x - cam.pos[0], dy = m.y - cam.pos[1], dz = m.z - cam.pos[2];
+        if (dx * dx + dy * dy + dz * dz < mreach) this._drawModel(P.dModel, m, cam);
+      }
     }
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -386,7 +394,7 @@ export class Renderer {
       const r = n._rel;
       if (!r) continue;
       const y0 = -r[4] - 2 * cy, y1 = -r[1] - 2 * cy;
-      if (n.dMin > f.viewDistance) continue;
+      if (n.dMin > Math.min(f.viewDistance, 9000)) continue;
       if (!this.cullFrustum.aabb(r[0], y0, r[2], r[3], y1, r[5])) continue;
       if (n.bounds[4] < -1) continue;
       this._drawNode(P.nodeR, n, cam);
@@ -430,18 +438,22 @@ export class Renderer {
     cam.buildVP(NEAR_SPLIT - 200, far, this.farVP, jit[0], jit[1]);
     cam.buildVP(0.3, far, this._vp);
     this.cullFrustum.setFromVP(this._vp);
-    const visible = [];
+    const visible = this._visible;
+    visible.length = 0;
     for (const n of f.nodes) {
       const r = n._rel;
       if (n.dMin > f.viewDistance * 1.02) continue;
       if (!this.cullFrustum.aabb(r[0], r[1], r[2], r[3], r[4], r[5])) continue;
       visible.push(n);
     }
-    visible.sort((a, b) => a.dMin - b.dMin);
+    visible.sort(byNear);
     this.stats.nodes = visible.length;
 
     if (this.q.shadows > 0) {
-      const near = f.nodes.filter((n) => n.dMin < (this.q.shadowDistance || 1200) + 600);
+      const near = this._shadowNodes;
+      near.length = 0;
+      const reach = (this.q.shadowDistance || 1200) + 600;
+      for (const n of f.nodes) if (n.dMin < reach) near.push(n);
       this._shadowPass(f, near);
     }
     if (post) this.post.skyLut(f.env, Math.max(1, cam.pos[1]));
@@ -496,3 +508,18 @@ export class Renderer {
   }
 }
 const ONE = [1, 1, 1];
+const byNear = (a, b) => a.dMin - b.dMin;
+
+/** True when a camera-relative box overlaps a cascade's orthographic light volume in x and y. Depth is left open on
+    purpose: casters between the sun and the cascade are exactly what a shadow map needs. */
+function inLightView(r, m) {
+  let lx = 1e30, hx = -1e30, ly = 1e30, hy = -1e30;
+  for (let i = 0; i < 8; i++) {
+    // trees and lamps stand above the mesh bounds, so grow the box a little
+    const x = i & 1 ? r[3] + 24 : r[0] - 24, y = i & 2 ? r[4] + 32 : r[1] - 4, z = i & 4 ? r[5] + 24 : r[2] - 24;
+    const cx = m[0] * x + m[4] * y + m[8] * z + m[12], cy = m[1] * x + m[5] * y + m[9] * z + m[13];
+    if (cx < lx) lx = cx; if (cx > hx) hx = cx;
+    if (cy < ly) ly = cy; if (cy > hy) hy = cy;
+  }
+  return hx >= -1 && lx <= 1 && hy >= -1 && ly <= 1;
+}

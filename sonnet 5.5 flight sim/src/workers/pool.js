@@ -7,7 +7,7 @@ import { now } from '../core/perf.js';
  * inlined script in the single-file build) and falls back to time-sliced main-thread building otherwise.
  */
 export class NodePool {
-  constructor({ workers = 3, seed, onResult, onError }) {
+  constructor({ workers = 3, seed, onResult, onError, inlineWorld = null, inlineBurst = 1 }) {
     this.onResult = onResult;
     this.onError = onError;
     this.seed = seed;
@@ -18,6 +18,7 @@ export class NodePool {
     this.queue = [];
     this.ready = 0;
     this.desired = workers;
+    if (inlineWorld) { this.inline = createNodeBuilder(inlineWorld); this.maxInflight = inlineBurst; return; }
     this._spawn(workers);
   }
 

@@ -82,7 +82,7 @@ export function createTerrain(seed, mods = []) {
     const c = { ...mod };
     if (c.y === undefined || c.y === 'auto') {
       c.y = natural(c.x ?? c.cx, c.z ?? c.cz, 0, { h: 0, m: 0 });
-      c.y = Math.round(c.y);
+      c.y = c.snap ? Math.round(c.y / c.snap) * c.snap : Math.round(c.y);
     }
     if (c.type === 'rect') {
       c.cos = Math.cos(c.rot || 0); c.sin = Math.sin(c.rot || 0);

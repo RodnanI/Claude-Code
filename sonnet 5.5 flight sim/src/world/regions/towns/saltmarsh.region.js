@@ -6,7 +6,7 @@ import { landOK } from '../_shared/zoning.js';
 export default settlement({
   key: 'saltmarsh', kind: 'town', block: 70, street: 16, i: [-3, 3], j: [-2, 2], maxHeight: 40, tint: M.URBAN_LOWRISE, blend: 200,
   streets: () => 'street',
-  style: { types: { houses: 5, lowrise: 2, park: 0.8, plaza: 0.5 }, low: [5, 9], house: { wall: M.SIDING_YELLOW, roof: M.ROOF_TERRACOTTA }, lowrise: { wall: M.PLASTER_CREAM } },
+  style: { types: { houses: 5, lowrise: 2, park: 0.8, plaza: 0.5 }, low: [5, 10], house: { fac: 'FAC_SIDING_WHITE', bank: 3, roof: M.ROOF_TERRACOTTA }, lowrise: { fac: 'FAC_PLASTER_CREAM' } },
   extras(ctx, { out, lat, rng, blocks }) {
     for (const r of blocks) {
       if (!landOK(ctx, r)) continue;

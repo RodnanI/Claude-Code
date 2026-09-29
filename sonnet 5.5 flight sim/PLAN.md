@@ -19,17 +19,19 @@ This document is the source of truth. If code and this file disagree, one of the
 
 Built and exercised in the foundation stage. "Exercised" means run end to end in headless Chromium with software WebGL and covered by tests, not measured on a real GPU.
 
-- Build pipeline: registry discovery, esbuild bundle, worker inlining, single-file output of about 510 KB, dev server with native modules.
+- Build pipeline: registry discovery, esbuild bundle, worker inlining, single-file output of about 650 KB, dev server with native modules.
 - Core: math, seeded RNG, noise, events, perf counters.
-- Voxel toolkit: palette of 238 materials with PBR properties, dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
+- Voxel toolkit: palette of 253 materials with PBR properties (24 of them procedural facade types), dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
 - WebGL2 renderer with an HDR pipeline: camera-relative rendering, split-depth passes, single-scattering atmosphere with a sky-view LUT and aerial perspective, volumetric clouds with cloud shadows, cascaded shadows, planar water reflections, SSAO, temporal anti-aliasing, bloom, GPU auto exposure, a 3D LUT color grade (six looks), lens effects, motion blur, light shafts. A direct forward path with no post at all serves the Potato tier.
 - Smart LOD: screen-space-error quadtree, worker pool with Blob workers in the single file, streaming, LRU eviction, skirts, adaptive governor.
-- Whole island: terrain, coast, Mount Corvus, rivers, a lake, a highway network, 21 region files (metropolis in nine, two cities, four towns, three airfields, three features), 35 building and prop kits, 11 scenery types, about 11,000 structures.
+- Whole island: terrain, coast, Mount Corvus, rivers, a lake, a highway network, 21 region files (metropolis in nine, two cities, four towns, three airfields, three features), 50 building and prop kits, 19 scenery types, about 6,700 structures. Meridian has a real skyline: 197 structures over 100 m and a 640 m supertall, in nine tower families (slab, art deco spire, round, twin, staggered, tapered, supertall and the classic glass box), plus hotels, lofts, garages, schools, a hospital, museums, a rail station, a mall and a power plant.
 - Aircraft: module contract, 240 Hz flight model with trim solver and autopilot, three aircraft with exteriors, animated parts, interiors with working gauges, and definitions for weapon stations.
+- Procedural facades: windows, brick courses, siding and ribs are drawn in the fragment shader in world space on a 3.6 m floor and 1.2 m bay grid, so a tower shows readable windows from 30 km to arm's length with no extra geometry. Every structure also picks one of four color banks per material, so the same facade comes in several colors.
+- Ambient life: container ships, tankers, ferries, tugs and sailing yachts on closed sea lanes, a twin-jet airliner flying a 15 minute airport circuit (approach, landing roll, taxi, dwell, taxi, takeoff, climb), helicopters circling Meridian, Port Halden and Ironford, and an advertising airship whose flank panel glows at night. All of it is a pure function of a clock, so nothing is stored and nothing drifts, and every orbit is checked by a test against the structures under its path.
 - Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
-- Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision, crash and restart flow.
+- Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision that follows the real shape of each building (a setback, a tapering crown or the gap between twin towers is free air), crash and restart flow, and an optional challenge (Settings, World): the Skyline run, eight rings beside the crowns of Meridian's tallest towers, chosen from the generated city, with a timer, a pointer to the next gate and a best time kept in the browser.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 97 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 104 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -39,7 +41,7 @@ Stubbed on purpose (contracts exist, content does not):
 
 Later, in rough dependency order rather than numbered stages:
 
-- Deepen the metropolis district by district (hero towers, signage, rooftops, bridges).
+- Deepen the metropolis further (bridges, elevated rail, helicopters, interiors behind the glass).
 - Weapons, damage, ballistics, targets.
 - More aircraft: airliner, transport, seaplane, aerobatic biplane, attack jet, business jet, glider.
 - Audio, dynamic weather, AI traffic in the air.
@@ -120,7 +122,7 @@ WebGL2 only, written directly. No engine dependency, because the vertex format, 
 
 ### 6.1 Vertex format (8 bytes)
 
-`i16 x, y, z, w` where `w` packs the face (3 bits, 0..5 for +X -X +Y -Y +Z -Z, so normals cost nothing), two ambient occlusion bits and an 8 bit material id. Positions are integer cell coordinates local to the node. Every other material property comes from a 256 by 3 palette texture: albedo and roughness, emissive color and intensity, metallic, variation, translucency and flags (emissive, glossy, water, foliage, flat, tint).
+`i16 x, y, z, w` where `w` packs the face (3 bits, 0..5 for +X -X +Y -Y +Z -Z, so normals cost nothing), two ambient occlusion bits, an 8 bit material id and a two bit color bank. Positions are integer cell coordinates local to the node. Every other material property comes from a 256 by 9 palette texture: albedo and roughness, emissive color and intensity, metallic, variation, translucency and flags (emissive, glossy, water, foliage, flat, tint), three rows of surface pattern parameters and three rows of alternate albedo (the color banks).
 
 Per-voxel color variation, voxel edge bevels, sub-voxel grain and macro color drift are computed in the fragment shader from the voxel index. That is what lets the mesher merge giant flat quads while the surface still reads as individual voxels.
 
@@ -141,12 +143,13 @@ One 24-bit depth buffer cannot cover 0.3 m to 60 km. The frame is drawn as a far
 - Clouds: raymarched in half resolution from a 3D Perlin-Worley volume, with shadows cast on the terrain. Cheaper tiers use sky layers.
 - Water is a terrain material, not a separate plane. Ocean columns merge into a few huge quads. The shader adds wave normals, Fresnel, sun glint and, on Ultra, real planar reflections from a mirrored geometry pass.
 - Post: temporal anti-aliasing with camera reprojection (FXAA as a fallback), dual-filter bloom, auto exposure without CPU readback, filmic tone mapping with a log-encoded 48^3 LUT for cinematic grading, chromatic aberration, sharpening, lens flare, light shafts, motion blur, film grain, vignette.
-- Emissive voxels (windows, lamps, runway lights, nav lights) glow through bloom, and windows vary per pane.
+- Facade shading: a facade material carries its pattern in three extra palette rows (bay width, floor height, window size, sill, frame tone, spandrel tone, lit share, glass tint). The fragment shader turns that into window panes with per-pane tint, frames, spandrels, reflective glass (higher specular, a brighter sky reflection) and, at night, lit panes: a share of the windows glows, some floors are busier than others, a few change state every minute, and the lit share fades in gradually through dusk. Beyond a few hundred meters the grid collapses to its average coverage so windows never shimmer. Brick courses, clapboard siding and vertical ribs use the same route. Tower roofs carry aviation beacons that flash in step.
+- Emissive voxels (lamps, runway lights, nav lights, neon) glow through bloom.
 - Night city glow at a distance: fine detail has real lamp props, and coarse road cells on avenues, streets and highways paint pools of `ASPHALT_LIT` (warm emissive color, night only) every few dozen meters, so a lit street grid reads from kilometers away.
 
 ### 6.5 Draw budget
 
-Terrain and structures share the node draw path: one or two draws per node. Scenery is instanced per node per model bucket. Vehicles and aircraft parts are individual model draws through the same shader with a rotation matrix and a tint.
+Terrain and structures share the node draw path: one or two draws per node. Scenery is instanced per node per model bucket, and beyond the finest ring the model variants collapse to one so a forest is a handful of draws, not dozens. Shadow cascades cull nodes and instance batches against the light-space box of each cascade, and the shadow filter takes four spread taps first and the remaining eight only inside a penumbra. Vehicles and aircraft parts are individual model draws through the same shader with a rotation matrix and a tint.
 
 ## 7. Smart LOD and streaming
 
@@ -295,7 +298,7 @@ Kits (`*.kit.js`) turn parameters into recipes. A recipe is an ordered list of s
 
 - Ops: box, carve, ellipsoid, tapered cylinder, gable and hip roofs, wedge, loft along an axis, airfoil wing, noisy blob, facade pattern, arbitrary function, paint (recolors only voxels that already exist), stamp.
 - Each op may carry `md` (skipped when the voxel is larger) or `mn`. Fine details (mullions, balconies, antennas, AC units) therefore appear only when the voxels are small enough to carry them. Ops flagged `thin` stay one voxel thick at any resolution, which is how a 1 cm fin survives a 6 cm voxel.
-- Facade ops generate floors, window bays and mullions from parameters, with per-window lit variation for night. A coarse blend material is used when the voxel is larger than a window.
+- Walls of buildings use a facade material (`FAC_*`), and the shader draws the windows (section 6.4). Kits therefore only place walls, cores and setbacks on the floor grid; they no longer carve windows, which is why a 640 m tower rasterizes in the same time as a 60 m one. Every floor is 3.6 m (7.2 m for a double-height loft), every bay a multiple of 1.2 m, and the base of a structure is snapped to a multiple of 3.6 m (`snapY`), so the painted window rows meet the floors and the pad.
 
 Architectural principles that kits must follow:
 
@@ -304,6 +307,8 @@ Architectural principles that kits must follow:
 - Roofs are never flat by accident: mechanical penthouses, water tanks, antennas, helipads, gables, hips, chimneys.
 - Seeds change massing, materials, and details, so no two blocks match.
 - Everything grounds itself: foundations extend below the pad so terrain steps never show gaps.
+
+City layout has three layers. `_shared/urban.js` splits a block into lots by recursive subdivision with a frontage side, so buildings face the street they belong to and corner lots get the tall or wide building. `_shared/zoning.js` chooses what stands on a lot from the district style (height field, density, material banks, storefront and awning rules) and adds the plazas, parks with ball fields, fountains, statues, bus stops, benches and billboards. Hero blocks in `landmarks.region.js` place the named skyscrapers, the stadium, the station and the civic buildings by hand so the skyline has a recognizable silhouette.
 
 ## 12. Scenery
 

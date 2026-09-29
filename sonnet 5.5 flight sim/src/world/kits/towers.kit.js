@@ -1,168 +1,199 @@
 import { defineKit } from '../region.js';
 import { M } from '../../voxel/palette.js';
-import { pick, parapet, roofClutter, foundation, GLASS_SETS } from './_util.js';
+import { Facade, roofCap, rooftop, foundation, pick } from './_tower.js';
 
-/* Towers and mid-rises. Descriptor: { w, d, h, seed, style: { wall, glass, lit, facade, crown, podium, tiers, bay } }.
-   Local origin is the footprint center at ground level. Every detail op carries a maxVoxel so fine geometry only
-   exists when the voxels are small enough to show it. */
+/* Mid-rise blocks: offices, apartments, hotels, lofts and garages. Descriptor: { w, d, h, rot, seed, style: { fac, accent,
+   shape, roof, balconies, awning } }. Local origin is the footprint center at ground level, rot 0 faces +z.
+   Walls carry facade materials (windows come from the shader), so the kits place volumes, floors and ornament. */
 
-function facadeFor(b, x0, y0, z0, x1, y1, z1, o) {
-  b.facade(x0, y0, z0, x1, y1, z1, o);
+const pickW = (rng, table) => rng.weighted(table);
+
+const MID_FAC = [['FAC_BRICK_RED', 3], ['FAC_BRICK_BROWN', 2.4], ['FAC_PLASTER_CREAM', 2], ['FAC_PLASTER_WHITE', 1.4], ['FAC_PLASTER_TERRA', 1], ['FAC_APT_RIBBON', 2.6],
+  ['FAC_GRID_WHITE', 1], ['FAC_GRID_CONCRETE', 1.2], ['FAC_RIBBON_STONE', 1.2], ['FAC_PUNCH_SAND', 1.2], ['FAC_CURTAIN_BLUE', 0.6], ['FAC_RIBBON_WHITE', 0.8]];
+
+/** Old style keys still used by a few region files: map a plain wall material to the nearest facade. */
+const LEGACY = { BRICK_RED: 'FAC_BRICK_RED', BRICK_BROWN: 'FAC_BRICK_BROWN', BRICK_DARK: 'FAC_BRICK_DARK', PLASTER_CREAM: 'FAC_PLASTER_CREAM', PLASTER_WHITE: 'FAC_PLASTER_WHITE',
+  PLASTER_TERRA: 'FAC_PLASTER_TERRA', CONCRETE_PANEL: 'FAC_GRID_CONCRETE', CONCRETE_BLDG: 'FAC_GRID_CONCRETE', STONE_LIGHT: 'FAC_RIBBON_STONE', SIDING_WHITE: 'FAC_SIDING_WHITE' };
+export function legacyFac(wall) {
+  if (wall === undefined) return undefined;
+  for (const [k, v] of Object.entries(LEGACY)) if (M[k] === wall) return v;
+  return undefined;
 }
 
-const skyscraper = defineKit({
-  id: 'skyscraper',
-  build(d, b, rng) {
-    const st = d.style || {};
-    const w = d.w, dp = d.d, h = d.h;
-    const wall = st.wall ?? pick(rng, [M.CONCRETE_PANEL, M.STONE_LIGHT, M.PLASTER_GRAY, M.STEEL, M.CLADDING_GRAY]);
-    const accent = st.accent ?? pick(rng, [M.STEEL_DARK, M.GRANITE, M.STONE_DARK]);
-    const glass = st.glass ?? pick(rng, Object.values(GLASS_SETS));
-    const coarse = st.coarse ?? M.GLASS_BLEND_DARK;
-    const lit = st.lit ?? 0.3;
-    const style = st.facade ?? pick(rng, ['curtain', 'punched', 'ribbon']);
-    const bay = st.bay ?? rng.range(3.0, 4.4);
-    const floorH = st.floorH ?? 3.9;
-    const podium = st.podium ?? rng.chance(0.55);
-    const podH = podium ? Math.min(h * 0.16, rng.range(9, 17)) : 0;
-    const mullion = style === 'curtain' ? 1.5 : 0;
-    const F = (x0, y0, z0, x1, y1, z1, extra) => facadeFor(b, x0, y0, z0, x1, y1, z1, {
-      floorH, bay, winW: bay * 0.6, winH: floorH * 0.5, sill: floorH * 0.28, glass, lit, seed: d.seed, style, coarse, mullion, frame: M.STEEL_DARK, ...extra,
-    });
+export const AWNINGS = [M.PAINT_BARN_RED, M.PAINT_GREEN, M.PAINT_YELLOW, M.TARP_BLUE, M.PAINT_ORANGE, M.PAINT_WHITE, M.SIGN_GREEN, M.SIGN_RED];
+export const SIGNS = [M.NEON_ORANGE, M.NEON_RED, M.NEON_CYAN, M.NEON_WHITE, M.NEON_MAGENTA];
 
-    foundation(b, -w / 2, -dp / 2, w / 2, dp / 2, 4);
-
-    let y = 0;
-    let px = w, pz = dp;
-    if (podium) {
-      px = w * 1.32; pz = dp * 1.32;
-      b.box(-px / 2, 0, -pz / 2, px / 2, podH, pz / 2, pick(rng, [M.STONE_LIGHT, M.BRICK_DARK, M.CONCRETE_PANEL]));
-      F(-px / 2, 0, -pz / 2, px / 2, podH, pz / 2, { style: 'punched', floorH: 4.6, bay: 4.4, winW: 2.4, winH: 2.6, sill: 1.0, ground: 5.4, groundGlass: M.GLASS_CLEAR, top: 1.2 });
-      b.box(-px / 2 - 0.4, podH - 0.9, -pz / 2 - 0.4, px / 2 + 0.4, podH, pz / 2 + 0.4, accent, { md: 1.5 });
-      parapet(b, -px / 2, -pz / 2, px / 2, pz / 2, podH, 1.0, 0.5, M.CONCRETE_PANEL, { md: 1 });
-      // entrance canopy
-      b.box(-6, 4.4, pz / 2, 6, 4.8, pz / 2 + 4, accent, { md: 1 });
-      b.box(-6, 0, pz / 2 + 3.4, -5.6, 4.4, pz / 2 + 3.8, M.STEEL, { md: 0.5 });
-      b.box(5.6, 0, pz / 2 + 3.4, 6, 4.4, pz / 2 + 3.8, M.STEEL, { md: 0.5 });
-      y = podH;
+/** Storefront zone: dark glass band, awnings on the +z side and sign boards. Fine detail only. */
+export function storefront(b, rng, T, x0, z0, x1, z1, o = {}) {
+  const top = T.Y(1);
+  b.box(x0 - 0.2, 0, z0 - 0.2, x1 + 0.2, top, z1 + 0.2, o.mat ?? M.GLASS_DARK);
+  b.box(x0 - 0.25, top - 0.7, z0 - 0.25, x1 + 0.25, top + 0.1, z1 + 0.25, o.band ?? M.CONCRETE_PANEL, { md: 2 });
+  if (o.awning !== false && x1 - x0 > 6) {
+    const n = Math.max(1, Math.floor((x1 - x0) / rng.range(6, 9)));
+    const seg = (x1 - x0 - 1) / n;
+    for (let i = 0; i < n; i++) {
+      const a = x0 + 0.5 + i * seg;
+      b.wedge(a + 0.2, top - 2.0, z1, a + seg - 0.2, top - 1.2, z1 + 1.9, '-z', pick(rng, AWNINGS), { md: 1.2 });
+      if (rng.chance(0.45)) b.box(a + seg * 0.2, top - 0.6, z1 + 0.1, a + seg * 0.8, top - 0.05, z1 + 0.22, pick(rng, SIGNS), { md: 1 });
     }
+  }
+}
 
-    const tiers = st.tiers ?? Math.max(1, Math.min(4, Math.round(h / 90)) + rng.int(0, 1));
-    const rest = h - y;
-    const fr = tiers === 1 ? [1] : tiers === 2 ? [0.68, 0.32] : tiers === 3 ? [0.5, 0.3, 0.2] : [0.4, 0.28, 0.2, 0.12];
-    let tw = w, td = dp, cx = 0, cz = 0;
-    for (let i = 0; i < tiers; i++) {
-      const th = rest * fr[i];
-      const x0 = cx - tw / 2, x1 = cx + tw / 2, z0 = cz - td / 2, z1 = cz + td / 2;
-      const isBase = i === 0;
-      b.box(x0, y, z0, x1, y + th, z1, wall);
-      F(x0, y, z0, x1, y + th, z1, { ground: isBase && !podium ? 6 : 0, groundGlass: M.GLASS_CLEAR, top: 1.4, corner: 1.4 });
-      // corner columns and crown band
-      const cw = 0.9;
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-        const ex = sx > 0 ? x1 : x0, ez = sz > 0 ? z1 : z0;
-        b.box(ex - (sx > 0 ? cw : -0.35), y, ez - (sz > 0 ? cw : -0.35), ex + (sx > 0 ? 0.35 : -cw), y + th, ez + (sz > 0 ? 0.35 : -cw), accent, { md: 1 });
-      }
-      b.box(x0 - 0.3, y + th - 1.0, z0 - 0.3, x1 + 0.3, y + th, z1 + 0.3, accent, { md: 1.5 });
-      // exposed roof ring of the tier below the next setback
-      y += th;
-      if (i < tiers - 1) {
-        parapet(b, x0, z0, x1, z1, y, 0.9, 0.45, M.CONCRETE_PANEL, { md: 1 });
-        roofClutter(b, rng, x0 + 1, z0 + 1, x1 - 1, z1 - 1, y, 3);
-        const s = rng.range(0.74, 0.88);
-        tw *= s; td *= s;
-        cx += rng.range(-0.05, 0.05) * w; cz += rng.range(-0.05, 0.05) * dp;
-      }
-    }
+/** Flat roof: cap, equipment, an occasional water tank on stilts, a planted patch. */
+export function flatRoof(b, rng, x0, z0, x1, z1, y, accent, n) {
+  roofCap(b, x0, z0, x1, z1, y, accent, { ph: 0.9 });
+  rooftop(b, rng, x0 + 1, z0 + 1, x1 - 1, z1 - 1, y + 0.5, n);
+  if (rng.chance(0.4) && x1 - x0 > 10 && z1 - z0 > 10) {
+    const tx = rng.range(x0 + 4, x1 - 4), tz = rng.range(z0 + 4, z1 - 4);
+    for (const [ax, az] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(tx + ax * 1.3 - 0.15, y + 0.5, tz + az * 1.3 - 0.15, tx + ax * 1.3 + 0.15, y + 2.7, tz + az * 1.3 + 0.15, M.WOOD_DARK, { md: 0.5 });
+    b.cyl('y', tx, tz, 1.9, 1.9, y + 2.7, y + 5.7, M.WOOD_MID, { md: 3 });
+    b.cyl('y', tx, tz, 2.0, 0.3, y + 5.7, y + 6.7, M.ROOF_SLATE, { md: 3 });
+  } else if (rng.chance(0.3) && x1 - x0 > 8 && z1 - z0 > 8) {
+    b.box(x0 + 2, y + 0.5, z0 + 2, x1 - 2, y + 0.9, z1 - 2, M.GREEN_ROOF, { md: 6 });
+  }
+}
 
-    // crown
-    const x0 = cx - tw / 2, x1 = cx + tw / 2, z0 = cz - td / 2, z1 = cz + td / 2;
-    const crown = st.crown ?? pick(rng, ['flat', 'spire', 'sloped', 'pyramid', 'flat', 'stepped']);
-    const topY = y;
-    if (crown === 'flat') {
-      parapet(b, x0, z0, x1, z1, topY, 1.2, 0.5, M.CONCRETE_PANEL, { md: 1 });
-      b.box(cx - tw * 0.22, topY, cz - td * 0.22, cx + tw * 0.22, topY + 5.5, cz + td * 0.22, wall);
-      roofClutter(b, rng, x0 + 1, z0 + 1, x1 - 1, z1 - 1, topY, 6);
-      b.cyl('y', cx + tw * 0.1, cz, 0.35, 0.18, topY + 5.5, topY + 5.5 + Math.min(40, h * 0.15), M.STEEL, { md: 1 });
-      b.box(cx + tw * 0.1 - 0.5, topY + 5.5 + Math.min(40, h * 0.15), cz - 0.5, cx + tw * 0.1 + 0.5, topY + 6.5 + Math.min(40, h * 0.15), cz + 0.5, M.BEACON_RED);
-      b.box(x0, topY + 1.0, z0, x1, topY + 1.4, z1, M.NEON_WHITE, { md: 1, mn: 0 });
-    } else if (crown === 'spire') {
-      parapet(b, x0, z0, x1, z1, topY, 1.0, 0.5, M.CONCRETE_PANEL, { md: 1 });
-      let sy = topY, sw = tw * 0.7, sd = td * 0.7;
-      for (let k = 0; k < 3; k++) {
-        b.box(cx - sw / 2, sy, cz - sd / 2, cx + sw / 2, sy + h * 0.035, cz + sd / 2, wall);
-        b.box(cx - sw / 2 - 0.1, sy, cz - sd / 2 - 0.1, cx + sw / 2 + 0.1, sy + 0.5, cz + sd / 2 + 0.1, accent, { md: 1 });
-        sy += h * 0.035; sw *= 0.72; sd *= 0.72;
-      }
-      const sl = Math.min(90, h * 0.24);
-      b.cyl('y', cx, cz, Math.min(sw, sd) * 0.5, 0.0, sy, sy + sl, M.STEEL_BRIGHT);
-      b.box(cx - 0.6, sy + sl - 0.5, cz - 0.6, cx + 0.6, sy + sl + 1.2, cz + 0.6, M.BEACON_RED);
-    } else if (crown === 'sloped') {
-      const rh = Math.min(tw, td) * 0.55;
-      b.wedge(x0, topY, z0, x1, topY + rh, z1, '+z', M.GLASS_TEAL);
-      b.wedge(x0 + 0.5, topY, z0 + 0.5, x1 - 0.5, topY + rh - 0.6, z1 - 0.5, '+z', M.GLASS_DARK, { md: 1 });
-      b.box(x0, topY, z1 - 0.5, x1, topY + rh, z1, accent);
-      b.cyl('y', cx, cz - td * 0.2, 0.3, 0.15, topY + rh, topY + rh + 18, M.STEEL, { md: 1 });
-    } else if (crown === 'pyramid') {
-      b.hip(x0, z0, x1, z1, topY, Math.min(tw, td) * 0.7, pick(rng, [M.GLASS_TEAL, M.ROOF_COPPER, M.GLASS_DARK]));
-      b.cyl('y', cx, cz, 0.3, 0.1, topY + Math.min(tw, td) * 0.7, topY + Math.min(tw, td) * 0.7 + 20, M.STEEL, { md: 1 });
-    } else {
-      // stepped crown
-      let sy = topY, sw = tw, sd = td;
-      for (let k = 0; k < 3; k++) {
-        sw *= 0.78; sd *= 0.78;
-        const sh = h * 0.045;
-        b.box(cx - sw / 2, sy, cz - sd / 2, cx + sw / 2, sy + sh, cz + sd / 2, wall);
-        F(cx - sw / 2, sy, cz - sd / 2, cx + sw / 2, sy + sh, cz + sd / 2, { top: 0.5, corner: 0.8 });
-        sy += sh;
-      }
-      b.cyl('y', cx, cz, 0.5, 0.15, sy, sy + Math.min(50, h * 0.18), M.STEEL, { md: 1 });
-      b.box(cx - 0.5, sy + Math.min(50, h * 0.18), cz - 0.5, cx + 0.5, sy + Math.min(50, h * 0.18) + 1.2, cz + 0.5, M.BEACON_RED);
+/** Balconies on the +z face, every second bay from the second floor up. */
+function balconies(b, T, x0, z1, x1, floors, mat) {
+  for (let f = 2; f < floors; f++) {
+    const y = T.Y(f) + 0.02;
+    for (let bx = x0 + T.bay * 1.5; bx < x1 - T.bay; bx += T.bay * 2) {
+      b.box(bx - 1.2, y - 0.3, z1, bx + 1.2, y, z1 + 1.3, mat, { md: 0.6 });
+      b.box(bx - 1.2, y, z1 + 1.18, bx + 1.2, y + 1.0, z1 + 1.3, M.GLASS_CLEAR, { md: 0.6 });
     }
-  },
-});
+  }
+}
+
+/** Wings of a shape as rectangles [x0, z0, x1, z1, floors] in local coordinates. */
+function wingsFor(shape, w, dp, total, T) {
+  const hw = w / 2, hd = dp / 2, e = T.bay * 3;
+  switch (shape) {
+    case 'L': {
+      const dz = Math.max(e, dp * 0.5);
+      return [[-hw, -hd, hw, -hd + dz, total], [-hw, -hd, -hw + Math.max(e, w * 0.45), hd, total]];
+    }
+    case 'U': {
+      const wd = Math.max(e, w * 0.32), dz = Math.max(e, dp * 0.36);
+      return [[-hw, -hd, hw, -hd + dz, total], [-hw, -hd, -hw + wd, hd, total], [hw - wd, -hd, hw, hd, total]];
+    }
+    case 'ring': {
+      const t = Math.max(e, Math.min(w, dp) * 0.28);
+      return [[-hw, -hd, hw, -hd + t, total], [-hw, hd - t, hw, hd, total], [-hw, -hd + t, -hw + t, hd - t, total], [hw - t, -hd + t, hw, hd - t, total]];
+    }
+    case 'terrace': {
+      const out = [];
+      const step = Math.max(2, Math.floor(total / 4));
+      for (let i = 0, k = 0; k < total; i++, k += step) {
+        const ins = T.bay * 2 * i;
+        if (w - 2 * ins < e || dp - 2 * ins < e) break;
+        out.push([-hw + ins, -hd + ins * 0.6, hw - ins, hd - ins * 0.6, Math.min(total, k + step)]);
+      }
+      return out;
+    }
+    default:
+      return [[-hw, -hd, hw, hd, total]];
+  }
+}
 
 const midrise = defineKit({
   id: 'midrise',
   build(d, b, rng) {
     const st = d.style || {};
     const w = d.w, dp = d.d, h = d.h;
-    const wall = st.wall ?? pick(rng, [M.BRICK_RED, M.BRICK_BROWN, M.PLASTER_CREAM, M.CONCRETE_BLDG, M.PLASTER_WHITE, M.STONE_LIGHT]);
-    const trim = st.trim ?? pick(rng, [M.STONE_LIGHT, M.CONCRETE_PANEL, M.PLASTER_WHITE]);
-    const glass = st.glass ?? [M.GLASS_SLATE, M.GLASS_CLEAR, M.GLASS_TEAL];
-    const bay = st.bay ?? rng.range(3.0, 3.8);
-    const floorH = st.floorH ?? 3.4;
-    const lit = st.lit ?? 0.26;
-    const balconies = st.balconies ?? rng.chance(0.35);
+    const T = new Facade(d, b, st.fac ?? legacyFac(st.wall) ?? pickW(rng, MID_FAC));
+    const accent = st.accent ?? st.trim ?? pick(rng, [M.STONE_LIGHT, M.CONCRETE_PANEL, M.PLASTER_WHITE, M.LIMESTONE, M.STEEL_DARK]);
+    const total = T.floors(h);
     foundation(b, -w / 2, -dp / 2, w / 2, dp / 2, 3);
-    b.box(-w / 2, 0, -dp / 2, w / 2, h, dp / 2, wall);
-    b.facade(-w / 2, 0, -dp / 2, w / 2, h, dp / 2, {
-      floorH, bay, winW: bay * 0.5, winH: floorH * 0.5, sill: floorH * 0.3, glass, lit, seed: d.seed, style: 'punched',
-      ground: st.ground ?? (rng.chance(0.6) ? 4.4 : 0), groundGlass: M.GLASS_CLEAR, coarse: M.GLASS_BLEND_LIGHT, top: 1.2, corner: 1.2,
-    });
-    // plinth, string course and cornice
-    b.box(-w / 2 - 0.3, 0, -dp / 2 - 0.3, w / 2 + 0.3, 1.0, dp / 2 + 0.3, M.GRANITE, { md: 1.5 });
-    b.box(-w / 2 - 0.5, h - 1.2, -dp / 2 - 0.5, w / 2 + 0.5, h, dp / 2 + 0.5, trim, { md: 1.5 });
-    b.box(-w / 2 - 0.25, 4.6, -dp / 2 - 0.25, w / 2 + 0.25, 5.0, dp / 2 + 0.25, trim, { md: 1 });
-    if (balconies) {
-      const floors = Math.floor(h / floorH);
-      for (let f = 2; f < floors - 1; f += 1) {
-        for (let bx = -w / 2 + bay * 1.5; bx < w / 2 - bay * 1.5; bx += bay * 2) {
-          b.box(bx - 1.0, f * floorH, dp / 2, bx + 1.0, f * floorH + 0.3, dp / 2 + 1.3, M.CONCRETE_PANEL, { md: 0.75 });
-          b.box(bx - 1.0, f * floorH + 0.3, dp / 2 + 1.15, bx + 1.0, f * floorH + 1.2, dp / 2 + 1.3, M.STEEL_DARK, { md: 0.4 });
-        }
-      }
+    const shape = st.shape ?? (w > 26 && dp > 26 ? pickW(rng, [['box', 4], ['L', 1.4], ['U', 1.2], ['terrace', 0.8], ['ring', 0.8]]) : 'box');
+    const wings = wingsFor(shape, w, dp, total, T);
+    const roof = st.roof ?? pickW(rng, [['flat', 5], ['mansard', 1.4], ['gable', 0.6]]);
+    const balc = st.balconies ?? rng.chance(0.3);
+    for (const [wx0, wz0, wx1, wz1, fl] of wings) {
+      const [x0, z0, x1, z1] = T.wall(wx0, wz0, wx1, wz1, 0, T.Y(fl));
+      const top = T.Y(fl);
+      storefront(b, rng, T, x0, z0, x1, z1, { awning: st.awning ?? z1 >= dp / 2 - 1, mat: rng.chance(0.5) ? M.GLASS_DARK : M.GLASS_SLATE });
+      b.box(x0 - 0.5, top - 1.3, z0 - 0.5, x1 + 0.5, top, z1 + 0.5, accent, { md: 1.5 });
+      b.box(x0 - 0.25, T.Y(2) - 0.4, z0 - 0.25, x1 + 0.25, T.Y(2) + 0.1, z1 + 0.25, accent, { md: 1.5 });
+      if (balc && z1 >= dp / 2 - 1) balconies(b, T, x0, z1, x1, fl, M.CONCRETE_PANEL);
+      const small = Math.min(x1 - x0, z1 - z0) < 26;
+      if (roof === 'mansard' && shape === 'box') {
+        b.hip(x0 - 0.3, z0 - 0.3, x1 + 0.3, z1 + 0.3, top, Math.min(x1 - x0, z1 - z0) * 0.2, pick(rng, [M.ROOF_SLATE, M.ROOF_COPPER, M.ROOF_SHINGLE_GRAY]));
+        for (let dx = x0 + T.bay; dx < x1 - T.bay * 0.5; dx += T.bay * 2) b.box(dx - 0.6, top, z1 - 0.2, dx + 0.6, top + 1.8, z1 + 0.3, M.PLASTER_WHITE, { md: 1 });
+      } else if (roof === 'gable' && shape === 'box' && small) {
+        b.gable(x0 - 0.5, z0 - 0.5, x1 + 0.5, z1 + 0.5, top, Math.min(x1 - x0, z1 - z0) * 0.32, x1 - x0 >= z1 - z0 ? 'x' : 'z', pick(rng, [M.ROOF_TERRACOTTA, M.ROOF_SLATE, M.ROOF_SHINGLE_BROWN]));
+      } else flatRoof(b, rng, x0, z0, x1, z1, top, accent, Math.max(2, Math.round(((x1 - x0) * (z1 - z0)) / 320)));
     }
-    parapet(b, -w / 2, -dp / 2, w / 2, dp / 2, h, 0.9, 0.45, trim, { md: 1 });
-    roofClutter(b, rng, -w / 2 + 1, -dp / 2 + 1, w / 2 - 1, dp / 2 - 1, h, Math.max(2, Math.round((w * dp) / 300)));
-    if (rng.chance(0.4)) {
-      // water tank on a stand
-      const tx = rng.range(-w * 0.25, w * 0.25), tz = rng.range(-dp * 0.25, dp * 0.25);
-      for (const [ax, az] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(tx + ax * 1.3 - 0.15, h, tz + az * 1.3 - 0.15, tx + ax * 1.3 + 0.15, h + 2.2, tz + az * 1.3 + 0.15, M.WOOD_DARK, { md: 0.4 });
-      b.cyl('y', tx, tz, 1.9, 1.9, h + 2.2, h + 5.2, M.WOOD_MID, { md: 1.5 });
-      b.cyl('y', tx, tz, 2.0, 0.3, h + 5.2, h + 6.2, M.ROOF_SLATE, { md: 1.5 });
-    }
+    if (shape === 'ring') b.box(-w * 0.18, 0, -dp * 0.18, w * 0.18, 0.3, dp * 0.18, M.LAWN, { md: 6 });
   },
 });
 
-export default [skyscraper, midrise];
+/** Hotel: a low base under a slab, a lit crown band, a rooftop sign and a drive-in canopy. */
+const hotel = defineKit({
+  id: 'hotel',
+  build(d, b, rng) {
+    const st = d.style || {};
+    const w = d.w, dp = d.d, h = d.h;
+    const T = new Facade(d, b, st.fac ?? pick(rng, ['FAC_APT_RIBBON', 'FAC_GRID_WHITE', 'FAC_RIBBON_WHITE', 'FAC_CURTAIN_SILVER', 'FAC_PUNCH_SAND']));
+    const accent = st.accent ?? pick(rng, [M.STEEL_DARK, M.STONE_LIGHT, M.BLACK_METAL]);
+    const total = T.floors(h);
+    foundation(b, -w / 2, -dp / 2, w / 2, dp / 2, 3);
+    const bf = Math.min(3, Math.floor(total / 3));
+    const [bx0, bz0, bx1, bz1] = T.wall(-w / 2, -dp / 2, w / 2, dp / 2, 0, T.Y(bf));
+    storefront(b, rng, T, bx0, bz0, bx1, bz1, { awning: false });
+    roofCap(b, bx0, bz0, bx1, bz1, T.Y(bf), accent);
+    const sx = T.bay * 2, sz = T.bay * 2;
+    const [x0, z0, x1, z1] = T.wall(-w / 2 + sx, -dp / 2 + sz, w / 2 - sx, dp / 2 - sz * 0.5, 0, T.Y(total));
+    b.box(x0 - 0.3, T.Y(total) - 1.0, z0 - 0.3, x1 + 0.3, T.Y(total), z1 + 0.3, M.NEON_WHITE, { md: 12 });
+    flatRoof(b, rng, x0, z0, x1, z1, T.Y(total), accent, 3);
+    const sy = T.Y(total) + 0.5, sw = Math.min(14, (x1 - x0) * 0.7), cx = (x0 + x1) / 2;
+    b.box(cx - sw / 2, sy + 1.5, z1 - 2, cx + sw / 2, sy + 4.5, z1 - 1.6, M.BLACK_METAL, { md: 3 });
+    b.box(cx - sw / 2 + 0.6, sy + 2.1, z1 - 1.6, cx + sw / 2 - 0.6, sy + 3.9, z1 - 1.45, pick(rng, SIGNS), { md: 4 });
+    b.box(cx - sw / 2 + 0.5, sy, z1 - 1.9, cx - sw / 2 + 1.0, sy + 1.5, z1 - 1.7, M.STEEL_DARK, { md: 2 });
+    b.box(cx + sw / 2 - 1.0, sy, z1 - 1.9, cx + sw / 2 - 0.5, sy + 1.5, z1 - 1.7, M.STEEL_DARK, { md: 2 });
+    const ccx = (bx0 + bx1) / 2;
+    b.box(ccx - 8, T.Y(1) - 0.6, bz1, ccx + 8, T.Y(1) - 0.2, bz1 + 7, accent, { md: 2 });
+    for (const px of [ccx - 7.6, ccx + 7.2]) b.box(px, 0, bz1 + 6.4, px + 0.4, T.Y(1) - 0.6, bz1 + 6.8, M.STEEL, { md: 0.75 });
+  },
+});
+
+/** Brick loft: big arched windows, a water tank on a frame, the old warehouse district. */
+const loft = defineKit({
+  id: 'loft',
+  build(d, b, rng) {
+    const st = d.style || {};
+    const w = d.w, dp = d.d, h = d.h;
+    const T = new Facade(d, b, st.fac ?? pick(rng, ['FAC_BRICK_DARK', 'FAC_BRICK_DARK', 'FAC_BRICK_RED', 'FAC_BRICK_BROWN']));
+    const total = T.floors(h);
+    foundation(b, -w / 2, -dp / 2, w / 2, dp / 2, 3);
+    const [x0, z0, x1, z1] = T.wall(-w / 2, -dp / 2, w / 2, dp / 2, 0, T.Y(total));
+    const top = T.Y(total);
+    b.box(x0 - 0.2, 0, z0 - 0.2, x1 + 0.2, T.Y(1), z1 + 0.2, M.GRANITE);
+    b.box(x0 - 0.35, top - 1.0, z0 - 0.35, x1 + 0.35, top + 0.3, z1 + 0.35, M.STONE_LIGHT, { md: 1.5 });
+    roofCap(b, x0, z0, x1, z1, top, M.STONE_DARK, { ph: 1.4 });
+    const tx = (x0 + x1) / 2 + rng.range(-3, 3), tz = (z0 + z1) / 2;
+    for (const [ax, az] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) b.box(tx + ax * 1.7 - 0.15, top + 0.5, tz + az * 1.7 - 0.15, tx + ax * 1.7 + 0.15, top + 3.5, tz + az * 1.7 + 0.15, M.STEEL_DARK, { md: 0.75 });
+    b.cyl('y', tx, tz, 2.4, 2.4, top + 3.5, top + 7.5, M.WOOD_MID, { md: 3 });
+    b.cyl('y', tx, tz, 2.5, 0.3, top + 7.5, top + 8.6, M.ROOF_SLATE, { md: 3 });
+    rooftop(b, rng, x0 + 1, z0 + 1, x1 - 1, z1 - 1, top + 0.5, 2);
+    if (rng.chance(0.5)) b.cyl('y', x1 - 3, z0 + 3, 1.0, 0.8, top + 0.5, top + 12, M.CHIMNEY_BRICK, { md: 3 });
+  },
+});
+
+/** Parking structure: open decks read as dark slots between pale slabs. */
+const garage = defineKit({
+  id: 'garage',
+  build(d, b, rng) {
+    const w = d.w, dp = d.d;
+    const decks = Math.max(3, Math.min(9, Math.round((d.h || 24) / 3.2)));
+    const fh = 3.2;
+    foundation(b, -w / 2, -dp / 2, w / 2, dp / 2, 3);
+    b.box(-w / 2, 0, -dp / 2, w / 2, decks * fh, dp / 2, M.GLASS_BLEND_DARK);
+    for (let k = 0; k <= decks; k++) b.box(-w / 2 - 0.15, k * fh - 0.5, -dp / 2 - 0.15, w / 2 + 0.15, k * fh + (k === decks ? 0.9 : 0.15), dp / 2 + 0.15, M.CONCRETE_PANEL);
+    for (let x = -w / 2; x <= w / 2 + 0.1; x += 6) for (const z of [-dp / 2, dp / 2 - 0.5]) b.box(x - 0.2, 0, z, x + 0.2, decks * fh, z + 0.5, M.CONCRETE_PANEL, { md: 1 });
+    b.wedge(w / 2, 0, -dp * 0.3, w / 2 + 8, fh, dp * 0.3, '-x', M.CONCRETE_DARK, { md: 2 });
+    b.box(-w / 2 + 1, decks * fh + 0.9, -dp / 2 + 1, w / 2 - 1, decks * fh + 1.5, dp / 2 - 1, M.ASPHALT_WORN, { md: 4 });
+    for (let x = -w / 2 + 4; x < w / 2 - 4; x += 5.4) for (const z of [-dp * 0.2, dp * 0.2]) if (rng.chance(0.5)) b.box(x, decks * fh + 1.5, z - 0.9, x + 4.2, decks * fh + 2.6, z + 0.9, pick(rng, [M.CAR_TRIM, M.STEEL, M.PAINT_WHITE, M.PAINT_BLUEGRAY]), { md: 0.6 });
+  },
+});
+
+export default [midrise, hotel, loft, garage];

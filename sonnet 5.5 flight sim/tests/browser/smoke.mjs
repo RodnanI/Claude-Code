@@ -82,6 +82,13 @@ await page.keyboard.press('F3');
 await new Promise((r) => setTimeout(r, 900));
 if (!(await page.$('#stats.on'))) fail('F3 did not show the performance overlay');
 await page.keyboard.press('F3');
+// challenge: switching on the Skyline run builds its gates and draws them
+await page.evaluate(() => window.__fh.store.set('challenge', 'skyline'));
+await waitFor(page, () => window.__fh.game.course && window.__fh.game.course.gates.length >= 6, { timeout: 90000 }).catch(() => fail('the skyline run never built its gates'));
+await new Promise((r) => setTimeout(r, 1500));
+await shot('9-challenge');
+await page.evaluate(() => window.__fh.store.set('challenge', 'off'));
+step('the skyline run builds its gates');
 // crash flow
 await page.click('#screen-pause .btn:has-text("Resume")');
 await waitFor(page, () => window.__fh.game.state === 'flying', { timeout: 30000 });

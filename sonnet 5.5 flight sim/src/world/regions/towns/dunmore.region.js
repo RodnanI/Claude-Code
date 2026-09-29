@@ -6,7 +6,7 @@ import { landOK } from '../_shared/zoning.js';
 export default settlement({
   key: 'dunmore', kind: 'town', block: 70, street: 16, i: [-3, 3], j: [-3, 2], maxHeight: 40, tint: M.URBAN_LOWRISE, blend: 200,
   streets: () => 'street',
-  style: { types: { houses: 5, lowrise: 1.6, park: 0.5 }, low: [6, 10], house: { roof: M.ROOF_SLATE }, lowrise: { wall: M.SIDING_BLUE } },
+  style: { types: { houses: 5, lowrise: 1.6, park: 0.5 }, low: [6, 11], house: { roof: M.ROOF_SLATE, fac: 'FAC_SIDING_WHITE', bank: 1 }, lowrise: { fac: 'FAC_SIDING_WHITE', bank: 1 } },
   extras(ctx, { out, lat, rng, blocks }) {
     const c = lat.blockRect(1, 0);
     put(ctx, out, 'church', c.cx, c.cz, 11, 26, 30, 0, 71);

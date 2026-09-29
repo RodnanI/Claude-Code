@@ -57,6 +57,7 @@ export class Hud {
     if (!this.visible || !s.ent) return;
     const m = s.ent.model, spec = s.ent.spec, u = unitsFor(s.units);
     const scale = (s.scale || 1) * clamp(Math.min(this.w / 1280, this.h / 720), 0.7, 1.5);
+    if (s.course) this._course(s.course, s.cam, scale);
     this._warnings(m, spec, s, scale);
     if (m.crashed) return;
     if (spec.hud === 'fighter') this._fighter(s, m, spec, u, scale);
@@ -89,6 +90,40 @@ export class Hud {
       y += 36;
     }
     c.globalAlpha = 1;
+  }
+
+  /** Course panel and a pointer to the next gate: a diamond on the gate when it is on screen, else an arrow on the screen edge. */
+  _course(c, cam, k) {
+    const ctx = this.ctx;
+    const x = 22 * k, y = 22 * k, w = 200 * k, h = 88 * k;
+    ctx.fillStyle = 'rgba(21,18,14,0.78)'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = ORANGE; ctx.fillRect(x, y, 4 * k, h);
+    this._text(c.name.toUpperCase(), x + 16 * k, y + 16 * k, 11 * k, DIM, 'left', COND, '700');
+    this._text(c.finished ? 'COMPLETE' : `GATE ${c.index} / ${c.total}`, x + 16 * k, y + 41 * k, 24 * k, PAPER, 'left', COND, '700');
+    this._text(c.timeText, x + 16 * k, y + 68 * k, 16 * k, AMBER);
+    if (c.bestText) this._text('BEST ' + c.bestText, x + w - 10 * k, y + 68 * k, 11 * k, DIM, 'right');
+    if (c.finished) return;
+    const dx = c.x - cam.pos[0], dy = c.y - cam.pos[1], dz = c.z - cam.pos[2];
+    const dist = Math.hypot(dx, dy, dz);
+    // the area the pointer may use: clear of the panel row above and the instrument strip below
+    const x0 = 48 * k, x1 = this.w - 48 * k, y0 = 60 * k, y1 = this.h - 130 * k, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    const p = this.project(cam, dx, dy, dz);
+    const label = dist < 1000 ? Math.round(dist) + ' m' : (dist / 1000).toFixed(1) + ' km';
+    ctx.lineWidth = 3 * k; ctx.strokeStyle = ORANGE; ctx.fillStyle = ORANGE;
+    if (p && p[0] > x0 && p[0] < x1 && p[1] > y0 && p[1] < y1) {
+      const r = 13 * k;
+      ctx.beginPath(); ctx.moveTo(p[0], p[1] - r); ctx.lineTo(p[0] + r, p[1]); ctx.lineTo(p[0], p[1] + r); ctx.lineTo(p[0] - r, p[1]); ctx.closePath(); ctx.stroke();
+      this._text(label, p[0], p[1] + r + 14 * k, 13 * k, PAPER, 'center');
+    } else {
+      const v = cam.view, cx = v[0] * dx + v[4] * dy + v[8] * dz, cy = v[1] * dx + v[5] * dy + v[9] * dz;
+      const len = Math.hypot(cx, cy) || 1, ux = cx / len, uy = -cy / len;
+      const t = 1 / Math.max(Math.abs(ux) / ((x1 - x0) / 2), Math.abs(uy) / ((y1 - y0) / 2), 1e-6);
+      const sx = mx + ux * t, sy = my + uy * t, r = 15 * k;
+      ctx.beginPath();
+      ctx.moveTo(sx + ux * r, sy + uy * r); ctx.lineTo(sx - ux * r * 0.7 - uy * r * 0.8, sy - uy * r * 0.7 + ux * r * 0.8); ctx.lineTo(sx - ux * r * 0.7 + uy * r * 0.8, sy - uy * r * 0.7 - ux * r * 0.8);
+      ctx.closePath(); ctx.fill();
+      this._text(label, sx - ux * r * 3.2, sy - uy * r * 3.2, 13 * k, PAPER, 'center');
+    }
   }
 
   _warnings(m, spec, s, k) {

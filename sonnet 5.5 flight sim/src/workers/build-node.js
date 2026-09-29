@@ -4,6 +4,7 @@ import { rasterize } from '../voxel/recipe.js';
 import { M } from '../voxel/palette.js';
 import { scatterNode, placeProps, InstanceBuckets } from '../world/scatter/scatter.js';
 import { NODE_CELLS } from '../world/config.js';
+import { hashString } from '../core/util.js';
 import { now } from '../core/perf.js';
 
 /**
@@ -58,14 +59,16 @@ export function createNodeBuilder(world) {
           const rb = recipe.bounds(cell);
           if (rb) {
             const cells = ((rb[3] - rb[0]) * (rb[4] - rb[1]) * (rb[5] - rb[2])) / (cell * cell * cell);
-            while (cells / (f * f * f) > 26e6) f *= 2;
+            while (cells / (f * f * f) > 10e6) f *= 2;
           }
           const cu = cell * f;
           const anchorY = Math.floor(d.y / cu + 1e-6) * cu;
           const r = rasterize(recipe, { cell: cu, anchor: [d.x, anchorY, d.z], rot: d.rot || 0, yaw: d.yaw || 0, conservative: cu >= 3 || !!(kit && kit.conservative) });
           if (!r) continue;
           const before = builder.quadCount;
+          builder.setBank(d.bank !== undefined ? d.bank : (hashString(d.id) >>> 9) & 3);
           meshVolume(r.vol, { ao: cfg.ao && cu <= 2, builder, scale: f, offset: [r.i0 * f - off[0], r.j0 * f, r.k0 * f - off[2]] });
+          builder.setBank(0);
           structQuads += builder.quadCount - before;
           structures++;
           const top = (r.j0 + r.vol.ny) * cu;

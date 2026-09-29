@@ -1,5 +1,6 @@
-/* Vertex layout, 8 bytes: i16 x, y, z, w where w packs face (3 bits) | ambient occlusion (2 bits) | material id (8 bits) | flags (bit 13).
-   Flag 1 marks terrain step walls, which the shader lights with a normal leaning toward the sky so gentle slopes do not show contour lines.
+/* Vertex layout, 8 bytes: i16 x, y, z, w where w packs face (3 bits) | ambient occlusion (2 bits) | material id (8 bits) | flags (bits 13 to 15).
+   Flag bit 0 (w bit 13) marks terrain step walls, which the shader lights with a normal leaning toward the sky so gentle slopes do not show contour lines.
+   Flag bits 1 and 2 (w bits 14 and 15) are the color bank of the structure, 0 to 3, so buildings that share a material still differ in color.
    Colors and every other material property come from the palette texture in the shader. */
 export const VERTEX_STRIDE = 8;
 
@@ -15,7 +16,11 @@ export class MeshBuilder {
     this.ic = 0;
     this.minx = 1e9; this.miny = 1e9; this.minz = 1e9;
     this.maxx = -1e9; this.maxy = -1e9; this.maxz = -1e9;
+    this.bankBits = 0;
   }
+
+  /** Color bank (0 to 3) written into every vertex added from now on. */
+  setBank(b) { this.bankBits = (b & 3) << 1; }
 
   _growV() {
     this.cap *= 2;
@@ -35,7 +40,7 @@ export class MeshBuilder {
     if (this.vc >= this.cap) this._growV();
     const o = this.vc * 4;
     const i16 = this.i16;
-    i16[o] = x; i16[o + 1] = y; i16[o + 2] = z; i16[o + 3] = face | (ao << 3) | (mat << 5) | (flags << 13);
+    i16[o] = x; i16[o + 1] = y; i16[o + 2] = z; i16[o + 3] = face | (ao << 3) | (mat << 5) | ((flags | this.bankBits) << 13);
     if (x < this.minx) this.minx = x; if (x > this.maxx) this.maxx = x;
     if (y < this.miny) this.miny = y; if (y > this.maxy) this.maxy = y;
     if (z < this.minz) this.minz = z; if (z > this.maxz) this.maxz = z;

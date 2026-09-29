@@ -16,6 +16,25 @@ export const ROAD_KINDS = {
 
 const seg = { t: 0 };
 
+/** Zebra crossing and stop line just outside the junction at either end of a street or avenue. */
+function crosswalk(s, list, lat, hw) {
+  const a0 = s.t * s.len, a1 = s.len - a0;
+  const atStart = a0 < a1, endD = atStart ? a0 : a1;
+  if (endD > 24) return 0;
+  const ex = atStart ? s.ax : s.bx, ez = atStart ? s.az : s.bz;
+  let cross = 0;
+  for (let i = 0; i < list.length; i++) {
+    const o = list[i];
+    if (o === s) continue;
+    if ((Math.abs(o.ax - ex) < 0.6 && Math.abs(o.az - ez) < 0.6) || (Math.abs(o.bx - ex) < 0.6 && Math.abs(o.bz - ez) < 0.6)) cross = Math.max(cross, o.w / 2);
+  }
+  if (!cross) return 0;
+  const from = cross + 1.4, to = from + 3.0;
+  if (endD >= from && endD <= to && Math.abs(lat) < hw - 0.6) return (Math.floor((lat + hw) / 0.8) & 1) ? M.ROAD_LINE_W : 0;
+  if (endD > to + 0.5 && endD < to + 1.0 && Math.abs(lat) < hw - 0.3 && lat > -0.3) return M.ROAD_LINE_W;
+  return 0;
+}
+
 /** Spatial index of road segments with a paint function for the surface pipeline. */
 export class RoadIndex {
   constructor() {
@@ -39,7 +58,7 @@ export class RoadIndex {
   paint(x, z, cell) {
     const list = this.grid.at(x, z);
     if (!list.length) return 0;
-    let roadHits = 0, best = null, bestD = 1e9, sideHit = false;
+    let roadHits = 0, best = null, bestD = 1e9, sideHit = false, curbHit = false;
     for (let i = 0; i < list.length; i++) {
       const s = list[i];
       const d = distToSegment(x, z, s.ax, s.az, s.bx, s.bz, seg);
@@ -48,9 +67,9 @@ export class RoadIndex {
       if (d <= hw) {
         roadHits++;
         if (d < bestD) { bestD = d; best = s; best.t = seg.t; }
-      } else if (s.sw > 0 && cell <= 4 && d <= hw + s.sw) sideHit = true;
+      } else if (s.sw > 0 && cell <= 4 && d <= hw + s.sw) { sideHit = true; if (cell <= 1.2 && d <= hw + 0.4) curbHit = true; }
     }
-    if (!roadHits) return sideHit ? M.SIDEWALK : 0;
+    if (!roadHits) return sideHit ? (curbHit ? M.CURB : M.SIDEWALK) : 0;
     const k = best.k;
     if (k.surface === 'dirt') return M.DIRT_ROAD;
     if (k.surface === 'gravel') return M.GRAVEL_ROAD;
@@ -70,6 +89,10 @@ export class RoadIndex {
     const hw = best.w / 2;
     const line = Math.max(0.16, cell * 0.5);
     const al = Math.abs(lat);
+    if (cell <= 0.9 && (k.marks === 'avenue' || k.marks === 'street')) {
+      const cw = crosswalk(best, list, lat, hw);
+      if (cw) return cw;
+    }
     switch (k.marks) {
       case 'highway':
         if (al < line * 1.4 || Math.abs(al - line * 3.4) < line * 0.75) return M.ROAD_LINE_Y;

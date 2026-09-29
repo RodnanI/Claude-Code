@@ -6,7 +6,7 @@ import { settlement, put } from '../_shared/settlement.js';
 export default settlement({
   key: 'cutbank', kind: 'town', block: 80, street: 16, i: [-4, 4], j: [-3, 3], maxHeight: 45, tint: M.URBAN_LOWRISE, blend: 240, pad: [200, 40, 40, 40],
   streets: () => 'street',
-  style: { types: { houses: 4.5, lowrise: 2, park: 0.5 }, low: [6, 10], lowrise: { wall: M.PLASTER_CREAM }, house: { roof: M.ROOF_SHINGLE_GRAY } },
+  style: { types: { houses: 4.5, lowrise: 1.6, park: 0.6, strip: 0.3 }, low: [6, 11], lowrise: { fac: 'FAC_PLASTER_CREAM' }, house: { roof: M.ROOF_SHINGLE_GRAY } },
   extras(ctx, { out, lat }) {
     const c = lat.blockRect(0, 0);
     put(ctx, out, 'church', c.cx, c.cz, 12, 28, 32, 0, 61);

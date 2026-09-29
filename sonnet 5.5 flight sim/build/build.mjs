@@ -16,6 +16,7 @@ const ENTRIES = {
   main: { file: 'main.js', out: 'fly-high.html', title: 'Fly High' },
   viewer: { file: 'test-scenes/viewer.js', out: 'test-viewer.html', title: 'Fly High: viewer' },
   aircraft: { file: 'test-scenes/aircraft.js', out: 'test-aircraft.html', title: 'Fly High: aircraft' },
+  kits: { file: 'test-scenes/kits.js', out: 'test-kits.html', title: 'Fly High: kits' },
 };
 const entry = ENTRIES[entryName];
 if (!entry) throw new Error('unknown entry ' + entryName);

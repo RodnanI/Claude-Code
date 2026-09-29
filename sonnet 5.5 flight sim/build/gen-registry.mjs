@@ -13,6 +13,7 @@ const GROUPS = [
   { name: 'KITS', dir: 'world/kits', suffix: '.kit.js' },
   { name: 'SCENERY', dir: 'world/scenery', suffix: '.scenery.js' },
   { name: 'VEHICLES', dir: 'traffic/vehicles', suffix: '.vehicle.js' },
+  { name: 'AMBIENT', dir: 'traffic/ambient', suffix: '.ambient.js' },
 ];
 
 function walk(dir, out = []) {
