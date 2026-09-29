@@ -119,7 +119,7 @@ export class PostChain {
       this.fbo.exp = this.tex.exp.map((x) => this._fbo([x]));
       for (const fb of this.fbo.exp) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-        gl.clearColor(0.05, 0, 0, 1);
+        gl.clearColor(0, 0, 0, 1); // zero means no history: the first frame meters straight to the target instead of fading in from black
         gl.clear(gl.COLOR_BUFFER_BIT);
       }
     }

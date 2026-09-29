@@ -285,14 +285,18 @@ export class Game extends Emitter {
       const e = this.preview;
       this.orbitAz += dt * 0.22;
       const c = e.worldPoint(new Float64Array(3), 0, 0.5, 0);
-      const size = Math.max(e.spec.wing.span, 8) * 1.55;
+      // frame the whole aircraft inside the free slot between the hangar panels, whatever the window shape
+      const ext = e.instance.extent(), W = this.canvas.clientWidth || 1280, H = this.canvas.clientHeight || 720;
+      const slot = Math.max(0.3, (W - Math.max(300, Math.min(390, W * 0.34)) - Math.max(280, Math.min(380, W * 0.3))) / W);
+      const R = Math.max(ext.length, ext.span) * 0.5 * 1.12, th = Math.tan((46 * Math.PI) / 360);
+      const size = Math.max(R / (slot * th * (W / H)), R / th * 0.9, 6);
       const hd = (this.previewStart.heading || 0) * DEG;
       const az = hd + this.orbitAz, el = 0.2;
       const x = c[0] + Math.sin(az) * Math.cos(el) * size, z = c[2] - Math.cos(az) * Math.cos(el) * size;
       const y = Math.max(c[1] + Math.sin(el) * size, this.ground.h(x, z) + 1.2);
       cam.fov = (46 * Math.PI) / 180;
       cam.setPose(x, y, z, c[0] - x, c[1] - y, c[2] - z);
-      e.emit(models, cockpit, { mode: 'external', camPos: cam.pos, pxPerRad: px() });
+      e.emit(models, cockpit, { mode: 'external', camPos: cam.pos, pxPerRad: px() * 2.2 }); // the hero object: always the finest voxels
       this.traffic.update(dt, cam.pos);
     } else {
       this.flyover.update(dt, cam, 62);

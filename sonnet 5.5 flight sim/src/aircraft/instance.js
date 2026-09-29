@@ -63,6 +63,23 @@ export class AircraftInstance {
 
   get maxLevel() { return this.spec.lodLevels ?? 3; }
 
+  /** Size of the exterior in meters, from the part recipes: { length, span, height }. Cached. */
+  extent() {
+    if (this._extent) return this._extent;
+    const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+    for (const p of this.parts) {
+      if (p.group !== 'exterior') continue;
+      const b = p.recipe.bounds(0.25);
+      if (!b) continue;
+      for (let i = 0; i < 3; i++) {
+        const o = p.local ? p.pivot[i] : 0;
+        lo[i] = Math.min(lo[i], b[i] + o); hi[i] = Math.max(hi[i], b[i + 3] + o);
+      }
+    }
+    this._extent = { length: hi[0] - lo[0], height: hi[1] - lo[1], span: hi[2] - lo[2] };
+    return this._extent;
+  }
+
   _cell(p, level) { return (p.voxel || (p.group === 'interior' ? this.spec.interiorVoxel : this.spec.voxel)) * (p.group === 'interior' ? 1 : 2 ** level); }
 
   meshFor(p, level) {

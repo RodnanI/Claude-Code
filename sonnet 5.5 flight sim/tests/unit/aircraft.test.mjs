@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AIRCRAFT } from '../../src/generated/registry.js';
-import { kitFor, liveryRemap } from '../../src/aircraft/instance.js';
+import { kitFor, liveryRemap, AircraftInstance } from '../../src/aircraft/instance.js';
 import { meshRecipe } from '../../src/voxel/recipe.js';
 import { defineAircraft } from '../../src/aircraft/base.js';
 import { M } from '../../src/voxel/palette.js';
@@ -102,4 +102,13 @@ test('defineAircraft rejects broken specs', () => {
   assert.throws(() => defineAircraft(clone({ aero: { ...base.aero, alphaStall: 0.9 } })), /alphaStall/);
   const { model, ...rest } = base;
   assert.throws(() => defineAircraft(rest), /missing model/);
+});
+
+test('the exterior extent used to frame the hangar showcase agrees with the specification', () => {
+  const fake = { fromRecipe: () => null };
+  for (const spec of AIRCRAFT) {
+    const e = new AircraftInstance(spec, fake).extent();
+    assert.ok(e.span >= spec.wing.span * 0.95 && e.span <= spec.wing.span * 1.5, `${spec.id}: span ${e.span.toFixed(1)} vs wing ${spec.wing.span}`);
+    assert.ok(e.length > 4 && e.length < 30 && e.height > 1 && e.height < 9, `${spec.id}: implausible extent`);
+  }
 });

@@ -29,7 +29,7 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision, crash and restart flow.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 94 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 95 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -368,13 +368,13 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 
 ## 17. Testing
 
-`npm test` runs 94 tests in about three seconds:
+`npm test` runs 95 tests in about three seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
 - World: every region lays out with known kits and inside its bounds, deterministic terrain, a mountain of the right height, all three start areas on land with flat runways (the strip smooth but sloping), a connected road graph, no building on a highway, LOD configuration, deterministic node builds.
 - Settings and input: presets, schema coverage, sanitizing, persistence and corrupt storage, governor behavior, hardware probe, key ramps, throttle lever, edge presses.
-- Aircraft: every part builds at every LOD, dimensions match the specification, liveries and stations resolve, validation rejects broken specs.
+- Aircraft: every part builds at every LOD, dimensions match the specification, the exterior extent agrees with the wing span, liveries and stations resolve, validation rejects broken specs.
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.
 - Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance, signal masts follow the phase and vanish with traffic off.
 - Render: the atmosphere gives a blue noon sky with a pale horizon and an orange sunset side, never negative or non-finite, black at night; sun transmittance reddens and dims monotonically; moonlight is a sliver of daylight; the cinematic grade keeps blacks dark.
