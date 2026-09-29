@@ -1,5 +1,4 @@
 import { defineRegion } from '../../region.js';
-import { M } from '../../../voxel/palette.js';
 import { newOut, snap } from '../_shared/zoning.js';
 import { Rng } from '../../../core/rng.js';
 
@@ -23,4 +22,3 @@ export default defineRegion({
     return out;
   },
 });
-void M;

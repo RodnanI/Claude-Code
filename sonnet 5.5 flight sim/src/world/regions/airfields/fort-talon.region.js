@@ -25,7 +25,7 @@ export default defineRegion({
   id: 'airfield/fort-talon',
   name: S.name,
   kind: 'airfield',
-  info: { label: 'Military air base', blurb: 'A long concrete runway, hardened shelters, hangars and a fuel farm. Nobody asks what you are doing here.' },
+  info: { order: 2, label: 'Military air base', blurb: 'A long concrete runway, hardened shelters, hangars and a fuel farm. Nobody asks what you are doing here.' },
   bounds: af.worldBounds(-1950, -760, 1950, 420, 60),
   maxHeight: 60,
   tint: M.CONCRETE_DARK,

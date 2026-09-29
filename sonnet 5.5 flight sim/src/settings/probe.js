@@ -15,7 +15,8 @@ export function probeHardware(info = {}) {
   if (/swiftshader|llvmpipe|software|softpipe|basic render/.test(renderer)) { score = 0; why.push('software renderer'); }
   else if (/rtx|rx 6|rx 7|radeon pro w|apple m[2-9]|m[2-9] (pro|max|ultra)|gtx 1080|gtx 1070|titan/.test(renderer)) { score = 4; why.push('high end GPU'); }
   else if (/gtx|rx 5|rx 4|apple m1|radeon rx|arc a|quadro/.test(renderer)) { score = 3; why.push('capable discrete GPU'); }
-  else if (/mali|adreno|powervr|apple gpu|videocore/.test(renderer)) { score = mobile ? 1 : 2; why.push('mobile GPU'); }
+  else if (/mali|adreno|powervr|videocore/.test(renderer)) { score = 1; why.push('mobile GPU'); }
+  else if (/apple gpu/.test(renderer)) { score = mobile ? 1 : 2; why.push('Apple GPU'); }
   else if (/intel/.test(renderer)) { score = /iris xe|arc/.test(renderer) ? 2 : 1; why.push('integrated Intel GPU'); }
   if (mobile) { score = Math.min(score, 1); why.push('mobile device'); }
   if (cores <= 2) { score = Math.min(score, 1); why.push('few cores'); }

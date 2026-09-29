@@ -1,4 +1,4 @@
-import { RoadGraph, signalGreen } from './road-graph.js';
+import { RoadGraph, signalPhase } from './road-graph.js';
 import { Recipe } from '../voxel/recipe.js';
 import { Rng } from '../core/rng.js';
 import { hashString, clamp } from '../core/util.js';
@@ -144,10 +144,12 @@ export class TrafficSystem {
             if (o.lane === Math.min(v.lane, v.next.lanes - 1)) { const g2 = toEnd + o.s - (o.def.length + def.length) * 0.5; if (g2 < gap) { gap = g2; dv = v.speed - o.speed; } break; }
           }
         }
-        // signal
-        if (e.b.sig && !signalGreen(e.b, e, this.time) && toEnd > 1.5) {
+        // signal: red always stops us; amber only when we can still stop comfortably before the line
+        if (e.b.sig && toEnd > 1.5) {
+          const ph = signalPhase(e.b, e, this.time);
           const g2 = toEnd - 7.5 - def.length * 0.5;
-          if (g2 < gap) { gap = Math.max(g2, 0.05); dv = v.speed; }
+          const canStop = g2 > (v.speed * v.speed) / (2 * 4.2);
+          if ((ph === 0 || (ph === 2 && canStop)) && g2 < gap) { gap = Math.max(g2, 0.05); dv = v.speed; }
         }
         // corners
         const dot = e.dx * v.next.dx + e.dz * v.next.dz;

@@ -13,6 +13,7 @@ export default defineAircraft({
   name: 'Shrike F-9',
   manufacturer: 'Fort Talon Aerospace',
   role: 'Light fighter',
+  order: 3,
   tags: ['Afterburner', 'Fly-by-wire', 'Cannon', 'Missiles', 'Rockets', 'Bombs'],
   description: 'Single engine, afterburning, fly-by-wire. A 9 G airframe that will happily fly faster than sound and land exactly as carefully as you make it. Cannon, heat seekers, rocket pods and bombs.',
   voxel: 0.0625,
@@ -243,8 +244,11 @@ export default defineAircraft({
     pn.box(3.5, 0.9, -0.42, 4.1, 1.0, 0.42, M.COCKPIT_TRIM);                    // glare shield
     pn.box(3.4, 0.98, -0.16, 3.76, 1.02, 0.16, M.COCKPIT_TRIM);                 // HUD housing
     pn.box(3.42, 1.0, -0.17, 3.5, 1.02, 0.17, M.COCKPIT_TRIM);
-    pn.box(3.47, 1.0, -0.15, 3.49, 1.3, 0.15, M.HUD_GLASS);                     // combiner glass
+    // combiner: an open frame, the symbology itself is drawn by the HUD overlay
+    pn.box(3.47, 1.0, -0.16, 3.49, 1.3, -0.145, M.COCKPIT_TRIM, { thin: true });
+    pn.box(3.47, 1.0, 0.145, 3.49, 1.3, 0.16, M.COCKPIT_TRIM, { thin: true });
     pn.box(3.46, 1.28, -0.16, 3.5, 1.32, 0.16, M.COCKPIT_TRIM);
+    pn.box(3.47, 1.15, -0.15, 3.485, 1.16, 0.15, M.HUD_GLASS, { thin: true });
     // multifunction displays, warning lights and backup gauges
     for (const [z, y] of [[-0.26, 0.55], [0.0, 0.55], [0.26, 0.55], [-0.13, 0.33], [0.13, 0.33]]) {
       pn.box(3.6, y - 0.1, z - 0.1, 3.63, y + 0.1, z + 0.1, M.AC_BLACK);

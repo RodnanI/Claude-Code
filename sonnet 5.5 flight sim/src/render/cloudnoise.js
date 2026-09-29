@@ -1,8 +1,6 @@
-import { Rng } from '../core/rng.js';
 
 /** Tileable 3D noise volume for volumetric clouds: R low-frequency Perlin-Worley, G/B/A Worley at rising frequencies. */
 export function buildCloudNoise(size = 48, seed = 7) {
-  const rng = new Rng(seed);
   const wrap = (v, n) => ((v % n) + n) % n;
   const rand3 = (x, y, z, s, n) => {
     let h = (Math.imul(wrap(x, n), 374761393) ^ Math.imul(wrap(y, n), 668265263) ^ Math.imul(wrap(z, n), 2147483647) ^ Math.imul(s, 1274126177)) >>> 0;
@@ -41,7 +39,6 @@ export function buildCloudNoise(size = 48, seed = 7) {
   };
   const data = new Uint8Array(size * size * size * 4);
   let o = 0;
-  void rng;
   for (let z = 0; z < size; z++) for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const u = x / size, v = y / size, w = z / size;
     const pf = perlin(u, v, w, 4, 1) * 0.55 + perlin(u, v, w, 8, 2) * 0.3 + perlin(u, v, w, 16, 3) * 0.15;

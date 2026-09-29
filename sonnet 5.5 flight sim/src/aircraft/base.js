@@ -18,6 +18,7 @@ export function defineAircraft(spec) {
     stations: [],
     weapons: [],
     tags: [],
+    order: 99,
     hud: 'none',
     animations: [],
     liveries: [{ id: 'default', name: 'Factory' }],

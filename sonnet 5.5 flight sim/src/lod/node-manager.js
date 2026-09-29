@@ -135,8 +135,6 @@ export class NodeManager {
     const proj = camera.projScale;
     const leaves = this.wanted;
     leaves.length = 0;
-    const S = this.cfg.size(this.cfg.maxLevel);
-    void S;
     for (let iz = -1; iz <= 0; iz++) for (let ix = -1; ix <= 0; ix++) this._visit(this.node(this.cfg.maxLevel, ix, iz), camera, proj, leaves);
 
     // coverage: ready leaf, else nearest ready ancestor; queue missing chain coarse first

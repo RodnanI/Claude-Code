@@ -7,7 +7,7 @@ import { ModelRegistry } from '../render/models.js';
 import { Environment } from '../render/sky.js';
 import { createWorld } from '../world/index.js';
 import { WORLD_SEED } from '../world/config.js';
-import { derive, PRESETS } from '../settings/presets.js';
+import { PRESETS } from '../settings/presets.js';
 import { Governor } from '../settings/governor.js';
 import { probeHardware } from '../settings/probe.js';
 import { AIRCRAFT, VEHICLES } from '../generated/registry.js';
@@ -133,7 +133,7 @@ export class Game extends Emitter {
   }
 
   // ------------------------------------------------------------------ catalog
-  get planes() { return AIRCRAFT; }
+  get planes() { return this._planes || (this._planes = [...AIRCRAFT].sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))); }
 
   /** Cruise speed used for airborne starts: comfortably above the stall. */
   cruiseFor(spec) {

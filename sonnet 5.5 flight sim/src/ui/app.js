@@ -164,7 +164,8 @@ export class App {
     const regions = new Map(this.game.world.regionsList.map((r) => [r.id, r]));
     const groups = new Map();
     for (const s of this.game.starts) { if (!groups.has(s.region)) groups.set(s.region, []); groups.get(s.region).push(s); }
-    for (const [rid, list] of groups) {
+    const ordered = [...groups].sort((a, b) => (regions.get(a[0])?.info?.order ?? 99) - (regions.get(b[0])?.info?.order ?? 99));
+    for (const [rid, list] of ordered) {
       const r = regions.get(rid);
       const info = (r && r.info) || { label: 'Airfield', blurb: '' };
       this.startList.append(h('div', { class: 'label', style: { margin: '10px 0 6px' } }, `${r ? r.name : rid}  /  ${info.label}`));
@@ -172,6 +173,8 @@ export class App {
       for (const s of list) this.startList.append(h('button', { class: 'start' + (s.id === this.sel.start ? ' sel' : ''), onclick: () => { this.sel.start = s.id; this._fillStarts(); this._preview(); } },
         h('b', null, s.name), h('small', null, `${s.kind === 'runway' ? 'Runway' : s.kind === 'apron' ? 'Parking apron' : s.kind} heading ${String(Math.round(s.heading)).padStart(3, '0')}`)));
     }
+    const sel = this.startList.querySelector('.start.sel');
+    if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
   }
 
   // ------------------------------------------------------------------ flow

@@ -1,6 +1,6 @@
 import { M } from '../../../voxel/palette.js';
 import { settlement, put } from '../_shared/settlement.js';
-import { landOK, snap } from '../_shared/zoning.js';
+import { landOK } from '../_shared/zoning.js';
 
 /* Port Halden: harbor city on the south coast. Towers and mid-rises around a compact center, houses on the
    outskirts, container terminal and piers along the water. */
@@ -30,6 +30,5 @@ export default settlement({
         put(ctx, out, 'crane', r.cx, r.z1 - 4, 20, 20, 60, 0, rng.int(1, 1e6));
       }
     }
-    void snap;
   },
 });

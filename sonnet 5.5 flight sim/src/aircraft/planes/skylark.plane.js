@@ -24,6 +24,7 @@ export default defineAircraft({
   name: 'Skylark SK-172',
   manufacturer: 'Meridian Aeroworks',
   role: 'Light trainer',
+  order: 1,
   tags: ['Docile stall', 'Short field', 'Fixed gear'],
   description: 'Four seats, one propeller and a wing that wants to keep flying. The aircraft to learn the island in. Short-field capable and impossible to spin by accident.',
   voxel: 0.0625,

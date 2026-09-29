@@ -1,8 +1,8 @@
 import { defineRegion } from '../../region.js';
 import { newOut, snap } from '../_shared/zoning.js';
 
-/** A lone lighthouse on the north-west headland. */
-const X = -7600, Z = -8300;
+/** A lone lighthouse on the west headland, a few kilometers from the air base. */
+const X = -12320, Z = 6620;
 export default defineRegion({
   id: 'feature/lighthouse-point',
   name: 'Point Lantern',

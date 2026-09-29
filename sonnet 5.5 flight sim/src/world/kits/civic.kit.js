@@ -83,7 +83,7 @@ const bridge = defineKit({
         }
         b.box(tx - 1.6, y + th - 8, -W / 2 - 3, tx + 1.6, y + th - 5, W / 2 + 3, M.CONCRETE_PANEL, { md: 1 });
         b.box(tx - 1.6, y + 14, -W / 2 - 3, tx + 1.6, y + 17, W / 2 + 3, M.CONCRETE_PANEL, { md: 1 });
-        b.box(tx - 0.5, y + th, s0(W) - 0.5, tx + 0.5, y + th + 1.4, s0(W) + 0.5, M.BEACON_RED, { md: 2 });
+        b.box(tx - 0.5, y + th, -0.5, tx + 0.5, y + th + 1.4, 0.5, M.BEACON_RED, { md: 2 });
       }
       // main cables as parabolas between the towers and out to the shore anchorages
       const tx0 = -L * 0.24, tx1 = L * 0.24;
@@ -91,7 +91,7 @@ const bridge = defineKit({
         const z = s * (W / 2 + 1.4);
         b.fn(-L / 2, y, z - 0.6, L / 2, y + th + 1, z + 0.6, (lx, ly, lz, cell) => {
           let cy;
-          if (lx >= tx0 && lx <= tx1) { const t = (lx - tx0) / (tx1 - tx0); cy = y + 5 + (th - 5) * (1 - 4 * (t - 0.5) * (t - 0.5)) * 0 + (th - 4) * Math.pow(Math.abs(2 * t - 1), 2.2); }
+          if (lx >= tx0 && lx <= tx1) { const t = (lx - tx0) / (tx1 - tx0); cy = y + 5 + (th - 4) * Math.pow(Math.abs(2 * t - 1), 2.2); }
           else if (lx < tx0) { const t = (lx - -L / 2) / (tx0 + L / 2); cy = y + 2 + (th - 2) * t * t; }
           else { const t = (L / 2 - lx) / (L / 2 - tx1); cy = y + 2 + (th - 2) * t * t; }
           return Math.abs(ly - cy) < Math.max(0.35, cell * 0.6) ? M.STEEL_BRIGHT : 0;
@@ -106,8 +106,6 @@ const bridge = defineKit({
     }
   },
 });
-const s0 = () => 0;
-
 const windturbine = defineKit({
   id: 'windturbine',
   build(d, b, rng) {

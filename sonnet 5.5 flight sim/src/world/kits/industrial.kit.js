@@ -1,6 +1,6 @@
 import { defineKit } from '../region.js';
 import { M } from '../../voxel/palette.js';
-import { pick, parapet, roofClutter, foundation } from './_util.js';
+import { pick, roofClutter, foundation } from './_util.js';
 
 /* Industry and harbor: warehouses, factories, tanks, silos, water towers, cranes, container yards, piers. */
 

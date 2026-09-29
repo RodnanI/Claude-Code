@@ -64,7 +64,7 @@ export const BLOCKS = {
   midrise(ctx, rng, r, st, out) {
     const sd = 24;
     const [hmin, hmax] = st.mid || [18, 55];
-    const row = (x0, x1, zc, rot, faceZ) => {
+    const row = (x0, x1, zc, rot) => {
       let x = x0;
       while (x < x1 - 14) {
         const lw = Math.min(x1 - x, rng.range(20, 34));
@@ -73,7 +73,6 @@ export const BLOCKS = {
         put(ctx, out, 'midrise', x + lw / 2, zc, lw - 2, sd - 2, h, rot, rng.int(1, 1e6), { ...st.midrise });
         x += lw;
       }
-      void faceZ;
     };
     row(r.x0, r.x1, r.z0 + sd / 2, 2);
     row(r.x0, r.x1, r.z1 - sd / 2, 0);

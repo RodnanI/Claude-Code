@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AIRCRAFT } from '../../src/generated/registry.js';
-import { FlightModel, KT, FT } from '../../src/aircraft/flight/model.js';
+import { FlightModel, KT } from '../../src/aircraft/flight/model.js';
 import { solveTrim, startAirborne } from '../../src/aircraft/flight/trim.js';
 import { Autopilot } from '../../src/aircraft/flight/autopilot.js';
 import { isa } from '../../src/aircraft/flight/atmosphere.js';

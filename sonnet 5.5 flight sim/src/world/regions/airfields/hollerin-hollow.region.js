@@ -20,7 +20,7 @@ export default defineRegion({
   id: 'airfield/hollerin-hollow',
   name: S.name,
   kind: 'airfield',
-  info: { label: 'Hillbilly strip', blurb: 'A mown pasture, a barn, a rusty truck and a windsock. Short, bumpy and slightly uphill in both directions.' },
+  info: { order: 3, label: 'Hillbilly strip', blurb: 'A mown pasture, a barn, a rusty truck and a windsock. Short, bumpy and slightly uphill in both directions.' },
   bounds: af.worldBounds(-620, -260, 340, 460, 60),
   maxHeight: 25,
   tint: M.URBAN_GREEN,

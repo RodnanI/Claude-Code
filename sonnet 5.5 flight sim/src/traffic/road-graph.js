@@ -114,10 +114,17 @@ export class RoadGraph {
   near(x, z, r, out = []) { return this.grid.query(x - r, z - r, x + r, z + r, out); }
 }
 
-/** Signal state for an approach: 1 green, 0 red. Two phases with an all-red gap. */
-export function signalGreen(node, edge, t) {
-  const c = (t + node.offset) % 24;
-  if (c < 10) return edge.axis === 0;
-  if (c >= 12 && c < 22) return edge.axis === 1;
-  return false;
+/**
+ * Signal phase for an approach: 0 red, 1 green, 2 amber. One 24 second cycle: green 8 s, amber 2.5 s and an all-red gap of
+ * 1.5 s for one axis, then the same for the other.
+ */
+export function signalPhase(node, edge, t) {
+  let c = (t + node.offset) % 24;
+  if (edge.axis === 1) c = (c + 12) % 24;
+  if (c < 8) return 1;
+  if (c < 10.5) return 2;
+  return 0;
 }
+
+/** True only while the approach has a full green. */
+export const signalGreen = (node, edge, t) => signalPhase(node, edge, t) === 1;

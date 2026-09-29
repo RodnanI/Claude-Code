@@ -11,7 +11,8 @@ export function settlement(cfg) {
   const S = SITES[cfg.key];
   const lat = makeLattice({ cx: S.x, cz: S.z, block: cfg.block ?? 80, street: cfg.street ?? 18 });
   const [i0, i1] = cfg.i, [j0, j1] = cfg.j;
-  const bounds = [lat.lineX(i0 - 0.5) - 14, lat.lineZ(j0 - 0.5) - 14, lat.lineX(i1 + 0.5) + 14, lat.lineZ(j1 + 0.5) + 14];
+  const pad = Array.isArray(cfg.pad) ? cfg.pad : [cfg.pad ?? 0, cfg.pad ?? 0, cfg.pad ?? 0, cfg.pad ?? 0];   // room for outlying farms: [west, north, east, south]
+  const bounds = [lat.lineX(i0 - 0.5) - 14 - pad[0], lat.lineZ(j0 - 0.5) - 14 - pad[1], lat.lineX(i1 + 0.5) + 14 + pad[2], lat.lineZ(j1 + 0.5) + 14 + pad[3]];
   const flatR = cfg.flatR ?? Math.max(i1 - i0, j1 - j0) * lat.px * 0.42;
   return defineRegion({
     id: `${cfg.kind}/${cfg.key}`,

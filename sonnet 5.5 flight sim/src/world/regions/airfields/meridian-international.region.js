@@ -28,7 +28,7 @@ export default defineRegion({
   id: 'airfield/meridian-international',
   name: S.name,
   kind: 'airfield',
-  info: { label: 'Civil airport', blurb: 'Two parallel asphalt runways, a glass terminal, the control tower and the busiest traffic on the island.' },
+  info: { order: 1, label: 'Civil airport', blurb: 'Two parallel asphalt runways, a glass terminal, the control tower and the busiest traffic on the island.' },
   bounds: af.worldBounds(-2050, -1120, 2050, 500, 60),
   maxHeight: 60,
   tint: M.CONCRETE,
@@ -72,7 +72,6 @@ export default defineRegion({
     af.road(out, 0, -1010, 0, -735);
     fenceRect(ctx, af, -1820, -1090, 1820, 440, out, 5, { u: 0, v: -1090, w: 30 });
     // grass around the movement area is left to the biome
-    void rng;
     return out;
   },
 });

@@ -1,5 +1,5 @@
 import { Noise } from '../../core/noise.js';
-import { smoothstep, hash2, hashUnit } from '../../core/util.js';
+import { hash2, hashUnit } from '../../core/util.js';
 import { M, waterMatForDepth, PALETTE_FLAGS, FL } from '../../voxel/palette.js';
 import { SEA_LEVEL } from '../config.js';
 

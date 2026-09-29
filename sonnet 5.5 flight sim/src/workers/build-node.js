@@ -43,7 +43,6 @@ export function createNodeBuilder(world) {
         sampleColumns(world, x0, z0, cell, N, buf);
         meshTerrain(buf, N, builder);
         minY = buf.minH; maxY = buf.maxH;
-        const terrainQuads = builder.quadCount;
 
         // structures anchored in this node
         const descs = world.structuresIn(x0, z0, x0 + size, z0 + size);
@@ -76,7 +75,6 @@ export function createNodeBuilder(world) {
         // scenery and props
         scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets);
         placeProps(world, x0, z0, cell, N, cfg, buckets);
-        void terrainQuads;
       }
       const mesh = builder.finish();
       const b = mesh.bounds;
