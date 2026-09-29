@@ -29,7 +29,7 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision, crash and restart flow.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 96 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 97 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -262,6 +262,8 @@ Water is baked into the terrain function: ocean at Y = 0, rivers and lakes at th
 
 Each airfield region carries an `info` block (label and blurb) that the hangar screen shows, so a new start area brings its own description.
 
+Paved airfields paint their whole footprint as mown grass in wide stripes (`Airfield.fieldLot`, an ordinary lot that ranks below roads and pavement). Without it the natural biome put woodland between the two runways of Meridian. A test samples the ground beside both runways and fails on any forest floor.
+
 ## 10. Region file contract
 
 A region is one file exporting `defineRegion({...})`:
@@ -369,7 +371,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 
 ## 17. Testing
 
-`npm test` runs 96 tests in about three seconds:
+`npm test` runs 97 tests in about three seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.

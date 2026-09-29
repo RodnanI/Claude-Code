@@ -173,3 +173,28 @@ test('lit streets: coarse asphalt on avenues and streets carries night glow pool
   const tex = buildPaletteTexels(), o = (256 + M.ASPHALT_LIT) * 4;
   assert.ok(tex[o] > tex[o + 2] * 1.4, 'the glow is warm sodium, not the grey of the asphalt');
 });
+
+test('no woodland grows on the ground around the paved runways', async () => {
+  const { createWorld } = await import('../../src/world/index.js');
+  const { M } = await import('../../src/voxel/palette.js');
+  const w = createWorld({});
+  const bad = new Set([M.FOREST_FLOOR, M.PINE_FLOOR, M.GRASS_LUSH]);
+  const cases = [
+    { id: 'airport-09R', length: 3000, side: [-200, 150] },
+    { id: 'talon-07', length: 3000, side: [-250, 250] },
+  ];
+  for (const c of cases) {
+    const sp = w.spawns().find((q) => q.id === c.id);
+    const h = (sp.heading * Math.PI) / 180, fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
+    let n = 0, woods = 0;
+    for (let t = 50; t < c.length; t += 50) for (let d = c.side[0]; d <= c.side[1]; d += 25) {
+      const x = sp.x + fx * t + rx * d, z = sp.z + fz * t + rz * d;
+      const s = {};
+      const g = w.terrain.sample(x, z, 1, s);
+      n++;
+      if (bad.has(w.surface.at(x, z, g, 0.02, 1, s))) woods++;
+    }
+    assert.ok(n > 300);
+    assert.equal(woods, 0, `${c.id}: ${woods} of ${n} sample points beside the runway are woodland`);
+  }
+});

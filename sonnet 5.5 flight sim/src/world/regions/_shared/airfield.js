@@ -60,6 +60,21 @@ export class Airfield {
     const pts = [this.toWorld(u0, v0), this.toWorld(u1, v0), this.toWorld(u0, v1), this.toWorld(u1, v1)];
     return [Math.min(...pts.map((p) => p[0])) - pad, Math.min(...pts.map((p) => p[1])) - pad, Math.max(...pts.map((p) => p[0])) + pad, Math.max(...pts.map((p) => p[1])) + pad];
   }
+  /**
+   * A mown grass lot covering a local rectangle, for `out.lots`. Ordinary lots rank below roads and pavement, so it only
+   * fills the ground between them, and keeps natural woodland out of the airfield.
+   */
+  fieldLot(u0, v0, u1, v1) {
+    const [x0, z0, x1, z1] = this.worldBounds(u0, v0, u1, v1, 0);
+    return {
+      x0, z0, x1, z1, mat: M.MOWN_STRIP,
+      fn: (x, z, cell) => {
+        const [u, v] = this.toLocal(x, z);
+        if (u < u0 || u > u1 || v < v0 || v > v1) return 0;
+        return cell <= 1 && (Math.floor(v / 12) & 1) ? M.LAWN : M.MOWN_STRIP;
+      },
+    };
+  }
   /** Terrain flatten rect in world terms. */
   flattenRect(u0, u1, v0, v1, blend, y, extra = {}) {
     const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2;

@@ -43,6 +43,7 @@ export default defineRegion({
   layout(ctx) {
     const rng = new Rng(11);
     const out = newOut();
+    out.lots.push(af.fieldLot(-2050, -1120, 2050, 500));
     runwayLights(af, R1, out);
     runwayLights(af, R2, out);
     // taxiway edge lights along the parallels

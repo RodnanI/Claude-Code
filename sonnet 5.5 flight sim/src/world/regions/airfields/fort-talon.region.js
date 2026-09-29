@@ -40,6 +40,7 @@ export default defineRegion({
   layout(ctx) {
     const rng = new Rng(17);
     const out = newOut();
+    out.lots.push(af.fieldLot(-1950, -760, 1950, 420));
     runwayLights(af, RW, out);
     for (let u = -1600; u <= 1600; u += 50) for (const s of [-1, 1]) af.prop(out, 'runway-light', u, s * 0 + (s < 0 ? -110 - 11.4 : 150 + 11.4), { variant: 3 });
     // hardened aircraft shelters facing the runway side
