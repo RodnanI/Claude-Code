@@ -211,7 +211,7 @@ const mailbox = defineKit({
 const fencerow = defineKit({
   id: 'fencerow',
   conservative: true,
-  maxCell: 2,
+  maxCell: 0.6,                       // thin rails inflate to whole voxels, so past this size a fence would read as a wall
   build(d, b, rng) {
     const L = d.w ?? 24;
     for (let x = -L / 2; x <= L / 2 + 0.01; x += 3) {

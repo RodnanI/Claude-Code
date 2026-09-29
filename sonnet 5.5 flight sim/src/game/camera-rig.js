@@ -22,9 +22,37 @@ export class CameraRig {
     this.shake = 0;
     this.baseFov = 70;
     this.time = 0;
+    this.intro = null;
   }
 
-  setMode(m) { this.mode = m; this.chase.ready = false; }
+  setMode(m) { this.mode = m; this.chase.ready = false; this.intro = null; }
+
+  /** The takeoff intro: a low camera ahead of the aircraft swings around its side and settles into the chase view. */
+  startIntro(seconds = 4.6) { this.intro = { t: 0, dur: seconds, skip: false }; }
+  skipIntro() { if (this.intro) this.intro.skip = true; }
+
+  _intro(dt, ent, fov, cx, cy, cz, tx, ty, tz) {
+    const it = this.intro;
+    it.t += dt * (it.skip ? 4 : 1);
+    const k = clamp(it.t / it.dur, 0, 1);
+    if (k >= 1) { this.intro = null; return false; }
+    const e = k * k * (3 - 2 * k), s = clamp((k - 0.6) / 0.4, 0, 1), blend = s * s * (3 - 2 * s);
+    const m = ent.model, h = m.att.heading, P = ent.pos;
+    const fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
+    const D = ent.spec.cameras.chase.distance * this.chase.zoom;
+    const x = ent.instance ? ent.instance.extent() : { length: 8, span: 10 };
+    const R = lerp(Math.max(x.length, x.span) * 0.8 + 4, D, e);
+    const a = lerp(-0.7, -Math.PI, e);                 // front left, along the left side, to behind
+    const ox = fx * Math.cos(a) + rx * Math.sin(a), oz = fz * Math.cos(a) + rz * Math.sin(a);
+    let ix = P[0] + ox * R, iz = P[2] + oz * R;
+    let iy = Math.max(P[1] + lerp(0.5, cy - P[1], e), this.ground.h(ix, iz) + 1.1);
+    const tgx = P[0] + fx * lerp(0, D * 0.18, e), tgy = P[1] + lerp(0.7, 0.6, e), tgz = P[2] + fz * lerp(0, D * 0.18, e);
+    ix = lerp(ix, cx, blend); iy = lerp(iy, cy, blend); iz = lerp(iz, cz, blend);
+    const px = lerp(tgx, tx, blend), py = lerp(tgy, ty, blend), pz = lerp(tgz, tz, blend);
+    this.cam.fov = fov * lerp(0.75, 1, e);
+    this.cam.setPose(ix, iy, iz, px - ix, py - iy, pz - iz);
+    return true;
+  }
   cycle(hasCockpit = true) {
     let i = VIEWS.indexOf(this.mode);
     do { i = (i + 1) % VIEWS.length; } while (!hasCockpit && VIEWS[i] === 'cockpit');
@@ -109,6 +137,7 @@ export class CameraRig {
     // a fraction of the aircraft bank tilts the horizon for a sense of motion
     mat3.mulVec(_u, ent.rot, 0, 1, 0);
     const bank = 0.14;
+    if (this.intro && this._intro(dt, ent, fov, x, y, z, ax, ay, az2)) return;
     cam.fov = fov * (1 + clamp(m.tas / 700, 0, 0.1));
     cam.setPose(x, y, z, ax - x, ay - y, az2 - z, _u[0] * bank, 1 - bank + _u[1] * bank, _u[2] * bank);
   }

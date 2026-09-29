@@ -63,6 +63,13 @@ const spawnPoints = (world) => {
   if (!list) { list = world.spawns().map((s) => [s.x, s.z]); spawnCache.set(world, list); }
   return list;
 };
+// regions can declare clearings ({ x, z, r } circles) where nothing natural grows, such as a farmyard inside a forest
+const clearCache = new WeakMap();
+const clearingsOf = (world) => {
+  let list = clearCache.get(world);
+  if (!list) { list = []; for (const r of world.regionsList || []) for (const c of r.clearings || []) list.push(c); clearCache.set(world, list); }
+  return list;
+};
 const defCache = new WeakMap();
 const habitatsOf = (world) => {
   let h = defCache.get(world);
@@ -101,8 +108,10 @@ export function scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets) {
   const { biomes, scenery } = world;
   // nothing grows on top of a start position, so the first frame is never a tree filling the screen
   const clear = spawnPoints(world).filter((p) => p[0] > x0 - SPAWN_CLEAR && p[0] < x0 + size + SPAWN_CLEAR && p[1] > z0 - SPAWN_CLEAR && p[1] < z0 + size + SPAWN_CLEAR);
+  const clearings = clearingsOf(world).filter((c) => c.x + c.r > x0 && c.x - c.r < x0 + size && c.z + c.r > z0 && c.z - c.r < z0 + size);
   const nearSpawn = (px, pz) => {
     for (const p of clear) if ((px - p[0]) * (px - p[0]) + (pz - p[1]) * (pz - p[1]) < SPAWN_CLEAR * SPAWN_CLEAR) return true;
+    for (const c of clearings) if ((px - c.x) * (px - c.x) + (pz - c.z) * (pz - c.z) < c.r * c.r) return true;
     return false;
   };
   const pick = (list, h, slope, r) => {
@@ -146,7 +155,7 @@ export function scatterNode(world, x0, z0, cell, level, N, buf, cfg, buckets) {
         const px = (gx + 0.5 + (((h1 & 255) / 255) - 0.5) * 0.9) * spacing;
         const pz = (gz + 0.5 + ((((h1 >> 8) & 255) / 255) - 0.5) * 0.9) * spacing;
         if (px < x0 || px >= x0 + size || pz < z0 || pz >= z0 + size) continue;
-        if (clear.length && nearSpawn(px, pz)) continue;
+        if ((clear.length || clearings.length) && nearSpawn(px, pz)) continue;
         cb(px, pz, gx, gz);
       }
     }

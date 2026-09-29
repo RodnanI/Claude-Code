@@ -2,29 +2,12 @@ import { h, clear } from './dom.js';
 import { SettingsPanel } from './settings-panel.js';
 import { IslandMap } from './map.js';
 import { ACTIONS } from '../input/bindings.js';
-import { KT } from '../aircraft/flight/model.js';
-import { totalMass } from '../aircraft/base.js';
+import { Hangar } from './hangar.js';
+
+export { planeFacts } from './hangar.js';
 
 const KEYNAMES = { ShiftLeft: 'Shift', ShiftRight: 'Shift', ControlLeft: 'Ctrl', ControlRight: 'Ctrl', Space: 'Space', Escape: 'Esc', Period: '.', Comma: ',', Slash: '/', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', PageUp: 'PgUp', PageDown: 'PgDn' };
 const keyName = (c) => KEYNAMES[c] || c.replace(/^Key/, '').replace(/^Digit/, '');
-
-/** Specification plate for an aircraft, computed from its definition. */
-export function planeFacts(spec, metric) {
-  const W = totalMass(spec) * 9.81;
-  const vs = Math.sqrt((2 * W) / (1.225 * spec.wing.area * spec.aero.CLmax));
-  const spd = (ms) => (metric ? `${Math.round(ms * 3.6)} km/h` : `${Math.round(ms * KT)} kt`);
-  const p = spec.propulsion;
-  return [
-    ['Power', p.type === 'prop' ? `${Math.round(p.power / 745.7)} hp` : `${Math.round(p.thrust / 1000)} kN, ${Math.round((p.thrust + (p.afterburner || 0)) / 1000)} kN afterburner`],
-    ['Mass', `${Math.round(totalMass(spec))} kg`],
-    ['Wingspan', `${spec.wing.span.toFixed(1)} m`],
-    ['Stall speed', spd(vs)],
-    ['Never exceed', spd(spec.limits.vne)],
-    ['Load limit', `${spec.limits.maxG} G`],
-    ['Landing gear', spec.gear.retractable ? 'Retractable tricycle' : spec.gear.wheels.length && spec.gear.wheels.some((w) => w.pos[0] < -2) ? 'Fixed tailwheel' : 'Fixed tricycle'],
-    ['Weapons', spec.weapons.length ? `${spec.weapons.length} systems` : 'None'],
-  ];
-}
 
 /** Menu, hangar, pause, crash, controls and map screens around the running game. */
 export class App {
@@ -54,6 +37,7 @@ export class App {
   show(name) {
     for (const [k, el] of Object.entries(this.screens)) el.classList.toggle('on', k === name);
     this.current = name;
+    if (this.hangar && name !== 'hangar') this.hangar.close();
   }
 
   hideAll() { this.show(null); }
@@ -72,31 +56,8 @@ export class App {
         h('button', { class: 'btn', onclick: () => this.openControls() }, 'Controls'),
         h('button', { class: 'btn', onclick: () => this.toggleFullscreen() }, 'Fullscreen')),
       h('div', { class: 'menu-foot', id: 'menu-foot' })));
-    // hangar
-    const hangar = this._screen('hangar');
-    this.aircraftList = h('div');
-    this.startList = h('div');
-    this.liveryField = h('div', { class: 'field' });
-    this.airborneBtn = h('button', { class: 'toggle', role: 'switch', onclick: () => { this.sel.airborne = !this.sel.airborne; this.airborneBtn.classList.toggle('on', this.sel.airborne); } });
-    this.hourSlider = h('input', { type: 'range', min: 0, max: 24, step: 0.25, value: g.store.get('timeOfDay') });
-    this.hourVal = h('span', { class: 'mono' }, '');
-    this.hourSlider.addEventListener('input', () => { g.store.set('timeOfDay', +this.hourSlider.value); this.hourVal.textContent = this._fmtHour(+this.hourSlider.value); });
-    this.cloudSlider = h('input', { type: 'range', min: 0, max: 1, step: 0.05, value: g.store.get('cloudCover') });
-    this.cloudSlider.addEventListener('input', () => g.store.set('cloudCover', +this.cloudSlider.value));
-    this.challengeSelect = h('select', { onchange: (e) => g.store.set('challenge', e.target.value) },
-      h('option', { value: 'off' }, 'Free flight'), h('option', { value: 'skyline' }, 'Skyline run over Meridian'));
-    this.challengeSelect.value = g.store.get('challenge');
-    hangar.append(
-      h('div', { class: 'hangar-left' }, h('h2', null, 'Aircraft'), this.aircraftList, h('button', { class: 'btn small', style: { marginTop: '8px' }, onclick: () => this.showMenu() }, 'Back')),
-      h('div', { class: 'hangar-right' },
-        h('div', null, h('h2', null, 'Start area'), this.startList),
-        this.liveryField,
-        h('div', { class: 'field' }, h('div', { class: 'row' }, h('span', { class: 'label' }, 'Time of day'), this.hourVal), this.hourSlider),
-        h('div', { class: 'field' }, h('span', { class: 'label' }, 'Cloud cover'), this.cloudSlider),
-        h('div', { class: 'row' }, h('span', { class: 'label' }, 'Start in the air'), this.airborneBtn),
-        h('div', { class: 'field' }, h('span', { class: 'label' }, 'Challenge'), this.challengeSelect),
-        h('div', { class: 'grow' }),
-        h('button', { class: 'btn primary', onclick: () => this.fly() }, 'Take off')));
+    // hangar: aircraft cards, airfield chart, briefing and conditions (see hangar.js)
+    this.hangar = new Hangar(this, this._screen('hangar'));
     // pause
     const pause = this._screen('pause');
     pause.append(h('div', { class: 'center-card' }, h('h1', null, 'Paused'), h('p', null, 'The aircraft is holding still. The island is not.'),
@@ -127,12 +88,7 @@ export class App {
     this.stats = h('div', { id: 'stats' });
     this.hint = h('div', { class: 'hint off' }, 'Shift: throttle   W S: pitch   A D: roll   Q E: rudder   Space: brakes   G: gear   F V: flaps   X: camera   M: map');
     document.body.append(this.stats, this.hint);
-    this._fillAircraft();
-    this._fillStarts();
-    this.hourVal.textContent = this._fmtHour(g.store.get('timeOfDay'));
   }
-
-  _fmtHour(v) { return `${String(Math.floor(v)).padStart(2, '0')}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}`; }
 
   _controlsSheet() {
     const rows = ACTIONS.map((a) => h('div', { class: 'keyrow' }, h('span', null, a.label), h('span', null, a.keys.filter((k, i, arr) => arr.findIndex((x) => keyName(x) === keyName(k)) === i).map((k) => h('span', { class: 'kbd' }, keyName(k))))));
@@ -147,40 +103,6 @@ export class App {
           h('p', null, 'Left stick pitch and roll, right stick rudder, triggers throttle, A brakes, B gear, X and Y flaps, LB camera, RB airbrake, View map, Menu pause, D-pad trim.'))));
   }
 
-  _fillAircraft() {
-    clear(this.aircraftList);
-    const metric = this.game.store.get('units') === 'metric';
-    for (const spec of this.game.planes) {
-      const facts = planeFacts(spec, metric);
-      const card = h('div', { class: 'card' + (spec.id === this.sel.plane ? ' sel' : ''), onclick: () => { this.sel.plane = spec.id; this.sel.livery = 'default'; this._fillAircraft(); this._preview(); } },
-        h('div', { class: 'role' }, spec.role + '  /  ' + spec.manufacturer), h('h3', null, spec.name), h('p', null, spec.description),
-        h('div', { class: 'spec' }, facts.flat().map((x) => h('div', null, x))),
-        h('div', { class: 'tags' }, spec.tags.map((t, i) => h('span', { class: 'tag' + (i < 2 ? ' hot' : '') }, t))));
-      this.aircraftList.append(card);
-    }
-    clear(this.liveryField);
-    const spec = this.game.planes.find((a) => a.id === this.sel.plane);
-    this.liveryField.append(h('span', { class: 'label' }, 'Livery'), h('select', { onchange: (e) => { this.sel.livery = e.target.value; this._preview(); } }, spec.liveries.map((l) => h('option', { value: l.id, selected: l.id === this.sel.livery }, l.name))));
-  }
-
-  _fillStarts() {
-    clear(this.startList);
-    const regions = new Map(this.game.world.regionsList.map((r) => [r.id, r]));
-    const groups = new Map();
-    for (const s of this.game.starts) { if (!groups.has(s.region)) groups.set(s.region, []); groups.get(s.region).push(s); }
-    const ordered = [...groups].sort((a, b) => (regions.get(a[0])?.info?.order ?? 99) - (regions.get(b[0])?.info?.order ?? 99));
-    for (const [rid, list] of ordered) {
-      const r = regions.get(rid);
-      const info = (r && r.info) || { label: 'Airfield', blurb: '' };
-      this.startList.append(h('div', { class: 'label', style: { margin: '10px 0 6px' } }, `${r ? r.name : rid}  /  ${info.label}`));
-      this.startList.append(h('div', { class: 'help', style: { color: 'var(--paper-dim)', fontSize: '12.5px', marginBottom: '8px', lineHeight: 1.4 } }, info.blurb));
-      for (const s of list) this.startList.append(h('button', { class: 'start' + (s.id === this.sel.start ? ' sel' : ''), onclick: () => { this.sel.start = s.id; this._fillStarts(); this._preview(); } },
-        h('b', null, s.name), h('small', null, `${s.kind === 'runway' ? 'Runway' : s.kind === 'apron' ? 'Parking apron' : s.kind} heading ${String(Math.round(s.heading)).padStart(3, '0')}`)));
-    }
-    const sel = this.startList.querySelector('.start.sel');
-    if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
-  }
-
   // ------------------------------------------------------------------ flow
   showMenu() {
     this.game.showFlyover();
@@ -192,13 +114,9 @@ export class App {
   }
 
   showHangar() {
-    this._fillAircraft(); this._fillStarts();
-    this.challengeSelect.value = this.game.store.get('challenge');
     this.show('hangar');
-    this._preview();
+    this.hangar.open();
   }
-
-  _preview() { this.game.showcase(this.sel.plane, this.sel.start, this.sel.livery); }
 
   fly() {
     this.hideAll();

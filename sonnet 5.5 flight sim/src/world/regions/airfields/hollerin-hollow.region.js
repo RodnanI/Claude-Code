@@ -23,7 +23,7 @@ af.pad(-214, 10, -198, 36, M.DIRT_ROAD);
 af.pad(-330, 55, -270, 75, M.DIRT_ROAD);
 af.pad(-150, -52, -138, 24, M.DIRT_ROAD);
 
-const inYard = (u, v) => u > -340 && u < -30 && v > -160 && v < 170;
+const inYard = (u, v) => (u > -340 && u < -30 && v > -160 && v < 170) || Math.hypot(u + 185, v - 5) < 215;
 
 export default defineRegion({
   id: 'airfield/hollerin-hollow',
@@ -37,6 +37,8 @@ export default defineRegion({
   bounds: af.worldBounds(-620, -260, 340, 460, 60),
   maxHeight: 40,
   tint: M.URBAN_GREEN,
+  // the farm is a clearing in the woods: the strip and both yards stay free of natural trees
+  clearings: [af.clearing(-185, 5, 210), af.clearing(0, 0, 90)],
   access: { hollow: af.toWorld(-520, 380) },
   runways: af.runwayList(),
   chart: () => af.chart(),

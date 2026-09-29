@@ -14,6 +14,7 @@ export default defineAircraft({
   manufacturer: 'Fort Talon Aerospace',
   role: 'Light fighter',
   order: 3,
+  difficulty: 5,
   tags: ['Afterburner', 'Fly-by-wire', 'Cannon', 'Missiles', 'Rockets', 'Bombs'],
   description: 'Single engine, afterburning, fly-by-wire. A 9 G airframe that will happily fly faster than sound and land exactly as carefully as you make it. Cannon, heat seekers, rocket pods and bombs.',
   voxel: 0.0625,

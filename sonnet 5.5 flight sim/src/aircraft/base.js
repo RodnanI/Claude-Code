@@ -23,6 +23,7 @@ export function defineAircraft(spec) {
     animations: [],
     liveries: [{ id: 'default', name: 'Factory' }],
     fuelDefault: 0.8,
+    difficulty: 3,
     ...spec,
   };
   a.aero = { CDflap: 0.04, CDgear: 0, CLflap: 0.4, Cmflap: -0.05, CLmaxFlap: 0.3, Cmq: -10, Clb: 0.08, Clp: -0.45, Cnb: 0.06, Cnr: -0.1, Cyb: 0.3, Cnda: 0.015, machCrit: 0.85, ...a.aero };
@@ -40,6 +41,7 @@ export function validateAircraft(a) {
   if (!(a.aero.Cma < 0)) err('aero.Cma must be negative for static pitch stability');
   if (!a.gear.wheels || a.gear.wheels.length < 3) err('gear needs at least three wheels');
   if (typeof a.model !== 'function') err('model must be a function');
+  if (!(a.difficulty >= 1 && a.difficulty <= 5)) err('difficulty is a rating from 1 to 5');
   if (a.propulsion.type !== 'prop' && a.propulsion.type !== 'jet') err('propulsion.type must be prop or jet');
   if (Math.abs((a.aero.CLmax - a.aero.CL0) / a.aero.CLa - a.aero.alphaStall) > 0.08) err('alphaStall disagrees with (CLmax - CL0) / CLa');
   const stationIds = new Set();

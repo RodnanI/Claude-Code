@@ -249,11 +249,42 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
     return [Math.min(lo, 0), hi];
   };
 
-  /** All start areas with their spawn points. */
+  /**
+   * All start areas with their spawn points. A start that names a runway also carries `rwy`, the runway it belongs to (both end
+   * names, length, width, surface), and `roll`, the pavement ahead of it in its own heading, so the hangar and the takeoff
+   * logic never have to search the region again.
+   */
   world.spawns = () => {
     const list = [];
-    for (const r of regions) for (const s of r.spawns || []) list.push({ ...s, region: r.id, site: r.id });
+    for (const r of regions) {
+      for (const s of r.spawns || []) {
+        const sp = { ...s, region: r.id, site: r.id };
+        const rw = s.runway && (r.runways || []).find((q) => q.ends.some((e) => e.name === s.runway));
+        if (rw) {
+          const end = rw.ends.find((e) => e.name === s.runway), far = rw.ends.find((e) => e !== end);
+          const h = (end.heading * Math.PI) / 180;
+          sp.rwy = { id: rw.id, name: end.name, opposite: far.name, length: rw.length, width: rw.width, surface: rw.surface, heading: end.heading, x: end.x, z: end.z, fx: far.x, fz: far.z };
+          sp.roll = s.kind === 'runway' ? Math.max(0, (far.x - s.x) * Math.sin(h) - (far.z - s.z) * Math.cos(h)) : rw.length;
+        }
+        list.push(sp);
+      }
+    }
     return list;
+  };
+
+  /**
+   * What the airfield chart draws for one region, in world coordinates: pavement rectangles and routes, structure footprints
+   * (oriented boxes) and the runway list. Null for a region that is not an airfield with a chart.
+   */
+  world.airfieldInfo = (regionId) => {
+    const r = regions.find((q) => q.id === regionId);
+    if (!r || typeof r.chart !== 'function') return null;
+    const c = r.chart();
+    const L = layoutOf(r);
+    return {
+      id: r.id, name: r.name, info: r.info || {}, chart: c, runways: r.runways || [], bounds: r.bounds,
+      structures: L.structures.map((d) => ({ kind: d.kind, x: d.x, z: d.z, w: d.w, d: d.d, ang: ((d.rot || 0) & 3) * (Math.PI / 2) + (d.yaw || 0) })),
+    };
   };
 
   return world;

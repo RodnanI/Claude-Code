@@ -7,8 +7,32 @@
 import { loadPlaywright, launch, waitFor } from '../tests/browser/harness.mjs';
 import { resolve } from 'node:path';
 import { mkdirSync } from 'node:fs';
+import { SITES } from '../src/world/layout.js';
+
+/** A view given in an airfield's own frame: u along the runway, v to its right, rel degrees clockwise from the runway heading. */
+const at = (site, u, v, agl, rel, pitch = -0.08, fov = 65) => {
+  const S = SITES[site], h = (S.heading * Math.PI) / 180;
+  return [S.x + u * Math.sin(h) + v * Math.cos(h), S.z - u * Math.cos(h) + v * Math.sin(h), agl, (S.heading + rel + 360) % 360, pitch, fov];
+};
 
 export const VIEWS = {
+  // airfields
+  'apt-terminal': at('airport', 0, -190, 42, -90, -0.1),
+  'apt-gates': at('airport', -20, -330, 14, -67, -0.05, 70),
+  'apt-approach': at('airport', -3100, 300, 150, 0, -0.06),
+  'apt-runway': at('airport', -1640, 300, 3.5, 0, -0.02, 70),
+  'apt-intro': at('airport', -1590.8, 292.3, 2.1, 140, 0, 52),
+  'apt-hangars': at('airport', -1000, -190, 30, -135, -0.1),
+  'apt-cargo': at('airport', 1100, -140, 30, -90, -0.1),
+  'apt-landside': at('airport', 0, -1240, 70, 90, -0.16),
+  'apt-junction': at('airport', -560, 130, 40, 0, -0.35, 70),
+  'talon-ramp': at('fortTalon', -60, -40, 22, -90, -0.08),
+  'talon-shelters': at('fortTalon', -800, 60, 18, 90, -0.06),
+  'talon-gate': at('fortTalon', -300, -760, 9, 90, -0.03, 70),
+  'talon-hangars': at('fortTalon', 0, -140, 14, -90, -0.05),
+  'hollow-compound': at('hollow', -100, -20, 12, -55, -0.05, 70),
+  'hollow-strip': at('hollow', -250, 0, 3.2, 0, -0.02, 70),
+  'hollow-barn': at('hollow', -60, -30, 8, -150, -0.04, 70),
   // name: [x, z, agl, headingDeg, pitch, fovDeg]
   forest: [3200, -3000, 40, 20, -0.14, 65],
   forestclose: [-2000, -1400, 14, 90, -0.06, 70],

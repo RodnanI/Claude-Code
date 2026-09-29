@@ -62,6 +62,8 @@ export class Airfield {
     this._grid = null;
   }
   toWorld(u, v) { return [this.cx + u * this.s + v * this.c, this.cz - u * this.c + v * this.s]; }
+  /** A circle where the scatter grows nothing (see world/scatter): the region lists these in `clearings`. */
+  clearing(u, v, r) { const [x, z] = this.toWorld(u, v); return { x, z, r }; }
   toLocal(x, z) {
     const dx = x - this.cx, dz = z - this.cz;
     return [dx * this.s - dz * this.c, dx * this.c + dz * this.s];
@@ -593,9 +595,8 @@ export class Airfield {
     const lu = u - a.u0, lv = v - a.v0;
     const su = Math.floor(lu / 7.5), sv = Math.floor(lv / 6);
     if (cell <= 0.62 && (lu % 7.5 < 0.3 || lv % 6 < 0.3)) return M.CONCRETE_DARK;
-    const r = n2(su, sv, a.seed);
-    if (r < 0.03) return M.CONCRETE_DARK;
-    if (r < 0.2) return M.CONCRETE;
+    // a few replaced panels only; the joints and stains carry the wear, a busy tone pattern reads as noise from the cockpit
+    if (n2(su, sv, a.seed) < 0.07) return M.CONCRETE;
     if (cell <= 1.05) {
       // stains on a coarse grid
       const gi = Math.floor(u / 26), gj = Math.floor(v / 26);
@@ -615,6 +616,13 @@ export class Airfield {
     if (p.mat === M.CONCRETE || p.mat === M.CONCRETE_DARK || p.mat === M.APRON) {
       if (cell <= 0.62 && (lu % 7.5 < 0.3 || lv % 6 < 0.3)) return p.mat === M.CONCRETE ? M.CONCRETE_DARK : M.ASPHALT_WORN;
       if (n2(Math.floor(lu / 7.5), Math.floor(lv / 6), 97) < 0.12) return p.mat === M.CONCRETE ? M.APRON : M.CONCRETE;
+    } else if (p.mat === M.DIRT_ROAD) {
+      // packed earth: trampled dark patches, bare clay, and grass taking back the margins
+      const e = Math.min(lu, p.u1 - u, lv, p.v1 - v);
+      const nn = n2(Math.floor(u / 2.5), Math.floor(v / 2.5), 71);
+      if (e < 6 && nn < 0.75 - e * 0.12) return M.GRASS_DRY;
+      if (nn > 0.9) return M.DIRT;
+      if (nn < 0.07) return M.DIRT_DARK;
     }
     return p.mat;
   }
@@ -639,6 +647,7 @@ export class Airfield {
   chart() {
     return {
       heading: this.headingDeg,
+      frame: { cx: this.cx, cz: this.cz, s: this.s, c: this.c },
       runways: this.runways.map((r) => ({ u0: r.u0, u1: r.u1, v: r.v, w: r.w, marks: r.marks, surface: r.surface === 'grass' ? 'grass' : r.pave })),
       taxiways: this.taxiways.map((t) => ({ u0: t.u0, u1: t.u1, v0: t.v0, v1: t.v1, w: t.w, kind: t.kind })),
       routes: this.routes.map((r) => ({ poly: r.poly, w: r.w })),

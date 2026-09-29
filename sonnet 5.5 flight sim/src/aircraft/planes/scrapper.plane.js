@@ -21,6 +21,7 @@ export default defineAircraft({
   manufacturer: "Cousin Earl's Garage",
   role: 'Bush plane',
   order: 2,
+  difficulty: 4,
   tags: ['Tailwheel', 'STOL', 'Open cockpit', 'Bites back'],
   description: 'Fabric, chrome-moly tube and a converted car engine. Lands on a road, a pasture or a sandbar. Spins if you look at it wrong. The only aircraft the hillbilly strip was built for.',
   voxel: 0.0625,

@@ -8,8 +8,8 @@ const COND = '"Bahnschrift", "DIN Condensed", "Arial Narrow", "Roboto Condensed"
 /** Unit conversion for display. */
 export function unitsFor(system) {
   return system === 'metric'
-    ? { speed: (ms) => ms * 3.6, speedUnit: 'km/h', alt: (m) => m, altUnit: 'm', vs: (ms) => ms, vsUnit: 'm/s', vsDigits: 1 }
-    : { speed: (ms) => ms * KT, speedUnit: 'kt', alt: (m) => m * FT, altUnit: 'ft', vs: (ms) => ms * FT * 60, vsUnit: 'fpm', vsDigits: 0 };
+    ? { speed: (ms) => ms * 3.6, speedUnit: 'km/h', alt: (m) => m, altUnit: 'm', vs: (ms) => ms, vsUnit: 'm/s', vsDigits: 1, dist: (m) => m, distUnit: 'm' }
+    : { speed: (ms) => ms * KT, speedUnit: 'kt', alt: (m) => m * FT, altUnit: 'ft', vs: (ms) => ms * FT * 60, vsUnit: 'fpm', vsDigits: 0, dist: (m) => m * FT, distUnit: 'ft' };
 }
 
 /**
@@ -59,6 +59,7 @@ export class Hud {
     const scale = (s.scale || 1) * clamp(Math.min(this.w / 1280, this.h / 720), 0.7, 1.5);
     if (s.course) this._course(s.course, s.cam, scale);
     this._warnings(m, spec, s, scale);
+    if (s.assist && !m.crashed) { this._runwayPath(s.assist, s, m, scale); this._takeoff(s.assist, m, u, scale); }
     if (m.crashed) return;
     if (spec.hud === 'fighter') this._fighter(s, m, spec, u, scale);
     else if (s.view === 'cockpit') this._mini(s, m, u, scale);
@@ -134,6 +135,7 @@ export class Hud {
     if (!m.onGround && spec.gear.retractable && m.c.gear < 0.99 && m.agl < 120 && m.vel[1] < -1 && m.ias < spec.limits.gearSpeed) items.push('GEAR');
     if (m.fuel < m.spec.mass.fuel * 0.08 && m.fuel > 0) items.push('LOW FUEL'); else if (m.fuel <= 0) items.push('NO FUEL');
     if (m.gLoad > spec.limits.maxG * 0.9) items.push('G LIMIT');
+    if (s.assist && s.assist.terrain && !m.onGround) items.push('TERRAIN');
     if (!items.length) return;
     const blink = Math.floor(performance.now() / 260) % 2 === 0;
     let y = this.h * 0.3;
@@ -144,6 +146,67 @@ export class Hud {
       c.fillRect(this.w / 2 - w / 2, y - 18 * k, w, 36 * k);
       c.fillStyle = INK; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(it, this.w / 2, y + 1);
       y += 44 * k;
+    }
+  }
+
+  /** Chevrons along the runway centerline ahead of the aircraft, drawn in perspective: something to steer at during the roll. */
+  _runwayPath(a, s, m, k) {
+    if (!a.frame || (a.phase !== 'hold' && a.phase !== 'roll' && a.phase !== 'rotate')) return;
+    const c = this.ctx, f = a.frame, cam = s.cam;
+    const gy = m.pos[1] - Math.max(m.agl, 0) - 0.2;
+    c.lineWidth = Math.max(1.5, 2 * k); c.lineCap = 'round'; c.lineJoin = 'round';
+    for (let d = 12; d <= 420; d += d < 160 ? 12 : 30) {
+      const uu = a.u + d;
+      if (uu > f.length - 5) break;
+      const dx = f.x + f.fx * uu - cam.pos[0], dy = gy - cam.pos[1], dz = f.z + f.fz * uu - cam.pos[2];
+      const p = this.project(cam, dx, dy, dz);
+      if (!p || p[0] < 0 || p[0] > this.w || p[1] < 0 || p[1] > this.h) continue;
+      const dist = Math.hypot(dx, dy, dz), sz = clamp(700 / dist, 2, 11) * k;
+      c.globalAlpha = clamp(0.85 - d / 520, 0.12, 0.85);
+      c.strokeStyle = AMBER;
+      c.beginPath(); c.moveTo(p[0] - sz, p[1] + sz * 0.3); c.lineTo(p[0], p[1] - sz * 0.3); c.lineTo(p[0] + sz, p[1] + sz * 0.3); c.stroke();
+    }
+    c.globalAlpha = 1; c.lineCap = 'butt';
+  }
+
+  /** The takeoff panel: runway, cross-track offset against the runway width, speed against the rotation speed, what to do next. */
+  _takeoff(a, m, u, k) {
+    const c = this.ctx;
+    const W = 304 * k, Hh = 128 * k, x = this.w - W - 20 * k, y = Math.max(96 * k, this.h * 0.27);
+    const tone = a.tone === 'bad' ? ORANGE : a.tone === 'good' ? GREEN : AMBER;
+    const cue = a.short ? 'Runway is short for this aircraft' : a.cue;
+    const cueTone = a.short ? ORANGE : tone;
+    c.fillStyle = 'rgba(21,18,14,0.8)'; c.fillRect(x, y, W, Hh);
+    c.fillStyle = a.controlling ? ORANGE : '#6b7444'; c.fillRect(x, y, 4 * k, Hh);
+    this._text(`RUNWAY ${a.runway}`, x + 16 * k, y + 17 * k, 18 * k, PAPER, 'left', COND, '700');
+    this._text(a.controlling ? 'AUTO TAKEOFF' : 'GUIDANCE', x + W - 10 * k, y + 17 * k, 11.5 * k, a.controlling ? ORANGE : DIM, 'right', COND, '700');
+    // cross-track: the bar spans the runway, the diamond is the aircraft
+    const bx0 = x + 18 * k, bx1 = x + W - 14 * k, bw = bx1 - bx0, by = y + 44 * k, half = Math.max(a.width || 30, 10) / 2;
+    c.fillStyle = '#2c271f'; c.fillRect(bx0, by - 4 * k, bw, 8 * k);
+    c.fillStyle = '#4a4234';
+    for (let i = 0; i <= 4; i++) c.fillRect(bx0 + (bw * i) / 4 - 1 * k, by - 7 * k, 2 * k, 14 * k);
+    const off = clamp(a.v / half, -1.15, 1.15), ox = bx0 + bw / 2 + off * (bw / 2);
+    const ok = Math.abs(off) < 0.3, close = Math.abs(off) < 0.65;
+    c.fillStyle = ok ? PAPER : close ? AMBER : ORANGE;
+    c.beginPath(); c.moveTo(ox, by - 8 * k); c.lineTo(ox + 7 * k, by); c.lineTo(ox, by + 8 * k); c.lineTo(ox - 7 * k, by); c.closePath(); c.fill();
+    this._text(Math.abs(a.v) < 0.8 ? 'ON THE LINE' : `${a.v < 0 ? 'LEFT' : 'RIGHT'} ${Math.abs(a.v).toFixed(0)} m`, x + 16 * k, y + 62 * k, 10.5 * k, ok ? DIM : cueTone, 'left', COND, '700');
+    // speed against the rotation speed
+    const sy = y + 84 * k, top = a.vr * 1.2, vx = bx0 + bw * (a.vr / top);
+    c.fillStyle = '#2c271f'; c.fillRect(bx0, sy - 4 * k, bw, 8 * k);
+    c.fillStyle = m.ias >= a.vr ? GREEN : AMBER; c.fillRect(bx0, sy - 4 * k, bw * clamp(m.ias / top, 0, 1), 8 * k);
+    c.fillStyle = PAPER; c.fillRect(vx - 1.5 * k, sy - 9 * k, 3 * k, 18 * k);
+    this._text(`VR ${u.speed(a.vr).toFixed(0)}`, vx, sy - 15 * k, 10 * k, PAPER, 'center', COND, '700');
+    this._text(`${u.speed(m.ias).toFixed(0)} ${u.speedUnit}`, x + 16 * k, sy + 15 * k, 10.5 * k, DIM, 'left', COND, '700');
+    this._text(`${Math.max(0, Math.round(u.dist(a.rem) / 10) * 10)} ${u.distUnit} LEFT`, x + W - 10 * k, sy + 15 * k, 10.5 * k, a.rem < 300 && a.phase !== 'climb' && a.phase !== 'done' ? ORANGE : DIM, 'right', COND, '700');
+    if (cue) this._text(cue.toUpperCase(), x + 16 * k, y + Hh - 11 * k, 13 * k, cueTone, 'left', COND, '700');
+    // the moments that must not be missed get the middle of the screen
+    const big = a.short ? null : a.phase === 'rotate' ? 'ROTATE' : /^Gear up/.test(a.cue) ? 'GEAR UP' : a.phase === 'abort' ? 'ABORT' : null;
+    if (big && (Math.floor(performance.now() / 320) % 2 === 0 || big !== 'ROTATE')) {
+      c.font = `700 ${Math.round(34 * k)}px ${COND}`;
+      const tw = c.measureText(big).width + 40 * k, cy = this.h * 0.24;
+      c.fillStyle = 'rgba(21,18,14,0.82)'; c.fillRect(this.w / 2 - tw / 2, cy - 24 * k, tw, 48 * k);
+      c.fillStyle = big === 'ABORT' ? ORANGE : GREEN; c.fillRect(this.w / 2 - tw / 2, cy - 24 * k, 5 * k, 48 * k);
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(big, this.w / 2 + 2 * k, cy + 2 * k);
     }
   }
 

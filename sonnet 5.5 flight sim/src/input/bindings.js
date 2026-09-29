@@ -24,6 +24,7 @@ export const ACTIONS = [
   { id: 'lookBack', label: 'Look back (hold)', keys: ['KeyN'] },
   { id: 'fire', label: 'Fire', keys: ['KeyJ'] },
   { id: 'weapon', label: 'Next weapon', keys: ['KeyK'] },
+  { id: 'assist', label: 'Takeoff assist mode', keys: ['KeyT'] },
   { id: 'map', label: 'Island map', keys: ['KeyM'] },
   { id: 'hud', label: 'Toggle HUD', keys: ['KeyH'] },
   { id: 'pause', label: 'Pause', keys: ['Escape', 'KeyP'] },

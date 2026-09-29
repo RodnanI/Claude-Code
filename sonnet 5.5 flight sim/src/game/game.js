@@ -20,10 +20,13 @@ import { StructureCollider } from './collision.js';
 import { TrafficSystem } from '../traffic/traffic.js';
 import { AmbientSystem } from '../traffic/ambient.js';
 import { Course, formatTime } from './course.js';
+import { TakeoffAssist, ASSIST_LABEL } from './takeoff-assist.js';
 
 const STEP = 1 / 240;
 const MAX_STEPS = 16;
 const FLAP_NOTCHES = 3;
+const INTRO_TIME = 4.6;               // seconds of the takeoff intro camera
+const INTRO_HOLD = 3.0;               // an automatic takeoff releases the brakes after this long
 
 /**
  * The running game: owns the renderer, world, streaming, traffic, the player aircraft and the frame loop.
@@ -73,6 +76,7 @@ export class Game extends Emitter {
     await step(0.14, 'Generating the island');
     this.world = createWorld({ seed: WORLD_SEED });
     this.ground = makeGround(this.world);
+    this.assist = new TakeoffAssist(this.world, this.ground);
     this.models = new ModelRegistry(this.renderer, this.world);
     this.nodes = new NodeManager({ renderer: this.renderer, models: this.models, world: this.world, seed: WORLD_SEED, settings: d.lod });
     this.env = new Environment();
@@ -87,7 +91,7 @@ export class Game extends Emitter {
     this.rig = new CameraRig(this.renderer.camera, this.ground);
     this.flyover = new Flyover(this.world, this.ground);
     this.starts = this.world.spawns();
-    this.store.on('change', (k) => { this.settingsDirty = true; if (k === 'timeOfDay') this.env.setHour(this.store.get('timeOfDay')); });
+    this.store.on('change', (k) => { if (k !== 'takeoffAssist') this.settingsDirty = true; if (k === 'timeOfDay') this.env.setHour(this.store.get('timeOfDay')); });
     this.applySettings();
     this.env.setHour(this.store.get('timeOfDay'));
     addEventListener('resize', () => this.resize());
@@ -158,7 +162,19 @@ export class Game extends Emitter {
     this.preview.instance.prewarm([0], false);
     this.previewStart = start;
     this.orbitAz = 0.7;
+    this.orbitEl = 0.2;
+    this.orbitZoom = 1;
+    this.orbitSpin = true;
     this.menuView = 'showcase';
+  }
+
+  /** Hangar camera control: drag to orbit, wheel to zoom, or jump to a preset (orbit, front, side, top, back). */
+  orbitBy(dAz, dEl) { this.orbitAz += dAz; this.orbitEl = Math.max(-0.05, Math.min(1.45, (this.orbitEl ?? 0.2) + dEl)); this.orbitSpin = false; }
+  zoomBy(f) { this.orbitZoom = Math.max(0.45, Math.min(2.2, (this.orbitZoom ?? 1) * f)); }
+  viewPreset(name) {
+    const P = { orbit: [0.7, 0.2, true], front: [Math.PI, 0.08, false], side: [Math.PI / 2, 0.06, false], back: [0, 0.14, false], top: [0, 1.4, false], three: [0.7, 0.2, false] };
+    const p = P[name] || P.orbit;
+    this.orbitAz = p[0]; this.orbitEl = p[1]; this.orbitSpin = p[2]; this.orbitZoom = 1;
   }
 
   showFlyover() { this.menuView = 'flyover'; this.preview = null; }
@@ -177,6 +193,9 @@ export class Game extends Emitter {
       this.input.throttle = 0;
     }
     this.ent.instance.prewarm([0, 1], true);
+    // takeoff help only makes sense from the ground; an automatic takeoff waits on the brakes while the intro camera plays
+    const assistMode = airborne ? 'off' : this.store.get('takeoffAssist');
+    this.assist.reset(assistMode, INTRO_HOLD);
     this.flapNotch = 0;
     this.input.trim = airborne ? this.ent.model.input.trim : 0;
     this.crashed = false;
@@ -185,15 +204,17 @@ export class Game extends Emitter {
     if (this.course) this.course.reset();
     this.rig.setMode(spec.cameras.defaultView || 'chase');
     this.rig.reset(this.ent);
+    if (!airborne && this.rig.mode !== 'cockpit') this.rig.startIntro(INTRO_TIME);
     this.acc = 0;
     this.setState('flying');
     this.hud.toast(`${spec.name} at ${start.name}`, 3400);
+    if (assistMode === 'auto') this.hud.toast('Automatic takeoff: hands off, or take over any time', 4200);
   }
 
   restart() { if (this.lastStart) this.startFlight(this.lastStart); }
   pause() { if (this.state === 'flying') this.setState('paused'); }
   resume() { if (this.state === 'paused') this.setState('flying'); }
-  toMenu() { this.ent = null; this.crashed = false; this.menuView = 'flyover'; this.preview = null; this.setState('menu'); }
+  toMenu() { this.ent = null; this.crashed = false; this.menuView = 'flyover'; this.preview = null; this.assist.reset('off'); this.setState('menu'); }
 
   // ------------------------------------------------------------------ loop
   _controls(dt, inp) {
@@ -215,6 +236,11 @@ export class Game extends Emitter {
     if (this.state === 'paused' || !m) return;
     if (inp.pressed('view')) { const v = this.rig.cycle(true); this.hud.toast(`${v} view`, 1200); }
     if (inp.pressed('hud')) this.hud.visible = !this.hud.visible;
+    if (inp.pressed('assist') && !this.ent.model.crashed) {
+      const mode = this.assist.cycle();
+      this.store.set('takeoffAssist', mode);
+      this.hud.toast(`Takeoff assist: ${ASSIST_LABEL[mode]}`, 1800);
+    }
     if (inp.pressed('map')) this.emit('map');
     if (inp.pressed('reset')) this.restart();
     if (inp.pressed('flapsDown') && this.flapNotch < FLAP_NOTCHES) { this.flapNotch++; this.hud.toast(`Flaps ${this.flapNotch}`, 1100); }
@@ -259,7 +285,13 @@ export class Game extends Emitter {
 
   _flight(dt, inp) {
     const ent = this.ent, m = ent.model;
+    const a = this.assist;
+    a.update(dt, ent, inp);
     this._controls(dt, inp);
+    if (a.controlling) a.apply(ent, this);
+    if (a.handedOver) { this.input.trim = Math.max(-1, Math.min(1, m.c.elev / 0.35)); a.handedOver = false; }
+    for (const c of a.drain()) if (c.key !== 'rotate') this.hud.toast(c.text, c.tone === 'bad' ? 3600 : 2200, c.tone);   // the ROTATE banner speaks for itself
+    if (this.rig.intro && (inp.throttle > 0.02 || inp.brake > 0.05 || Math.abs(inp.pitch) + Math.abs(inp.roll) + Math.abs(inp.yaw) > 0.15)) this.rig.skipIntro();
     this.acc += dt;
     let n = 0;
     while (this.acc >= STEP && n < MAX_STEPS) { ent.step(STEP); this.acc -= STEP; n++; }
@@ -308,17 +340,17 @@ export class Game extends Emitter {
       ent.emit(models, cockpit, { mode: view, camPos: cam.pos, pxPerRad: px() });
     } else if (this.menuView === 'showcase' && this.preview) {
       const e = this.preview;
-      this.orbitAz += dt * 0.22;
+      if (this.orbitSpin !== false) this.orbitAz += dt * 0.22;
       const c = e.worldPoint(new Float64Array(3), 0, 0.5, 0);
       // frame the whole aircraft inside the free slot between the hangar panels, whatever the window shape
       const ext = e.instance.extent(), W = this.canvas.clientWidth || 1280, H = this.canvas.clientHeight || 720;
-      const slot = Math.max(0.3, (W - Math.max(300, Math.min(390, W * 0.34)) - Math.max(280, Math.min(380, W * 0.3))) / W);
+      const slot = Math.max(0.3, (W - Math.max(300, Math.min(400, W * 0.34)) - Math.max(300, Math.min(440, W * 0.32))) / W);
       const R = Math.max(ext.length, ext.span) * 0.5 * 1.12, th = Math.tan((46 * Math.PI) / 360);
       const size = Math.max(R / (slot * th * (W / H)), R / th * 0.9, 6);
       const hd = (this.previewStart.heading || 0) * DEG;
-      const az = hd + this.orbitAz, el = 0.2;
-      const x = c[0] + Math.sin(az) * Math.cos(el) * size, z = c[2] - Math.cos(az) * Math.cos(el) * size;
-      const y = Math.max(c[1] + Math.sin(el) * size, this.ground.h(x, z) + 1.2);
+      const az = hd + this.orbitAz, el = this.orbitEl ?? 0.2, dist = size * (this.orbitZoom ?? 1);
+      const x = c[0] + Math.sin(az) * Math.cos(el) * dist, z = c[2] - Math.cos(az) * Math.cos(el) * dist;
+      const y = Math.max(c[1] + Math.sin(el) * dist, this.ground.h(x, z) + 1.2);
       cam.fov = (46 * Math.PI) / 180;
       cam.setPose(x, y, z, c[0] - x, c[1] - y, c[2] - z);
       e.emit(models, cockpit, { mode: 'external', camPos: cam.pos, pxPerRad: px() * 2.2 }); // the hero object: always the finest voxels
@@ -339,7 +371,7 @@ export class Game extends Emitter {
     if (this.shot) { this.shot = false; this._screenshot(); }
 
     if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
-      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, course: v.challenge === 'skyline' && this.course ? this.course.status() : null });
+      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, course: v.challenge === 'skyline' && this.course ? this.course.status() : null, assist: this.assist.info });
     } else this.hud.draw({ ent: null, cam, view: 'menu', units: v.units, scale: v.hudScale, dt, hideAll: true });
 
     this.cpuMs.push(now() - started);
