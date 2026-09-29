@@ -21,15 +21,15 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 
 - Build pipeline: registry discovery, esbuild bundle, worker inlining, single-file output of about 510 KB, dev server with native modules.
 - Core: math, seeded RNG, noise, events, perf counters.
-- Voxel toolkit: palette of 235 materials with PBR properties, dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
+- Voxel toolkit: palette of 237 materials with PBR properties, dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
 - WebGL2 renderer with an HDR pipeline: camera-relative rendering, split-depth passes, single-scattering atmosphere with a sky-view LUT and aerial perspective, volumetric clouds with cloud shadows, cascaded shadows, planar water reflections, SSAO, temporal anti-aliasing, bloom, GPU auto exposure, a 3D LUT color grade (six looks), lens effects, motion blur, light shafts. A direct forward path with no post at all serves the Potato tier.
 - Smart LOD: screen-space-error quadtree, worker pool with Blob workers in the single file, streaming, LRU eviction, skirts, adaptive governor.
 - Whole island: terrain, coast, Mount Corvus, rivers, a lake, a highway network, 21 region files (metropolis in nine, two cities, four towns, three airfields, three features), 35 building and prop kits, 11 scenery types, about 11,000 structures.
 - Aircraft: module contract, 240 Hz flight model with trim solver and autopilot, three aircraft with exteriors, animated parts, interiors with working gauges, and definitions for weapon stations.
-- Traffic: road graph split at every crossing, signals, IDM car following, nine vehicle types, spawn and cull around the camera.
+- Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision, crash and restart flow.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 93 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 94 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -42,7 +42,7 @@ Later, in rough dependency order rather than numbered stages:
 - Deepen the metropolis district by district (hero towers, signage, rooftops, bridges).
 - Weapons, damage, ballistics, targets.
 - More aircraft: airliner, transport, seaplane, aerobatic biplane, attack jet, business jet, glider.
-- Audio, dynamic weather, traffic light models, AI traffic in the air.
+- Audio, dynamic weather, AI traffic in the air.
 
 ## 3. Coordinates, units, scales
 
@@ -368,7 +368,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 
 ## 17. Testing
 
-`npm test` runs 93 tests in about three seconds:
+`npm test` runs 94 tests in about three seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
@@ -376,7 +376,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Settings and input: presets, schema coverage, sanitizing, persistence and corrupt storage, governor behavior, hardware probe, key ramps, throttle lever, edge presses.
 - Aircraft: every part builds at every LOD, dimensions match the specification, liveries and stations resolve, validation rejects broken specs.
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.
-- Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance.
+- Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance, signal masts follow the phase and vanish with traffic off.
 - Render: the atmosphere gives a blue noon sky with a pale horizon and an orange sunset side, never negative or non-finite, black at night; sun transmittance reddens and dims monotonically; moonlight is a sliver of daylight; the cinematic grade keeps blacks dark.
 - Build: registry covers every content file, the output is one self-contained file under budget, no em dashes anywhere.
 
@@ -394,7 +394,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Nothing here has been measured on a real GPU. Everything ran on software WebGL in a headless browser, which proves the pipeline works and says nothing about frame rate. The Potato path and the HDR path both render; whether they hold 60 fps on the target hardware is unknown until someone tries.
 - The engine is the easy half. A metropolis with real architectural quality is a huge content job, and it belongs to later work. This stage makes sure it can be done without touching the engine.
 - Voxel LOD pops. Skirts hide cracks, but level changes at a distance still pop by up to one coarse cell. Hysteresis and fog reduce it; nothing removes it entirely.
-- Traffic lights are logic only: cars stop for red, but there are no signal heads on the poles yet.
+- Signal masts are drawn as individual model entries (up to 64 within 300 m), one per approach direction. In a dense downtown at low altitude the frame reaches about two thousand draw calls at Medium, mostly terrain nodes and scenery buckets, which is fine for a desktop GPU and something to merge later.
 - Collision with buildings uses oriented boxes around each structure and the aircraft's extreme points. It is honest at flying speed and wrong for a wing slipping between two towers.
 - The flight model is a tuned engineering approximation, not a certified one. Each aircraft has numbers checked against its design (stall speed, climb, takeoff roll, roll rate, G limit), but nothing was compared against a real airframe.
 - Pure JavaScript meshing is fast enough only because the world is streamed in small nodes in workers. Keep nodes small.

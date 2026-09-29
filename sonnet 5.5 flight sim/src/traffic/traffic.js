@@ -4,8 +4,10 @@ import { Rng } from '../core/rng.js';
 import { hashString, clamp } from '../core/util.js';
 import { mat3 } from '../core/math.js';
 import { PAINTS } from './vehicle-def.js';
+import { buildSignalHead, signalReach } from './signal-head.js';
 
 const SPAWN_MIN = 140, SPAWN_MAX = 700, CULL = 820;
+const SIGNAL_RANGE = 300, SIGNAL_MAX = 64, SIGNAL_LEVELS = [0.05, 0.1, 0.2, 0.4];
 const LEVELS = [0.1, 0.2, 0.4, 0.8];
 const IDM = { T: 1.35, s0: 2.2, delta: 4 };
 
@@ -27,6 +29,8 @@ export class TrafficSystem {
     this.max = 0;
     this.time = 0;
     this.recipes = new Map();
+    this.sigRecipes = new Map();
+    this.sigNodes = [];
     this.pool = [];
     this.active = 0;
     this._near = [];
@@ -36,6 +40,13 @@ export class TrafficSystem {
   /** Build the graph (loads every region layout, so call during loading). */
   init() {
     this.graph = new RoadGraph(this.world);
+    this.sigNodes = this.graph.nodes.filter((n) => n.sig);
+    // one mast per approach direction, preferring the ordinary road over a highway that shares its alignment
+    for (const n of this.sigNodes) {
+      const order = n.in.slice().sort((p, q) => (p.kind === 'highway') - (q.kind === 'highway'));
+      n.masts = [];
+      for (const e of order) if (!n.masts.some((o) => o.dx * e.dx + o.dz * e.dz > 0.96)) n.masts.push(e);
+    }
     return this.graph.stats;
   }
 
@@ -205,6 +216,41 @@ export class TrafficSystem {
       mat3.fromAxisAngle(e.rot, 0, 1, 0, v.yaw);
       list.push(e);
     }
+    n = this._emitSignals(list, cam, pxPerRad, n, Math.min(maxDist, SIGNAL_RANGE));
     this.active = n;
+  }
+
+  /** Signal masts for the approaches near the camera. The lit lamp follows the phase the cars obey. */
+  _emitSignals(list, cam, pxPerRad, n, range) {
+    if (this.max <= 0) return n; // tiers without traffic skip the masts too
+    const px = cam.pos[0], py = cam.pos[1], pz = cam.pos[2];
+    let count = 0;
+    for (const node of this.sigNodes) {
+      if (Math.abs(node.x - px) > range || Math.abs(node.z - pz) > range) continue;
+      for (const ap of node.masts) {
+        if (count >= SIGNAL_MAX) return n;
+        const rx = -ap.dz, rz = ap.dx, off = ap.w / 2 + 0.9;
+        const x = node.x - ap.dx * (ap.w / 2 + 2.5) + rx * off, z = node.z - ap.dz * (ap.w / 2 + 2.5) + rz * off;
+        const y = this.world.heightAt(x, z, 0);
+        const d = Math.hypot(x - px, y - py, z - pz);
+        if (d > range) continue;
+        const want = (1.6 * d) / pxPerRad;
+        let cell = SIGNAL_LEVELS[0];
+        for (const l of SIGNAL_LEVELS) if (l <= want) cell = l;
+        const state = signalPhase(node, ap, this.time), reach = signalReach(ap.w);
+        const key = `sig:${state}:${reach}:${cell}`;
+        let rec = this.sigRecipes.get(`${state}:${reach}`);
+        if (!rec) { rec = new Recipe(); buildSignalHead(rec, state, reach); this.sigRecipes.set(`${state}:${reach}`, rec); }
+        const mesh = this.models.fromRecipe(key, rec, cell, { conservative: true });
+        if (!mesh || !mesh.gpu) continue;
+        let e = this.pool[n];
+        if (!e) e = this.pool[n] = { mesh: null, x: 0, y: 0, z: 0, rot: new Float64Array(9), tint: [1, 1, 1], noPost: false };
+        n++; count++;
+        e.mesh = mesh; e.x = x; e.y = y; e.z = z; e.tint = [1, 1, 1];
+        mat3.fromAxisAngle(e.rot, 0, 1, 0, Math.atan2(-ap.dz, ap.dx));
+        list.push(e);
+      }
+    }
+    return n;
   }
 }

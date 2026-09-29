@@ -40,5 +40,6 @@ await new Promise((r) => setTimeout(r, 800));
 await page.evaluate(() => { for (const el of document.querySelectorAll('.screen, .hint')) el.style.display = 'none'; });
 mkdirSync(dirname(resolve(out)), { recursive: true });
 await page.screenshot({ path: resolve(out), timeout: 400000 });
-console.log(out, 'exposure', expo && expo.toFixed(3), errs.length ? errs.slice(0, 4) : 'ok');
+const st = await page.evaluate(() => { const s = window.__fh.stats(); return { tris: s.tris, draws: s.draws, nodes: s.nodesDrawn, gpuMB: +(s.gpuMB || 0).toFixed(0) }; }).catch(() => ({}));
+console.log(out, 'exposure', expo && expo.toFixed(3), JSON.stringify(st), errs.length ? errs.slice(0, 4) : 'ok');
 await browser.close();

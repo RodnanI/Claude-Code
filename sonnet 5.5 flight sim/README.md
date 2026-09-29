@@ -42,19 +42,21 @@ A gamepad works too (sticks, triggers for throttle, face buttons for brakes, gea
 ## Test it
 
 ```
-npm test                 # 93 unit tests, about three seconds, no dependencies
+npm test                 # 94 unit tests, about three seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```
 
 The browser test needs Playwright to be installed globally or locally; it skips itself if it cannot find it. It uses software WebGL, so it proves the game runs and says nothing about speed.
 
-Handy tools:
+Handy tools (the aircraft sheet renders `dist/test-aircraft.html`, so run `npm run build:all` after changing a plane):
 
 ```
 node tools/flight-shot.mjs out/a.png ultra shrike airport-09R cockpit 10.5 1 600   # screenshot of a flight
 node tools/aircraft-sheet.mjs skylark low                                          # front, rear, side, top and cockpit views
 node tools/map-preview.mjs out/map.png 1024 17000                                  # top-down PNG of the island
+node tools/hero-shot.mjs out/h.png high shrike 15.5 -8800 3400 900 75              # aircraft placed anywhere: preset plane hour x z agl heading
+OVR='{"exposureBias":0.4}' FRAMES=60 node tools/hero-shot.mjs ...                  # setting overrides, frames to let exposure and TAA settle
 ```
 
 ## Layout

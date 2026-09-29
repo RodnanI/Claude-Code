@@ -101,3 +101,36 @@ test('cars mostly stop for red lights instead of running them', () => {
   assert.ok(crossings > 30, `only ${crossings} intersection crossings observed`);
   assert.ok(violations / crossings < 0.05, `${violations} of ${crossings} crossings were at speed on red`);
 });
+
+test('signal masts show the phase the cars obey, are built at every reach, and vanish with traffic off', async () => {
+  const { buildSignalHead, signalReach } = await import('../../src/traffic/signal-head.js');
+  for (const state of [0, 1, 2]) {
+    for (const w of [8, 14, 22]) {
+      const r = new Recipe();
+      buildSignalHead(r, state, signalReach(w));
+      const res = rasterize(r, { cell: 0.1 });
+      assert.ok(res && res.vol.count() > 100, `mast state ${state} width ${w} is empty`);
+      const b = r.bounds(0.1);
+      assert.ok(b[4] > 5.5 && b[4] < 6.5, 'the mast is about six meters tall');
+      assert.ok(b[2] < -signalReach(w) + 0.3, 'the arm reaches over the road toward -z');
+    }
+  }
+  const keys = [];
+  const models = { fromRecipe: (key) => { keys.push(key); return { gpu: true }; } };
+  const t = new TrafficSystem({ world, models, vehicles: VEHICLES, seed: 3 });
+  t.init();
+  t.setMax(10);
+  const node = t.sigNodes.find((n) => Math.hypot(n.x - 4300, n.z + 8000) < 900);
+  assert.ok(node, 'the metropolis has signalized intersections');
+  const cam = { pos: [node.x + 30, 60, node.z + 30] };
+  const list = [];
+  t.time = 3.7;
+  t.emit(list, cam, 900);
+  const masts = keys.filter((k) => k.startsWith('sig:'));
+  assert.ok(masts.length >= node.masts.length, 'every approach direction of a nearby signal gets a mast');
+  for (const ap of node.masts) assert.ok(masts.some((k) => k.startsWith(`sig:${signalPhase(node, ap, 3.7)}:`)), 'the lit lamp follows signalPhase');
+  t.setMax(0);
+  keys.length = 0; list.length = 0;
+  t.emit(list, cam, 900);
+  assert.equal(keys.filter((k) => k.startsWith('sig:')).length, 0, 'no masts when traffic is off');
+});

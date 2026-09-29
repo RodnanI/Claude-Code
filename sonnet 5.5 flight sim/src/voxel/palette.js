@@ -123,7 +123,7 @@ const OVERRIDES = {
   ASPHALT: [0.78, 0, null, null, 0.1], ASPHALT_WORN: [0.86, 0, null, null, 0.12], RUNWAY: [0.72, 0, null, null, 0.08], CONCRETE: [0.82, 0], APRON: [0.8, 0],
   WINDOW_LIT: [0.2, 0, 2.6], WINDOW_LIT_COOL: [0.2, 0, 2.6], WINDOW_LIT_DIM: [0.2, 0, 1.8], LAMP_SODIUM: [0.4, 0, 9], LAMP_WHITE: [0.4, 0, 9],
   BEACON_RED: [0.4, 0, 9], RWY_LIGHT_WHITE: [0.4, 0, 10], RWY_LIGHT_GREEN: [0.4, 0, 10], RWY_LIGHT_RED: [0.4, 0, 10], RWY_LIGHT_AMBER: [0.4, 0, 10],
-  SIGNAL_RED: [0.4, 0, 7], SIGNAL_AMBER: [0.4, 0, 7], SIGNAL_GREEN: [0.4, 0, 7], HEADLIGHT: [0.2, 0, 14], TAILLIGHT: [0.3, 0, 6],
+  SIGNAL_RED: [0.4, 0, 3.2], SIGNAL_AMBER: [0.4, 0, 3.2], SIGNAL_GREEN: [0.4, 0, 3.2], HEADLIGHT: [0.2, 0, 14], TAILLIGHT: [0.3, 0, 6],
   NEON_ORANGE: [0.3, 0, 8], NEON_WHITE: [0.3, 0, 8], NAV_RED: [0.3, 0, 9], NAV_GREEN: [0.3, 0, 9], STROBE: [0.3, 0, 20], AC_GLOW: [0.5, 0, 6],
   LEAF_PINE: [0.9, 0, null, 0.35], LEAF_PINE_L: [0.9, 0, null, 0.35], LEAF_OAK: [0.85, 0, null, 0.45], LEAF_OAK_L: [0.85, 0, null, 0.5],
   LEAF_BIRCH: [0.85, 0, null, 0.5], LEAF_AUTUMN: [0.85, 0, null, 0.5], LEAF_PALM: [0.7, 0, null, 0.45], BUSH: [0.9, 0, null, 0.4],
