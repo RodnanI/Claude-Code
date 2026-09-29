@@ -65,13 +65,13 @@ void main() {
   float hq = floor(yawIn * 0.125);
   float yaw = yawIn - hq * 8.0;
   vec3 sn = ln;
-  if (fol && (fli & 2) != 0) {
-    // a rounded crown: the model is a voxel ball around its origin. Corners are pulled toward the sphere and the normal
-    // follows it, so a handful of big voxels reads as a soft mass of leaves
+  if ((fli & 2) != 0) {
+    // a rounded body: the model is a voxel ball around its origin. Corners are pulled toward the sphere and the normal
+    // follows it, so a handful of big voxels reads as a soft mass of leaves (or, less so, a weathered boulder)
     float rl = length(mp);
-    mp *= mix(1.0, 1.0 / max(rl, 0.3), 0.62 * smoothstep(0.45, 0.85, rl));
+    mp *= mix(1.0, 1.0 / max(rl, 0.3), (fol ? 0.62 : 0.3) * smoothstep(0.45, 0.85, rl));
     sn = mp / max(length(mp), 1e-4);
-    soft = 1;
+    soft = fol ? 1 : 2;
   }
   vec3 m = mp * a_iScale;
   if (fol) {
@@ -463,12 +463,13 @@ void main() {
   float roundAO = 1.0;
   bool isRound = false;
 #ifdef INSTANCED
-  if (v_soft == 1) {
-    isRound = true;
-    // rounded crown: light it as the ball it stands for, darker toward its underside where the leaves shade each other
+  if (v_soft != 0) {
+    // rounded crown: light it as the ball it stands for, darker toward its underside where the leaves shade each other;
+    // a boulder keeps more of its flat faces
     vec3 sn = normalize(v_sn);
-    N = normalize(mix(N, sn, 0.88));
-    roundAO = mix(0.56, 1.0, smoothstep(-0.95, 0.3, sn.y));
+    isRound = v_soft == 1;
+    N = normalize(mix(N, sn, isRound ? 0.88 : 0.5));
+    roundAO = isRound ? mix(0.56, 1.0, smoothstep(-0.95, 0.3, sn.y)) : mix(0.7, 1.0, smoothstep(-0.9, 0.2, sn.y));
   }
 #endif
   vec3 albedo = pow(p0.rgb, vec3(2.2));
@@ -508,19 +509,47 @@ void main() {
   }
 #endif
 
+  bool groundSoft = false;
+  vec3 quilt = vec3(1.0);
+#ifdef TNORM
+  groundSoft = v_soft == 1;
+#endif
 #ifdef MACRO
-  if (foliage && v_face == 2) {
-    float mv = vnoise(wpos.xz * 0.045) * 0.65 + vnoise(wpos.xz * 0.012) * 0.35;
-    albedo *= 0.84 + 0.32 * mv;
+  if (foliage && (v_face == 2 || groundSoft)) {
+    // beyond a dozen kilometers the patches are far below a pixel and average out to 1, so they are not worth evaluating
+    float mvF = 1.0 - smoothstep(6000.0, 13000.0, dist);
+    if (mvF > 0.0) {
+      float mv = vnoise(wpos.xz * 0.045) * 0.65 + vnoise(wpos.xz * 0.012) * 0.35;
+      albedo *= 1.0 + (mv - 0.5) * 0.32 * mvF;
+    }
     // broad sun-scorched patches so large fields and lawns are not one flat green
     float dry = vnoise(wpos.xz * 0.0065 + 11.0);
     albedo *= mix(vec3(1.0), vec3(1.16, 1.0, 0.7), smoothstep(0.55, 0.8, dry) * 0.6);
+    // patches of lush and of sun-cured ground a few hundred meters across: the quilt seen from a cruising altitude
+    float qv = vnoise(wpos.xz * 0.0024 + 17.0) * 0.6 + vnoise(wpos.xz * 0.0071 - 4.0) * 0.4;
+    quilt = mix(vec3(0.9, 1.0, 0.92), vec3(1.15, 1.03, 0.8), smoothstep(0.34, 0.72, qv));
+    albedo *= quilt;
+    // wind running over the grass: broad bands of light and shade that drift downwind
+    float wF = 1.0 - smoothstep(250.0, 2200.0, dist);
+    if (wF > 0.0) {
+      vec2 wdir = normalize(u_wind + vec2(1e-5));
+      // the drift is in lattice units: 5.5 and 8.5 m/s of gust, times the frequency of each layer
+      float wv = vnoise(wpos.xz * 0.034 - wdir * (u_time * 0.187)) * 0.62 + vnoise(wpos.xz * 0.12 - wdir * (u_time * 1.02) + 5.0) * 0.38;
+      albedo *= 1.0 + (wv - 0.5) * 0.3 * wF;
+    }
+    // blades of grass up close: fine streaks of light and dark, and a rough normal to catch the sun
+    float gdn = 1.0 - smoothstep(14.0, 70.0, dist);
+    if (gdn > 0.0 && groundSoft) {
+      float g1 = vnoise(wpos.xz * vec2(11.0, 9.0) + 3.0), g2 = vnoise(wpos.xz * vec2(27.0, 31.0) - 8.0);
+      albedo *= 1.0 + ((g1 * 0.55 + g2 * 0.45) - 0.5) * 0.6 * gdn;
+      N = normalize(N + vec3(g2 - 0.5, 0.0, g1 - 0.5) * 0.4 * gdn);
+    }
   }
 #endif
 
   float canopyAO = 1.0;
 #ifdef CANOPY
-  if (v_soft == 1 && v_face == 2 && (fl & 2) != 0 && !water) {
+  if (v_soft == 1 && (fl & 2) != 0 && !water) {
     // forest ground beyond the reach of the tree models: a canopy of sunlit crowns and dark gaps, lit like the real thing
     float cw = smoothstep(u_canopyNear, u_canopyNear * 2.4 + 1.0, dist);
     if (cw > 0.002) {
@@ -535,7 +564,7 @@ void main() {
       vec3 Nc = vec3(c.g * 2.0 - 1.0, 0.0, c.b * 2.0 - 1.0);
       Nc.y = sqrt(max(1.0 - dot(Nc.xz, Nc.xz), 0.05));
       vec3 lit = pineC ? vec3(0.04, 0.105, 0.05) : mix(vec3(0.078, 0.19, 0.04), vec3(0.15, 0.27, 0.055), c.a);
-      vec3 crownCol = lit * (0.78 + 0.44 * fract(c.a * 7.31));
+      vec3 crownCol = lit * (0.78 + 0.44 * fract(c.a * 7.31)) * mix(vec3(1.0), quilt, 0.75);
       vec3 gapCol = albedo * 0.5;
       float crownM = smoothstep(0.03, 0.26, hh);
       albedo = mix(albedo, mix(gapCol, crownCol, crownM), cw);

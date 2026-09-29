@@ -1,6 +1,7 @@
 import { WORLD_SEED } from './config.js';
 import { SITES, MASSIFS } from './layout.js';
 import { createTerrain } from './terrain/terrain.js';
+import { createMacro } from './terrain/macro.js';
 import { createSurface } from './terrain/surface.js';
 import { createBiomes } from './scatter/biomes.js';
 import { RoadIndex, ROAD_KINDS } from './roads/network.js';
@@ -24,8 +25,9 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
   }
   const mods = [];
   for (const r of regions) if (r.terrain) mods.push(...(r.terrain().flatten || []));
-  const terrain = createTerrain(seed, mods);
-  const biomes = createBiomes(seed);
+  const macro = createMacro(seed);
+  const terrain = createTerrain(seed, mods, macro);
+  const biomes = createBiomes(seed, macro);
   const roads = new RoadIndex();
   const kitMap = new Map(kits.map((k) => [k.id, k]));
   const sceneryMap = new Map(scenery.map((s) => [s.id, s]));

@@ -219,7 +219,11 @@ export class NodeManager {
         const mcell = sdef.unitCells ? sdef.unitCells[Math.min(result.level, sdef.unitCells.length - 1)] : rules.fine ? Math.max(result.cell * 0.25, 0.125) : result.level >= 1 ? result.cell * 1.5 : result.cell;
         const model = this.models.scenery(inst.type, inst.variant, mcell);
         if (model.empty) continue;
-        list.push(r.uploadInstances(inst.data, inst.count, model));
+        const batch = r.uploadInstances(inst.data, inst.count, model);
+        // small things are not worth a shadow and are not drawn beyond their range: fewer draw calls where they cannot be seen
+        batch.noShadow = !!rules.noShadow;
+        batch.maxDist = rules.maxDist || 0;
+        list.push(batch);
       }
       n.batches = list;
     }

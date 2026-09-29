@@ -21,17 +21,18 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 
 - Build pipeline: registry discovery, esbuild bundle, worker inlining, single-file output of about 650 KB, dev server with native modules.
 - Core: math, seeded RNG, noise, events, perf counters.
-- Voxel toolkit: palette of 253 materials with PBR properties (24 of them procedural facade types), dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
+- Voxel toolkit: palette of 255 materials with PBR properties (24 of them procedural facade types), dense volumes, resolution-independent recipes (box, ellipsoid, cylinder, roofs, wedge, loft, airfoil, blob, facade, function, paint), greedy mesher with ambient occlusion.
 - WebGL2 renderer with an HDR pipeline: camera-relative rendering, split-depth passes, single-scattering atmosphere with a sky-view LUT and aerial perspective, volumetric clouds with cloud shadows, cascaded shadows, planar water reflections, SSAO, temporal anti-aliasing, bloom, GPU auto exposure, a 3D LUT color grade (six looks), lens effects, motion blur, light shafts. A direct forward path with no post at all serves the Potato tier.
 - Smart LOD: screen-space-error quadtree, worker pool with Blob workers in the single file, streaming, LRU eviction, skirts, adaptive governor.
-- Whole island: terrain, coast, Mount Corvus, rivers, a lake, a highway network, 21 region files (metropolis in nine, two cities, four towns, three airfields, three features), 50 building and prop kits, 19 scenery types, about 6,700 structures. Meridian has a real skyline: 197 structures over 100 m and a 640 m supertall, in nine tower families (slab, art deco spire, round, twin, staggered, tapered, supertall and the classic glass box), plus hotels, lofts, garages, schools, a hospital, museums, a rail station, a mall and a power plant.
+- Whole island: terrain, coast, Mount Corvus and two more massifs (Kestrel Ridge, The Harrow), ridges, mesas, headlands and sea stacks, rivers, lakes, a highway network, 25 region files (metropolis in nine, two cities, four towns, three airfields, three features, four farmstead sets), 50 building and prop kits, 32 scenery types, about 6,700 structures plus the farmsteads. Meridian has a real skyline: 197 structures over 100 m and a 640 m supertall, in nine tower families (slab, art deco spire, round, twin, staggered, tapered, supertall and the classic glass box), plus hotels, lofts, garages, schools, a hospital, museums, a rail station, a mall and a power plant.
 - Aircraft: module contract, 240 Hz flight model with trim solver and autopilot, three aircraft with exteriors, animated parts, interiors with working gauges, and definitions for weapon stations.
 - Procedural facades: windows, brick courses, siding and ribs are drawn in the fragment shader in world space on a 3.6 m floor and 1.2 m bay grid, so a tower shows readable windows from 30 km to arm's length with no extra geometry. Every structure also picks one of four color banks per material, so the same facade comes in several colors.
-- Ambient life: container ships, tankers, ferries, tugs and sailing yachts on closed sea lanes, a twin-jet airliner flying a 15 minute airport circuit (approach, landing roll, taxi, dwell, taxi, takeoff, climb), helicopters circling Meridian, Port Halden and Ironford, and an advertising airship whose flank panel glows at night. All of it is a pure function of a clock, so nothing is stored and nothing drifts, and every orbit is checked by a test against the structures under its path.
+- Landscape look (see 6.4 and 12): the ground is shaded from a smooth height-field normal per terrain node, so slopes read as rolling hills instead of stairs; tree crowns are voxel balls the shader rounds and lights as spheres; forest beyond the tree levels is a procedural canopy texture; the ground carries color patches, wind waves and grass streaks in the shader; farmland, hedgerows, herds, flowers, reeds, driftwood and boulders fill the countryside. Measured on `tools/budget.mjs all high` (eight standard views): about half the scenery triangles of the version before, terrain triangles within 2 percent, node build time down by about a fifth.
+- Ambient life: container ships, tankers, ferries, tugs and sailing yachts on closed sea lanes, a twin-jet airliner flying a 15 minute airport circuit (approach, landing roll, taxi, dwell, taxi, takeoff, climb), helicopters circling Meridian, Port Halden and Ironford, an advertising airship whose flank panel glows at night, and flocks of gulls, crows and geese (one mesh per flock, wings beating, every loop kept above the ground and the rooftops under it). All of it is a pure function of a clock, so nothing is stored and nothing drifts, and every orbit is checked by a test against the structures under its path.
 - Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision that follows the real shape of each building (a setback, a tapering crown or the gap between twin towers is free air), crash and restart flow, and an optional challenge (Settings, World): the Skyline run, eight rings beside the crowns of Meridian's tallest towers, chosen from the generated city, with a timer, a pointer to the next gate and a best time kept in the browser.
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 104 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 121 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -122,7 +123,7 @@ WebGL2 only, written directly. No engine dependency, because the vertex format, 
 
 ### 6.1 Vertex format (8 bytes)
 
-`i16 x, y, z, w` where `w` packs the face (3 bits, 0..5 for +X -X +Y -Y +Z -Z, so normals cost nothing), two ambient occlusion bits, an 8 bit material id and a two bit color bank. Positions are integer cell coordinates local to the node. Every other material property comes from a 256 by 9 palette texture: albedo and roughness, emissive color and intensity, metallic, variation, translucency and flags (emissive, glossy, water, foliage, flat, tint), three rows of surface pattern parameters and three rows of alternate albedo (the color banks).
+`i16 x, y, z, w` where `w` packs the face (3 bits, 0..5 for +X -X +Y -Y +Z -Z, so normals cost nothing), two ambient occlusion bits, an 8 bit material id, a soft flag (bit 13: the face belongs to smooth ground or a rounded crown) and a two bit color bank (bits 14 and 15). Positions are integer cell coordinates local to the node. Every other material property comes from a 256 by 9 palette texture: albedo and roughness, emissive color and intensity, metallic, variation, translucency and flags (emissive, glossy, water, foliage, flat, tint), three rows of surface pattern parameters and three rows of alternate albedo (the color banks). Scenery instances are 24 bytes (position, yaw, scale, tint and a bank byte in the alpha channel).
 
 Per-voxel color variation, voxel edge bevels, sub-voxel grain and macro color drift are computed in the fragment shader from the voxel index. That is what lets the mesher merge giant flat quads while the surface still reads as individual voxels.
 
@@ -144,12 +145,16 @@ One 24-bit depth buffer cannot cover 0.3 m to 60 km. The frame is drawn as a far
 - Water is a terrain material, not a separate plane. Ocean columns merge into a few huge quads. The shader adds wave normals, Fresnel, sun glint and, on Ultra, real planar reflections from a mirrored geometry pass.
 - Post: temporal anti-aliasing with camera reprojection (FXAA as a fallback), dual-filter bloom, auto exposure without CPU readback, filmic tone mapping with a log-encoded 48^3 LUT for cinematic grading, chromatic aberration, sharpening, lens flare, light shafts, motion blur, film grain, vignette.
 - Facade shading: a facade material carries its pattern in three extra palette rows (bay width, floor height, window size, sill, frame tone, spandrel tone, lit share, glass tint). The fragment shader turns that into window panes with per-pane tint, frames, spandrels, reflective glass (higher specular, a brighter sky reflection) and, at night, lit panes: a share of the windows glows, some floors are busier than others, a few change state every minute, and the lit share fades in gradually through dusk. Beyond a few hundred meters the grid collapses to its average coverage so windows never shimmer. Brick courses, clapboard siding and vertical ribs use the same route. Tower roofs carry aviation beacons that flash in step.
+- Smooth ground: every terrain node ships a 64 by 64 texture of Sobel normals and cavity occlusion computed from its height field. The shader lights soft ground faces with that normal and darkens the risers by the size of the step, so the voxel stairs disappear under lighting while the geometry stays greedy-merged. Walls up to three cells tall take the surface material; taller cliffs stay rock below a soft cap.
+- Rounded foliage: crowns are voxel balls whose vertices the shader pulls toward a sphere (pull 0.62 for leaves, 0.3 for other soft models), with spherical normals, underside occlusion and a leaf grain. Voxel edge darkening is halved on foliage.
+- Canopy: beyond the levels where real trees exist (`TREE_MAX_LEVEL`) forest ground is textured with a tileable, mipmapped texture of tree crowns (`canopy-tex.js`, sampled with explicit gradients), lit and shadowed like the crowns it stands for, so forest reads as forest from 20 km with no instances at all.
+- Ground character: macro color drift, quilted field patches, wind waves that travel across meadows and grass streaks, all in the fragment shader from world position, and terrain color banks (two bits of the vertex, only for cells up to 2 m so greedy merging survives).
 - Emissive voxels (lamps, runway lights, nav lights, neon) glow through bloom.
 - Night city glow at a distance: fine detail has real lamp props, and coarse road cells on avenues, streets and highways paint pools of `ASPHALT_LIT` (warm emissive color, night only) every few dozen meters, so a lit street grid reads from kilometers away.
 
 ### 6.5 Draw budget
 
-Terrain and structures share the node draw path: one or two draws per node. Scenery is instanced per node per model bucket, and beyond the finest ring the model variants collapse to one so a forest is a handful of draws, not dozens. Shadow cascades cull nodes and instance batches against the light-space box of each cascade, and the shadow filter takes four spread taps first and the remaining eight only inside a penumbra. Vehicles and aircraft parts are individual model draws through the same shader with a rotation matrix and a tint.
+Terrain and structures share the node draw path: one or two draws per node. Scenery is instanced per node per model bucket, and beyond the finest ring the model variants collapse to one so a forest is a handful of draws, not dozens. A tree is not a model of its own: it is a trunk and a few crowns from the shared `puff`, `puffb` and `cone` models, so every species of a node shares the same few buckets. Small ground cover carries `maxDist` and `noShadow` so it costs nothing far away and nothing in the shadow pass. Shadow cascades cull nodes and instance batches against the light-space box of each cascade, and the shadow filter takes four spread taps first and the remaining eight only inside a penumbra. Vehicles and aircraft parts are individual model draws through the same shader with a rotation matrix and a tint.
 
 ## 7. Smart LOD and streaming
 
@@ -245,7 +250,7 @@ Positions are tuned against `tools/map-preview.mjs` output, and the master table
 
 ### 9.1 Terrain
 
-Natural height is: island mask with domain warp, beach ramp, rolling hills, a ridged-noise mountain, and river and lake carving. Then region-declared modifiers are applied: circular and oriented-rectangle flatten zones with blend distance and optional planar tilt (runways, city pads, the sloping hillbilly strip). Octaves finer than the requested cell size are skipped, which is both a speed win and an anti-aliasing measure.
+Natural height is: island mask with domain warp, beach ramp, rolling hills, ridged spines, stepped mesas, headlands and sea stacks along the coast, a ridged-noise mountain and two more massifs (`MASSIFS` in `layout.js`), and river and lake carving (`LAKES`, `RIVERS`). A softplus valley-floor clamp keeps new relief from leaving accidental sea-level ponds inland. The slow fields (warp, mask, ridges, mesas) are cached on a 32 m lattice (`macro.js`) for node columns only; `heightAt` stays exact, and callers that sample sparsely turn the cache off. Then region-declared modifiers are applied: circular and oriented-rectangle flatten zones with blend distance and optional planar tilt (runways, city pads, the sloping hillbilly strip). Octaves finer than the requested cell size are skipped, which is both a speed win and an anti-aliasing measure.
 
 Surface material is chosen in priority order: airfield paint, road paint, region lot paint, water, then biome (beach, grass variants, forest floor, farmland fields, rock by slope, snow by altitude and noise). At coarse cell sizes settlements paint an aggregate district tint so a metropolis still reads as a city from 20 km away.
 
@@ -312,7 +317,9 @@ City layout has three layers. `_shared/urban.js` splits a block into lots by rec
 
 ## 12. Scenery
 
-Scenery types are one file each and declare a recipe per variant plus biome rules (which biome, density, slope and altitude limits, `fine` for small props that deserve finer voxels than the terrain). The scatter system uses those rules; adding a new tree means adding a file. Instances carry position, yaw, scale and a tint so one model yields many looks.
+Scenery types are one file each and declare a recipe per variant (`build`) or a composition (`expand`), plus biome rules (which biome, density, slope and altitude limits, `fine` for small props that deserve finer voxels than the terrain, `noShadow` and `maxDist` for small things). Instances carry position, yaw, scale, a tint and a color bank so one model yields many looks (autumn, gold and deep oaks, blue and olive spruce, birch, dark and gray trunks).
+
+The scatter system (`src/world/scatter/scatter.js`) is a set of layers, each a pure function of position and seed: canopy trees with species mixed by biome and altitude, understory bushes, flowers in drifts, hedgerows along field edges, herds of cows, sheep and horses on pastures and deer at the forest edge, reeds and lilies in shallows, driftwood on beaches, and the older rock, shrub and palm layers. Tree spacing grows with the level of detail, `LEVEL_CROWN` makes far trees bigger and simpler, and trees stop at `TREE_MAX_LEVEL`. Farmsteads are region files (`farmsteads.region.js`): a house, a barn and sheds at field corners of the farmland grid.
 
 ## 13. Roads and traffic
 
@@ -378,7 +385,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 
 ## 17. Testing
 
-`npm test` runs 97 tests in about three seconds:
+`npm test` runs 121 tests in about fifteen seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
@@ -388,6 +395,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.
 - Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance, signal masts follow the phase and vanish with traffic off.
 - Render: the atmosphere gives a blue noon sky with a pale horizon and an orange sunset side, never negative or non-finite, black at night; sun transmittance reddens and dims monotonically; moonlight is a sliver of daylight; the cinematic grade keeps blacks dark.
+- Landscape: ground normals on a ramp, a plane and a pit; land nodes carry a normal texture and ocean tiles do not; the canopy texture is deterministic and covers its tile; tree parts by level of detail; forests are shared parts up to the tree levels and nothing beyond; flowers, herds, reeds and driftwood appear where they belong; massif heights, lakes and no inland ponds; the cached macro fields agree with the exact ones and never change the world between threads; farmsteads sit on farmland with a house and a barn; bird flocks clear the ground and the rooftops and cycle their wing beat.
 - Build: registry covers every content file, the output is one self-contained file under budget, no em dashes anywhere.
 
 `npm run test:browser` boots the built file in headless Chromium and walks menu, hangar, takeoff, throttle, pause, settings, map, F3 overlay, a forced crash and a restart, failing on any console error.
@@ -398,6 +406,7 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Every allocation on the hot path is reused. Typed arrays are transferred, not copied.
 - The renderer reports draw calls, triangles and GPU bytes so regressions are visible (F3).
 - A change that slows Potato to fix Ultra is rejected.
+- `node tools/budget.mjs all high` is the fair A/B for geometry: it selects the nodes the game would select, builds them in-process and totals triangles, draws and build time over eight views. Compare before and after; a rise in terrain triangles is a red flag (color banks broke greedy merging once, so they are limited to fine cells).
 
 ## 19. Hard truths and risks
 

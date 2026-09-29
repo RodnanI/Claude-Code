@@ -1,5 +1,5 @@
 // Places the player aircraft anywhere and shoots it from a chosen camera. For visual checks of places and light.
-// Setting overrides: OVR='{"shadows":2}' node tools/hero-shot.mjs ...
+// Setting overrides: OVR='{"shadows":2}' node tools/hero-shot.mjs ...  AMB_TIME=30 freezes the ambient clock (ships, flocks) at that second.
 // Usage: node tools/hero-shot.mjs out.png preset plane hour x z agl heading fov [camDist camHeight camYawOffsetDeg] [w h]
 import { loadPlaywright, launch, waitFor } from '../tests/browser/harness.mjs';
 import { PRESETS } from '../src/settings/presets.js';
@@ -17,12 +17,15 @@ page.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
 page.on('pageerror', (e) => errs.push('pageerror ' + e.message));
 await page.goto('file://' + resolve('dist/fly-high.html'));
 await waitFor(page, () => !!(window.__fh && window.__fh.app), { timeout: 400000, poll: 500 });
+if (process.env.AMB_TIME) await page.evaluate((t) => { window.__ambTime = t; }, +process.env.AMB_TIME);
 await page.evaluate(([plane, x, z, agl, heading, fov, dist, camH, yawOff]) => {
   const g = window.__fh.game;
   g.startFlight({ planeId: plane, startId: 'airport-09R', airborne: true });
   const y = g.ground.h(+x, +z) + +agl;
   g.ent.placeAirborne({ x: +x, y, z: +z, headingDeg: +heading, ias: g.cruiseFor(g.ent.spec), gear: g.ent.spec.gear.retractable ? 0 : 1 });
-  g.ent.model.input.throttle = 0; g.pause();
+  g.ent.model.input.throttle = 0;
+  if (window.__ambTime !== undefined) g.ambient.time = window.__ambTime;
+  g.pause();
   const hd = (+heading + +yawOff) * Math.PI / 180;
   // camera behind and beside the aircraft
   const fx = Math.sin(hd), fz = -Math.cos(hd);

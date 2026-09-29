@@ -11,6 +11,9 @@ export function buildHighways(terrain, access = {}) {
   const h = new Float32Array(nx * nz);
   const water = new Uint8Array(nx * nz);
   const o = { h: 0, m: 0, water: NaN };
+  // one sample per 200 m is too sparse to be worth filling the cached terrain tiles, so the exact function is used here
+  const macro = terrain.macro, macroWas = macro ? macro.enabled : true;
+  if (macro) macro.enabled = false;
   for (let j = 0; j < nz; j++) {
     for (let i = 0; i < nx; i++) {
       const s = terrain.sample(x0 + (i + 0.5) * G, z0 + (j + 0.5) * G, 12, o);
@@ -19,6 +22,7 @@ export function buildHighways(terrain, access = {}) {
       water[k] = o.water === o.water ? (o.hydro === 1 ? 2 : 1) : 0; // 1 blocked, 2 river crossable
     }
   }
+  if (macro) macro.enabled = macroWas;
   const used = new Float32Array(nx * nz);
   const idx = (i, j) => j * nx + i;
   const cellOf = (x, z) => [Math.min(nx - 1, Math.max(0, Math.floor((x - x0) / G))), Math.min(nz - 1, Math.max(0, Math.floor((z - z0) / G)))];

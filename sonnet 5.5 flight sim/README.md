@@ -44,7 +44,7 @@ Settings, World, Challenge switches on the Skyline run: a ring beside the crown 
 ## Test it
 
 ```
-npm test                 # 104 unit tests, about four seconds, no dependencies
+npm test                 # 121 unit tests, about fifteen seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```
@@ -61,6 +61,8 @@ node tools/kit-shot.mjs out/k.png '[["skyscraper",{"w":44,"d":44,"h":260,"seed":
 node tools/ambient-shot.mjs out/s.png cargo-ship medium 14 260 14 40 0 0           # a ship, boat or airliner from a chosen offset
 node tools/bench.mjs dist/fly-high.html high 4300 -7300 250 0 60                    # CPU frame cost, for A/B between two builds
 node tools/hero-shot.mjs out/h.png high shrike 15.5 -8800 3400 900 75              # aircraft placed anywhere: preset plane hour x z agl heading
+node tools/budget.mjs all high                                                     # triangles, draws and node build time over eight standard views, no GPU needed
+node tools/tour.mjs out/tour high forest,farmland,cliffs 1280 720                  # named camera views of the landscape in one browser session (needs: node build/build.mjs --entry viewer)
 OVR='{"exposureBias":0.4}' FRAMES=60 node tools/hero-shot.mjs ...                  # setting overrides, frames to let exposure and TAA settle
 ```
 
@@ -97,9 +99,9 @@ Every kind of content is one file found by its suffix. After adding a file run `
 
 **A skyscraper or facade**: tower kits live in `skyline.kit.js` and build on the helpers in `_tower.js` (floor grid, setbacks, crowns). A wall material with a window pattern is a `FACADE_DEFS` entry in `src/voxel/palette.js`: bay width, floor height, window size, glass tint, lit share at night. The shader draws it, so the kit only places the wall. Keep floors at 3.6 m and bays at multiples of 1.2 m (a test checks).
 
-**Ships and aircraft that move by themselves**: `src/traffic/ambient/name.ambient.js` exports `defineAmbient({...})`: a model per variant and a path that is a pure function of a clock, so it costs nothing to store. See `ships.ambient.js` and the airport circuit in `aircraft.ambient.js`.
+**Ships, aircraft and birds that move by themselves**: `src/traffic/ambient/name.ambient.js` exports `defineAmbient({...})`: a model per variant and a path that is a pure function of a clock, so it costs nothing to store. See `ships.ambient.js` and the airport circuit in `aircraft.ambient.js`. Flocks of gulls, crows and geese (`bird.ambient.js`) are one mesh per flock, with the wing beat in the low bits of the variant.
 
-**A tree, rock or lamp**: `src/world/scenery/name.scenery.js` with `defineScenery`. Rules say where it grows.
+**A tree, rock, animal or lamp**: `src/world/scenery/name.scenery.js` with `defineScenery`. Rules say where it grows. A model either has a `build` (one recipe per variant) or an `expand(emit, t)` that places parts: a tree is a trunk plus a few crowns from the shared `puff`, `puffb` and `cone` models, so a forest costs a handful of draws (see `src/world/scatter/trees.js`). Animals (`cow`, `sheep`, `horse`, `deer`) and small ground cover (`flowers`, `reeds`, `lily`, `log`, `boulder`) follow the same rules, and `rules.noShadow` and `rules.maxDist` keep small things out of the shadow pass and away from far batches. The layers that place them (canopy trees, understory, flowers, hedgerows, herds, reeds, driftwood) are in `src/world/scatter/scatter.js`.
 
 **A vehicle**: `src/traffic/vehicles/name.vehicle.js` exports `defineVehicle({...})` or an array of them. The traffic system picks it up and uses it on the road kinds it lists.
 

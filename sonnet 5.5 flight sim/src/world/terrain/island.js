@@ -8,10 +8,11 @@ const smax = (a, b, k) => {
 };
 
 /** Land mask: positive on land, negative at sea, about 1 at blob centers. */
-export function createIsland(seed) {
+export function createIsland(seed, macro = null) {
   const n1 = new Noise(seed ^ 0x101), n2 = new Noise(seed ^ 0x202);
   return {
     mask(x, z, cell = 0) {
+      if (macro && macro.enabled && cell < macro.maxCell) return macro.at(x, z).mask;
       let m = -1;
       // Domain warp turns geometric blobs and circular bays into organic coastline.
       const wx = x + 2300 * n1.fbm2(x / 6500 + 11, z / 6500, 3) + 450 * n2.fbm2(x / 1700, z / 1700 + 4, 2);

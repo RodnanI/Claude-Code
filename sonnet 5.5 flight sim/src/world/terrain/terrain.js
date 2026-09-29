@@ -2,6 +2,7 @@ import { Noise } from '../../core/noise.js';
 import { smoothstep, lerp } from '../../core/util.js';
 import { SITES, MASSIFS } from '../layout.js';
 import { createIsland } from './island.js';
+import { createMacro } from './macro.js';
 import { createHydrology } from './hydrology.js';
 import { SEA_LEVEL } from '../config.js';
 
@@ -12,8 +13,9 @@ const MC = Math.cos(-0.44), MS = Math.sin(-0.44);
  * Terrain height function. Pipeline: island mask and hills, mountain, region flatten zones, rivers and lakes.
  * Everything is a pure function of (x, z, cell). `cell` is the sampling cell size: octaves finer than it are skipped.
  */
-export function createTerrain(seed, mods = []) {
-  const island = createIsland(seed);
+export function createTerrain(seed, mods = [], macro = createMacro(seed)) {
+  macro.enabled = false;   // setup samples sparsely; turned back on before the terrain is used
+  const island = createIsland(seed, macro);
   const nHill = new Noise(seed ^ 0x303), nMtn = new Noise(seed ^ 0x404), nDet = new Noise(seed ^ 0x505), nWarp = new Noise(seed ^ 0x606);
   const nRidge = new Noise(seed ^ 0x717), nMesa = new Noise(seed ^ 0x828), nCliff = new Noise(seed ^ 0x939), nStack = new Noise(seed ^ 0xa4a), nGully = new Noise(seed ^ 0xb5b);
   const siteList = Object.values(SITES).filter((q) => q.kind !== 'mountain');
@@ -75,8 +77,12 @@ export function createTerrain(seed, mods = []) {
     } else {
       const land = smoothstep(0, 0.09, m);
       const up = smoothstep(0.05, 0.7, m);
-      const hill = 0.5 + 0.5 * nHill.fbm2(x / 3800 + 3.1, z / 3800 - 1.7, 5, 2, 0.5, cell / 3800);
-      const plains = smoothstep(-0.25, 0.35, nHill.n2(x / 7000 + 8, z / 7000));
+      let hill, plains;
+      if (macro.enabled && cell < macro.maxCell) { const f = macro.out; hill = f.hill; plains = f.plains; }   // island.mask just filled it for this point
+      else {
+        hill = 0.5 + 0.5 * nHill.fbm2(x / 3800 + 3.1, z / 3800 - 1.7, 5, 2, 0.5, cell / 3800);
+        plains = smoothstep(-0.25, 0.35, nHill.n2(x / 7000 + 8, z / 7000));
+      }
       const amp = 95 * (0.4 + 0.6 * (1 - plains * 0.85));
       h = 2.5 * land + up * (10 + hill * hill * amp);
       const hc = up * (1 - plains);                      // hill country: where the ground may be dramatic
@@ -88,10 +94,10 @@ export function createTerrain(seed, mods = []) {
           // ridges and hollows, and in patches a stepped mesa country with cliff bands
           const rd = nRidge.ridged2(x / 1250 + 2.2, z / 1250 - 7.7, 4, 2.05, 0.5, cell / 1250);
           h += w * (rd - 0.42) * 85;
-          let mesa = smoothstep(0.36, 0.62, nMesa.n2(x / 4600 + 6.1, z / 4600 - 2.4)) * w;
+          let mesa = smoothstep(0.5, 0.74, nMesa.n2(x / 4600 + 6.1, z / 4600 - 2.4)) * w;
           if (mesa > 0.02) {
             // the mountains carve their own cliffs; a mesa country belongs to the open hills between them
-            mesa *= 1 - smoothstep(0.0, 0.06, mountainRaw(x, z, cell));
+            mesa *= (1 - smoothstep(0.0, 0.06, mountainRaw(x, z, cell))) * smoothstep(48, 95, h);   // on the hills, not the plains
             const step = 26, t = h / step, fl = Math.floor(t);
             h += (step * (fl + smoothstep(0.84, 0.9, t - fl)) - h) * mesa * 0.88;
           }
@@ -170,6 +176,8 @@ export function createTerrain(seed, mods = []) {
   // lowest order first, bigger footprints first within an order, so small specific pads are applied last and win
 flat.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (b.r ?? b.hw) - (a.r ?? a.hw));
 
+  macro.enabled = true;
+
   const scratch = { h: 0, m: 0, mtn: 0, land: 0, water: NaN, hydro: 0 };
 
   function applyMods(x, z, h, gate) {
@@ -213,10 +221,17 @@ flat.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || (b.r ?? b.hw) - (a.r ?? a
     return surf;
   }
 
-  /** Physics/ground height at a point (water surface counts as ground). */
+  /**
+   * Physics/ground height at a point (water surface counts as ground). Points asked for one at a time (physics, layouts, props)
+   * use the exact function; only the dense sampling of node columns goes through the cached macro tiles.
+   */
   function heightAt(x, z, cell = 0) {
-    return sample(x, z, cell, scratch);
+    const was = macro.enabled;
+    macro.enabled = false;
+    const h = sample(x, z, cell, scratch);
+    macro.enabled = was;
+    return h;
   }
 
-  return { island, natural, sample, heightAt, hydro, mods: flat, mountainPeak: MT.peak, mtnScale, massifs };
+  return { island, natural, sample, heightAt, hydro, mods: flat, mountainPeak: MT.peak, mtnScale, massifs, macro };
 }

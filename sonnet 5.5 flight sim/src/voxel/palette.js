@@ -40,7 +40,7 @@ const TABLE = [
   ['PLASTER_CREAM', 0xdcc9a1, 0], ['PLASTER_GRAY', 0xa8a49b, 0], ['PLASTER_TERRA', 0xc98a5a, 0], ['STONE_LIGHT', 0xbdb6a4, 0],
   ['STONE_DARK', 0x6d6a66, 0], ['CONCRETE_BLDG', 0xa5a29a, 0], ['CONCRETE_PANEL', 0xb9b6ad, 0], ['STEEL', 0x8c9096, 0],
   ['STEEL_DARK', 0x51555a, 0], ['STEEL_BRIGHT', 0xc3c8cc, G], ['CLADDING_GRAY', 0x7f858a, 0], ['CLADDING_SAND', 0xb5a68a, 0],
-  ['SIDING_WHITE', 0xe9e6de, 0], ['SIDING_BLUE', 0x6f8ea6, 0], ['SIDING_GREEN', 0x7d9a78, 0], ['SIDING_YELLOW', 0xd9c07a, 0],
+  ['SIDING_WHITE', 0xe9e6de, 0], ['SIDING_BLUE', 0x6f8ea6, 0], ['SIDING_GREEN', 0x7d9a78, 0], ['BOULDER', 0x8d8a84, C],
   ['SIDING_RED', 0xa8574a, 0], ['SIDING_GRAY', 0x9aa0a4, 0], ['GRANITE', 0x5f5d5b, G],
   // glass
   ['GLASS_TEAL', 0x4f8a92, G | N], ['GLASS_DARK', 0x2c4650, G | N], ['GLASS_SLATE', 0x3e5560, G | N], ['GLASS_CLEAR', 0x8fb2b8, G | N],
@@ -95,10 +95,12 @@ const TABLE = [
   // appended: asphalt that glows warm at night, painted in pools along lit streets at coarse detail
   ['ASPHALT_LIT', 0x3a3b3e, E],
   // appended: city palette. More glass tints, stone, dark metal, colored neon, a green roof
-  ['GLASS_BLUE', 0x3b6ea5, G | N], ['GLASS_SILVER', 0x9fb0bb, G | N], ['GLASS_GOLD', 0x8f8153, G | N],
+  ['GLASS_BLUE', 0x3b6ea5, G | N], ['GLASS_SILVER', 0x9fb0bb, G | N], ['PETAL', 0xf1ede3, T],
   ['LIMESTONE', 0xd6cdb6, 0], ['SANDSTONE', 0xc9ab80, 0], ['BLACK_METAL', 0x25272a, 0],
   ['NEON_RED', 0xff2e3a, E | N], ['NEON_CYAN', 0x35e6ff, E | N], ['NEON_MAGENTA', 0xff3fd0, E | N],
   ['GREEN_ROOF', 0x6f8f4e, F], ['STEAM', 0xe6ecef, F],
+  // appended: animal coats that take the instance tint (cattle, horses, deer)
+  ['FUR', 0xd9d3c6, T],
 ];
 
 /* Procedural surface patterns. The fragment shader draws them in world space from the palette texture (rows 3 to 5), so a
@@ -148,7 +150,7 @@ for (const f of FACADE_DEFS) TABLE.push([f.name, f.hex, 0]);
 const BANK_COLORS = {
   GLASS_TEAL: [0x4a7fa0, 0x4f9a86, 0x5d7f88], GLASS_DARK: [0x26384f, 0x2a4a45, 0x32363a], GLASS_SLATE: [0x44546c, 0x3e5a52, 0x4a5058],
   GLASS_CLEAR: [0x8ab0c4, 0x9ab8ae, 0xb0b8bc], GLASS_BRONZE: [0x7a6444, 0x5a5048, 0x6f5f52], GLASS_GREEN: [0x45806f, 0x3f7a80, 0x5a7a62],
-  GLASS_BLUE: [0x3268a0, 0x4a7ab0, 0x3d5f86], GLASS_SILVER: [0x94a8b8, 0xb2bcc2, 0x8a9aa0], GLASS_GOLD: [0x9a8a5a, 0x7f7a52, 0xa08e66],
+  GLASS_BLUE: [0x3268a0, 0x4a7ab0, 0x3d5f86], GLASS_SILVER: [0x94a8b8, 0xb2bcc2, 0x8a9aa0],
 };
 /* Whole-tree color banks, picked per instance by the scatter: autumn, gold and a deep dark green for broadleaf crowns, blue spruce,
    olive and snow-dusted for conifers, and a pale birch, dark and weathered trunk. */
@@ -156,9 +158,20 @@ Object.assign(BANK_COLORS, {
   LEAF_OAK: [0xb4632a, 0xc8a13a, 0x34602a], LEAF_OAK_L: [0xd58a36, 0xe2c24c, 0x4b7534], LEAF_BIRCH: [0xe0a63e, 0xa9c852, 0xc48f36],
   LEAF_AUTUMN: [0xa8442a, 0xd09a30, 0x8a5a2a], LEAF_PINE: [0x2c5560, 0x4a5a2a, 0xc9d4d6], LEAF_PINE_L: [0x3a6a70, 0x5f6e33, 0xdfe6e8],
   TRUNK: [0xd8d4c8, 0x3a2f26, 0x8c8478], BUSH: [0x5b7a30, 0x8a7a2e, 0x2f5a3a],
+  BOULDER: [0x8a7560, 0x5b5955, 0xb9b3a4],
+  MEADOW: [0xb9a95c, 0x5c9a3a, 0x9bb04c], GRASS_DRY: [0xb09a52, 0x8a9a48, 0xa48c4c],
+  // ground: the terrain picks a bank per patch, so a meadow is not one green and a forest floor not one brown
+  GRASS: [0x4f8a34, 0x86a03e, 0x6e9a48], GRASS_LUSH: [0x3c7a2c, 0x5b9636, 0x477a3e],
+  FOREST_FLOOR: [0x2f4d24, 0x4a5a2c, 0x3d6030], PINE_FLOOR: [0x2b4529, 0x3c4d30, 0x2f5236],
+  DIRT: [0x8a6a44, 0x6b4f36, 0x92704c], SAND: [0xe0cf9a, 0xcbb47c, 0xd8bc86], ALPINE: [0x7d8f60, 0x9aa672, 0x8a8c62],
+  ROCK: [0x86807a, 0x6f6e6c, 0x8a7c6c], ROCK_WARM: [0x9a8066, 0x7a6a58, 0x8a7a68],
+  FARM_WHEAT: [0xd0b862, 0xbda350, 0xcfc070], FARM_GREEN: [0x66a844, 0x559a3a, 0x72b04e], FARM_YELLOW: [0xdcc046, 0xc9a534, 0xe0c85a],
+  FARM_STUBBLE: [0xbca55e, 0xa8934c, 0xc4ae68], FARM_PLOW: [0x77543a, 0x62442f, 0x6b4a32],
+  FARM_WHEAT_B: [0xc0a856, 0xae9548, 0xbfb064], FARM_GREEN_B: [0x5a9c3a, 0x4c8c34, 0x66a248], FARM_YELLOW_B: [0xcdb03c, 0xb99a2e, 0xd0b850],
+  FARM_STUBBLE_B: [0xaa944e, 0x98833f, 0xb29c5a], FARM_PLOW_B: [0x674834, 0x553b29, 0x5e412d],
 });
 const BANK_AUTO = ['BRICK_RED', 'BRICK_BROWN', 'BRICK_DARK', 'PLASTER_WHITE', 'PLASTER_CREAM', 'PLASTER_GRAY', 'PLASTER_TERRA', 'STONE_LIGHT', 'CONCRETE_BLDG',
-  'CONCRETE_PANEL', 'CLADDING_GRAY', 'CLADDING_SAND', 'SIDING_WHITE', 'SIDING_BLUE', 'SIDING_GREEN', 'SIDING_YELLOW', 'SIDING_RED', 'SIDING_GRAY', 'ROOF_TERRACOTTA',
+  'CONCRETE_PANEL', 'CLADDING_GRAY', 'CLADDING_SAND', 'SIDING_WHITE', 'SIDING_BLUE', 'SIDING_GREEN', 'SIDING_RED', 'SIDING_GRAY', 'ROOF_TERRACOTTA',
   'ROOF_SLATE', 'ROOF_SHINGLE_BROWN', 'ROOF_SHINGLE_GRAY', 'ROOF_GREEN', 'PAINT_BARN_RED', 'PAINT_YELLOW', 'PAINT_GREEN', 'PAINT_ORANGE', 'PAINT_BLUEGRAY',
   'LIMESTONE', 'SANDSTONE', 'PAVER', 'PAVER_DARK', 'LEAF_OAK', 'LEAF_OAK_L'];
 const BANK_SHIFT = [[8, 1.06, 0.96], [-10, 0.9, 1.06], [3, 0.72, 0.88]];

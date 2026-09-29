@@ -249,6 +249,60 @@ export class AmbientSystem {
         this._add({ def: defs.get('airship'), variant: rng.int(0, 2), loop, phase: 0.3 * loop.period, kind: 'sky', alt: 560, bob: 9, tint: null });
       }
     }
+    this.initBirds();
+  }
+
+  /** Flocks of birds: gulls circling off the coast towns, crows over the forests, geese in long loops high over the island. */
+  initBirds() {
+    const rng = this.rng, defs = this.defs, have = (id) => defs.has(id);
+    const orbit = (cx, cz, rx, rz, tilt, n = 10) => Array.from({ length: n }, (_, i) => {
+      const t = (i / n) * TAU, x = Math.cos(t) * rx, z = Math.sin(t) * rz;
+      return [cx + x * Math.cos(tilt) - z * Math.sin(tilt), cz + x * Math.sin(tilt) + z * Math.cos(tilt)];
+    });
+    // a flock keeps clear of the ground and of every roof under its path; one that would have to climb out of sight is dropped
+    const need = (loop, base) => {
+      let alt = base;
+      const p = [0, 0];
+      for (let d = 0; d < loop.len; d += 70) {
+        loop.pointAt(d, p);
+        alt = Math.max(alt, this.world.heightAt(p[0], p[1], 16) + 74);
+        for (const st of this.world.structuresIn(p[0] - 110, p[1] - 110, p[0] + 110, p[1] + 110, [])) alt = Math.max(alt, st.y + (st.h || 0) + 40);
+      }
+      return alt;
+    };
+    // tries: a big loop is tried at several headings and the one that needs the least climb wins
+    const add = (id, cx, cz, rx, rz, alt, speed, bob, phase, tries = 1) => {
+      let best = null, low = Infinity;
+      for (let k = 0; k < tries; k++) {
+        const loop = new Loop(smoothClosed(orbit(cx, cz, rx, rz, rng.range(0, TAU)), 40), speed), safe = need(loop, alt);
+        if (safe < low) { low = safe; best = loop; }
+      }
+      if (low > alt + 140) return;
+      this._add({ def: defs.get(id), variant: rng.int(0, 3) * 4, loop: best, phase: phase * best.period, kind: 'sky', alt: low, bob, tint: null });
+    };
+    if (have('gulls')) {
+      for (const key of ['dunmore', 'saltmarsh', 'portHalden', 'meridian']) {
+        const S = SITES[key];
+        const a = Math.atan2(S.z - 0, S.x - 1000);
+        let r = 26000;
+        while (r > 500 && this.isSea(1000 + Math.cos(a) * r, Math.sin(a) * r)) r -= 250;
+        const cx = 1000 + Math.cos(a) * (r + 150), cz = Math.sin(a) * (r + 150);
+        add('gulls', cx, cz, rng.range(260, 520), rng.range(200, 380), rng.range(48, 95), 9, 5, rng.next());
+        add('gulls', cx + Math.cos(a) * 600, cz + Math.sin(a) * 600, rng.range(320, 700), rng.range(260, 500), rng.range(70, 130), 8, 6, rng.next());
+      }
+      add('gulls', 12000, 6200, 380, 300, 60, 9, 5, rng.next());
+      add('gulls', -12800, -3000, 420, 320, 75, 9, 5, rng.next());
+    }
+    if (have('crows')) {
+      for (const [x, z] of [[-4000, -1800], [3200, -3000], [-9800, 3400], [6900, 3100], [-2200, 5200]]) {
+        add('crows', x, z, rng.range(280, 520), rng.range(220, 380), this.world.heightAt(x, z, 32) + rng.range(55, 110), 8, 7, rng.next());
+      }
+    }
+    if (have('geese')) {
+      add('geese', 1800, -800, 6200, 3800, 430, 17, 8, 0.1, 10);
+      add('geese', -6000, -5500, 5200, 3000, 520, 19, 9, 0.6, 10);
+      add('geese', 7500, 4000, 4600, 2600, 380, 16, 7, 0.35, 10);
+    }
   }
 
   setMax(n) { this.max = Math.max(0, n); }
@@ -305,6 +359,7 @@ export class AmbientSystem {
       o.pitch = def.rotor ? -0.07 : 0;
       o.y = a.alt + a.bob * Math.sin((t + a.phase) * 0.35);
       if (def.rotor) o.variant = (a.variant & ~3) | (Math.floor((t + a.phase) * 16) & 3);
+      else if (def.flap) o.variant = (a.variant & ~3) | (Math.floor((t + a.phase) * def.flap) & 3);
       return true;
     }
     const st = a.track.at(t + a.phase, this._state);

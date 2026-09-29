@@ -1,13 +1,18 @@
 import { defineScenery } from '../region.js';
-import { M } from '../../voxel/palette.js';
+import { packYaw } from '../scatter/trees.js';
 
+/* Rock outcrops: one to three boulders leaning on each other, the biggest of them up to a few meters across. Far away only
+   the biggest is drawn. Stone color is a bank of the instance, warmer on red ground and darker on the peaks. */
 export default defineScenery({
   id: 'rock',
   variants: 4,
-  rules: { habitat: 'rock', weight: 1, slopeMax: 9, size: 4, scale: 1 },
-  build(b, v, rng) {
-    const r = [1.1, 1.8, 2.8, 4.2][v];
-    b.blob(0, r * 0.45, 0, r, r * 0.62, r * 0.9, v & 1 ? M.ROCK_DARK : M.ROCK, 101 + v, 0.34, M.ROCK_WARM, 0.25);
-    if (v > 1) b.blob(r * 0.8, r * 0.25, r * 0.4, r * 0.55, r * 0.4, r * 0.5, M.ROCK, 111 + v, 0.3, 0, 0);
+  rules: { habitat: 'rock', weight: 1, slopeMax: 9, size: 1.6, scale: 1 },
+  expand(e, t) {
+    const R = [0.9, 1.4, 2.1, 3.1][t.pv % 4] * t.s * (0.8 + 0.5 * t.u[0]);
+    const bank = t.bank || (t.u[3] < 0.25 ? 1 : t.u[3] < 0.35 ? 2 : t.u[3] < 0.42 ? 3 : 0);
+    e('boulder', t.pv % 3, 0, R * 0.42, 0, packYaw(t.u[1] * 6.28, R * 0.4), R, bank);
+    if (t.level > 1) return;
+    if (R > 1.2) e('boulder', (t.pv + 1) % 3, R * 0.85 * Math.cos(t.u[2] * 6.28), R * 0.24, R * 0.85 * Math.sin(t.u[2] * 6.28), packYaw(t.u[4] * 6.28, R * 0.2), R * 0.52, bank);
+    if (R > 2 && t.level === 0) e('boulder', (t.pv + 2) % 3, R * 0.6 * Math.cos(t.u[5] * 6.28), R * 0.9, R * 0.6 * Math.sin(t.u[5] * 6.28), packYaw(t.u[6] * 6.28, R * 0.9), R * 0.4, bank);
   },
 });

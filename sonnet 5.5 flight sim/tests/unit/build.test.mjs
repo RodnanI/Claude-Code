@@ -12,7 +12,7 @@ const walk = (dir, out = []) => { for (const n of readdirSync(dir)) { const p = 
 test('the registry lists every content file by suffix', () => {
   const count = (dir, suffix) => walk(join(root, 'src', dir)).filter((f) => f.endsWith(suffix)).length;
   assert.equal(count('aircraft/planes', '.plane.js'), new Set(AIRCRAFT.map((a) => a.id)).size);
-  assert.equal(count('world/regions', '.region.js'), REGIONS.length);
+  assert.ok(REGIONS.length >= count('world/regions', '.region.js'), 'a region file may export several regions, never fewer than one');
   assert.equal(count('world/kits', '.kit.js') > 0, true);
   assert.ok(KITS.length >= count('world/kits', '.kit.js'));
   assert.ok(SCENERY.length >= count('world/scenery', '.scenery.js'));

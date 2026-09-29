@@ -13,6 +13,7 @@ export class ColumnBuf {
     this.hq = new Int32Array(W * W);
     this.mat = new Uint8Array(W * W);
     this.sub = new Uint8Array(W * W);
+    this.bank = new Uint8Array(W * W);
     this.water = new Float64Array(W * W);
     this.hydro = new Uint8Array(W * W);
     this.mm = new Float32Array(W * W);
@@ -53,6 +54,7 @@ export function sampleColumns(world, x0, z0, cell, N, buf) {
       const mat = surface.at(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, h, slope, cell, sv);
       buf.mat[a] = mat;
       buf.sub[a] = surface.sub(mat, h, slope);
+      buf.bank[a] = surface.bank ? surface.bank(mat, x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, cell) : 0;
       let top = h;
       if (buf.hydro[a] && !isWater(mat)) top = buf.water[a] + 1.0;
       buf.surf[a] = top;
@@ -113,12 +115,12 @@ function wall(b, dir, plane, a0, a1, yb, yt, mat, soft = 0, aoc = 3) {
 /** Greedy terrain mesher over sampled columns. Positions are cell units local to the node, y absolute. */
 export function meshTerrain(buf, N, builder) {
   const W = buf.W;
-  const { hq, mat, sub } = buf;
+  const { hq, mat, sub, bank } = buf;
   const mask = new Int32Array(N * N);
   // top faces
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const a = (j + 1) * W + i + 1;
-    mask[j * N + i] = hq[a] * 256 + mat[a] + 1; // +1 keeps 0 as "empty"; hq >= 0 always
+    mask[j * N + i] = (hq[a] * 4 + bank[a]) * 256 + mat[a] + 1; // +1 keeps 0 as "empty"; hq >= 0 always
   }
   for (let j = 0; j < N; j++) {
     for (let i = 0; i < N;) {
@@ -129,11 +131,13 @@ export function meshTerrain(buf, N, builder) {
       let h = 1;
       outer: for (; j + h < N; h++) for (let q = 0; q < w; q++) if (mask[(j + h) * N + i + q] !== key) break outer;
       for (let l = 0; l < h; l++) mask.fill(0, (j + l) * N + i, (j + l) * N + i + w);
-      const y = Math.floor((key - 1) / 256), m = (key - 1) & 255;
+      const hb = Math.floor((key - 1) / 256), y = hb >> 2, m = (key - 1) & 255;
+      builder.setBank(hb & 3);
       builder.quad(i, y, j, i, y, j + h, i + w, y, j + h, i + w, y, j, 2, m, 3, 3, 3, 3, 1);
       i += w;
     }
   }
+  builder.setBank(0);
   // walls: per direction, per wall line, merge runs
   const wallKey = (a, n, edge) => {
     const top = hq[a], nb = hq[n];
@@ -141,19 +145,22 @@ export function meshTerrain(buf, N, builder) {
     if (edge) yb = Math.min(nb, top - SKIRT);
     else if (top > nb) yb = nb; else return 0;
     if (yb >= top) return 0;
-    return { yb, top, mt: mat[a], ms: sub[a] };
+    return { yb, top, mt: mat[a], ms: sub[a], bt: bank[a] };
   };
   const emit = (dir, plane, a0, a1, k) => {
     // a step of up to three cells is part of the slope: it wears the surface material and is lit like the ground beside it, so a
     // gentle hillside has no contour lines. Taller drops are cliffs: rock below, a softened cap above.
     const hgt = k.top - k.yb;
-    if (hgt <= 3) wall(builder, dir, plane, a0, a1, k.yb, k.top, k.mt, 1, 3);
+    if (hgt <= 3) { builder.setBank(k.bt); wall(builder, dir, plane, a0, a1, k.yb, k.top, k.mt, 1, 3); }
     else {
+      builder.setBank(0);
       wall(builder, dir, plane, a0, a1, k.yb, k.top - 1, k.ms);
+      builder.setBank(k.bt);
       wall(builder, dir, plane, a0, a1, k.top - 1, k.top, k.mt, 1, 1);
     }
+    builder.setBank(0);
   };
-  const same = (p, q) => p && q && p.yb === q.yb && p.top === q.top && p.mt === q.mt && p.ms === q.ms;
+  const same = (p, q) => p && q && p.yb === q.yb && p.top === q.top && p.mt === q.mt && p.ms === q.ms && p.bt === q.bt;
   // +x and -x walls: lines indexed by i, runs along j
   for (let dir = 0; dir < 2; dir++) {
     for (let i = 0; i < N; i++) {

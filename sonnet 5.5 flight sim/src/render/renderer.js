@@ -313,13 +313,14 @@ export class Renderer {
     this.stats.draws++; this.stats.tris += g.indexCount / 3;
   }
 
-  _drawBatches(p, n, cam, maxDist = 1e9) {
+  _drawBatches(p, n, cam, maxDist = 1e9, shadow = false) {
     if (!n.batches || !n.batches.length || n.dMin > maxDist) return;
     const gl = this.gl;
     p.f3('u_origin', n.x0 - cam.pos[0], -cam.pos[1], n.z0 - cam.pos[2]);
     p.i3('u_cellOrigin', 0, 0, 0);
     p.f3('u_worldOrigin', n.x0, 0, n.z0);
     for (const b of n.batches) {
+      if ((shadow && b.noShadow) || (b.maxDist && n.dMin > b.maxDist)) continue;
       const m = b.model;
       p.f1('u_cell', m.cell);
       p.f3('u_modelOff', m.off[0], m.off[1], m.off[2]);
@@ -376,7 +377,7 @@ export class Renderer {
       const maxLevel = this.q.shadowMaxLevel ?? 4;
       for (const n of visibleForShadow) if (n.dMin < reach && n.level <= maxLevel && inLightView(n._rel, vp)) this._drawNode(P.dNode, n, cam);
       P.dInst.use();
-      for (const n of visibleForShadow) if (n.dMin < reach && n.batches && n.batches.length && inLightView(n._rel, vp)) this._drawBatches(P.dInst, n, cam);
+      for (const n of visibleForShadow) if (n.dMin < reach && n.batches && n.batches.length && inLightView(n._rel, vp)) this._drawBatches(P.dInst, n, cam, 1e9, true);
       P.dModel.use();
       const mreach = (reach + 300) * (reach + 300);
       for (const m of f.models) {
