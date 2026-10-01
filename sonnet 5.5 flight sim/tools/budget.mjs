@@ -2,6 +2,7 @@
 // this process and adds up what the GPU would be asked to draw. No GL, so it is fast and deterministic, and it is the
 // fair A/B for "did this change cost performance": node build time, terrain triangles, scenery triangles, draw calls.
 // Usage: node tools/budget.mjs [preset] [x z agl heading] [fovDeg]   (defaults: high over Pinecrest)
+//        node tools/budget.mjs airfields [preset]   (takeoff and busiest views of the three airfields)
 //        node tools/budget.mjs all            (runs the standard set of views, prints one line each and a total)
 import { createWorld } from '../src/world/index.js';
 import { createNodeBuilder } from '../src/workers/build-node.js';
@@ -30,6 +31,19 @@ export const VIEWS = [
   ['highland', -6500, 300, 600, 90],
   ['vista', 800, 2500, 1600, 320],
 ];
+
+/** Airfield views in the airfield's own frame (u along the runway, v to its right): [name, site, u, v, agl, rel heading]. The first is what
+    a takeoff looks like from the chase camera, the others are the busiest places of each airfield. */
+export const AIRFIELD_VIEWS = [
+  ['apt-takeoff', 'airport', -1600, 300, 5, 0], ['apt-terminal', 'airport', 0, -190, 42, -90], ['apt-cargo', 'airport', 1100, -140, 30, -90],
+  ['apt-hangars', 'airport', -1000, -190, 30, -135], ['apt-approach', 'airport', -3100, 300, 150, 0],
+  ['talon-takeoff', 'fortTalon', -1500, 0, 5, 0], ['talon-ramp', 'fortTalon', -60, -40, 22, -90], ['talon-shelters', 'fortTalon', -800, 60, 18, 90],
+  ['hollow-takeoff', 'hollow', -240, 0, 5, 0], ['hollow-farm', 'hollow', -250, 60, 20, 40], ['hollow-strip', 'hollow', -120, 0, 12, 0],
+];
+const airfieldPose = (site, u, v, rel) => {
+  const S = SITES[site], h = (S.heading * Math.PI) / 180;
+  return [S.x + u * Math.sin(h) + v * Math.cos(h), S.z - u * Math.cos(h) + v * Math.sin(h), (S.heading + rel + 360) % 360];
+};
 
 const modelTris = new Map();
 function triCount(type, variant, cell, rules) {
@@ -132,7 +146,15 @@ const fmt = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3)
 
 const [a0 = 'high', ...rest] = process.argv.slice(2);
 if (process.argv[1] && process.argv[1].endsWith('budget.mjs')) {
-  if (a0 === 'all' || rest[0] === 'all') {
+  if (a0 === 'airfields' || rest[0] === 'airfields') {
+    const preset = a0 === 'airfields' ? (rest[0] && rest[0] !== 'airfields' ? rest[0] : 'high') : a0;
+    for (const [name, site, u, v, agl, rel] of AIRFIELD_VIEWS) {
+      const [x, z, hd] = airfieldPose(site, u, v, rel);
+      const r = measure(preset, x, z, agl, hd, 70);
+      console.log(name.padEnd(15), `nodes ${String(r.nodes).padStart(4)}  draws ${String(r.draws).padStart(5)}  terrain ${fmt(r.terrainTris).padStart(6)}  scenery ${fmt(r.sceneryTris).padStart(6)}  struct ${fmt(r.structTris).padStart(6)}  total ${fmt(r.totalTris).padStart(6)}  inst ${fmt(r.instances).padStart(6)}  build ${(r.buildMs / 1000).toFixed(1)}s`);
+      if (process.env.TYPES) console.log('   ', Object.entries(r.byType).sort((a, b) => b[1].tris - a[1].tris).slice(0, 8).map(([k, v2]) => `${k} ${fmt(v2.n)}/${fmt(v2.tris)}`).join('  '));
+    }
+  } else if (a0 === 'all' || rest[0] === 'all') {
     const preset = a0 === 'all' ? (rest[0] || 'high') : a0;
     let tot = { totalTris: 0, terrainTris: 0, sceneryTris: 0, structTris: 0, draws: 0, buildMs: 0, instances: 0, nodes: 0 };
     for (const [name, x, z, agl, hd] of VIEWS) {

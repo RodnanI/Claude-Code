@@ -31,6 +31,7 @@ For development, `npm run dev` serves `src/` with native modules on http://local
 | X | Camera: chase, cockpit, orbit |
 | Right mouse drag | Look around |
 | M | Island map |
+| T | Takeoff assist mode: off, runway guidance, automatic |
 | H | Toggle HUD |
 | R | Restart the flight |
 | Esc or P | Pause |
@@ -39,12 +40,26 @@ For development, `npm run dev` serves `src/` with native modules on http://local
 
 A gamepad works too (sticks, triggers for throttle, face buttons for brakes, gear and flaps). The full list is under Controls in the menu.
 
+### Choosing an aircraft and a start
+
+The hangar shows the aircraft standing where you will start. Drag to orbit, wheel to zoom, keys 1 to 5 jump to a view. Left and Right change aircraft, Up and Down change start, Page Up and Page Down change airfield, L cycles the livery, T the takeoff assist, Enter takes off. The right side has three tabs:
+
+- **Airfield**: a chart of the airfield with every start on it (click one), and the starts grouped by runway, ramp, gate and hangar with the runway length ahead of each.
+- **Briefing**: the runway, its surface, elevation and slope, the wind split into head and cross components, and a bar showing how much runway this aircraft needs at this weight in this wind, worked out by running the automatic takeoff against the real flight model. It says so plainly when a runway is too short.
+- **Conditions**: time of day, wind (presets are relative to the selected runway), cloud, starting in the air, and the challenge.
+
+Your last choice is remembered.
+
+### Taking off
+
+Start on a runway and the camera swings from the nose around to the chase view while you set up. With runway guidance (the default) the HUD draws the centerline ahead in perspective, a panel with your offset from the centerline against the runway width, your speed against the rotation speed and the runway left, a flashing ROTATE at the right moment, and the next thing to do (gear up, flaps up, climb). Automatic takeoff flies all of it: full power, centerline, rotation, gear and flaps, a climb that turns away from rising ground, then hands the controls back. It refuses a runway the flight model says is too short, aborts if the runway runs out, and gives the controls back at once when you touch the stick, rudder, brakes or throttle. Setting: Controls, Takeoff assist.
+
 Settings, World, Challenge switches on the Skyline run: a ring beside the crown of each of the tallest towers in Meridian, flown in order, with a timer and a pointer to the next gate.
 
 ## Test it
 
 ```
-npm test                 # 123 unit tests, about fifteen seconds, no dependencies
+npm test                 # 152 unit tests, about twenty seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```
@@ -63,6 +78,9 @@ node tools/bench.mjs dist/fly-high.html high 4300 -7300 250 0 60                
 node tools/hero-shot.mjs out/h.png high shrike 15.5 -8800 3400 900 75              # aircraft placed anywhere: preset plane hour x z agl heading
 node tools/budget.mjs all high                                                     # triangles, draws and node build time over eight standard views, no GPU needed
 node tools/tour.mjs out/tour high forest,farmland,cliffs 1280 720                  # named camera views of the landscape in one browser session (needs: node build/build.mjs --entry viewer)
+node tools/budget.mjs airfields high                                               # triangles and draws at takeoff and at the busiest spots of the three airfields
+node tools/plan.mjs out/p.png airport u0=-700 u1=700 v0=-450 v1=350 mpp=1          # top-down plan of an airfield: pavement, markings, structures, props, starts
+node tools/iso.mjs out/i.png kit:terminal '{"w":250,"d":36}' cell=0.5               # software isometric render of one kit or scenery model, no GPU
 OVR='{"exposureBias":0.4}' FRAMES=60 node tools/hero-shot.mjs ...                  # setting overrides, frames to let exposure and TAA settle
 ```
 
@@ -76,11 +94,11 @@ src/render/   WebGL2 renderer, atmosphere, clouds, post chain, shaders
 src/lod/      screen-space-error quadtree, streaming, terrain mesher
 src/workers/  node builder and worker pool
 src/world/    the island: terrain, roads, scatter, kits, scenery, regions
-src/aircraft/ contract, flight model, planes (one file each)
+src/aircraft/ contract, flight model, takeoff controller and performance figures, planes (one file each)
 src/traffic/  road graph, simulation, vehicles (one file per family), ambient ships and airliner
-src/game/     game loop, cameras, HUD, collision
+src/game/     game loop, cameras, HUD, collision, takeoff assist, takeoff briefing
 src/input/    bindings and input
-src/ui/       menu, hangar, settings, map
+src/ui/       menu, hangar (cards, blueprint, airfield chart, briefing), settings, map
 src/settings/ schema, presets, store, probe, governor
 tests/        unit and browser tests
 ```
@@ -93,7 +111,7 @@ Every kind of content is one file found by its suffix. After adding a file run `
 
 **A town or city**: create `src/world/regions/towns/name.region.js`. Most towns are a few lines around `settlement({...})` from `_shared/settlement.js`; add its site to `src/world/layout.js`. The world tests check that it lays out inside its bounds with known kits.
 
-**An airfield**: a region with `spawns` and an `info` block. Its start areas appear in the hangar screen on their own.
+**An airfield**: a region file that builds an `Airfield` from `src/world/regions/_shared/airfield.js`. It paints the runways (numbers, threshold bars, touchdown zone, aiming point, edge lines, rubber, patches, displaced thresholds), taxiways with rounded fillets, aprons with slab joints and oil, stands, hold lines and parking lots, all as pure functions of position that only draw detail the voxel size can carry; it lists structures from the kits (`airport.kit.js`, `airfield.kit.js`, `military.kit.js`, `homestead.kit.js`) and props (`aids.js` places approach lights, PAPI, taxiway lights and signs, parked aircraft with a ground crew at each stand). Give it `runways: af.runwayList()`, `chart: () => af.chart()`, an `info` block (order, label, blurb, features) and `spawns: [af.spawn({ id, name, u, v, dir, kind, group, runway })]`: `kind` is runway, hold, apron, hangar or gate, and a start that names its `runway` gets its length ahead, surface and heading added by `world.spawns()`. The start areas, the chart and the briefing appear in the hangar on their own. A `clearings: [af.clearing(u, v, r)]` list keeps the natural forest out of a farmyard. `tools/plan.mjs`, `tools/iso.mjs` and `tools/tour.mjs` (the airfield views) are how you look at one.
 
 **A building type or prop**: `src/world/kits/name.kit.js` exports `defineKit({ id, build(desc, recipe, rng, ctx) })`. Recipes are lists of shape operations in meters, so the same kit produces a 4 m voxel skyline and a 25 cm facade with window frames.
 

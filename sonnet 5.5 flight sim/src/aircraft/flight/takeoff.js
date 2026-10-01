@@ -90,6 +90,7 @@ export class TakeoffPilot {
     tr.vv = m.vel[0] * f.rx + m.vel[2] * f.rz;
     tr.rem = f.length - tr.u;
     tr.hErr = wrapPi(f.heading - m.att.heading);
+    if (this.u0 === undefined) this.u0 = tr.u;        // where the takeoff began, to report the run from the start and not from the runway end
     return tr;
   }
 

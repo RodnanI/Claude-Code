@@ -101,6 +101,7 @@ export class Hangar {
     this.briefPane = h('div', { class: 'hr-pane', 'data-p': 'brief' });
     this.condPane = h('div', { class: 'hr-pane', 'data-p': 'conditions' });
     this._buildField(); this._buildConditions();
+    this.body = h('div', { class: 'hr-body' }, this.fieldPane, this.briefPane, this.condPane);
     this.summary = h('div', { class: 'summary' });
     this.flyBtn = h('button', { class: 'btn primary', onclick: () => this.app.fly() }, 'Take off');
 
@@ -109,7 +110,7 @@ export class Hangar {
         h('h2', null, 'Aircraft'), this.list, this.liveryField,
         h('button', { class: 'btn small', style: { marginTop: '10px' }, onclick: () => this.app.showMenu() }, 'Back')),
       this.stage,
-      h('div', { class: 'hangar-right' }, this.tabs, h('div', { class: 'hr-body' }, this.fieldPane, this.briefPane, this.condPane), h('div', { class: 'hr-foot' }, this.summary, this.flyBtn)));
+      h('div', { class: 'hangar-right' }, this.tabs, this.body, h('div', { class: 'hr-foot' }, this.summary, this.flyBtn)));
   }
 
   _stageEvents() {
@@ -190,6 +191,7 @@ export class Hangar {
     if (id === this.sel.plane) return;
     this.sel.plane = id; this.sel.livery = 'default';
     this._save(); this._renderCards(); this._renderBrief(); this._sync(); this._preview();
+    if (this.tab === 'brief') this.body.scrollTop = 0;
   }
 
   pickStart(id) {
@@ -197,6 +199,7 @@ export class Hangar {
     if (!s) return;
     this.sel.start = id; this.region = s.region;
     this._save(); this._renderField(); this._renderBrief(); this._sync(); this._preview();
+    if (this.tab === 'brief') this.body.scrollTop = 0;
   }
 
   pickRegion(rid) {
@@ -211,6 +214,7 @@ export class Hangar {
     for (const b of this.tabs.children) b.classList.toggle('on', b.dataset.t === id);
     for (const p of this.root.querySelectorAll('.hr-pane')) p.classList.toggle('on', p.dataset.p === id);
     if (!quiet) this._save();
+    this.body.scrollTop = 0;
     if (id === 'field') requestAnimationFrame(() => { this._drawChart(); const sel = this.startList.querySelector('.start.sel'); if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' }); });
   }
 
@@ -242,7 +246,7 @@ export class Hangar {
       });
     }
     clear(this.liveryField);
-    this.liveryField.append(h('span', { class: 'label' }, 'Livery'), h('select', { onchange: (e) => { this.sel.livery = e.target.value; this._save(); this._preview(); } }, this.spec.liveries.map((l) => h('option', { value: l.id, selected: l.id === this.sel.livery }, l.name))));
+    this.liveryField.append(h('span', { class: 'label' }, 'Livery'), h('select', { onchange: (e) => { this.sel.livery = e.target.value; this._save(); this._preview(); e.target.blur(); } }, this.spec.liveries.map((l) => h('option', { value: l.id, selected: l.id === this.sel.livery }, l.name))));
     const sel = this.list.querySelector('.card.sel');
     if (sel && sel.scrollIntoView) sel.scrollIntoView({ block: 'nearest' });
   }

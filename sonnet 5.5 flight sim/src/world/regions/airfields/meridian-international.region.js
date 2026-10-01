@@ -196,7 +196,7 @@ export default defineRegion({
         for (const blk of [0, 1]) for (let j = 0; (j + 1) * lot.stall < lot.v1 - lot.v0 - 1; j++) {
           if (!rng.chance(0.52)) continue;
           const u = lot.u0 + p * pitch + lot.depth * (blk + 0.5), v = lot.v0 + (j + 0.5) * lot.stall;
-          af.prop(out, 'car', u, v, { variant: rng.int(0, 4), tint: cars[rng.int(0, cars.length - 1)], yaw: af.propYawAt(rng.chance(0.5) ? 0 : 180) });
+          af.prop(out, 'lot-car', u, v, { variant: rng.int(0, 3), tint: cars[rng.int(0, cars.length - 1)], yaw: af.propYawAt(rng.chance(0.5) ? 0 : 180) });
         }
       }
     }

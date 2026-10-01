@@ -86,7 +86,7 @@ export class App {
     this.map = new IslandMap(g, () => this.closeModal());
     // overlays
     this.stats = h('div', { id: 'stats' });
-    this.hint = h('div', { class: 'hint off' }, 'Shift: throttle   W S: pitch   A D: roll   Q E: rudder   Space: brakes   G: gear   F V: flaps   X: camera   M: map');
+    this.hint = h('div', { class: 'hint off' }, 'Shift: throttle   W S: pitch   A D: roll   Q E: rudder   Space: brakes   G: gear   F V: flaps   X: camera   T: takeoff assist   M: map');
     document.body.append(this.stats, this.hint);
   }
 

@@ -310,4 +310,22 @@ const oldPickup = defineScenery({
   },
 });
 
-export default [tug, belt, stairs, fuel, catering, pushback, gpu, bus, crash, followMe, milTruck, milFuel, milJeep, milTug, milLoader, tractor, oldPickup];
+/**
+ * A car for the thousands in a car park: the same four body shapes as the road car with wheels made of boxes, so a lot of five
+ * thousand costs a fifth of the triangles. Cars in a lot are seen from above and far away; nobody parks next to the camera.
+ */
+const lotCar = defineScenery({
+  id: 'lot-car',
+  variants: 4,
+  rules: { size: 4.6, conservative: true, maxDist: 2200 },
+  build(b, v) {
+    const L = [4.5, 4.7, 5.3, 5.0][v], W = [1.8, 1.9, 2.05, 2.0][v], H = [1.45, 1.75, 2.3, 1.85][v];
+    const hl = L / 2, hw = W / 2, cl = [2.3, 3.0, 3.3, 1.9][v], cx = [-0.25, -0.2, -0.3, 0.35][v];
+    b.box(-hl, 0.3, -hw, hl, 0.95, hw, M.CAR_PAINT);
+    b.box(cx - cl / 2, 0.95, -hw + 0.07, cx + cl / 2, H, hw - 0.07, M.CAR_GLASS);
+    b.box(cx - cl / 2, H - 0.06, -hw + 0.07, cx + cl / 2, H + 0.04, hw - 0.07, M.CAR_PAINT);
+    for (const wx of [-hl * 0.62, hl * 0.62]) for (const sd of [-1, 1]) b.box(wx - 0.32, 0, sd * (hw - 0.1) - 0.13, wx + 0.32, 0.64, sd * (hw - 0.1) + 0.13, M.TIRE);
+  },
+});
+
+export default [tug, belt, stairs, fuel, catering, pushback, gpu, bus, crash, followMe, milTruck, milFuel, milJeep, milTug, milLoader, tractor, oldPickup, lotCar];

@@ -100,9 +100,11 @@ export class TakeoffAssist {
     if (!this.pilot && !this.done) {
       const lu = m.onGround ? this.lineup(m) : null;
       if (lu) {
-        this.pilot = new TakeoffPilot(m, lu.frame, { mode: this.mode === 'auto' ? 'auto' : 'guide', delay: this.delay });
+        // an automatic takeoff only starts from a standstill: rolling onto a runway at taxi speed means the player is still positioning
+        const auto = this.mode === 'auto' && m.groundSpeed < 4;
+        this.pilot = new TakeoffPilot(m, lu.frame, { mode: auto ? 'auto' : 'guide', delay: this.delay });
         this.runway = lu;
-        this.controlling = this.mode === 'auto';
+        this.controlling = auto;
         this.lastThr = m.input.throttle;
         this.estimate = this.estimateFor(m, lu);
         if (this.estimate.short && this.mode === 'auto') {
@@ -113,9 +115,20 @@ export class TakeoffAssist {
       }
     }
     if (this.pilot && this.pilot.phase === 'hold' && !m.onGround && m.agl > 30) { this.pilot = null; this.info = null; this.controlling = false; return false; }
+    // a takeoff that has ended without a handover (a hop and a landing, or a taxi off the runway) is over: the panel must not linger
+    if (this.pilot) {
+      const t = this.pilot.track, off = Math.abs(t.v) > this.runway.rw.width / 2 + 40 || t.u < -80 || t.u > this.runway.rw.length + 80;
+      this.groundT = m.onGround && (this.pilot.phase === 'climb' || this.pilot.phase === 'done') ? (this.groundT || 0) + dt : 0;
+      if ((off && m.onGround) || this.groundT > 2.5) { this.pilot = null; this.info = null; this.controlling = false; this.groundT = 0; if (!off) this.done = false; return false; }
+    }
     if (!this.pilot) { this.info = null; return false; }
     if (this.mode === 'guide' && this.pilot.mode === 'auto') { this.pilot.mode = 'guide'; this.controlling = false; }
-    if (this.mode === 'auto' && this.pilot.mode === 'guide' && this.pilot.phase === 'hold') { this.pilot.mode = 'auto'; this.controlling = true; this.lastThr = m.input.throttle; }
+    if (this.mode === 'auto' && this.pilot.mode === 'guide' && this.pilot.phase === 'hold' && m.groundSpeed < 4) {
+      if (this.estimate && this.estimate.short) {
+        this.mode = 'guide';
+        this.pilot.calls.push({ key: 'refuse-later', text: 'Runway too short for an automatic takeoff', tone: 'bad', need: this.estimate.need });
+      } else { this.pilot.mode = 'auto'; this.controlling = true; this.lastThr = m.input.throttle; }
+    }
     // the player touching anything takes an automatic takeoff back
     if (this.controlling && this.pilot.phase !== 'hold' && this.pilot.phase !== 'done') {
       if (Math.abs(inp.pitch) > 0.4 || Math.abs(inp.roll) > 0.4 || Math.abs(inp.yaw) > 0.4 || inp.brake > 0.5 || Math.abs(inp.throttle - this.lastThr) > 0.04) {

@@ -31,8 +31,10 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Ambient life: container ships, tankers, ferries, tugs and sailing yachts on closed sea lanes, a twin-jet airliner flying a 15 minute airport circuit (approach, landing roll, taxi, dwell, taxi, takeoff, climb), helicopters circling Meridian, Port Halden and Ironford, an advertising airship whose flank panel glows at night, and flocks of gulls, crows and geese (one mesh per flock, wings beating, every loop kept above the ground and the rooftops under it). All of it is a pure function of a clock, so nothing is stored and nothing drifts, and every orbit is checked by a test against the structures under its path.
 - Traffic: road graph split at every crossing, signals with visible masts whose lit lamp follows the phase the cars obey, IDM car following, nine vehicle types, spawn and cull around the camera.
 - Game: chase, cockpit and orbit cameras, keyboard, mouse and gamepad, HUD (instrument strip and a full fighter HUD), structure collision that follows the real shape of each building (a setback, a tapering crown or the gap between twin towers is free air), crash and restart flow, and an optional challenge (Settings, World): the Skyline run, eight rings beside the crowns of Meridian's tallest towers, chosen from the generated city, with a timer, a pointer to the next gate and a best time kept in the browser.
-- UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 123 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Airfields: the three start areas are built with one painter (`_shared/airfield.js`): runway numbers, threshold bars, touchdown zone and aiming point marks, displaced thresholds with arrows, blast pads, edge lines, rubber, patches and tire marks, taxiways with rounded fillets and centerline lights, aprons with slab joints and oil, stands with lead-in lines, hold lines, parking lots and lettering from a 5x7 bitmap font, all drawn only at voxel sizes that can carry them. Structures come from four kit files (terminal with piers and jet bridges, tower, hangars, cargo sheds, fuel farm, fire station, garage, hardened shelters, barn, silos, windmill, still) and props from three scenery files (parked aircraft with tinted liveries, approach lights, PAPI, signs, floodlights, ground support vehicles). `tools/plan.mjs`, `tools/iso.mjs` and the airfield views of `tools/tour.mjs` are how they are inspected, `tools/budget.mjs airfields` how they are costed.
+- Takeoff and selector: the hangar is aircraft cards (bars computed from the flight model, a blueprint rasterized from the real model), an airfield chart with clickable starts, a briefing that runs the automatic takeoff against the flight model for the chosen wind, and conditions; in flight there is a takeoff intro camera, runway guidance on the HUD and an optional automatic takeoff (see 14.3).
+- UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase you can orbit, settings generated from the schema, pause, controls, island map, performance overlay.
+- Tests: 152 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -265,9 +267,11 @@ Water is baked into the terrain function: ocean at Y = 0, rivers and lakes at th
 
 ### 9.3 The three start areas
 
-- **Meridian International Airport**: two parallel runways with markings and lights, taxiways, terminal, control tower, hangars, cargo sheds, fuel farm, parking. Perfectly flat.
-- **Fort Talon Air Base**: long runway on a flattened plateau, hardened aircraft shelters, hangars, tower, radar dome, barracks, fuel farm, perimeter fence.
-- **Hollerin' Hollow Strip**: a short mowed strip on rolling ground that climbs about 1.4 percent, tire-lined edges, a tin barn hangar, a pallet control tower with a lawn chair, a jeans windsock, a trailer, a junk pile, drums, hay bales.
+- **Meridian International Airport**: two parallel asphalt runways (09R/27L 3,400 m, 09L/27R 2,600 m with a displaced 27R threshold), full markings, approach lighting and PAPI, blue taxiway edge lights and green centerlights, named taxiways with sign panels, a terminal with two piers and twelve jet bridges under a glass roof, tower, hangars, a cargo apron with heavy freighters, fuel farm, fire station, parking garage and lots with thousands of cars, and airliners with ground crews at the gates. Perfectly flat.
+- **Fort Talon Air Base**: a 3,300 m concrete runway with arrestor cable marks on a flattened plateau, hardened aircraft shelters with taxi stubs, hangars, tower, radar dome, barracks, motor pool, fuel farm, fire station, olive vehicles and parked Shrikes on the flight line, an alert pad and a perimeter fence.
+- **Hollerin' Hollow Strip**: a 520 m mowed strip on rolling ground that climbs about 1.4 percent with a deliberate hump, worn wheel tracks and lime-painted numbers, a farm beside it (patchwork tin hangar with an airplane in front, pallet control tower, barn, silos, windmill, water tank, a school bus somebody lives in, trailers, a still, a bonfire, a wreck under a chain hoist, junk, hay, split-rail fence) standing in a clearing the natural forest keeps out of.
+
+Every runway start knows its runway: `world.spawns()` adds `rwy` (both end names, length, width, surface, heading) and `roll`, the pavement ahead of the start, for any spawn that names a `runway`.
 
 Each airfield region carries an `info` block (label and blurb) that the hangar screen shows, so a new start area brings its own description.
 
@@ -289,8 +293,10 @@ export default defineRegion({
   terrain: () => ({ flatten: [ ... ] }),
   layout: (ctx) => ({ structures, roads, props, lots }),   // lazy, deterministic
   paint: (x, z, cell, h, world) => materialId | 0,         // hot path, keep it cheap
-  spawns: [ { id, name, x, z, heading, kind } ],           // airfields only
-  info: { label, blurb },                                  // airfields: shown in the hangar
+  spawns: [ { id, name, x, z, heading, kind, group, runway } ],  // airfields only; kind: runway, hold, apron, hangar, gate
+  info: { order, label, blurb, features },                 // airfields: shown in the hangar
+  runways: [ ... ], chart: () => ({ ... }),                // airfields: runway list and chart data (Airfield.runwayList, Airfield.chart)
+  clearings: [ { x, z, r } ],                              // circles where the natural scatter grows nothing (a farmyard in a forest)
 });
 ```
 
@@ -368,6 +374,14 @@ Six degrees of freedom, fixed step at 240 Hz with an accumulator and render inte
 
 `solveTrim` finds angle of attack, elevator and throttle for level flight, and `startAirborne` places a model in that trim, so airborne starts and tests are stable. `Autopilot` holds altitude, heading and speed through the normal inputs.
 
+### 14.3 Takeoff
+
+`src/aircraft/flight/takeoff.js` holds everything about a takeoff that does not care where it runs. `takeoffSpeeds` gives the stall speed at takeoff flaps, the rotation speed (1.12 times it) and the climb-out speed. `TakeoffPilot` is one controller for the whole takeoff, working through the ordinary input channels: hold on the brakes, full power, centerline by heading on the wheels and by ground track in the air (which puts the nose into a crosswind by itself), rotation at a fixed rate to ten degrees, gear up at a positive rate, flaps up above a speed, climb speed by pitch, and a handover once established. It runs the same phase machine (hold, roll, rotate, climb, done, abort) whether it flies or only watches, and produces the cue and callouts for the HUD. `simulateTakeoff` runs it against the real flight model on flat ground with wind, slope, elevation, surface, fuel and payload, in about 10 to 80 ms, and reports lift-off and 50 ft distances. The hangar briefing, the assist's own go or no-go decision and the tests all use it, so the numbers agree with what the automatic takeoff delivers.
+
+`src/game/takeoff-assist.js` finds the runway an aircraft is lined up on (from the region runway lists, either direction), runs the pilot in guidance or automatic mode, scans the terrain ahead once the aircraft is climbing and turns away from rising ground, refuses an automatic takeoff when the simulated 50 ft distance with a 15 percent margin does not fit the runway left, aborts on the roll if the runway will not stop it, and gives the controls back on any real input. `Game` applies its commands after copying the player's input, moves the throttle lever with it, and trims for the handover. The mode is the `takeoffAssist` setting (off, runway guidance, automatic) and the T key cycles it.
+
+The camera rig plays a takeoff intro from a runway start: a low camera ahead and to the left of the nose swings along the side to the chase position in 4.6 s and gives way at once to any input.
+
 ### 14.2 Reference roster in this stage
 
 - **Skylark SK-172**: four-seat high-wing trainer. Forgiving, about 44 knot stall, full interior with a working panel, attitude ball, yoke, pedals and throttle.
@@ -382,11 +396,11 @@ Keyboard, gamepad and mouse flight through an action layer, so bindings are data
 
 The look is deliberately not the usual dark-glass-and-gradient game menu. It is an airfield operations board: warm charcoal, paper cream, signal orange, olive drab, hazard stripe dividers, condensed uppercase type and monospace numerals. No gradients, no emoji, no icon library.
 
-Screens: loading, main menu over a live flyover of the island, hangar (aircraft cards with computed specification plates, start areas grouped by airfield, livery, time of day, cloud cover and an airborne start switch, with the chosen aircraft standing on the chosen start area behind the panels), settings (generated from the schema, tabs by group), pause, controls, island map (hill-shaded terrain, highways, sites, your aircraft), crash screen, HUD and a performance overlay on F3.
+Screens: loading, main menu over a live flyover of the island, hangar (aircraft cards with bars for speed, climb, roll, short field and handling worked out from the flight model and a top and side blueprint rasterized from the real model at one scale for all aircraft; an Airfield tab with a north-up chart of the airfield and its starts grouped by runway, ramp, gate and hangar; a Briefing tab with runway data, wind components, a runway-needed bar and reference speeds; a Conditions tab with time of day, wind presets relative to the runway, cloud, airborne start and challenge; the chosen aircraft stands on the chosen start between the panels and can be orbited, zoomed and set to front, side, rear and top views; keyboard navigation and a remembered selection), settings (generated from the schema, tabs by group), pause, controls, island map (hill-shaded terrain, highways, sites, your aircraft), crash screen, HUD and a performance overlay on F3.
 
 ## 17. Testing
 
-`npm test` runs 123 tests in about fifteen seconds:
+`npm test` runs 152 tests in about twenty seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
@@ -397,9 +411,11 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance, signal masts follow the phase and vanish with traffic off.
 - Render: the atmosphere gives a blue noon sky with a pale horizon and an orange sunset side, never negative or non-finite, black at night; sun transmittance reddens and dims monotonically; moonlight is a sliver of daylight; the cinematic grade keeps blacks dark.
 - Landscape: ground normals on a ramp, a plane and a pit; land nodes carry a normal texture and ocean tiles do not; the canopy texture is deterministic and covers its tile; tree parts by level of detail; forests are shared parts up to the tree levels and nothing beyond; flowers, herds, reeds and driftwood appear where they belong; massif heights, lakes and no inland ponds; the cached macro fields agree with the exact ones and never change the world between threads; farmsteads sit on farmland with a house and a barn; bird flocks clear the ground and the rooftops and cycle their wing beat.
+- Takeoff: reference speed ordering, wind components, runway frames, the automatic takeoff on pavement and grass for every aircraft (airborne, on the line, in the expected distance range), the effect of wind, slope, altitude and crosswind on the run, refusal and abort on a short runway, phase tracking in guidance mode, verdict grading, card bars and silhouettes.
+- Assist and hangar: runway data on every start, runway lookup in both directions, automatic takeoffs from every long runway with all aircraft (gear, flaps, handover trim, callouts), crosswind and headwind, the farm strip (the bush plane flies out, the jet and the trainer are refused), takeover by the player, briefing against the real takeoff, chart data and drawing for all three airfields, marker picking, the setting and its key, and the farm clearing (no natural trees inside it, woods around it).
 - Build: registry covers every content file, the output is one self-contained file under budget, no em dashes anywhere.
 
-`npm run test:browser` boots the built file in headless Chromium and walks menu, hangar, takeoff, throttle, pause, settings, map, F3 overlay, a forced crash and a restart, failing on any console error.
+`npm run test:browser` boots the built file in headless Chromium and walks menu, hangar (tabs, chart, briefing, keyboard), takeoff (intro camera, runway guidance), throttle, pause, settings, map, F3 overlay, a forced crash and a restart, failing on any console error.
 
 ## 18. Performance policy
 

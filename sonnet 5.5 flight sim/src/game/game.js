@@ -15,7 +15,7 @@ import { Input } from '../input/input.js';
 import { AircraftEntity } from './aircraft-entity.js';
 import { makeGround } from './ground.js';
 import { CameraRig, Flyover } from './camera-rig.js';
-import { Hud } from './hud.js';
+import { Hud, unitsFor } from './hud.js';
 import { StructureCollider } from './collision.js';
 import { TrafficSystem } from '../traffic/traffic.js';
 import { AmbientSystem } from '../traffic/ambient.js';
@@ -204,7 +204,8 @@ export class Game extends Emitter {
     if (this.course) this.course.reset();
     this.rig.setMode(spec.cameras.defaultView || 'chase');
     this.rig.reset(this.ent);
-    if (!airborne && this.rig.mode !== 'cockpit') this.rig.startIntro(INTRO_TIME);
+    // the intro swings the camera around the nose, which needs open ground: runways and holding points, not a gate against a pier
+    if (!airborne && this.rig.mode !== 'cockpit' && (start.kind === 'runway' || start.kind === 'hold')) this.rig.startIntro(INTRO_TIME);
     this.acc = 0;
     this.setState('flying');
     this.hud.toast(`${spec.name} at ${start.name}`, 3400);
@@ -290,7 +291,14 @@ export class Game extends Emitter {
     this._controls(dt, inp);
     if (a.controlling) a.apply(ent, this);
     if (a.handedOver) { this.input.trim = Math.max(-1, Math.min(1, m.c.elev / 0.35)); a.handedOver = false; }
-    for (const c of a.drain()) if (c.key !== 'rotate') this.hud.toast(c.text, c.tone === 'bad' ? 3600 : 2200, c.tone);   // the ROTATE banner speaks for itself
+    for (const c of a.drain()) {
+      if (c.key !== 'rotate') this.hud.toast(c.text, c.tone === 'bad' ? 3600 : 2200, c.tone);   // the ROTATE banner speaks for itself
+      if (c.key === 'done' && a.pilot && a.pilot.liftoffAt) {
+        // the takeoff report: what the briefing promised, as it turned out
+        const u = unitsFor(this.store.get('units')), lo = a.pilot.liftoffAt, run = Math.max(0, lo.u - (a.pilot.u0 || 0));
+        this.hud.toast(`Lift-off after ${Math.round(u.dist(run) / 10) * 10} ${u.distUnit} at ${Math.round(u.speed(lo.ias))} ${u.speedUnit}`, 4200, 'good');
+      }
+    }
     if (this.rig.intro && (inp.throttle > 0.02 || inp.brake > 0.05 || Math.abs(inp.pitch) + Math.abs(inp.roll) + Math.abs(inp.yaw) > 0.15)) this.rig.skipIntro();
     this.acc += dt;
     let n = 0;

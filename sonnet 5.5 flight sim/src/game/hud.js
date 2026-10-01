@@ -59,7 +59,7 @@ export class Hud {
     const scale = (s.scale || 1) * clamp(Math.min(this.w / 1280, this.h / 720), 0.7, 1.5);
     if (s.course) this._course(s.course, s.cam, scale);
     this._warnings(m, spec, s, scale);
-    if (s.assist && !m.crashed) { this._runwayPath(s.assist, s, m, scale); this._takeoff(s.assist, m, u, scale); }
+    if (s.assist && !m.crashed) { this._runwayPath(s.assist, s, m, scale); this._takeoff(s.assist, m, u, scale, spec.hud === 'fighter'); }
     if (m.crashed) return;
     if (spec.hud === 'fighter') this._fighter(s, m, spec, u, scale);
     else if (s.view === 'cockpit') this._mini(s, m, u, scale);
@@ -170,9 +170,10 @@ export class Hud {
   }
 
   /** The takeoff panel: runway, cross-track offset against the runway width, speed against the rotation speed, what to do next. */
-  _takeoff(a, m, u, k) {
+  _takeoff(a, m, u, k, corner = false) {
     const c = this.ctx;
-    const W = 304 * k, Hh = 128 * k, x = this.w - W - 20 * k, y = Math.max(96 * k, this.h * 0.27);
+    // the fighter HUD owns the middle and both sides at eye height, so its panel sits in the top corner
+    const W = 304 * k, Hh = 128 * k, x = this.w - W - 20 * k, y = corner ? 20 * k : Math.max(96 * k, this.h * 0.27);
     const tone = a.tone === 'bad' ? ORANGE : a.tone === 'good' ? GREEN : AMBER;
     const cue = a.short ? 'Runway is short for this aircraft' : a.cue;
     const cueTone = a.short ? ORANGE : tone;

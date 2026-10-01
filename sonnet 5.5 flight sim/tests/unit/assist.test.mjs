@@ -88,6 +88,8 @@ test('an automatic takeoff completes from every long runway with every aircraft 
     const said = r.calls.map((c) => c.text).join(' | ');
     assert.match(said, /Rotate/); assert.match(said, /Positive rate/); assert.match(said, /Takeoff complete/);
     assert.ok(r.handover && Math.abs(r.handover.trim) <= 1, 'the game is told to trim the aircraft for the handover');
+    const lo = r.assist.pilot.liftoffAt;
+    assert.ok(lo && lo.u - r.assist.pilot.u0 > 50 && lo.u - r.assist.pilot.u0 < 900, `${plane} at ${id}: the takeoff report has a run of ${lo && lo.u - r.assist.pilot.u0}`);
   }
 });
 

@@ -358,6 +358,9 @@ export class Airfield {
     const dv = v - rw.v, adv = Math.abs(dv), hw = rw.w / 2;
     if (adv > hw + 8) return 0;
     if (rw.surface === 'grass') return this._strip(rw, u, dv, adv, hw, cell, fine);
+    // seen from a few kilometers the edge lamps are far smaller than a voxel: dashes of pavement that glows at night (an ordinary dark
+    // gray by day) stand in for them, so a lit runway can be found from the air
+    if (rw.lights && cell > 2.4 && cell <= 10 && u > rw.u0 + 10 && u < rw.u1 - 10 && adv > hw - cell * 0.45 && adv < hw + cell * 0.85 && (u - rw.u0) % 60 < 16 + cell) return M.ASPHALT_LIT;
     const inside = u >= rw.u0 && u <= rw.u1 && adv <= hw;
     if (!inside) {
       // blast pads and stopways past the ends carry yellow chevrons that point at the runway
@@ -620,6 +623,9 @@ export class Airfield {
       // packed earth: trampled dark patches, bare clay, and grass taking back the margins
       const e = Math.min(lu, p.u1 - u, lv, p.v1 - v);
       const nn = n2(Math.floor(u / 2.5), Math.floor(v / 2.5), 71);
+      // a yard is bare where people walk and grassy in the corners nobody bothers with: blocks of nine meters broken up at three
+      const blob = 0.7 * n2(Math.floor(u / 9), Math.floor(v / 9), 72) + 0.3 * n2(Math.floor(u / 3), Math.floor(v / 3), 73);
+      if (blob < 0.33) return M.GRASS_DRY;
       if (e < 6 && nn < 0.75 - e * 0.12) return M.GRASS_DRY;
       if (nn > 0.9) return M.DIRT;
       if (nn < 0.07) return M.DIRT_DARK;
