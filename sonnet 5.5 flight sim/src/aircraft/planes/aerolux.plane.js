@@ -82,7 +82,7 @@ export default defineAircraft({
   manufacturer: 'Aerolux Meridian',
   role: 'Business jet',
   category: 'private',
-  order: 8,
+  order: 4,
   difficulty: 2,
   tags: ['Twin jet', 'T-tail', 'Full cabin', 'Glass cockpit', 'Long range'],
   description: 'Eight seats, a divan, a galley and a lavatory behind a glass cockpit. The AL-9 climbs quietly, cruises at 450 knots and lands like a limousine. The cabin behind your seat is fully modeled: turn around to see the table laid and the lights on.',

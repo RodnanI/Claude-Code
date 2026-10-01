@@ -2,6 +2,7 @@ import { defineAircraft } from '../base.js';
 import { M } from '../../voxel/palette.js';
 import { hash2, hashUnit } from '../../core/util.js';
 import { strut, wheel, gauge, needle, wingPair, fin, propeller } from '../builders/parts.js';
+import { munitionRecipe } from '../munitions.js';
 
 /* Scrapper B-1: a homebuilt taildragger bush plane welded together from whatever was in the barn. Patchwork fabric,
    automotive engine, tundra tires, an open cockpit and a wing that will lift off in the length of a driveway.
@@ -21,7 +22,7 @@ export default defineAircraft({
   manufacturer: "Cousin Earl's Garage",
   category: 'homebuilt',
   role: 'Bush plane',
-  order: 2,
+  order: 10,
   difficulty: 4,
   tags: ['Tailwheel', 'STOL', 'Open cockpit', 'Bites back'],
   description: 'Fabric, chrome-moly tube and a converted car engine. Lands on a road, a pasture or a sandbar. Spins if you look at it wrong. The only aircraft the hillbilly strip was built for.',
@@ -46,6 +47,11 @@ export default defineAircraft({
     ],
   },
   skids: [{ p: [0.0, 1.1, 4.8], kind: 'tip' }, { p: [0.0, 1.1, -4.8], kind: 'tip' }, { p: [2.05, 0.05, 0], kind: 'nose' }, { p: [0.2, -0.45, 0], kind: 'belly' }, { p: [-4.4, 1.35, 0], kind: 'tail' }],
+  stations: [{ id: 'btL', pos: [0.5, 0.8, -2.2], kind: 'rack' }, { id: 'btR', pos: [0.5, 0.8, 2.2], kind: 'rack' }],
+  weapons: [
+    { id: 'spud', name: 'Potato cannon', type: 'gun', munition: 'spud', ammo: 24, rate: 1.8, muzzle: [2.1, 0.45, 0.32], spread: 0.02, flash: 0.4 },
+    { id: 'bottles', name: 'Bottle rockets', type: 'rocket', munition: 'bottle', stations: ['btL', 'btR'], rounds: 6, muzzleX: 0.7, tube: 0.07 },
+  ],
   limits: { vne: 55, maxG: 4, minG: 1.5, flapSpeed: 30, gearSpeed: 999, crashVs: 6 },
   cameras: { cockpit: [0.05, 0.76, 0], chase: { distance: 12, height: 3 }, near: { distance: 6.2, height: 1.7 } },
   liveries: [
@@ -168,6 +174,21 @@ export default defineAircraft({
     gl.box(0.66, 0.6, -0.27, 0.7, 0.95, 0.27, M.AC_CANOPY, { thin: true });
     gl.box(0.7, 0.6, -0.27, 0.9, 0.8, -0.24, M.AC_CANOPY, { thin: true });
     gl.box(0.7, 0.6, 0.24, 0.9, 0.8, 0.27, M.AC_CANOPY, { thin: true });
+    // a potato cannon of gray PVC along the right side of the cowl, and under each wing a milk crate of bottle rockets
+    const sp = k.part('spudGun');
+    sp.cyl('x', 0.45, 0.32, 0.055, 0.055, 0.1, 2.12, M.AC_WHITE, { thin: true });
+    for (const x of [0.5, 1.0, 1.5]) sp.cyl('x', 0.45, 0.32, 0.062, 0.062, x, x + 0.05, M.AC_GRAY_LIGHT, { thin: true, md: 0.1 });
+    sp.cyl('x', 0.45, 0.32, 0.075, 0.075, 0.08, 0.2, M.AC_GRAY_DARK, { thin: true, md: 0.1 });
+    for (const s of [-1, 1]) {
+      const n = s < 0 ? 'L' : 'R';
+      const crate = k.part('crate' + n, { visibleWhen: 'store_bt' + n, voxel: 0.03125 });
+      crate.box(0.1, 0.72, s * 2.2 - 0.24, 0.9, 0.76, s * 2.2 + 0.24, M.CONTAINER_RED);
+      for (const zz of [-0.24, 0.24]) crate.box(0.1, 0.72, s * 2.2 + zz - 0.02, 0.9, 0.98, s * 2.2 + zz + 0.02, M.CONTAINER_RED);
+      for (const xx of [0.1, 0.9]) crate.box(xx - 0.02, 0.72, s * 2.2 - 0.24, xx + 0.02, 0.98, s * 2.2 + 0.24, M.CONTAINER_RED);
+      const bt = munitionRecipe('bottle');
+      for (let i = 0; i < 6; i++) crate.stamp(bt, 0.5, 0.8 + (i >= 3 ? 0.11 : 0), s * 2.2 - 0.14 + (i % 3) * 0.14, 0);
+      strut(body, [0.5, 1.06, s * 2.2], [0.5, 0.95, s * 2.2], 0.02, M.AC_BLACK, { md: 0.08 });
+    }
   },
   interior(k) {
     // ------------------------------------------------------------------ cockpit (2.5 cm voxels)

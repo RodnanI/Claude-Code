@@ -15,6 +15,16 @@ const RATING = ['', 'Docile', 'Easy', 'Demanding', 'Difficult', 'Unforgiving'];
 const TIMES = [['Dawn', 6.5], ['Morning', 9.5], ['Noon', 12.5], ['Golden hour', 17.5], ['Dusk', 19.5], ['Night', 22.5]];
 const VIEWS = [['orbit', 'Orbit'], ['front', 'Front'], ['side', 'Side'], ['back', 'Rear'], ['top', 'Top']];
 const TABS = [['field', 'Airfield'], ['brief', 'Briefing'], ['conditions', 'Conditions']];
+const CATS = [['all', 'All'], ['military', 'Military'], ['private', 'Private'], ['homebuilt', 'Hillbilly']];
+const CAT_LABEL = { military: 'Military', private: 'Private', homebuilt: 'Hillbilly' };
+
+/** One line about a weapon system for the specification plate. */
+function weaponDetail(w) {
+  const n = (w.stations || []).length;
+  if (w.type === 'gun') return `${w.ammo ?? 0} rounds`;
+  if (w.type === 'rocket') return `${n} x ${w.rounds ?? 1}`;
+  return n === 1 ? 'one' : `${n}`;
+}
 
 /** Specification plate for an aircraft, computed from its definition. */
 export function planeFacts(spec, metric) {
@@ -29,8 +39,8 @@ export function planeFacts(spec, metric) {
     ['Stall speed', spd(vs)],
     ['Never exceed', spd(spec.limits.vne)],
     ['Load limit', `${spec.limits.maxG} G`],
-    ['Landing gear', spec.gear.retractable ? 'Retractable tricycle' : spec.gear.wheels.length && spec.gear.wheels.some((w) => w.pos[0] < -2) ? 'Fixed tailwheel' : 'Fixed tricycle'],
-    ['Weapons', spec.weapons.length ? `${spec.weapons.length} systems` : 'None'],
+    ['Landing gear', (spec.gear.retractable ? 'Retractable ' : 'Fixed ') + (spec.gear.wheels.some((w) => w.pos[0] < -2 && w.radius < 0.2) ? 'tailwheel' : 'tricycle')],
+    ['Weapons', spec.weapons.length ? `${spec.weapons.length} system${spec.weapons.length > 1 ? 's' : ''}` : 'None'],
   ];
 }
 
@@ -52,7 +62,7 @@ export class Hangar {
   constructor(app, root) {
     this.app = app; this.game = app.game; this.store = app.game.store; this.root = root;
     this.sel = app.sel;
-    this.region = null; this.tab = 'field'; this.hover = null; this.hits = [];
+    this.region = null; this.tab = 'field'; this.hover = null; this.hits = []; this.filter = 'all';
     this.open_ = false;
     this._load();
     this._build();
@@ -73,12 +83,16 @@ export class Hangar {
         this.sel.livery = spec.liveries.some((l) => l.id === m.livery) ? m.livery : 'default';
         this.sel.airborne = !!m.airborne;
         if (TABS.some((t) => t[0] === m.tab)) this.tab = m.tab;
+        if (CATS.some((c) => c[0] === m.filter)) this.filter = m.filter;
       }
     } catch { /* no storage or bad data: keep the defaults */ }
+    if (!this.visible.some((p) => p.id === this.sel.plane)) this.filter = 'all';
   }
-  _save() { try { localStorage.setItem(MEMORY_KEY, JSON.stringify({ ...this.sel, tab: this.tab })); } catch { /* private mode */ } }
+  _save() { try { localStorage.setItem(MEMORY_KEY, JSON.stringify({ ...this.sel, tab: this.tab, filter: this.filter })); } catch { /* private mode */ } }
 
   get spec() { return this.game.planes.find((p) => p.id === this.sel.plane); }
+  /** The aircraft the category filter lets through; the selected one is always in it. */
+  get visible() { const l = this.game.planes.filter((p) => this.filter === 'all' || p.category === this.filter); return l.length ? l : this.game.planes; }
   get start() { return this.game.starts.find((s) => s.id === this.sel.start) || this.game.starts[0]; }
   get metric() { return this.store.get('units') === 'metric'; }
   _dist(m) { return this.metric ? `${Math.round(m).toLocaleString('en-US')} m` : `${(Math.round((m * FT) / 10) * 10).toLocaleString('en-US')} ft`; }
@@ -88,6 +102,7 @@ export class Hangar {
   _build() {
     const g = this.game, root = this.root;
     this.list = h('div', { class: 'aircraft-list' });
+    this.catSeg = h('div', { class: 'cats' });
     this.liveryField = h('div', { class: 'field' });
     this.stageBar = h('div', { class: 'stage-bar' });
     this.viewSeg = segmented(VIEWS.map(([v, l], i) => [v, `${l}`, `${i + 1}`]), 'orbit', (v) => g.viewPreset(v));
@@ -107,7 +122,7 @@ export class Hangar {
 
     root.append(
       h('div', { class: 'hangar-left' },
-        h('h2', null, 'Aircraft'), this.list, this.liveryField,
+        h('h2', null, 'Aircraft'), this.catSeg, this.list, this.liveryField,
         h('button', { class: 'btn small', style: { marginTop: '10px' }, onclick: () => this.app.showMenu() }, 'Back')),
       this.stage,
       h('div', { class: 'hangar-right' }, this.tabs, this.body, h('div', { class: 'hr-foot' }, this.summary, this.flyBtn)));
@@ -187,6 +202,13 @@ export class Hangar {
 
   _preview() { this.game.showcase(this.sel.plane, this.sel.start, this.sel.livery); this.viewSeg.set('orbit'); }
 
+  setFilter(f) {
+    if (f === this.filter) return;
+    this.filter = f; this._save();
+    const list = this.visible;
+    if (!list.some((p) => p.id === this.sel.plane)) this.pickPlane(list[0].id); else this._renderCards();
+  }
+
   pickPlane(id) {
     if (id === this.sel.plane) return;
     this.sel.plane = id; this.sel.livery = 'default';
@@ -222,7 +244,8 @@ export class Hangar {
   _renderCards() {
     clear(this.list);
     const metric = this.metric;
-    for (const spec of this.game.planes) {
+    clear(this.catSeg).append(segmented(CATS.map(([v, l]) => [v, `${l} ${v === 'all' ? this.game.planes.length : this.game.planes.filter((p) => p.category === v).length}`]), this.filter, (v) => this.setFilter(v), 'chips'));
+    for (const spec of this.visible) {
       const on = spec.id === this.sel.plane, b = this.bars.get(spec.id), perf = b.perf;
       const canvas = h('canvas', { class: 'bp', width: 10, height: 10 });
       const bar = (label, v, text) => h('div', { class: 'bar' }, h('span', null, label), h('div', { class: 'track' }, h('i', { style: { width: `${Math.round(Math.max(0.04, Math.min(1, v)) * 100)}%` } })), h('b', null, text));
@@ -236,7 +259,8 @@ export class Hangar {
           bar('Short field', b.field, this._dist(perf.run)), pips),
         on ? h('p', null, spec.description) : null,
         on ? h('div', { class: 'spec' }, planeFacts(spec, metric).flat().map((x) => h('div', null, x))) : null,
-        h('div', { class: 'tags' }, spec.tags.map((t, i) => h('span', { class: 'tag' + (i < 2 ? ' hot' : '') }, t))));
+        on && spec.weapons.length ? h('ul', { class: 'wlist' }, spec.weapons.map((w) => h('li', null, h('b', null, w.name), h('span', null, weaponDetail(w))))) : null,
+        h('div', { class: 'tags' }, h('span', { class: 'tag cat ' + spec.category }, CAT_LABEL[spec.category]), spec.tags.map((t, i) => h('span', { class: 'tag' + (i < 2 ? ' hot' : '') }, t))));
       this.list.append(card);
       // the canvas needs its layout size before it can be drawn at the right resolution
       requestAnimationFrame(() => {
@@ -396,7 +420,7 @@ export class Hangar {
     if (!this.open_ || this.app.current !== 'hangar' || this.app.modal) return;
     const tag = (e.target && e.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-    const g = this.game, planes = g.planes;
+    const g = this.game, planes = this.visible;
     const step = (list, cur, d) => list[(list.indexOf(cur) + d + list.length) % list.length];
     let used = true;
     switch (e.code) {

@@ -25,7 +25,7 @@ export default defineAircraft({
   manufacturer: 'Fort Talon Aerospace',
   role: 'Air superiority fighter',
   category: 'military',
-  order: 6,
+  order: 8,
   difficulty: 5,
   tags: ['Canard delta', 'Afterburner', 'Fly-by-wire', 'Supersonic', 'Missiles'],
   description: 'Two afterburning engines, a delta wing and canards, and a computer that does the flying while you do the thinking. It will go faster than sound before you have finished raising the gear and turn tighter than the Shrike at half the speed. Six heat seekers, bombs, a cannon.',

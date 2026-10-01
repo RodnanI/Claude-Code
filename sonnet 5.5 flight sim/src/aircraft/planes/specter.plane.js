@@ -43,7 +43,7 @@ export default defineAircraft({
   manufacturer: 'Fort Talon Aerospace',
   role: 'Stealth bomber',
   category: 'military',
-  order: 7,
+  order: 9,
   difficulty: 4,
   tags: ['Flying wing', 'Stealth', 'Bomb bays', 'Cruise missiles', 'Heavy'],
   description: 'A black boomerang with two bomb bays and a 24 meter wing. It cruises high and fast, rolls like a ship and drops the biggest bombs on the island. Doors open under the belly when you arm a bomb, and two cruise missiles hang under the wings for the targets that are far off.',

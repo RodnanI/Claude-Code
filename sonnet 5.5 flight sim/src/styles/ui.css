@@ -59,6 +59,15 @@ button { cursor: pointer; }
 .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .tag { border: 1px solid var(--line); padding: 2px 7px; font-size: 10.5px; font-family: var(--cond); text-transform: uppercase; letter-spacing: 0.12em; color: var(--paper-dim); font-weight: 700; }
 .tag.hot { border-color: var(--orange); color: var(--orange); }
+.tag.cat { background: var(--ink); color: var(--paper); border-color: var(--paper-dim); }
+.tag.cat.military { border-color: var(--olive); color: var(--olive); }
+.tag.cat.homebuilt { border-color: var(--amber); color: var(--amber); }
+.cats { margin-bottom: 12px; }
+.cats .segbtn { padding: 5px 8px; font-size: 12px; }
+.wlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; border-top: 1px dashed var(--line); padding-top: 6px; }
+.wlist li { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; }
+.wlist b { font-family: var(--cond); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; font-size: 11.5px; }
+.wlist span { font-family: var(--mono); color: var(--paper-dim); white-space: nowrap; }
 .field { display: grid; gap: 6px; }
 .field select, .field input[type=text] { background: var(--ink-2); border: 2px solid var(--line); padding: 8px 10px; }
 .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

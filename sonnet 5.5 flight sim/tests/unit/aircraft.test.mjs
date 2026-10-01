@@ -5,6 +5,7 @@ import { kitFor, liveryRemap, AircraftInstance, TRANSIENT } from '../../src/airc
 import { meshRecipe } from '../../src/voxel/recipe.js';
 import { defineAircraft } from '../../src/aircraft/base.js';
 import { M } from '../../src/voxel/palette.js';
+import { MUNITIONS } from '../../src/aircraft/munitions.js';
 
 const cellOf = (spec, p, level = 0) => (p.voxel || (p.group === 'interior' ? spec.interiorVoxel : spec.voxel)) * (p.group === 'interior' ? 1 : 2 ** level);
 const anchorOf = (p) => (p.local ? [0, 0, 0] : p.pivot.map((v) => -v));
@@ -64,6 +65,18 @@ for (const spec of AIRCRAFT) {
       assert.ok(w.pos[1] - w.radius >= b[1] - 0.5, 'wheel bottom below the model floor by more than half a meter');
     }
     for (const s of spec.skids) assert.ok(s.p[0] >= b[0] - 0.4 && s.p[0] <= b[3] + 0.9, `skid ${s.kind} outside model`);
+  });
+
+  test(`${spec.id}: every weapon names real stations and a known munition, and every station shows what hangs on it`, () => {
+    const kit = kitFor(spec);
+    const ids = new Set((spec.stations || []).map((st) => st.id));
+    for (const w of spec.weapons || []) {
+      assert.ok(MUNITIONS[w.munition], `${w.id}: unknown munition ${w.munition}`);
+      for (const st of w.stations || []) assert.ok(ids.has(st), `${w.id}: unknown station ${st}`);
+      if (w.type === 'gun') assert.ok(w.muzzle || (w.muzzles && w.muzzles.length), `${w.id}: a gun needs a muzzle`);
+      else assert.ok((w.stations || []).length > 0, `${w.id}: needs stations`);
+    }
+    for (const id of ids) assert.ok(kit.parts.some((p) => p.visibleWhen === 'store_' + id), `station ${id} has no store part`);
   });
 
   test(`${spec.id}: liveries resolve to real materials`, () => {

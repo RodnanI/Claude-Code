@@ -25,7 +25,7 @@ export default defineAircraft({
   manufacturer: 'Fort Talon Aerospace',
   role: 'Piston fighter',
   category: 'military',
-  order: 5,
+  order: 6,
   difficulty: 4,
   tags: ['Tail dragger', 'Machine guns', 'Rockets', 'Bombs', 'Radial engine'],
   description: 'Two thousand horsepower in front of a bubble canopy. Six .50 calibers in the wings, ten rockets under them and a pair of bombs. It climbs like a rocket, rolls like a falling tree, and the torque swings the nose around the moment the throttle goes forward.',

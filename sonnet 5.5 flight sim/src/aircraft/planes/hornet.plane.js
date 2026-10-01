@@ -27,7 +27,7 @@ export default defineAircraft({
   manufacturer: 'Vesper Aerobatics',
   role: 'Aerobatic biplane',
   category: 'private',
-  order: 10,
+  order: 2,
   difficulty: 4,
   tags: ['Biplane', 'Aerobatic', 'Inverted flight', 'Tailwheel'],
   description: 'A big engine in a small airplane with four ailerons and wings that do not care which way is up. The Hornet rolls like a thrown wrench, stalls without warning and punishes sloppy feet. It is also the most fun you can have with a throttle.',
@@ -167,7 +167,7 @@ export default defineAircraft({
       const n = s < 0 ? 'L' : 'R';
       for (const [W, tag] of [[UW(s), 'U'], [LW(s), 'L']]) {
         const part = wingSurface(k, body, 'aileron' + tag + n, W, { z0: 1.55, z1: Math.abs(W.root[2] + s * W.span) - 0.02, frac: 0.3, mat: YEL });
-        part.paint(-2, -1, -4, 2, 2, 4, (x, y, z) => burst(x, y, z), { thin: true });
+        part.paint(-2, -1, Math.min(1.5 * s, 3.1 * s), 2, 2, Math.max(1.5 * s, 3.1 * s), (x, y, z) => burst(x, y, z), { thin: true });
       }
       const el = wingSurface(k, body, 'elevator' + n, ST(s), { z0: 0.2, z1: 1.3, frac: 0.42, mat: YEL });
       el.paint(-4, -1, -2, 0, 1, 2, () => RED, { thin: true });

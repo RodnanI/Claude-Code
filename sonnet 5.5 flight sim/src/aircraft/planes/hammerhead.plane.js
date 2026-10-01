@@ -31,7 +31,7 @@ export default defineAircraft({
   manufacturer: 'Fort Talon Aerospace',
   role: 'Attack jet',
   category: 'military',
-  order: 4,
+  order: 7,
   difficulty: 3,
   tags: ['Gatling cannon', 'Rockets', 'Missiles', 'Bombs', 'Armored'],
   description: 'Built around a seven barrel cannon and a pilot who would rather be low. Twin engines, a straight wing that turns on a coin and a titanium tub around the cockpit. Rockets, missiles, cluster bombs and two tonnes of ordnance; slow enough to see what it is hitting.',

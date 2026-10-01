@@ -36,11 +36,11 @@ export default defineAircraft({
   inertia: [9500, 42000, 36000],
   wing: { area: 58, span: 18.8, chord: 3.0, y: 2.3 },
   aero: {
-    CL0: 0.35, CLa: 4.8, CLmax: 1.75, alphaStall: 0.3, CD0: 0.06, k: 0.05, CDflap: 0.07, CLflap: 0.6, Cmflap: -0.12, CLmaxFlap: 0.55, CDgear: 0.04, CDair: 0.2,
+    CL0: 0.35, CLa: 4.8, CLmax: 1.75, alphaStall: 0.3, CD0: 0.048, k: 0.05, CDflap: 0.07, CLflap: 0.6, Cmflap: -0.12, CLmaxFlap: 0.55, CDgear: 0.04, CDair: 0.2,
     Cm0: 0.05, Cma: -0.95, Cmq: -17, Clb: 0.1, Clp: -0.6, Cnb: 0.12, Cnr: -0.2, Cyb: 0.5, Cnda: 0.02, spin: 0.05, stallPitchDown: 0.08,
     control: { elevator: 0.55, aileron: 0.075, rudder: 0.045 },
   },
-  propulsion: { type: 'prop', power: 560000, efficiency: 0.7, propDiameter: 3.6, maxRpm: 2400, idleRpm: 700, fuelBurn: 0.045, staticFactor: 0.6, spin: 0.05 },
+  propulsion: { type: 'prop', power: 640000, efficiency: 0.72, propDiameter: 3.6, maxRpm: 2400, idleRpm: 700, fuelBurn: 0.05, staticFactor: 0.6, spin: 0.05 },
   gear: {
     retractable: false,
     wheels: [

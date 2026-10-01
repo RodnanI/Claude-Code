@@ -173,3 +173,36 @@ test('trim solver reports saturation when the aircraft cannot sustain a speed', 
   assert.equal(ok.saturated, false);
   assert.ok(ok.throttle > 0.1 && ok.throttle < 1);
 });
+
+// ------------------------------------------------------------------ every aircraft, the same sanity checks
+import { simulateTakeoff, stallSpeed } from '../../src/aircraft/flight/takeoff.js';
+
+for (const spec of AIRCRAFT) {
+  test(`${spec.id}: trims at cruise, holds it hands off, takes off and lands softly`, () => {
+    const vs = stallSpeed(spec);
+    const cruise = Math.max(vs * 1.5, Math.min(vs * 2.2, spec.limits.vne * 0.6));
+    const m = new FlightModel(spec, SKY);
+    const t = startAirborne(m, { x: 0, y: 2000, z: 0, heading: 1, ias: cruise, gear: spec.gear.retractable ? 0 : 1 });
+    assert.equal(t.saturated, false, `cannot hold ${Math.round(cruise * KT)} kt at 2000 m`);
+    let dh = 0;
+    run(m, 30, () => { dh = Math.max(dh, Math.abs(m.pos[1] - 2000)); });
+    assert.ok(dh < 60 && !m.crashed, `${spec.id} wandered ${dh.toFixed(0)} m hands off`);
+    const takeoff = simulateTakeoff(spec, { surface: 'RUNWAY' });
+    assert.ok(takeoff.ok, `takeoff failed: ${takeoff.reason}`);
+    assert.ok(takeoff.d50 < 2200, `needs ${Math.round(takeoff.d50)} m to clear 50 ft`);
+    const L = new FlightModel(spec, runway());
+    startAirborne(L, { x: 0, y: 0.4 - L.gearBottom, z: 0, heading: Math.PI / 2, ias: stallSpeed(spec, { flaps: 1 }) * 1.3, flaps: 1 });
+    L.vel[1] = -0.8; L._preVy = -0.8; L.input.throttle = 0;
+    run(L, 40, () => { if (L.onGround) { L.input.brake = 0.6; L.input.pitch = 0.05; L.input.yaw = Math.max(-1, Math.min(1, (Math.PI / 2 - L.att.heading) * 2.5 + L.omega[1])); } });
+    assert.equal(L.crashed, false, `landing crashed: ${L.crashReason}`);
+  });
+}
+
+test('the roster has the right mix: military, private and hillbilly, at least twelve, each with a role and a description', () => {
+  assert.ok(AIRCRAFT.length >= 12, `${AIRCRAFT.length} aircraft`);
+  for (const c of ['military', 'private', 'homebuilt']) assert.ok(AIRCRAFT.filter((a) => a.category === c).length >= 3, `too few ${c} aircraft`);
+  assert.ok(AIRCRAFT.filter((a) => a.weapons.length).length >= 6, 'at least six armed aircraft');
+  const orders = AIRCRAFT.map((a) => a.order);
+  assert.equal(new Set(orders).size, orders.length, 'order values are unique');
+  for (const a of AIRCRAFT) assert.ok(a.role && a.description.length > 60 && a.tags.length >= 3, a.id);
+});

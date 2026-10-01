@@ -69,8 +69,12 @@ await waitFor(page, () => window.__fh.game.ent.model.groundSpeed > 6, { timeout:
 await page.keyboard.up('ShiftLeft');
 step('throttle accelerates the aircraft');
 await page.keyboard.press('KeyX');
+await new Promise((r) => setTimeout(r, 600));
+await shot('4-flying-close-chase');
+await page.keyboard.press('KeyX');
 await new Promise((r) => setTimeout(r, 1500));
 await shot('4-flying-cockpit');
+if ((await page.evaluate(() => window.__fh.game.rig.mode)) !== 'cockpit') fail('two presses of X should reach the cockpit view');
 await page.keyboard.press('Escape');
 await waitFor(page, () => window.__fh.game.state === 'paused', { timeout: 30000 }).catch(() => fail('Escape did not pause'));
 await shot('5-paused');

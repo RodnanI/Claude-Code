@@ -1,6 +1,6 @@
 # Fly High
 
-A voxel flight simulator on one island: a metropolis, two cities, four towns, a mountain and two more massifs, lakes, rivers, farmland with herds and flocks of birds, three places to start (an international airport, a military air base and a hillbilly strip) and three aircraft that could not be more different. Everything you see is voxels, from the terrain to the needles in the cockpit gauges. The finished game is one HTML file with no network access.
+A voxel flight simulator on one island: a metropolis, two cities, four towns, a mountain and two more massifs, lakes, rivers, farmland with herds and flocks of birds, three places to start (an international airport, a military air base and a hillbilly strip) and fourteen aircraft that could not be more different: military jets and a warbird, private jets and a biplane, and a handful of hillbilly creations that should not fly (a flying outhouse, a flying mobile home, a rocket barn, a flying school bus). Most of the military and hillbilly ones carry weapons that cut craters and take buildings apart. Everything you see is voxels, from the terrain to the needles in the cockpit gauges. The finished game is one HTML file with no network access.
 
 `PLAN.md` explains the design and the reasons. This file is about working in the repository.
 
@@ -28,7 +28,10 @@ For development, `npm run dev` serves `src/` with native modules on http://local
 | F / V | Flaps extend / retract |
 | G | Landing gear |
 | B | Airbrake |
-| X | Camera: chase, cockpit, orbit |
+| X | Camera: far chase, close chase, cockpit, orbit |
+| N | Look back (hold) |
+| J or left mouse | Fire the selected weapon |
+| K | Next weapon |
 | Right mouse drag | Look around |
 | M | Island map |
 | T | Takeoff assist mode: off, runway guidance, automatic |
@@ -42,7 +45,7 @@ A gamepad works too (sticks, triggers for throttle, face buttons for brakes, gea
 
 ### Choosing an aircraft and a start
 
-The hangar shows the aircraft standing where you will start. Drag to orbit, wheel to zoom, keys 1 to 5 jump to a view. Left and Right change aircraft, Up and Down change start, Page Up and Page Down change airfield, L cycles the livery, T the takeoff assist, Enter takes off. The right side has three tabs:
+The hangar shows the aircraft standing where you will start. The chips above the list filter it by military, private and hillbilly, and the selected card lists the aircraft's weapons. Drag to orbit, wheel to zoom, keys 1 to 5 jump to a view. Left and Right change aircraft, Up and Down change start, Page Up and Page Down change airfield, L cycles the livery, T the takeoff assist, Enter takes off. The right side has three tabs:
 
 - **Airfield**: a chart of the airfield with every start on it (click one), and the starts grouped by runway, ramp, gate and hangar with the runway length ahead of each.
 - **Briefing**: the runway, its surface, elevation and slope, the wind split into head and cross components, and a bar showing how much runway this aircraft needs at this weight in this wind, worked out by running the automatic takeoff against the real flight model. It says so plainly when a runway is too short.
@@ -59,7 +62,7 @@ Settings, World, Challenge switches on the Skyline run: a ring beside the crown 
 ## Test it
 
 ```
-npm test                 # 152 unit tests, about twenty seconds, no dependencies
+npm test                 # 250 unit tests, about twenty seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
 PRESET=potato npm run test:browser
 ```
@@ -70,7 +73,9 @@ Handy tools (the aircraft sheet renders `dist/test-aircraft.html`, so run `npm r
 
 ```
 node tools/flight-shot.mjs out/a.png ultra shrike airport-09R cockpit 10.5 1 600   # screenshot of a flight
-node tools/aircraft-sheet.mjs skylark low                                          # front, rear, side, top and cockpit views
+node tools/aircraft-sheet.mjs skylark low                                          # front, rear, side, top and cockpit views (VIEWS=cockpitBack,cabin,... for more)
+node tools/flight-lab.mjs hornet                                                   # flight envelope of one aircraft or all: stall, top speed, climb, roll, trim, takeoff, landing
+node tools/blast-shot.mjs out/b low hammerhead 3 2400 -1900 260 90                 # fire one weapon from a frozen aircraft and photograph the blast and the crater (needs a full build)
 node tools/map-preview.mjs out/map.png 1024 17000                                  # top-down PNG of the island
 node tools/kit-shot.mjs out/k.png '[["skyscraper",{"w":44,"d":44,"h":260,"seed":1}]]' el=12 dist=420   # kits on a flat pad (needs build:all)
 node tools/ambient-shot.mjs out/s.png cargo-ship medium 14 260 14 40 0 0           # a ship, boat or airliner from a chosen offset

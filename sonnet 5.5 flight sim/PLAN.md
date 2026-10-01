@@ -25,7 +25,8 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - WebGL2 renderer with an HDR pipeline: camera-relative rendering, split-depth passes, single-scattering atmosphere with a sky-view LUT and aerial perspective, volumetric clouds with cloud shadows, cascaded shadows, planar water reflections, SSAO, temporal anti-aliasing, bloom, GPU auto exposure, a 3D LUT color grade (six looks), lens effects, motion blur, light shafts. A direct forward path with no post at all serves the Potato tier.
 - Smart LOD: screen-space-error quadtree, worker pool with Blob workers in the single file, streaming, LRU eviction, skirts, adaptive governor.
 - Whole island: terrain, coast, Mount Corvus and two more massifs (Kestrel Ridge, The Harrow), ridges, mesas, headlands and sea stacks, rivers, lakes, a highway network, 25 region files (metropolis in nine, two cities, four towns, three airfields, three features, four farmstead sets), 50 building and prop kits, 32 scenery types, about 6,700 structures plus the farmsteads. Meridian has a real skyline: 197 structures over 100 m and a 640 m supertall, in nine tower families (slab, art deco spire, round, twin, staggered, tapered, supertall and the classic glass box), plus hotels, lofts, garages, schools, a hospital, museums, a rail station, a mall and a power plant.
-- Aircraft: module contract, 240 Hz flight model with trim solver and autopilot, three aircraft with exteriors, animated parts, interiors with working gauges, and definitions for weapon stations.
+- Aircraft: module contract, 240 Hz flight model with trim solver and autopilot, and a roster of fourteen aircraft in three groups (military, private, hillbilly), each with a detailed exterior, cut-out control surfaces that move, a finished interior with working gauges and controls, a far and a close chase view and a cockpit view, liveries and, on the armed ones, weapon stations whose stores are drawn on the airframe (see 14.2 and 14.4).
+- Weapons and destruction: guns, rockets, guided missiles and bombs with a nose-ray designation for ground attack, a bomb impact predictor on the HUD, cluster bombs and bay doors; every blast carves a crater, collapses or bites the buildings it touches and fells the trees in range, and the same list of blasts is mirrored into the workers so the island rebuilds identically everywhere (see 14.5 and 14.6). Fire, smoke, dust, debris and tracers are instanced voxel particles (14.7).
 - Procedural facades: windows, brick courses, siding and ribs are drawn in the fragment shader in world space on a 3.6 m floor and 1.2 m bay grid, so a tower shows readable windows from 30 km to arm's length with no extra geometry. Every structure also picks one of four color banks per material, so the same facade comes in several colors.
 - Landscape look (see 6.4 and 12): the ground is shaded from a smooth height-field normal per terrain node, so slopes read as rolling hills instead of stairs; tree crowns are voxel balls the shader rounds and lights as spheres; forest beyond the tree levels is a procedural canopy texture; the ground carries color patches, wind waves and grass streaks in the shader; farmland, hedgerows, herds, flowers, reeds, driftwood and boulders fill the countryside. Measured on `tools/budget.mjs all high` (eight standard views): about half the scenery triangles of the version before (4.0M against 7.9M), terrain triangles unchanged (10.4M), 15 M triangles in total against 18.9 M, node build time down by 15 to 20 percent (37 s against 43 s), and 9 percent more draw calls (8,900 against 8,200) because a forest is now several shared parts instead of one model per tree.
 - Ambient life: container ships, tankers, ferries, tugs and sailing yachts on closed sea lanes, a twin-jet airliner flying a 15 minute airport circuit (approach, landing roll, taxi, dwell, taxi, takeoff, climb), helicopters circling Meridian, Port Halden and Ironford, an advertising airship whose flank panel glows at night, and flocks of gulls, crows and geese (one mesh per flock, wings beating, every loop kept above the ground and the rooftops under it). All of it is a pure function of a clock, so nothing is stored and nothing drifts, and every orbit is checked by a test against the structures under its path.
@@ -34,19 +35,18 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Airfields: the three start areas are built with one painter (`_shared/airfield.js`): runway numbers, threshold bars, touchdown zone and aiming point marks, displaced thresholds with arrows, blast pads, edge lines, rubber, patches and tire marks, taxiways with rounded fillets and centerline lights, aprons with slab joints and oil, stands with lead-in lines, hold lines, parking lots and lettering from a 5x7 bitmap font, all drawn only at voxel sizes that can carry them. Structures come from four kit files (terminal with piers and jet bridges, tower, hangars, cargo sheds, fuel farm, fire station, garage, hardened shelters, barn, silos, windmill, still) and props from three scenery files (parked aircraft with tinted liveries, approach lights, PAPI, signs, floodlights, ground support vehicles). `tools/plan.mjs`, `tools/iso.mjs` and the airfield views of `tools/tour.mjs` are how they are inspected, `tools/budget.mjs airfields` how they are costed.
 - Takeoff and selector: the hangar is aircraft cards (bars computed from the flight model, a blueprint rasterized from the real model), an airfield chart with clickable starts, a briefing that runs the automatic takeoff against the flight model for the chosen wind, and conditions; in flight there is a takeoff intro camera, runway guidance on the HUD and an optional automatic takeoff (see 14.3).
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase you can orbit, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 152 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 250 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
-- Weapons: stations and weapon definitions exist on the Shrike, and the stores are modeled and shown or hidden by channel. Firing, ballistics and damage do not exist.
 - Audio.
 - AI aircraft, missions, dynamic weather beyond cloud cover and wind, multiplayer.
 
 Later, in rough dependency order rather than numbered stages:
 
 - Deepen the metropolis further (bridges, elevated rail, helicopters, interiors behind the glass).
-- Weapons, damage, ballistics, targets.
-- More aircraft: airliner, transport, seaplane, aerobatic biplane, attack jet, business jet, glider.
+- Targets that shoot back, missions and scoring.
+- More aircraft: airliner, transport, seaplane, glider, a helicopter (the flight model has one thrust unit and one wing, so rotors need new code).
 - Audio, dynamic weather, AI traffic in the air.
 
 ## 3. Coordinates, units, scales
@@ -382,31 +382,79 @@ Six degrees of freedom, fixed step at 240 Hz with an accumulator and render inte
 
 The camera rig plays a takeoff intro from a runway start: a low camera ahead and to the left of the nose swings along the side to the chase position in 4.6 s and gives way at once to any input.
 
-### 14.2 Reference roster in this stage
+### 14.2 The roster
+
+Fourteen aircraft in three groups. The hangar lists them in this order and can filter by group. Each has two third person views (a far chase and a close one), a cockpit view with a finished interior, a livery set and numbers worked out by `tools/flight-lab.mjs` against the real flight model.
+
+Private:
 
 - **Skylark SK-172**: four-seat high-wing trainer. Forgiving, about 44 knot stall, full interior with a working panel, attitude ball, yoke, pedals and throttle.
-- **Scrapper B-1**: homebuilt taildragger for the hillbilly strip. Patchwork cloth generated with paint ops, tundra tires, converted car engine, open cockpit, adverse yaw and a real spin tendency.
-- **Shrike F-9**: single-engine fighter with afterburner, fly-by-wire, 9 G limit, retractable gear, airbrake, bubble canopy with a HUD frame and sidestick, wingtip missiles, rocket pods and bombs modeled as stores.
+- **Hornet S-2**: aerobatic biplane. Four ailerons, symmetric wings, 560 degrees a second at full stick, sunburst paint made of angular paint ops, skeleton canopy, open cockpit.
+- **Vantage VJ-1**: personal jet with an engine on the spine and a V-tail whose ruddervators mix pitch and yaw. Real window openings, a four-seat cabin and a flight deck with a wide glass panel and sidesticks.
+- **Aerolux AL-9**: twin-engine business jet. A hollow hull with oval windows cut through the skin, a full cabin (club chairs, tables, a divan, a galley), a cockpit with three screens and an open door back into the cabin.
+
+Military:
+
+- **Shrike F-9**: light fighter with afterburner, fly-by-wire, 9 G, retractable gear, airbrake, bubble canopy, wingtip missiles, rocket pods and bombs.
+- **Tempest P-48**: piston fighter. Radial cowl with cylinder heads, a four-blade prop, six .50 caliber guns, rockets, bombs, strong torque.
+- **Hammerhead A-12**: twin-engine attack jet with a seven-barrel cannon in the nose that spins up, shark mouth, ten stations carrying rocket pods, air-to-ground and air-to-air missiles and two kinds of bomb.
+- **Kestrel X-7**: canard delta with fly-by-wire and a long afterburner flame, a deep cockpit and five weapon systems.
+- **Specter FW-3**: flying-wing stealth bomber with a sawtooth trailing edge, drag rudders at the tips and two weapon bays whose doors open on the airbrake channel; the bays carry a heavy bomb, cruise missiles and cluster bombs.
+
+Hillbilly:
+
+- **Scrapper B-1**: homebuilt taildragger for the hillbilly strip. Patchwork cloth generated with paint ops, tundra tires, converted car engine, adverse yaw and a real spin tendency. A potato cannon and bottle rockets.
+- **Thunderbox TB-1**: an outhouse with a drone jet engine strapped to the roof, plywood wings, a barn-door tail, a plunger for a stick and a pull chain for a throttle. Crescent moons are real windows. Potato cannon, bottle rockets, propane tanks.
+- **Doublewide DW-2**: a mobile home with a billboard wing and four car engines. The pilot drives from a recliner; behind him the living room, kitchen and bedroom are all modeled. Potato cannons, moonshine jugs and propane tanks.
+- **Barnburner BB-1**: a red barn with an afterburning grain silo on the roof, a hayloft, stalls and a lantern inside, a tractor seat at the Dutch door. Plunger rockets, bottle rockets, propane tanks.
+- **Hauler RH-1**: a school bus with a radial engine where the hood was, a wing on the roof and a stop sign that deploys with the airbrake. Rows of green seats behind the driver. A potato cannon, moonshine jugs and propane tanks.
+
+### 14.4 Building a plane
+
+Planes are authored in `src/aircraft/planes/`. The helpers in `src/aircraft/builders/` carry the detail work so a plane file reads like a description:
+
+- `parts.js`: struts, wheels, rings, gauges, needles, wing pairs and `clipToHull`, which trims interior geometry to the airframe skin.
+- `detail.js`: stenciled lettering and decals, camouflage patterns, panel seams, rivets, navigation lights, a posed pilot figure with harness and oxygen hose, engine inlets with recessed fan blades, nozzles with petals, propellers with twisted paddle blades, landing gear legs, stores on pylons and rocket pods.
+- `surfaces.js`: control surfaces that really move. An aileron, flap, elevator or rudder is cut out of the airframe along its hinge and rebuilt as its own part with the same section; the cut and the part share one membership test, so at rest the two are one smooth skin and in motion there is a real gap behind the edge. At coarse voxel sizes the test widens by half a cell so thin surfaces never vanish.
+- `hull.js`: hollow fuselages. One station list gives the outer loft, the cavity, a one-cell glass skin and a squarish room carved inside it; windows and windshields are real openings at the finest voxel size and dark paint on the solid hull at the coarse ones (ops carry `md` and `mn` limits on the cell size), and a `glass` part marked `hideInCockpit` fills the openings from outside.
+
+The loop for one plane: write the file, run `node build/gen-registry.mjs`, run `node tools/flight-lab.mjs <id>` and tune until the envelope is sane, run `npm run build:all`, then `VIEWS=front34,rear34,side,cockpit,cabin node tools/aircraft-sheet.mjs <id> low` and read the images. The sheet tool can also look around inside a cockpit (`cockpitL`, `cockpitBack`, `cockpitUp`) and put the eye anywhere (`cabin` views).
+
+### 14.5 Weapons
+
+`src/aircraft/munitions.js` lists everything that can be thrown, with the numbers that fly it and the voxel model that hangs on the wing: guns (30 and 20 mm, .50 caliber, a potato), rockets (70 and 127 mm, bottle rockets, plunger rockets), guided missiles (air to ground, air to air, a standoff missile) and bombs (two sizes of general purpose bomb, a cluster canister, a moonshine jug, a propane tank, a lawn dart). An aircraft names a munition in its `weapons` list and may override any number; the stations decide which store parts are drawn, and the mass of what has gone leaves the aircraft one store at a time.
+
+`src/game/weapons.js` is the system. Guns throw bullets that carry the aircraft's velocity; rockets burn and fly on; guided missiles fly to the spot the nose pointed at over the ground when they left; bombs fall, with a predicted impact point drawn on the HUD. Every projectile is stepped in small slices and tested along its path against the terrain and the standing structures, and the first thing it meets is where it goes off. J (or the left mouse button) fires, K cycles the weapon. Bay doors, gun spin-up and muzzle flashes are animation channels (`bay`, `gunSpin`, `muzzle`) so a plane's parts can follow them.
+
+### 14.6 Destruction
+
+`src/world/damage.js` keeps the scars of the flight: every explosion is one entry `{ x, y, z, r, seed }` in a list that is mirrored into every worker. Everything the world draws or collides with is still a pure function of position, now of position and that list, so a node built after a blast, or rebuilt because of one, carves the same crater, bites the same chunk out of the same building and leaves the same trees standing or not, on the main thread and in the workers. The crater is a bowl of 0.72 of the radius with a raised rim; buildings lose everything inside 1.1 of it, and pieces left without support (found by flood fill) fall away; trees and props inside the radius are removed. Ground height and the collision queries follow the list, so a crater really is a hole to fly into.
+
+### 14.7 Effects
+
+`src/game/effects.js` draws fire, smoke, dust, debris and tracers as instanced voxels from one pool of particles: fire is a white to red ramp of emissive cubes that bloom in daylight, smoke is a rounded puff tinted any gray, debris is small tinted cubes under gravity. The particle budget is a quality setting.
 
 ## 15. Input and controls
 
-Keyboard, gamepad and mouse flight through an action layer, so bindings are data (`src/input/bindings.js`). Digital keys ramp toward full deflection so keyboard flying feels analog; the throttle is a lever that stays where it was left. Free look with the right mouse button. Camera modes: chase (follows the flight path with a lagging heading and stays out of the ground), cockpit (head motion from load factor, buffet shake) and orbit. The map key opens the island map. Rebinding in the UI is not built; the controls screen lists the bindings.
+Keyboard, gamepad and mouse flight through an action layer, so bindings are data (`src/input/bindings.js`). Digital keys ramp toward full deflection so keyboard flying feels analog; the throttle is a lever that stays where it was left. Free look with the right mouse button. Camera modes, cycled with X: a far chase (follows the flight path with a lagging heading and stays out of the ground), a close chase tucked in behind the tail so the airplane fills the frame, the cockpit (head motion from load factor, buffet shake; N looks back) and orbit. J or the left mouse button fires and K cycles the weapon; B is the airbrake (on the Hauler it also swings out the stop sign). The map key opens the island map. Rebinding in the UI is not built; the controls screen lists the bindings.
 
 ## 16. UI
 
 The look is deliberately not the usual dark-glass-and-gradient game menu. It is an airfield operations board: warm charcoal, paper cream, signal orange, olive drab, hazard stripe dividers, condensed uppercase type and monospace numerals. No gradients, no emoji, no icon library.
 
-Screens: loading, main menu over a live flyover of the island, hangar (aircraft cards with bars for speed, climb, roll, short field and handling worked out from the flight model and a top and side blueprint rasterized from the real model at one scale for all aircraft; an Airfield tab with a north-up chart of the airfield and its starts grouped by runway, ramp, gate and hangar; a Briefing tab with runway data, wind components, a runway-needed bar and reference speeds; a Conditions tab with time of day, wind presets relative to the runway, cloud, airborne start and challenge; the chosen aircraft stands on the chosen start between the panels and can be orbited, zoomed and set to front, side, rear and top views; keyboard navigation and a remembered selection), settings (generated from the schema, tabs by group), pause, controls, island map (hill-shaded terrain, highways, sites, your aircraft), crash screen, HUD and a performance overlay on F3.
+Screens: loading, main menu over a live flyover of the island, hangar (category chips for military, private and hillbilly aircraft above the aircraft cards, with the weapon systems listed on the selected card; aircraft cards with bars for speed, climb, roll, short field and handling worked out from the flight model and a top and side blueprint rasterized from the real model at one scale for all aircraft; an Airfield tab with a north-up chart of the airfield and its starts grouped by runway, ramp, gate and hangar; a Briefing tab with runway data, wind components, a runway-needed bar and reference speeds; a Conditions tab with time of day, wind presets relative to the runway, cloud, airborne start and challenge; the chosen aircraft stands on the chosen start between the panels and can be orbited, zoomed and set to front, side, rear and top views; keyboard navigation and a remembered selection), settings (generated from the schema, tabs by group), pause, controls, island map (hill-shaded terrain, highways, sites, your aircraft), crash screen, HUD and a performance overlay on F3.
 
 ## 17. Testing
 
-`npm test` runs 152 tests in about twenty seconds:
+`npm test` runs 250 tests in about twenty seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
 - World: lit streets glow only on coarse avenues, streets and highways; every region lays out with known kits and inside its bounds, deterministic terrain, a mountain of the right height, all three start areas on land with flat runways (the strip smooth but sloping), a connected road graph, no building on a highway, LOD configuration, deterministic node builds.
 - Settings and input: presets, schema coverage, sanitizing, persistence and corrupt storage, governor behavior, hardware probe, key ramps, throttle lever, edge presses.
-- Aircraft: every part builds at every LOD, dimensions match the specification, the exterior extent agrees with the wing span, liveries and stations resolve, validation rejects broken specs.
+- Aircraft: every part builds at every LOD, dimensions match the specification, the exterior extent agrees with the wing span, liveries resolve, every weapon names real stations and a known munition and every station has a store part, validation rejects broken specs.
+- Every aircraft: trims at a cruise speed, holds it hands off for thirty seconds, takes off on a runway and lands softly, and the roster has enough military, private and hillbilly aircraft and enough armed ones.
+- Weapons and damage: loadouts and cycling, gun streams and rockets landing where the nose pointed, guided missiles flying to the designated ground point, bomb impact prediction, cluster bombs, stores leaving the airframe and its mass, craters, collapsed buildings, felled trees, blast list mirroring and deterministic node rebuilds.
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.
 - Traffic: vehicle modules, no NaN or overlap, culling and respawn, signal phases, red light compliance, signal masts follow the phase and vanish with traffic off.
 - Render: the atmosphere gives a blue noon sky with a pale horizon and an orange sunset side, never negative or non-finite, black at night; sun transmittance reddens and dims monotonically; moonlight is a sliver of daylight; the cinematic grade keeps blacks dark.
@@ -436,4 +484,6 @@ Screens: loading, main menu over a live flyover of the island, hangar (aircraft 
 - Pure JavaScript meshing is fast enough only because the world is streamed in small nodes in workers. Keep nodes small.
 - Single-file distribution costs startup time. The file is 510 KB, but the first terrain ring still has to be generated.
 - Very old mobile GPUs may fail on WebGL2 features. Potato is a floor, not a promise for every device.
-- Weapons and audio are not started. Do not assume they are close.
+- Audio is not started. Do not assume it is close.
+- Weapon effects are tuned by eye on software WebGL. Blast radii, crater sizes and the particle budget have not been balanced on a real GPU, and a very long fight against dense city blocks will cost node rebuild time in the workers.
+- Cabins and cockpits are cut out of the hull at the finest voxel size only. Far away the windows are dark paint on a solid hull, which is the right trade, but it means the interior is never visible from outside.

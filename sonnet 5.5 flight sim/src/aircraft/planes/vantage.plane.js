@@ -50,7 +50,7 @@ export default defineAircraft({
   manufacturer: 'Vantage Aero',
   role: 'Personal jet',
   category: 'private',
-  order: 9,
+  order: 3,
   difficulty: 2,
   tags: ['Single jet', 'V-tail', 'Sidestick', 'Glass cockpit'],
   description: 'One engine on top of the tail, a V-tail behind it and a cabin that is mostly window. The VJ-1 is the friendliest jet there is: it stalls gently, lands slowly and cruises at 280 knots. Sidesticks, one wide glass panel and four leather seats.',
