@@ -63,6 +63,23 @@ export function wingSurface(k, body, name, W, { z0, z1, frac = 0.28, le = false,
   return part;
 }
 
+/**
+ * Painted seams around a surface cut out with wingSurface: a line along the hinge and one at each end. Run it on the wing and on the
+ * surface part with the same arguments, so the line is continuous and reads as a gap even while the surface is at rest.
+ */
+export function surfaceSeams(r, W, { z0, z1, frac = 0.28, le = false, hx = null, mat = M.AC_GRAY_DARK, w = 0.012 }) {
+  const s = W.side, za = Math.min(z0 * s, z1 * s), zb = Math.max(z0 * s, z1 * s);
+  const hinge = (z) => (hx ? hx(z) : hingeX(W, z, frac, le));
+  const b = boxOfWing(W, za - 0.05, zb + 0.05);
+  r.paint(b[0], b[1], b[2], b[3], b[4], b[5], (x, y, z) => {
+    if (z < za - w || z > zb + w) return 0;
+    const h = hinge(z);
+    if (Math.abs(x - h) < w) return mat;
+    if ((Math.abs(z - za) < w || Math.abs(z - zb) < w) && (le ? x > h - w : x < h + w)) return mat;
+    return 0;
+  }, { thin: true });
+}
+
 /** Cut any lofted surface (a fin, a stabilizer built as a loft) at an arbitrary hinge test: aft(x, y, z) is true behind the hinge. */
 export function loftSurface(k, body, name, { stations, axis = 'y', box, aft, mat, pivot, grow = 0.03, opts = {} }) {
   const tests = new Map();

@@ -206,7 +206,7 @@ export function prop(r, radius, blades = 3, { chord = 0.2, mat = M.AC_PROP, tip 
       const w = Math.max(chord * shape * 0.5, cell * 0.55);
       // the blade is a twisted plate: its pitch changes with radius, so it leans forward at the tip
       const lean = perp * twist * (0.4 + u);
-      const th = Math.max(0.026 * (1 - 0.6 * u) + 0.01, cell * 0.55) * 0.5;
+      const th = Math.max(0.026 * (1 - 0.6 * u) + 0.01, cell * 1.1) * 0.5;                  // at least a voxel thick, or the sample centers step over the blade
       if (Math.abs(perp) > w || Math.abs(x - lean * 0.12) > th) return 0;
       return along > radius - tipLen ? tip : mat;
     }, { thin: true });
@@ -269,4 +269,76 @@ export function rocketPod(r, cx, cy, cz, { len = 1.5, radius = 0.2, mat = M.AC_O
     r.cyl('x', cy + Math.sin(a) * rr, cz + Math.cos(a) * rr, radius * 0.17, radius * 0.17, cx + len / 2 + 0.01, cx + len / 2 + 0.2, M.AC_BLACK, { md: 0.1 });
   }
   r.box(cx - 0.15, cy + radius * 0.9, cz - 0.05, cx + 0.15, cy + radius + 0.06, cz + 0.05, M.AC_GRAY_DARK, { md: 0.1 });
+}
+
+// ------------------------------------------------------------------------------------------------------------ light aircraft
+/**
+ * A faired strut: a flat streamlined section between two points, `chord` along x and `thick` across, tapering by `taper` toward b.
+ * The cross section never drops below a voxel, so a wing strut survives the coarse levels.
+ */
+export function fairedStrut(r, a, b, { chord = 0.2, thick = 0.05, mat = M.AC_WHITE, taper = 1 } = {}) {
+  const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], L = Math.hypot(ux, uy, uz);
+  const u = [ux / L, uy / L, uz / L];
+  const e1 = [1 - u[0] * u[0], -u[0] * u[1], -u[0] * u[2]], l1 = Math.hypot(e1[0], e1[1], e1[2]);
+  for (let i = 0; i < 3; i++) e1[i] /= l1;                                    // the chord direction: x made square to the strut
+  const e2 = [u[1] * e1[2] - u[2] * e1[1], u[2] * e1[0] - u[0] * e1[2], u[0] * e1[1] - u[1] * e1[0]];
+  const pad = chord + 0.1;
+  r.fn(Math.min(a[0], b[0]) - pad, Math.min(a[1], b[1]) - pad, Math.min(a[2], b[2]) - pad, Math.max(a[0], b[0]) + pad, Math.max(a[1], b[1]) + pad, Math.max(a[2], b[2]) + pad, (x, y, z, c) => {
+    const qx = x - a[0], qy = y - a[1], qz = z - a[2];
+    const t = (qx * u[0] + qy * u[1] + qz * u[2]) / L;
+    if (t < 0 || t > 1) return 0;
+    const rx = qx - t * L * u[0], ry = qy - t * L * u[1], rz = qz - t * L * u[2];
+    const w = 1 + (taper - 1) * t;
+    const hc = Math.max(chord * w * 0.5, c * 0.6), ht = Math.max(thick * w * 0.5, c * 0.55);
+    const dc = rx * e1[0] + ry * e1[1] + rz * e1[2], dt = rx * e2[0] + ry * e2[1] + rz * e2[2];
+    return (dc / hc) ** 2 + (dt / ht) ** 2 <= 1 ? mat : 0;
+  }, { thin: true });
+  return r;
+}
+
+/** Paint a frame of width w around an opening (the box a carved window occupies), on the skin that is left standing beside it. */
+export function frameBox(r, box, w, mat) {
+  r.paint(box[0] - w, box[1] - w, box[2] - w, box[3] + w, box[4] + w, box[5] + w, (x, y, z) => (x > box[0] && x < box[3] && y > box[1] && y < box[4] && z > box[2] && z < box[5] ? 0 : mat), { thin: true });
+}
+
+/** A rectangle outline (and optionally a fill) painted on the side of a fuselage: a door, a hatch, an access panel. */
+export function panelOutline(r, side, x0, y0, x1, y1, { w = 0.012, mat = M.AC_GRAY_DARK, z0 = 0.2, z1 = 1.2, fill = 0 } = {}) {
+  r.paint(x0 - w, y0 - w, side > 0 ? z0 : -z1, x1 + w, y1 + w, side > 0 ? z1 : -z0, (x, y) => (x > x0 && x < x1 && y > y0 && y < y1 ? fill : mat), { thin: true });
+}
+
+/**
+ * A person sitting in a light aircraft, looking along +x, in ordinary clothes: (x, y) is the hip on the seat cushion, zc the seat
+ * center, floor the height their shoes rest at. hands are two absolute grip points. Hair and an optional cap, a headset, sunglasses.
+ */
+export function sitter(r, x, y, zc, { hands, floor = y - 0.2, feetX = x + 0.78, shirt = M.AC_WHITE, pants = M.STEEL_DARK, skin = M.PLASTER_TERRA, hair = M.RUST_DARK, cap = 0, headset = true, shades = true, sleeves = 0.2 } = {}) {
+  const h = hands || [[x + 0.45, y + 0.2, zc - 0.1], [x + 0.45, y + 0.2, zc + 0.1]];
+  for (const s of [-1, 1]) {
+    const z = zc + s * 0.11;
+    strut(r, [x - 0.02, y + 0.09, z], [x + 0.42, y + 0.13, z], 0.17, pants);
+    strut(r, [x + 0.42, y + 0.13, z], [feetX, floor + 0.12, z], 0.12, pants);
+    r.box(feetX - 0.07, floor, z - 0.065, feetX + 0.17, floor + 0.1, z + 0.065, M.AC_BLACK, { md: 0.1 });
+  }
+  r.ell(x - 0.02, y + 0.36, zc, 0.14, 0.27, 0.2, shirt);                                                            // torso
+  r.paint(x - 0.2, y + 0.12, zc - 0.26, x + 0.2, y + 0.66, zc + 0.26, (px, py, pz) => (px > x + 0.05 && Math.abs(Math.abs(pz - zc) - 0.07 - (py - y - 0.2) * 0.32) < 0.016 ? M.AC_GRAY_DARK : 0), { thin: true, md: 0.08 });   // belt
+  for (let i = 0; i < 2; i++) {
+    const s = i ? 1 : -1, g = h[i], sh = [x - 0.02, y + 0.57, zc + s * 0.23], el = [x + 0.14, y + 0.28, zc + s * 0.28];
+    r.ell(sh[0], sh[1], sh[2], 0.085, 0.085, 0.085, shirt);
+    strut(r, sh, el, 0.105, shirt);
+    strut(r, el, g, 0.085, skin, { md: 0.12 });
+    r.ell(g[0] + 0.02, g[1], g[2], 0.05, 0.04, 0.045, skin, { md: 0.12 });
+  }
+  r.box(x - 0.045, y + 0.6, zc - 0.05, x + 0.045, y + 0.72, zc + 0.05, skin, { md: 0.1 });                               // neck
+  const hy = y + 0.82, hr = 0.115;
+  r.ell(x + 0.02, hy, zc, hr * 1.02, hr * 1.1, hr * 0.92, skin);                                                       // head
+  r.ell(x - 0.01, hy + 0.04, zc, hr * 1.06, hr * 0.95, hr * 0.98, hair, { md: 0.12 });                                 // hair, set back and above
+  if (cap) {
+    r.ell(x - 0.005, hy + 0.06, zc, hr * 1.12, hr * 0.8, hr * 1.02, cap, { md: 0.12 });
+    r.box(x + hr * 0.7, hy + 0.04, zc - hr * 0.8, x + hr * 1.7, hy + 0.065, zc + hr * 0.8, cap, { md: 0.1 });         // the peak
+  }
+  if (shades) r.box(x + hr * 0.92, hy - 0.012, zc - hr * 0.8, x + hr * 1.12, hy + 0.034, zc + hr * 0.8, M.AC_BLACK, { md: 0.1 });
+  if (headset) {
+    for (const s of [-1, 1]) r.box(x - 0.04, hy - 0.04, zc + s * hr * 0.96, x + 0.05, hy + 0.05, zc + s * hr * 1.28, M.AC_GRAY_DARK, { md: 0.12 });
+    r.box(x - 0.03, hy + hr * 1.02, zc - hr * 0.9, x + 0.03, hy + hr * 1.18, zc + hr * 0.9, M.AC_BLACK, { md: 0.1 });
+    strut(r, [x + 0.02, hy - 0.06, zc - hr * 1.2], [x + hr * 1.5, hy - 0.1, zc - 0.03], 0.016, M.AC_BLACK, { md: 0.08 });   // the boom
+  }
 }
