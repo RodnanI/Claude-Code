@@ -55,6 +55,7 @@ export class Input {
     this._h.md = (e) => { this.mouse.buttons |= 1 << e.button; if (e.button === 2) e.preventDefault(); };
     this._h.mu = (e) => { this.mouse.buttons &= ~(1 << e.button); };
     this._h.cm = (e) => e.preventDefault();
+    this._h.ml = () => { this.mouse.inside = false; };
     this._h.wheel = (e) => { this.wheelDelta = (this.wheelDelta || 0) + Math.sign(e.deltaY); };
     t.addEventListener('keydown', this._h.kd);
     t.addEventListener('keyup', this._h.ku);
@@ -63,6 +64,7 @@ export class Input {
     t.addEventListener('mousedown', this._h.md);
     t.addEventListener('mouseup', this._h.mu);
     t.addEventListener('contextmenu', this._h.cm);
+    if (typeof document !== 'undefined') document.documentElement.addEventListener('mouseleave', this._h.ml);
     t.addEventListener('wheel', this._h.wheel, { passive: true });
     return this;
   }
@@ -72,7 +74,11 @@ export class Input {
     t.removeEventListener('keydown', h.kd); t.removeEventListener('keyup', h.ku); t.removeEventListener('blur', h.blur);
     t.removeEventListener('mousemove', h.mm); t.removeEventListener('mousedown', h.md); t.removeEventListener('mouseup', h.mu);
     t.removeEventListener('contextmenu', h.cm); t.removeEventListener('wheel', h.wheel);
+    if (typeof document !== 'undefined') document.documentElement.removeEventListener('mouseleave', h.ml);
   }
+
+  /** Move the throttle lever by a step, for the mouse wheel. */
+  nudgeThrottle(d) { this.throttle = clamp(this.throttle + d, 0, 1); }
 
   held(action) { return this.down.has(action) || this.padActions.has(action); }
   /** True once per key press. */
@@ -115,14 +121,15 @@ export class Input {
     const s = this.padState;
     let tp = kp, tr = kr, ty = ky;
     if (opts.mouseFlight && this.mouse.inside) {
-      const dzn = (v) => (Math.abs(v) < 0.06 ? 0 : (v - Math.sign(v) * 0.06) / 0.94);
-      tr += dzn(this.mouse.x) * 1.4; tp += dzn(this.mouse.y) * 1.2;
+      // virtual stick: full deflection at about 70 percent of the way to the screen edge, a small dead patch at the center, a curve that is gentle near center
+      const stick = (v) => { const a = Math.min(1, Math.max(0, Math.abs(v) - 0.05) / 0.65); return Math.sign(v) * (0.6 * a + 0.4 * a * a * a); };
+      tr += stick(this.mouse.x); tp += stick(this.mouse.y);
     }
     if (s.any) { tp += s.pitch; tr += s.roll; ty += s.yaw; }
     const inv = opts.invertPitch ? -1 : 1;
-    this.axes.pitch = ramp(this.axes.pitch, clamp(tp * inv, -1, 1), 5 * sens, 9);
-    this.axes.roll = ramp(this.axes.roll, clamp(tr, -1, 1), 6 * sens, 10);
-    this.axes.yaw = ramp(this.axes.yaw, clamp(ty, -1, 1), 5 * sens, 8);
+    this.axes.pitch = ramp(this.axes.pitch, clamp(tp * inv, -1, 1), 8 * sens, 12);
+    this.axes.roll = ramp(this.axes.roll, clamp(tr, -1, 1), 9 * sens, 13);
+    this.axes.yaw = ramp(this.axes.yaw, clamp(ty, -1, 1), 7 * sens, 10);
     // throttle is a lever: it stays where it was left
     if (this.held('throttleUp')) this.throttle += 0.45 * dt;
     if (this.held('throttleDown')) this.throttle -= 0.45 * dt;

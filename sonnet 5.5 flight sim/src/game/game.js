@@ -356,7 +356,14 @@ export class Game extends Emitter {
     const inp = this.input.update(dt, { sensitivity: v.sensitivity, invertPitch: v.invertPitch, mouseFlight: v.mouseFlight && this.state === 'flying', deadzone: v.deadzone });
     if (this.state === 'flying' || this.state === 'paused') this._discrete();
     else this.input.clearEdges();
-    const wheel = this.input.wheelDelta || 0; this.input.wheelDelta = 0;
+    let wheel = this.input.wheelDelta || 0; this.input.wheelDelta = 0;
+    const mouseFly = v.mouseFlight && this.state === 'flying' && this.input.mouse.inside;
+    if (this.state === 'flying' && this.input.pressed('mouseFlight')) {
+      this.store.set('mouseFlight', !v.mouseFlight);
+      this.hud.toast(`Mouse flight ${v.mouseFlight ? 'off' : 'on'}`, 1400);
+    }
+    // with mouse flight the wheel is the throttle lever (scroll up for more power) and the camera zoom steps aside
+    if (mouseFly && wheel) { this.input.nudgeThrottle(-wheel * 0.05); wheel = 0; }
 
     let view = 'external';
     if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
@@ -404,7 +411,7 @@ export class Game extends Emitter {
     if (this.shot) { this.shot = false; this._screenshot(); }
 
     if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
-      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, course: v.challenge === 'skyline' && this.course ? this.course.status() : null, assist: this.assist.info, weapons: this.weapons.info(this.ent) });
+      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, mouse: mouseFly ? this.input.mouse : null, course: v.challenge === 'skyline' && this.course ? this.course.status() : null, assist: this.assist.info, weapons: this.weapons.info(this.ent) });
     } else this.hud.draw({ ent: null, cam, view: 'menu', units: v.units, scale: v.hudScale, dt, hideAll: true });
 
     this.cpuMs.push(now() - started);

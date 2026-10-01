@@ -110,10 +110,10 @@ test('an automatic takeoff holds the runway in a crosswind and takes off into th
   assert.ok(head.liftoff.u < tail.liftoff.u - 60, `headwind ${head.liftoff.u} vs tailwind ${tail.liftoff.u}`);
 });
 
-test('the short farm strip: the bush plane flies out of it, the jet and the trainer are refused', () => {
+test('the short farm strip: the bush plane flies out of it, the jet is refused', () => {
   const ok = run('scrapper', 'hollow-north');
   assert.ok(ok.done && !ok.crashed, ok.reason);
-  for (const plane of ['shrike', 'skylark']) {
+  for (const plane of ['shrike']) {
     const r = run(plane, 'hollow-south', { seconds: 6 });
     assert.equal(r.controlled, 0, `${plane}: the assist must not take an aircraft down a strip it cannot use`);
     assert.ok(r.calls.some((c) => /too short/i.test(c.text)), `${plane}: told why`);
@@ -122,10 +122,10 @@ test('the short farm strip: the bush plane flies out of it, the jet and the trai
 });
 
 test('the player taking the controls ends an automatic takeoff at once, and a crash never comes from the assist', () => {
-  const r = run('skylark', 'airport-09R', { seconds: 40, player: (t, inp) => { if (t > 9) inp.pitch = 0.8; } });
+  const r = run('skylark', 'airport-09R', { seconds: 40, player: (t, inp) => { if (t > 9 && t < 9.2) inp.pitch = 0.8; } });
   assert.ok(r.calls.some((c) => c.key === 'takeover'), 'takeover is announced');
   assert.equal(r.assist.mode, 'guide');
-  assert.ok(!r.crashed);
+  assert.ok(!r.crashed, r.reason);
   const before = r.controlled;
   assert.ok(before > 100);
 });

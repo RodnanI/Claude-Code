@@ -55,7 +55,7 @@ export const SCHEMA = [
   { key: 'cloudCover', group: 'World', label: 'Cloud cover', type: 'range', min: 0, max: 1, step: 0.05, default: 0.5, apply: 'live', format: (v) => Math.round(v * 100) + '%' },
 
   { key: 'fov', group: 'Controls', label: 'Field of view', type: 'range', min: 50, max: 110, step: 1, default: 70, apply: 'live', format: (v) => v + ' deg' },
-  { key: 'mouseFlight', group: 'Controls', label: 'Mouse flight', type: 'toggle', default: false, apply: 'live', help: 'Steer with the mouse position instead of keys.' },
+  { key: 'mouseFlight', group: 'Controls', label: 'Mouse flight', type: 'toggle', default: true, apply: 'live', help: 'Steer with the pointer: right of center rolls right, below center pulls the nose up, above pushes it down. The wheel sets throttle and O toggles it in flight. Invert pitch applies.' },
   { key: 'invertPitch', group: 'Controls', label: 'Invert pitch', type: 'toggle', default: false, apply: 'live' },
   { key: 'takeoffAssist', group: 'Controls', label: 'Takeoff assist', type: 'select', default: 'guide', apply: 'live',
     options: [{ value: 'off', label: 'Off' }, { value: 'guide', label: 'Runway guidance' }, { value: 'auto', label: 'Automatic takeoff' }],

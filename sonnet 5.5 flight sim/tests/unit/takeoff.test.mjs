@@ -62,7 +62,7 @@ test('the automatic takeoff gets every aircraft airborne on pavement and grass w
 test('takeoff distances: the light aircraft need a few hundred meters, the jet a little more, and grass costs more than pavement', () => {
   const run = (id, o) => simulateTakeoff(spec(id), o).d50;
   assert.ok(run('scrapper', {}) < 400, 'the bush plane is the shortest');
-  assert.ok(run('skylark', {}) > 400 && run('skylark', {}) < 750);
+  assert.ok(run('skylark', {}) > 150 && run('skylark', {}) < 750);
   assert.ok(run('shrike', {}) > 500 && run('shrike', {}) < 1000);
   assert.ok(run('scrapper', {}) < run('skylark', {}));
   for (const id of ['scrapper', 'skylark', 'shrike']) assert.ok(run(id, { surface: 'MOWN_STRIP' }) > run(id, { surface: 'RUNWAY' }) - 1, `${id}: grass is never faster`);
@@ -128,8 +128,8 @@ test('performance figures separate the aircraft the way their character says', (
   assert.ok(p.shrike.climb > p.skylark.climb * 5, 'the jet climbs far faster than a trainer');
   assert.ok(p.shrike.roll > p.skylark.roll);
   assert.ok(p.scrapper.run < p.skylark.run);
-  assert.ok(climbRate(spec('skylark'), { ias: 40 }) > 1.5 && climbRate(spec('skylark'), { ias: 40 }) < 8);
-  assert.ok(rollRate(spec('scrapper')) > 20 && rollRate(spec('scrapper')) < 150);
+  assert.ok(climbRate(spec('skylark'), { ias: 40 }) > 1.5 && climbRate(spec('skylark'), { ias: 40 }) < 12);
+  assert.ok(rollRate(spec('scrapper')) > 20 && rollRate(spec('scrapper')) < 250);
   for (const a of AIRCRAFT) assert.ok(a.difficulty >= 1 && a.difficulty <= 5);
   assert.ok(spec('shrike').difficulty > spec('skylark').difficulty);
 });

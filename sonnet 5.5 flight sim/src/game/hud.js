@@ -62,9 +62,21 @@ export class Hud {
     if (s.weapons && !m.crashed) this._weapons(s, m, scale);
     if (s.assist && !m.crashed) { this._runwayPath(s.assist, s, m, scale); this._takeoff(s.assist, m, u, scale, spec.hud === 'fighter'); }
     if (m.crashed) return;
+    if (s.mouse) this._mouseStick(s.mouse, scale);
     if (spec.hud === 'fighter') this._fighter(s, m, spec, u, scale);
     else if (s.view === 'cockpit') this._mini(s, m, u, scale);
     else this._strip(s, m, spec, u, scale);
+  }
+
+  /** Mouse flight: a ring at screen center and a dot where the pointer is, joined by a line. The farther the dot, the harder the stick. */
+  _mouseStick(mo, k) {
+    const c = this.ctx, cx = this.w / 2, cy = this.h / 2, px = (mo.x * 0.5 + 0.5) * this.w, py = (mo.y * 0.5 + 0.5) * this.h;
+    c.save();
+    c.lineWidth = 2 * k; c.strokeStyle = ORANGE; c.fillStyle = ORANGE; c.globalAlpha = 0.8;
+    c.beginPath(); c.arc(cx, cy, 14 * k, 0, Math.PI * 2); c.stroke();
+    c.globalAlpha = 0.45; c.beginPath(); c.moveTo(cx, cy); c.lineTo(px, py); c.stroke();
+    c.globalAlpha = 0.95; c.beginPath(); c.arc(px, py, 5 * k, 0, Math.PI * 2); c.fill();
+    c.restore();
   }
 
   _text(str, x, y, size, color = PAPER, align = 'left', font = MONO, weight = '600') {

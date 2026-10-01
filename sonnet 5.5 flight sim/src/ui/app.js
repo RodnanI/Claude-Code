@@ -102,7 +102,7 @@ export class App {
         h('div', { class: 'pane', style: { padding: '16px 24px' } },
           h('div', { class: 'keys' }, rows),
           h('p', { class: 'label', style: { marginTop: '22px' } }, 'Mouse'),
-          h('p', null, 'Hold the right button and drag to look around. The wheel zooms the chase and orbit cameras. Turn on Mouse flight in Settings to steer with the pointer.'),
+          h('p', null, 'Hold the right button and drag to look around. With Mouse flight on (the default, O toggles it in flight) the pointer is the stick: left and right roll, up and down pitch, and the wheel moves the throttle. With it off the wheel zooms the chase and orbit cameras. Left button fires.'),
           h('p', { class: 'label' }, 'Gamepad'),
           h('p', null, 'Left stick pitch and roll, right stick rudder, triggers throttle, A brakes, B gear, X and Y flaps, LB camera, RB airbrake, View map, Menu pause, D-pad trim.'))));
   }

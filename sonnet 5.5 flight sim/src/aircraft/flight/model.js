@@ -151,9 +151,9 @@ export class FlightModel {
   _updateControls(dt) {
     const i = this.input, c = this.c, a = this.spec;
     const move = (cur, target, rate) => (cur < target ? Math.min(cur + rate * dt, target) : Math.max(cur - rate * dt, target));
-    c.elev = move(c.elev, clamp(i.pitch + i.trim * 0.35, -1, 1), 3.4);
-    c.ail = move(c.ail, clamp(i.roll, -1, 1), 4.5);
-    c.rud = move(c.rud, clamp(i.yaw, -1, 1), 3.0);
+    c.elev = move(c.elev, clamp(i.pitch + i.trim * 0.35, -1, 1), 5);
+    c.ail = move(c.ail, clamp(i.roll, -1, 1), 7);
+    c.rud = move(c.rud, clamp(i.yaw, -1, 1), 4.5);
     c.thr = move(c.thr, clamp(i.throttle, 0, 1), a.propulsion.spool ?? (a.propulsion.type === 'jet' ? 0.45 : 0.9));
     c.flap = move(c.flap, clamp(i.flaps, 0, 1), 0.22);
     c.brake = move(c.brake, clamp(i.brake, 0, 1), 6);

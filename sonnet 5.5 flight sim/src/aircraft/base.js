@@ -3,6 +3,7 @@
    center of gravity, which is the body origin. Angles in radians unless a field says degrees. */
 
 import { MUNITIONS, storesMass } from './munitions.js';
+import { tuneSpec } from './tuning.js';
 
 const REQUIRED = ['id', 'name', 'mass', 'inertia', 'wing', 'aero', 'propulsion', 'gear', 'model'];
 
@@ -32,7 +33,7 @@ export function defineAircraft(spec) {
   a.aero = { CDflap: 0.04, CDgear: 0, CLflap: 0.4, Cmflap: -0.05, CLmaxFlap: 0.3, Cmq: -10, Clb: 0.08, Clp: -0.45, Cnb: 0.06, Cnr: -0.1, Cyb: 0.3, Cnda: 0.015, machCrit: 0.85, ...a.aero };
   a.aero.control = { elevator: 0.55, aileron: 0.07, rudder: 0.035, ...(a.aero.control || {}) };
   validateAircraft(a);
-  return Object.freeze(a);
+  return Object.freeze(tuneSpec(a));
 }
 
 export function validateAircraft(a) {
