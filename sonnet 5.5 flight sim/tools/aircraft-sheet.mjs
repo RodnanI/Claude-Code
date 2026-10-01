@@ -22,7 +22,7 @@ const VIEWS = {
   nose: { az: 28, el: 10, k: 0.38, t: [L * 0.28, 0.3, 0] }, tail: { az: 150, el: 12, k: 0.42, t: [-L * 0.3, 0.8, 0] }, wing: { az: 60, el: 25, k: 0.5, t: [0, 0.2, ext.span * 0.2] },
   gear: { az: 55, el: 4, k: 0.4, t: [0, -0.8, 0] },
   cockpit: { view: 'cockpit' }, cockpitL: { view: 'cockpit', ly: -70 }, cockpitR: { view: 'cockpit', ly: 70 }, cockpitBack: { view: 'cockpit', ly: 160 }, cockpitDown: { view: 'cockpit', lp: -38 }, cockpitUp: { view: 'cockpit', lp: 40 },
-  cabin: { view: 'cockpit', ly: 180, eye: [4.2, 0.2, 0] }, cabinFwd: { view: 'cockpit', ly: 0, eye: [-3.8, 0.2, 0.0] }, cabinL: { view: 'cockpit', ly: -90, lp: -10, eye: [1.0, 0.2, 0.3] },
+  cabin: { view: 'cockpit', ly: 180, eye: [e[0] - 0.9, e[1] - 0.1, 0] }, cabinFwd: { view: 'cockpit', ly: 0, eye: [e[0] - 4.5, e[1] - 0.1, 0] }, cabinL: { view: 'cockpit', ly: -90, lp: -10, eye: [e[0] - 2, e[1] - 0.1, 0.2] },
 };
 const only = process.env.VIEWS ? process.env.VIEWS.split(',') : ['front34', 'rear34', 'side', 'top', 'cockpit'];
 const pw = loadPlaywright();
