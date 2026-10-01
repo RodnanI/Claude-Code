@@ -24,7 +24,7 @@ const H = makeHull([
   { a: 4.6, c1: -0.2, c2: 0, r1: 0.3, r2: 0.26, n: 2.05 },
   { a: 4.95, c1: -0.26, c2: 0, r1: 0.1, r2: 0.1, n: 2 },
 ], WALL);
-const { FUS, skin, glassSkin, shell } = H;
+const { FUS, glassSkin, shell } = H;
 
 const WR = wingDef([0.95, -0.5, 0.62], 5.2, 1.95, 0.95, 0.55, 0.5, 0.15, 0.11, 1);
 const WL = wingDef([0.95, -0.5, -0.62], 5.2, 1.95, 0.95, 0.55, 0.5, 0.15, 0.11, -1);

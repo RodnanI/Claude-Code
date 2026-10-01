@@ -1,11 +1,9 @@
 import { resolveWeapon, munitionRecipe, MUNITIONS, storesMass } from '../aircraft/munitions.js';
 export { storesMass };
-import { mat3 } from '../core/math.js';
 import { clamp } from '../core/util.js';
 import { Rng } from '../core/rng.js';
 
 const G = 9.81;
-const _f = new Float64Array(3), _p = new Float64Array(3);
 
 /* What the pilot has left to throw. One entry per weapon of the aircraft definition, with its stations and rounds. The stations
    decide which store parts are drawn on the airframe (channel store_<station>), the count decides what the HUD says, and the mass

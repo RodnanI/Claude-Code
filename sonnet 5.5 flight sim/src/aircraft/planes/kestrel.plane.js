@@ -1,6 +1,6 @@
 import { defineAircraft } from '../base.js';
 import { M } from '../../voxel/palette.js';
-import { strut, wheel, gauge, needle } from '../builders/parts.js';
+import { wheel, gauge, needle } from '../builders/parts.js';
 import { decal, camo, seams, seamsZ, rivets, navLights, pilot, nozzle, gearLeg, store, pylon, roundelSide } from '../builders/detail.js';
 import { wingDef, wingSurface, loftSurface, finStations, finAt, wingAt } from '../builders/surfaces.js';
 

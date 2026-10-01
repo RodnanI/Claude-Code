@@ -45,18 +45,19 @@ function boxOfWing(W, za, zb, pad = 0.05) {
 
 /**
  * Cut a hinged surface out of a wing. W is the wing, z0 and z1 the span range in meters from the center line (positive numbers,
- * the side is taken from W), frac the share of the chord, le true for a leading edge device. The part's pivot is on the hinge at
+ * the side is taken from W), frac the share of the chord (or hx(z), the hinge line's x), le true for a leading edge device. The part's pivot is on the hinge at
  * mid span; rotate it about the z axis (or a tilted axis for a swept hinge). Returns the part recipe for more detail.
  */
-export function wingSurface(k, body, name, W, { z0, z1, frac = 0.28, le = false, mat, opts = {}, thin = true, mask = null }) {
+export function wingSurface(k, body, name, W, { z0, z1, frac = 0.28, le = false, mat, opts = {}, thin = true, mask = null, hx = null }) {
   const solid = wingSolid(W), s = W.side;
   const za = Math.min(z0 * s, z1 * s), zb = Math.max(z0 * s, z1 * s);
   const m = (c) => (c > 0.12 ? c * 0.5 : 0);                       // coarse cells widen the region so thin surfaces never vanish
-  const test = (x, y, z, c) => z >= za - m(c) && z <= zb + m(c) && solid(x, y, z, c) && (le ? x > hingeX(W, z, frac, true) - m(c) : x < hingeX(W, z, frac, false) + m(c)) && !(mask && mask(x, y, z));
+  const hinge = (z) => (hx ? hx(z) : hingeX(W, z, frac, le));      // hx: a hinge line of your own, x as a function of z (a constant-chord flaperon on a tapered wing)
+  const test = (x, y, z, c) => z >= za - m(c) && z <= zb + m(c) && solid(x, y, z, c) && (le ? x > hinge(z) - m(c) : x < hinge(z) + m(c)) && !(mask && mask(x, y, z));
   const box = boxOfWing(W, za, zb);
   body.fn(box[0], box[1], box[2], box[3], box[4], box[5], (x, y, z, c) => (test(x, y, z, c > 0.12 ? c : c * 1.4) ? -1 : 0));
   const zm = (za + zb) / 2, a = wingAt(W, zm);
-  const pivot = [hingeX(W, zm, frac, le), a.y, zm];
+  const pivot = [hinge(zm), a.y, zm];
   const part = k.part(name, { pivot, ...opts });
   part.fn(box[0], box[1], box[2], box[3], box[4], box[5], (x, y, z, c) => (test(x, y, z, c * 1.05) ? mat : 0), thin ? { thin: true } : undefined);
   return part;

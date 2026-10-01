@@ -1,7 +1,7 @@
 import { defineAircraft } from '../base.js';
 import { M } from '../../voxel/palette.js';
 import { strut, wheel, gauge, needle } from '../builders/parts.js';
-import { decal, camo, seams, seamsZ, rivets, navLights, pilot, gearLeg, store, pylon } from '../builders/detail.js';
+import { decal, seams, seamsZ, rivets, navLights, pilot, gearLeg, store, pylon } from '../builders/detail.js';
 import { wingDef, wingSolid, wingSurface, wingAt } from '../builders/surfaces.js';
 import { hash2, hashUnit } from '../../core/util.js';
 
@@ -16,7 +16,6 @@ const WR = wingDef([4.2, 0.0, 0.0], 12.0, 9.0, 1.4, 6.0, 0.0, 0.16, 0.06, 1);
 const WL = wingDef([4.2, 0.0, 0.0], 12.0, 9.0, 1.4, 6.0, 0.0, 0.16, 0.06, -1);
 const solid = wingSolid(WR);
 const wsolid = (x, y, z, c) => solid(x, y, Math.abs(z), c);
-const wy = () => 0.0;
 
 /** The trailing edge: a full beaver tail in the middle, then two sawteeth on each side that cut forward and step back. Behind this line there is no wing. */
 const teCut = (z) => {
