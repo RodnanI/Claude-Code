@@ -195,8 +195,8 @@ export default defineAircraft({
       strut(body, [-0.65, -0.28, s * 0.3], [-0.6, 1.06, s * 2.75], 0.06, M.WOOD_MID, { md: 0.2 });
       strut(body, [0.075, 0.39, s * 1.5], [-0.62, 0.39, s * 1.5], 0.04, FRAME, { md: 0.1 });            // a cross piece between the lift struts
       for (let i = 0; i < 4; i++) { const t = 0.15 + i * 0.22; body.cyl('y', 0.05 + t * 0.05, s * (0.3 + 2.45 * t), 0.055, 0.055, -0.28 + 1.34 * t - 0.02, -0.28 + 1.34 * t + 0.02, M.AC_YELLOW, { md: 0.09 }); }   // tape on the strut
-      strut(body, [0.32, 0.55, s * 0.24], [0.2, 1.05, s * 0.42], 0.06, FRAME, { md: 0.2 });
-      strut(body, [-0.5, 0.5, s * 0.24], [-0.4, 1.05, s * 0.42], 0.06, FRAME, { md: 0.2 });
+      strut(body, [0.32, 0.58, s * 0.35], [0.2, 1.05, s * 0.52], 0.05, M.STEEL, { md: 0.2 });
+      strut(body, [-0.5, 0.58, s * 0.35], [-0.4, 1.05, s * 0.52], 0.05, M.STEEL, { md: 0.2 });
       strut(body, [0.2, 1.05, s * 4.2], [0.1, 1.06, s * 2.75], 0.015, M.STEEL, { md: 0.05 });           // a flying wire out to the tip
       body.cyl('y', 0.13, s * 1.0, 0.08, 0.08, 0.35 + 0.03, 0.35 + 0.05, M.AC_BLACK, { md: 0.06 });
     }
@@ -205,8 +205,9 @@ export default defineAircraft({
     for (const z of [-0.2, 0, 0.2]) body.cyl('z', -0.3, 1.43, 0.215, 0.215, z - 0.012, z + 0.012, M.RUST, { md: 0.09 });
     body.cyl('y', -0.3, 0.12, 0.045, 0.045, 1.62, 1.66, M.STEEL_BRIGHT, { md: 0.1 });
     for (const s of [-1, 1]) body.box(-0.5, 1.19, s * 0.22 - 0.05, -0.1, 1.24, s * 0.22 + 0.05, M.WOOD_MID, { md: 0.1 });
-    strut(body, [-0.3, 1.25, 0.1], [0.35, 0.8, 0.14], 0.03, M.AC_BLACK, { md: 0.07 });
-    strut(body, [0.35, 0.8, 0.14], [1.1, 0.38, 0.1], 0.03, M.AC_BLACK, { md: 0.07 });
+    strut(body, [-0.3, 1.24, 0.2], [0.2, 0.95, 0.5], 0.03, M.AC_BLACK, { md: 0.07 });       // the fuel line is routed around the pilot's face
+    strut(body, [0.2, 0.95, 0.5], [0.85, 0.52, 0.36], 0.03, M.AC_BLACK, { md: 0.07 });
+    strut(body, [0.85, 0.52, 0.36], [1.1, 0.38, 0.08], 0.03, M.AC_BLACK, { md: 0.07 });
     // a stop sign for a patch, a car mirror on the left strut, a jerry can lashed to the right one
     body.paint(-0.6, 1.1, -2.6, -0.1, 1.3, -1.4, (x, y, z) => (y > 1.17 ? M.AC_RED : 0), { md: 0.1, thin: true });
     decalTop(body, 'STOP', { x: -0.35, z: -2.0, y0: 1.12, y1: 1.3, px: 0.04, mat: M.AC_WHITE });

@@ -238,7 +238,11 @@ export function loftTest(st, axis, e = 0) {
     const n = (s0.n ?? 2) + ((s1.n ?? 2) - (s0.n ?? 2)) * t;
     if (r1 <= 0 || r2 <= 0) return false;
     const u = Math.abs(p - c1) / r1, v = Math.abs(q - c2) / r2;
-    return n === 2 ? u * u + v * v <= 1 : Math.pow(u, n) + Math.pow(v, n) <= 1;
+    if (u > 1 || v > 1) return false;
+    const d2 = u * u + v * v;
+    if (n === 2) return d2 <= 1;
+    if (n > 2 && d2 <= 1) return true;                            // inside the circle means inside any rounder-cornered section: no pow for most voxels
+    return Math.pow(u, n) + Math.pow(v, n) <= 1;
   };
 }
 

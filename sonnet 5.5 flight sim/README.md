@@ -62,8 +62,9 @@ Settings, World, Challenge switches on the Skyline run: a ring beside the crown 
 ## Test it
 
 ```
-npm test                 # 250 unit tests, about twenty seconds, no dependencies
+npm test                 # 256 unit tests, about twenty seconds, no dependencies
 npm run test:browser     # builds, then drives headless Chromium through menu, takeoff, pause, settings, map and a crash
+node tests/browser/fleet.mjs  # flies all fourteen aircraft of the built file: X through the four cameras, the weapon, console errors (PLANES=shrike,hauler to pick, screenshots in out/fleet)
 PRESET=potato npm run test:browser
 ```
 

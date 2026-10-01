@@ -109,7 +109,6 @@ export default defineAircraft({
   ],
   model(k) {
     const body = k.part('body');
-    const FINE = { md: 0.1 };
     // ------------------------------------------------------------------ fuselage: long and slightly flattened, cheek to cheek with the blended wing root
     body.loft('x', FUS, GRAY);
     // dorsal spine and nose radome

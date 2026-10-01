@@ -48,7 +48,7 @@ export class App {
     // main menu
     const menu = this._screen('menu');
     menu.append(h('div', { class: 'menu-panel' },
-      h('div', null, h('h1', { class: 'menu-title' }, 'Fly', h('span', null, 'High')), h('p', { class: 'menu-sub' }, 'One island. Three runways. A jet, a trainer and a barn-built taildragger. Every voxel in the world is really there.')),
+      h('div', null, h('h1', { class: 'menu-title' }, 'Fly', h('span', null, 'High')), h('p', { class: 'menu-sub' }, 'One island. Three places to start. Fourteen aircraft, from a trainer to a flying outhouse. Every voxel in the world is really there.')),
       h('div', { class: 'stripe' }),
       h('div', { class: 'menu-list' },
         h('button', { class: 'btn primary', onclick: () => this.showHangar() }, 'Fly'),
@@ -58,6 +58,10 @@ export class App {
       h('div', { class: 'menu-foot', id: 'menu-foot' })));
     // hangar: aircraft cards, airfield chart, briefing and conditions (see hangar.js)
     this.hangar = new Hangar(this, this._screen('hangar'));
+    // loading: shown while the aircraft is meshed, which keeps the main thread busy for a few seconds with a detailed cockpit
+    const loading = this._screen('loading');
+    this.loadText = h('p', null, '');
+    loading.append(h('div', { class: 'center-card' }, h('h1', null, 'Rolling out'), this.loadText, h('div', { class: 'stripe' })));
     // pause
     const pause = this._screen('pause');
     pause.append(h('div', { class: 'center-card' }, h('h1', null, 'Paused'), h('p', null, 'The aircraft is holding still. The island is not.'),
@@ -119,11 +123,21 @@ export class App {
   }
 
   fly() {
-    this.hideAll();
-    this.game.startFlight({ planeId: this.sel.plane, startId: this.sel.start, livery: this.sel.livery, airborne: this.sel.airborne });
-    this.hint.classList.remove('off');
-    clearTimeout(this._hintT);
-    this._hintT = setTimeout(() => this.hint.classList.add('off'), 9000);
+    if (this._launching) return;
+    this._launching = true;
+    const spec = this.game.planes.find((p) => p.id === this.sel.plane);
+    this.loadText.textContent = `${spec ? spec.name : 'The aircraft'} is being built, voxel by voxel.`;
+    this.show('loading');
+    // let the panel paint before the aircraft is meshed
+    requestAnimationFrame(() => setTimeout(() => {
+      try {
+        this.hideAll();
+        this.game.startFlight({ planeId: this.sel.plane, startId: this.sel.start, livery: this.sel.livery, airborne: this.sel.airborne });
+      } finally { this._launching = false; }
+      this.hint.classList.remove('off');
+      clearTimeout(this._hintT);
+      this._hintT = setTimeout(() => this.hint.classList.add('off'), 9000);
+    }, 30));
   }
 
   _onState(s) {

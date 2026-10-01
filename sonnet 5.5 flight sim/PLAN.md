@@ -35,7 +35,7 @@ Built and exercised in the foundation stage. "Exercised" means run end to end in
 - Airfields: the three start areas are built with one painter (`_shared/airfield.js`): runway numbers, threshold bars, touchdown zone and aiming point marks, displaced thresholds with arrows, blast pads, edge lines, rubber, patches and tire marks, taxiways with rounded fillets and centerline lights, aprons with slab joints and oil, stands with lead-in lines, hold lines, parking lots and lettering from a 5x7 bitmap font, all drawn only at voxel sizes that can carry them. Structures come from four kit files (terminal with piers and jet bridges, tower, hangars, cargo sheds, fuel farm, fire station, garage, hardened shelters, barn, silos, windmill, still) and props from three scenery files (parked aircraft with tinted liveries, approach lights, PAPI, signs, floodlights, ground support vehicles). `tools/plan.mjs`, `tools/iso.mjs` and the airfield views of `tools/tour.mjs` are how they are inspected, `tools/budget.mjs airfields` how they are costed.
 - Takeoff and selector: the hangar is aircraft cards (bars computed from the flight model, a blueprint rasterized from the real model), an airfield chart with clickable starts, a briefing that runs the automatic takeoff against the flight model for the chosen wind, and conditions; in flight there is a takeoff intro camera, runway guidance on the HUD and an optional automatic takeoff (see 14.3).
 - UI: loading, menu over a live island flyover, hangar with a 3D aircraft showcase you can orbit, settings generated from the schema, pause, controls, island map, performance overlay.
-- Tests: 250 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
+- Tests: 256 unit tests through `npm test` and a browser smoke test through `npm run test:browser`.
 
 Stubbed on purpose (contracts exist, content does not):
 
@@ -97,14 +97,15 @@ sonnet 5.5 flight sim/
     aircraft/
       base.js  model-kit.js  instance.js
       flight/       model.js atmosphere.js trim.js autopilot.js
-      builders/     parts.js
+      builders/     parts.js detail.js surfaces.js hull.js
+      munitions.js  silhouette.js
       planes/       *.plane.js     one file per plane
     traffic/        road-graph.js traffic.js vehicle-def.js  vehicles/*.vehicle.js
     input/          bindings.js input.js
-    game/           game.js camera-rig.js hud.js collision.js ground.js aircraft-entity.js
+    game/           game.js camera-rig.js hud.js collision.js ground.js aircraft-entity.js weapons.js effects.js
     ui/             app.js settings-panel.js map.js dom.js
     test-scenes/    viewer.js aircraft.js      (inspection pages, not part of the game)
-  tests/            unit/*.test.mjs  browser/(harness.mjs smoke.mjs)  run-unit.mjs
+  tests/            unit/*.test.mjs  browser/(harness.mjs smoke.mjs fleet.mjs)  run-unit.mjs
   dist/             fly-high.html
 ```
 
@@ -116,7 +117,7 @@ File suffixes drive discovery: `*.plane.js`, `*.region.js`, `*.scenery.js`, `*.v
 - `npm run build` runs gen, bundles `src/main.js` and `src/workers/world.worker.js` with esbuild as IIFE bundles, minifies, then writes one HTML file: CSS in a style tag, the worker source in an inert `<script type="text/plain" id="fh-worker-src">`, the main bundle in a module-free script. Workers start from a Blob URL built from that text. `--entry viewer` or `--entry aircraft` builds the inspection pages instead.
 - `npm run dev` serves `src/` unbundled with native ES modules and module workers for fast iteration (`/?entry=test-scenes/aircraft.js&plane=shrike` opens the aircraft inspector).
 - `npm test` regenerates the registry and runs every `tests/unit/*.test.mjs` with `node --test`. No test dependency.
-- `npm run test:browser` builds and drives headless Chromium (Playwright) against the built file. It skips itself when Playwright is absent. `PRESET=potato` picks the quality tier.
+- `npm run test:browser` builds and drives headless Chromium (Playwright) against the built file. It skips itself when Playwright is absent. `PRESET=potato` picks the quality tier. `node tests/browser/fleet.mjs` is the slow one (about a minute per aircraft in software rendering): it starts every aircraft through the same path as the hangar button, cycles the camera with X, holds the fire key and fails on any console error.
 - The unit suite builds the game and fails if the output references the network, loads modules dynamically, exceeds 3 MB, or if any source file contains an em dash.
 
 ## 6. Rendering
@@ -388,14 +389,14 @@ Fourteen aircraft in three groups. The hangar lists them in this order and can f
 
 Private:
 
-- **Skylark SK-172**: four-seat high-wing trainer. Forgiving, about 44 knot stall, full interior with a working panel, attitude ball, yoke, pedals and throttle.
+- **Skylark SK-172**: four-seat high-wing trainer. Forgiving, about 44 knot stall, full interior with a working panel, attitude ball, yoke, pedals and throttle, a passenger holding the right-hand yoke. Outside: a hollow cabin with real window openings and gaskets, a wing that runs over the roof, flaps, ailerons, elevators and rudder cut out of the airframe, faired struts, a cheatline that follows the belt line and climbs the tail, a red-rimmed cowl with two dark inlets, a spinner and a two-blade prop.
 - **Hornet S-2**: aerobatic biplane. Four ailerons, symmetric wings, 560 degrees a second at full stick, sunburst paint made of angular paint ops, skeleton canopy, open cockpit.
 - **Vantage VJ-1**: personal jet with an engine on the spine and a V-tail whose ruddervators mix pitch and yaw. Real window openings, a four-seat cabin and a flight deck with a wide glass panel and sidesticks.
 - **Aerolux AL-9**: twin-engine business jet. A hollow hull with oval windows cut through the skin, a full cabin (club chairs, tables, a divan, a galley), a cockpit with three screens and an open door back into the cabin.
 
 Military:
 
-- **Shrike F-9**: light fighter with afterburner, fly-by-wire, 9 G, retractable gear, airbrake, bubble canopy, wingtip missiles, rocket pods and bombs.
+- **Shrike F-9**: light fighter with afterburner, fly-by-wire, 9 G, retractable gear, airbrake, bubble canopy, wingtip missiles, rocket pods and bombs. Ghost gray camouflage over a pale belly, roundels, a chin intake with a splitter plate, flaperons and stabilators cut out of the airframe, a petalled nozzle.
 - **Tempest P-48**: piston fighter. Radial cowl with cylinder heads, a four-blade prop, six .50 caliber guns, rockets, bombs, strong torque.
 - **Hammerhead A-12**: twin-engine attack jet with a seven-barrel cannon in the nose that spins up, shark mouth, ten stations carrying rocket pods, air-to-ground and air-to-air missiles and two kinds of bomb.
 - **Kestrel X-7**: canard delta with fly-by-wire and a long afterburner flame, a deep cockpit and five weapon systems.
@@ -403,7 +404,7 @@ Military:
 
 Hillbilly:
 
-- **Scrapper B-1**: homebuilt taildragger for the hillbilly strip. Patchwork cloth generated with paint ops, tundra tires, converted car engine, adverse yaw and a real spin tendency. A potato cannon and bottle rockets.
+- **Scrapper B-1**: homebuilt taildragger for the hillbilly strip. Patchwork cloth generated with paint ops, tundra tires, adverse yaw and a real spin tendency. An air cooled flat four out of a small car hangs in the breeze under a tin hood with a paint can for an air cleaner and a deer skull for an ornament; behind the cockpit the cloth has torn away in two bays and the welded tube frame and its broom handle braces show through; a fuel drum is bolted to the wing, a hound in goggles rides in the cargo bay, a fishing rod sticks out of the back. A potato cannon and bottle rockets.
 - **Thunderbox TB-1**: an outhouse with a drone jet engine strapped to the roof, plywood wings, a barn-door tail, a plunger for a stick and a pull chain for a throttle. Crescent moons are real windows. Potato cannon, bottle rockets, propane tanks.
 - **Doublewide DW-2**: a mobile home with a billboard wing and four car engines. The pilot drives from a recliner; behind him the living room, kitchen and bedroom are all modeled. Potato cannons, moonshine jugs and propane tanks.
 - **Barnburner BB-1**: a red barn with an afterburning grain silo on the roof, a hayloft, stalls and a lantern inside, a tractor seat at the Dutch door. Plunger rockets, bottle rockets, propane tanks.
@@ -413,9 +414,9 @@ Hillbilly:
 
 Planes are authored in `src/aircraft/planes/`. The helpers in `src/aircraft/builders/` carry the detail work so a plane file reads like a description:
 
-- `parts.js`: struts, wheels, rings, gauges, needles, wing pairs and `clipToHull`, which trims interior geometry to the airframe skin.
-- `detail.js`: stenciled lettering and decals, camouflage patterns, panel seams, rivets, navigation lights, a posed pilot figure with harness and oxygen hose, engine inlets with recessed fan blades, nozzles with petals, propellers with twisted paddle blades, landing gear legs, stores on pylons and rocket pods.
-- `surfaces.js`: control surfaces that really move. An aileron, flap, elevator or rudder is cut out of the airframe along its hinge and rebuilt as its own part with the same section; the cut and the part share one membership test, so at rest the two are one smooth skin and in motion there is a real gap behind the edge. At coarse voxel sizes the test widens by half a cell so thin surfaces never vanish.
+- `parts.js`: struts, wheels, rings, gauges, needles and `clipToHull`, which trims interior geometry to the airframe skin.
+- `detail.js`: stenciled lettering and decals, camouflage patterns, panel seams, rivets, navigation lights, a posed pilot figure with harness and oxygen hose, a seated person in ordinary clothes (`sitter`), engine inlets with recessed fan blades, nozzles with petals, propellers with twisted paddle blades (never thinner than a voxel, or the sample centers step over them), faired struts, window gaskets and door outlines painted on the skin, landing gear legs, stores on pylons and rocket pods. Window glass is an opaque glossy material, so a figure behind a canopy is never seen: seat people only where the cockpit is open or where the interior view looks at them.
+- `surfaces.js`: control surfaces that really move. An aileron, flap, elevator or rudder is cut out of the airframe along its hinge and rebuilt as its own part with the same section; the cut and the part share one membership test, so at rest the two are one smooth skin and in motion there is a real gap behind the edge. At coarse voxel sizes the test widens by half a cell so thin surfaces never vanish. `surfaceSeams` paints the hinge line and the end gaps on both the wing and the surface so a closed surface still reads as a separate piece, and `hx` lets a surface follow a hinge line of its own (a constant chord flaperon on a tapered wing).
 - `hull.js`: hollow fuselages. One station list gives the outer loft, the cavity, a one-cell glass skin and a squarish room carved inside it; windows and windshields are real openings at the finest voxel size and dark paint on the solid hull at the coarse ones (ops carry `md` and `mn` limits on the cell size), and a `glass` part marked `hideInCockpit` fills the openings from outside.
 
 The loop for one plane: write the file, run `node build/gen-registry.mjs`, run `node tools/flight-lab.mjs <id>` and tune until the envelope is sane, run `npm run build:all`, then `VIEWS=front34,rear34,side,cockpit,cabin node tools/aircraft-sheet.mjs <id> low` and read the images. The sheet tool can also look around inside a cockpit (`cockpitL`, `cockpitBack`, `cockpitUp`) and put the eye anywhere (`cabin` views).
@@ -446,13 +447,14 @@ Screens: loading, main menu over a live flyover of the island, hangar (category 
 
 ## 17. Testing
 
-`npm test` runs 250 tests in about twenty seconds:
+`npm test` runs 256 tests in about twenty seconds:
 
 - Core: RNG and noise determinism, quaternion and matrix identities, attitude round trips.
 - Voxel: palette invariants, mesher face counts and culling, vertex layout, recipe rasterization counts, lattice alignment, rotation and yaw, detail gating, thin ops, paint, loft membership, material remaps.
 - World: lit streets glow only on coarse avenues, streets and highways; every region lays out with known kits and inside its bounds, deterministic terrain, a mountain of the right height, all three start areas on land with flat runways (the strip smooth but sloping), a connected road graph, no building on a highway, LOD configuration, deterministic node builds.
 - Settings and input: presets, schema coverage, sanitizing, persistence and corrupt storage, governor behavior, hardware probe, key ramps, throttle lever, edge presses.
 - Aircraft: every part builds at every LOD, dimensions match the specification, the exterior extent agrees with the wing span, liveries resolve, every weapon names real stations and a known munition and every station has a store part, validation rejects broken specs.
+- Builders: propeller blades never thinner than a voxel, faired struts and cut-out surfaces that survive every coarse level, a loft membership test that keeps its exact answers with its fast paths, hull clipping that removes exactly what a test of every voxel would, a seated person that fits a light aircraft seat.
 - Every aircraft: trims at a cruise speed, holds it hands off for thirty seconds, takes off on a runway and lands softly, and the roster has enough military, private and hillbilly aircraft and enough armed ones.
 - Weapons and damage: loadouts and cycling, gun streams and rockets landing where the nose pointed, guided missiles flying to the designated ground point, bomb impact prediction, cluster bombs, stores leaving the airframe and its mass, craters, collapsed buildings, felled trees, blast list mirroring and deterministic node rebuilds.
 - Flight regression: trimmed hands-off flight, control signs, stall speed and recovery, takeoff roll bounds, rest attitudes, soft and hard landings, fly-by-wire limits, structural failure, determinism, trim saturation.

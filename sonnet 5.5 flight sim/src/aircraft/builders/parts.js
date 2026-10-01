@@ -59,42 +59,33 @@ export function needle(r, length, m = M.NEEDLE_ORANGE) {
   return r;
 }
 
-/** Tapered wing pair helper. root: [xLE, y, z]; returns nothing, adds both sides. */
-export function wingPair(r, root, span, cr, ct, sweep, dih, tr, tt, m, o) {
-  r.wing([root[0], root[1], root[2]], span, cr, ct, sweep, dih, tr, tt, 1, m, o);
-  r.wing([root[0], root[1], -root[2]], span, cr, ct, sweep, dih, tr, tt, -1, m, o);
-}
-
-/** Vertical fin as a lofted plate along y. */
-export function fin(r, xRoot, yRoot, chordRoot, chordTip, height, sweep, thick, m, o) {
-  r.loft('y', [
-    { a: yRoot, c1: xRoot - chordRoot / 2, c2: 0, r1: chordRoot / 2, r2: thick, n: 4 },
-    { a: yRoot + height, c1: xRoot - sweep - chordTip / 2, c2: 0, r1: chordTip / 2, r2: thick * 0.7, n: 4 },
-  ], m, { thin: true, ...o });
-}
-
-/** Propeller with two or three blades about the +x axis; recipe origin = hub center. */
-export function propeller(r, radius, blades = 2, chord = 0.16, mat = M.AC_PROP, tip = M.AC_PROP_TIP) {
-  for (let i = 0; i < blades; i++) {
-    const a = (i / blades) * Math.PI * 2;
-    const ca = Math.cos(a), sa = Math.sin(a);
-    r.fn(-0.05, -radius, -radius, 0.05, radius, radius, (x, y, z, cell) => {
-      const along = y * ca + z * sa, perp = -y * sa + z * ca;
-      if (along < 0.08 || along > radius) return 0;
-      const w = Math.max(chord * (1 - 0.35 * (along / radius)), cell * 1.05) * 0.5;
-      if (Math.abs(perp) > w || Math.abs(x) > Math.max(0.025 + 0.02 * (1 - perp / w), cell * 0.5)) return 0;
-      return along > radius - 0.16 ? tip : mat;
-    }, { thin: true });
-  }
-  r.cyl('x', 0, 0, 0.09, 0.09, -0.06, 0.06, M.AC_METAL, { md: 0.2 });
-}
-
 /**
  * Keep interior geometry inside the airframe skin: removes everything in `bounds` that lies outside the lofted hull
  * shrunk by `inset`. Call after the interior ops of a part so seats, floors and trim cannot poke through the skin.
  */
 export function clipToHull(r, hull, axis, inset, bounds) {
   const inside = loftTest(hull, axis, -inset);
-  r.fn(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5], (x, y, z) => (inside(x, y, z) ? 0 : -1));
+  if (axis !== 'x') {
+    r.fn(bounds[0], bounds[1], bounds[2], bounds[3], bounds[4], bounds[5], (x, y, z) => (inside(x, y, z) ? 0 : -1));
+    return r;
+  }
+  // the shrunk hull has a box of its own: everything outside it goes with plain box carves, and only the voxels inside it are tested
+  let a0 = Infinity, a1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const s of hull) {
+    a0 = Math.min(a0, s.a); a1 = Math.max(a1, s.a);
+    y0 = Math.min(y0, s.c1 - s.r1 + inset); y1 = Math.max(y1, s.c1 + s.r1 - inset);
+    z0 = Math.min(z0, s.c2 - s.r2 + inset); z1 = Math.max(z1, s.c2 + s.r2 - inset);
+  }
+  const [bx0, by0, bz0, bx1, by1, bz1] = bounds;
+  const hx0 = Math.max(bx0, a0 + inset), hx1 = Math.min(bx1, a1 - inset), hy0 = Math.max(by0, y0), hy1 = Math.min(by1, y1), hz0 = Math.max(bz0, z0), hz1 = Math.min(bz1, z1);
+  if (hx0 >= hx1 || hy0 >= hy1 || hz0 >= hz1) { r.box(bx0, by0, bz0, bx1, by1, bz1, 0); return r; }
+  const q = 1e-7;                                                    // the box carves stop a hair short of the hull box and the test reaches a hair past it, so no voxel center falls between
+  if (bx0 < hx0) r.box(bx0, by0, bz0, hx0 - q, by1, bz1, 0);
+  if (hx1 < bx1) r.box(hx1 + q, by0, bz0, bx1, by1, bz1, 0);
+  if (by0 < hy0) r.box(bx0, by0, bz0, bx1, hy0 - q, bz1, 0);
+  if (hy1 < by1) r.box(bx0, hy1 + q, bz0, bx1, by1, bz1, 0);
+  if (bz0 < hz0) r.box(bx0, by0, bz0, bx1, by1, hz0 - q, 0);
+  if (hz1 < bz1) r.box(bx0, by0, hz1 + q, bx1, by1, bz1, 0);
+  r.fn(Math.max(bx0, hx0 - 2 * q), Math.max(by0, hy0 - 2 * q), Math.max(bz0, hz0 - 2 * q), Math.min(bx1, hx1 + 2 * q), Math.min(by1, hy1 + 2 * q), Math.min(bz1, hz1 + 2 * q), (x, y, z) => (inside(x, y, z) ? 0 : -1));
   return r;
 }

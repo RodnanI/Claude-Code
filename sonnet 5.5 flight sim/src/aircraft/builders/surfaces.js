@@ -91,7 +91,7 @@ export function loftSurface(k, body, name, { stations, axis = 'y', box, aft, mat
   return part;
 }
 
-/** A fin as a loft along y at a spanwise offset z, with the same arguments as builders/parts fin() plus z. Returns the stations. */
+/** The stations of a fin as a loft along y, at a spanwise offset z. */
 export function finStations({ x, y, z = 0, chord, tip, height, sweep, thick }) {
   return [
     { a: y, c1: x - chord / 2, c2: z, r1: chord / 2, r2: thick, n: 4 },
@@ -106,4 +106,3 @@ export function finAt(f, y) {
   return { le, te: le - chord, chord, t };
 }
 
-export const SKIN = M.AC_GRAY;
