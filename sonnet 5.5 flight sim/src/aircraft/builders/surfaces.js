@@ -58,7 +58,7 @@ export function wingSurface(k, body, name, W, { z0, z1, frac = 0.28, le = false,
   const zm = (za + zb) / 2, a = wingAt(W, zm);
   const pivot = [hingeX(W, zm, frac, le), a.y, zm];
   const part = k.part(name, { pivot, ...opts });
-  part.fn(box[0], box[1], box[2], box[3], box[4], box[5], (x, y, z, c) => (test(x, y, z, c) ? mat : 0), thin ? { thin: true } : undefined);
+  part.fn(box[0], box[1], box[2], box[3], box[4], box[5], (x, y, z, c) => (test(x, y, z, c * 1.05) ? mat : 0), thin ? { thin: true } : undefined);
   return part;
 }
 
