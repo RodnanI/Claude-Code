@@ -1,5 +1,6 @@
 import { mat3 } from '../core/math.js';
 import { rasterize } from '../voxel/recipe.js';
+import { DAMAGE, DamageField } from '../world/damage.js';
 
 const QUARTER = Math.PI / 2;
 const _p = new Float64Array(3);
@@ -28,16 +29,54 @@ export class StructureCollider {
 
   /** Occupancy of a structure at a size that keeps even a supertall to a few tens of thousands of cells. Thin details
       (antennas, fences) are left out. Built the first time an aircraft is inside the footprint box. */
-  _shape(d) {
-    if (d._col !== undefined) return d._col;
-    d._col = null;
+  _shape(d, field = DAMAGE) {
+    const hr = Math.hypot(d.w || 8, d.d || 8) * 0.5;
+    const rev = field === DAMAGE ? DAMAGE.revNear(d.x - hr, d.z - hr, d.x + hr, d.z + hr) : 0;
+    if (field === DAMAGE && d._col !== undefined && d._colRev === rev) return d._col;
     const recipe = this.world.recipeFor(d);
     const solid = Object.create(recipe);
     solid.ops = recipe.ops.filter((op) => !op.thin);
+    if (!(d._h > 0)) d._h = d.h > 0 ? d.h : this._heightOf(d);
     const cell = Math.min(6, Math.max(1.5, Math.max(d.w, d.d, d._h / 4) / 40));
     const r = rasterize(solid, { cell, anchor: [d.x, d.y, d.z], rot: d.rot || 0, yaw: d.yaw || 0, maxCells: 2e6 });
-    if (r) d._col = { vol: r.vol, cell, i0: r.i0, j0: r.j0, k0: r.k0 };
-    return d._col;
+    let col = null;
+    if (r) {
+      // blasts have taken their share out of it (and what stood on that share)
+      if (field.count) field.carveVolume(r.vol, r.i0, r.j0, r.k0, cell, d.y);
+      col = { vol: r.vol, cell, i0: r.i0, j0: r.j0, k0: r.k0 };
+    }
+    if (field === DAMAGE) { d._col = col; d._colRev = rev; }
+    return col;
+  }
+
+  /** Solid air for projectiles: is this point inside a standing structure? */
+  pointSolid(x, y, z) {
+    const near = this.world.structuresIn(x - 48, z - 48, x + 48, z + 48, this._pt || (this._pt = []));
+    for (let i = 0; i < near.length; i++) if (this._inside(near[i], x, y, z)) return near[i];
+    return null;
+  }
+
+  /**
+   * What one blast does to the structures near it, measured on the same coarse shapes the collisions use: for each structure
+   * hit, how much of it is gone in cubic meters and where it stood. The effects use this to raise dust and drop debris.
+   */
+  blastReport(b) {
+    const out = [];
+    const one = new DamageField();
+    one.add({ x: b.x, y: b.y, z: b.z, r: b.r, seed: b.seed });
+    const R = b.r * 1.3 + 40;
+    for (const d of this.world.structuresIn(b.x - R, b.z - R, b.x + R, b.z + R, [])) {
+      if (!(d._h > 0)) d._h = d.h > 0 ? d.h : this._heightOf(d);
+      if (Math.abs(d.x - b.x) > d.w + b.r * 1.2 + 6 || Math.abs(d.z - b.z) > d.d + b.r * 1.2 + 6) continue;
+      const base = this._shape(d, new DamageField());           // the structure as built
+      if (!base) continue;
+      const before = base.vol.count();
+      const col = this._shape(d, one);
+      const left = col ? col.vol.count() : 0;
+      const gone = col ? (before - left) * col.cell ** 3 : 0;
+      if (gone > 1) out.push({ d, gone, x: d.x, y: d.y, z: d.z, h: d._h, w: d.w, dd: d.d, share: before ? 1 - left / before : 0, cell: col.cell, vol: col });
+    }
+    return out;
   }
 
   /** True when a point is inside the footprint box and the coarse shape of a structure. */

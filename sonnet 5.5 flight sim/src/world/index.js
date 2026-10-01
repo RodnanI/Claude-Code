@@ -11,6 +11,7 @@ import { Rng } from '../core/rng.js';
 import { hashString } from '../core/util.js';
 import { M } from '../voxel/palette.js';
 import { Recipe } from '../voxel/recipe.js';
+import { DAMAGE } from './damage.js';
 import { REGIONS, KITS, SCENERY } from '../generated/registry.js';
 
 /**
@@ -226,10 +227,25 @@ export function createWorld({ seed = WORLD_SEED, regions = REGIONS, kits = KITS,
     const slope = Math.hypot(hx, hz) / (2 * cell);
     out.h = surf; out.slope = slope; out.bed = s.bed; out.water = s.water;
     out.mat = world.surface.at(x, z, surf, slope, cell, s);
+    if (DAMAGE.count) {
+      const dm = DAMAGE.mat(x, z);
+      if (dm) out.mat = dm;
+      if (Number.isNaN(s.water)) out.h += DAMAGE.dh(x, z);
+    }
     return out;
   };
 
-  world.heightAt = (x, z, cell = 0) => terrain.heightAt(x, z, cell);
+  /** Ground height for physics and projectiles: the island as generated, minus the craters of the flight so far. */
+  const dscratch = { h: 0, m: 0, mtn: 0, land: 0, water: NaN, hydro: 0 };
+  world.heightAt = (x, z, cell = 0) => {
+    const h = terrain.heightAt(x, z, cell);
+    if (!DAMAGE.count) return h;
+    const dh = DAMAGE.dh(x, z);
+    if (dh === 0) return h;
+    terrain.sample(x, z, cell, dscratch);
+    return Number.isNaN(dscratch.water) ? h + dh : h;
+  };
+  world.damage = DAMAGE;
 
   /** Conservative [minY, maxY] over a square, including structures and the mountain. Used for LOD bounds. */
   world.heightRange = (x0, z0, size) => {

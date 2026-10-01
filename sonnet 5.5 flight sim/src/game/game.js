@@ -14,13 +14,16 @@ import { AIRCRAFT, VEHICLES, AMBIENT } from '../generated/registry.js';
 import { Input } from '../input/input.js';
 import { AircraftEntity } from './aircraft-entity.js';
 import { makeGround } from './ground.js';
-import { CameraRig, Flyover } from './camera-rig.js';
+import { CameraRig, Flyover, VIEW_LABELS } from './camera-rig.js';
 import { Hud, unitsFor } from './hud.js';
 import { StructureCollider } from './collision.js';
 import { TrafficSystem } from '../traffic/traffic.js';
 import { AmbientSystem } from '../traffic/ambient.js';
 import { Course, formatTime } from './course.js';
 import { TakeoffAssist, ASSIST_LABEL } from './takeoff-assist.js';
+import { Effects } from './effects.js';
+import { WeaponSystem } from './weapons.js';
+import { DAMAGE } from '../world/damage.js';
 
 const STEP = 1 / 240;
 const MAX_STEPS = 16;
@@ -86,6 +89,8 @@ export class Game extends Emitter {
     this.ambient = new AmbientSystem({ world: this.world, models: this.models, defs: AMBIENT, seed: WORLD_SEED });
     this.ambient.init();
     this.collider = new StructureCollider(this.world);
+    this.effects = new Effects({ renderer: this.renderer, models: this.models, ground: this.ground, max: d.effects.maxParticles });
+    this.weapons = new WeaponSystem({ ground: this.ground, collider: this.collider, effects: this.effects, models: this.models, explode: (e) => this._explode(e) });
     await step(0.5, 'Warming up aircraft');
     this.input = new Input(window, this.canvas).attach();
     this.rig = new CameraRig(this.renderer.camera, this.ground);
@@ -126,6 +131,7 @@ export class Game extends Emitter {
     this.renderer.configure(d.render);
     this.nodes.applySettings(d.lod);
     this.traffic.setMax(d.traffic.maxVehicles);
+    if (this.effects) this.effects.setMax(d.effects.maxParticles);
     this.ambient.setMax(d.traffic.maxVehicles > 0 ? 1 : 0);
     this.env.cover = v.cloudCover;
     this.env.timeSpeed = v.timeSpeed;
@@ -193,6 +199,8 @@ export class Game extends Emitter {
       this.input.throttle = 0;
     }
     this.ent.instance.prewarm([0, 1], true);
+    this.weapons.attach(this.ent);
+    this.effects.clear();
     // takeoff help only makes sense from the ground; an automatic takeoff waits on the brakes while the intro camera plays
     const assistMode = airborne ? 'off' : this.store.get('takeoffAssist');
     this.assist.reset(assistMode, INTRO_HOLD);
@@ -215,7 +223,12 @@ export class Game extends Emitter {
   restart() { if (this.lastStart) this.startFlight(this.lastStart); }
   pause() { if (this.state === 'flying') this.setState('paused'); }
   resume() { if (this.state === 'paused') this.setState('flying'); }
-  toMenu() { this.ent = null; this.crashed = false; this.menuView = 'flyover'; this.preview = null; this.assist.reset('off'); this.setState('menu'); }
+  toMenu() {
+    this.ent = null; this.crashed = false; this.menuView = 'flyover'; this.preview = null; this.assist.reset('off');
+    // leaving the flight leaves the island whole again; restarting with R keeps the craters
+    this.weapons.reset(); this.effects.clear(); this.nodes.healAll(); this.collider.reset(); this.traffic.clear();
+    this.setState('menu');
+  }
 
   // ------------------------------------------------------------------ loop
   _controls(dt, inp) {
@@ -235,7 +248,11 @@ export class Game extends Emitter {
     if (inp.pressed('debug')) { this.showStats = !this.showStats; this.emit('stats', this.showStats); }
     if (inp.pressed('screenshot')) this.shot = true;
     if (this.state === 'paused' || !m) return;
-    if (inp.pressed('view')) { const v = this.rig.cycle(true); this.hud.toast(`${v} view`, 1200); }
+    if (inp.pressed('view')) { const v = this.rig.cycle(true); this.hud.toast(`${VIEW_LABELS[v] || v} view`, 1200); }
+    if (inp.pressed('weapon') && this.weapons.armed) {
+      const w = this.weapons.select(1);
+      if (w) this.hud.toast(`${w.def.name}  x${this.weapons.loadout.remaining()}`, 1600);
+    }
     if (inp.pressed('hud')) this.hud.visible = !this.hud.visible;
     if (inp.pressed('assist') && !this.ent.model.crashed) {
       const mode = this.assist.cycle();
@@ -305,6 +322,10 @@ export class Game extends Emitter {
     while (this.acc >= STEP && n < MAX_STEPS) { ent.step(STEP); this.acc -= STEP; n++; }
     if (n === MAX_STEPS) this.acc = 0;
     ent.interpolate(this.acc / STEP);
+    if (this.weapons.armed && !m.crashed) this.weapons.trigger(ent, inp.fire, dt, inp.fireEdge);
+    this.weapons.update(dt, ent);
+    const note = this.weapons.takeToast();
+    if (note) this.hud.toast(note.text, 2200, note.tone);
     if (!m.crashed) {
       const hit = this.collider.test(ent, dt);
       if (hit) m._crash(`collision with a ${String(hit.kind).replace(/[-_]/g, ' ')}`);
@@ -342,10 +363,11 @@ export class Game extends Emitter {
       if (this.state === 'flying') this._flight(dt, inp);
       else ent.interpolate(this.acc / STEP);
       const look = this.lookBack ? { x: Math.PI, y: 0 } : this.input.look;
-      this.rig.update(this.state === 'paused' ? 0 : dt, ent, look, { fov: v.fov, wheel });
+      this.rig.update(this.state === 'paused' ? 0 : dt, ent, look, { fov: v.fov, wheel, shake: this.effects.shakeAmp });
       view = this.rig.mode === 'cockpit' ? 'cockpit' : 'external';
       this.traffic.update(this.state === 'paused' ? 0 : dt, cam.pos);
       ent.emit(models, cockpit, { mode: view, camPos: cam.pos, pxPerRad: px() });
+      this.weapons.emit(models, cam);
     } else if (this.menuView === 'showcase' && this.preview) {
       const e = this.preview;
       if (this.orbitSpin !== false) this.orbitAz += dt * 0.22;
@@ -375,11 +397,13 @@ export class Game extends Emitter {
 
     this.env.update(dt);
     const nodes = this.nodes.update(cam, dt * 1000);
-    this.renderer.render({ env: this.env, time: this.time, dt, viewDistance: v.viewDistance, nodes, models, cockpit });
+    this.effects.update(this.state === 'paused' ? 0 : dt, cam.pos);
+    const fx = this.effects.emit(cam.pos);
+    this.renderer.render({ env: this.env, time: this.time, dt, viewDistance: v.viewDistance, nodes, models, cockpit, fx });
     if (this.shot) { this.shot = false; this._screenshot(); }
 
     if ((this.state === 'flying' || this.state === 'paused') && this.ent) {
-      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, course: v.challenge === 'skyline' && this.course ? this.course.status() : null, assist: this.assist.info });
+      this.hud.draw({ ent: this.ent, cam, view: this.rig.mode === 'cockpit' ? 'cockpit' : 'chase', units: v.units, scale: v.hudScale, dt: this.state === 'paused' ? 0 : dt, course: v.challenge === 'skyline' && this.course ? this.course.status() : null, assist: this.assist.info, weapons: this.weapons.info(this.ent) });
     } else this.hud.draw({ ent: null, cam, view: 'menu', units: v.units, scale: v.hudScale, dt, hideAll: true });
 
     this.cpuMs.push(now() - started);
@@ -387,6 +411,33 @@ export class Game extends Emitter {
     if (v.preset === 'auto' && this.frameMs.count > 45 && this.state !== 'loading') {
       const change = this.governor.step(this.frameMs.avg, v, dt * 1000);
       if (change) this.store.applyGraphics(change);
+    }
+  }
+
+  /**
+   * A weapon went off. Big ones (a rocket, a missile, a bomb) change the island: the blast joins the list that every worker
+   * builds nodes from, the nodes around it are rebuilt with the crater, the bitten buildings and the missing trees, traffic
+   * in the radius burns, and the aircraft itself is not safe from its own bombs. Small ones (cannon shells) only raise dust.
+   */
+  _explode(e) {
+    const { x, y, z, r } = e;
+    const fx = this.effects, cam = this.renderer.camera;
+    const far = Math.hypot(x - cam.pos[0], y - cam.pos[1], z - cam.pos[2]);
+    const scale = far > 1200 ? 0.55 : 1;
+    if (e.water) { fx.explosion(x, y, z, r, { water: true, scale }); return; }
+    if (r < 3.4) { fx.impact(x, y, z, r, false); return; }
+    const b = DAMAGE.add({ x, y, z, r });
+    this.nodes.blast(b);
+    for (const s of this.collider.blastReport(b)) {
+      if (s.share > 0.22 || s.gone > 500) fx.collapse(s.x, s.y, s.z, s.w, s.dd, s.h, Math.min(1, s.share * 1.15 + 0.15));
+      else fx.burn(s.x, s.y + 1, s.z, Math.min(s.w, s.dd) * 0.3, 14);
+    }
+    for (const v of this.traffic.killNear(x, z, r * 0.95)) { fx.explosion(v.x, v.y + 0.6, v.z, 2.8, { scale: 0.5 }); fx.burn(v.x, v.y, v.z, 1.6, 26); }
+    fx.explosion(x, y, z, r, { ground: !e.air, fuel: e.fuel, scale });
+    const ent = this.ent;
+    if (ent && !ent.model.crashed) {
+      const d = Math.hypot(ent.pos[0] - x, ent.pos[1] - y, ent.pos[2] - z);
+      if (d < r * 0.6 + 4) ent.model._crash('caught in the blast of its own weapon');
     }
   }
 

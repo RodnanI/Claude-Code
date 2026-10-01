@@ -59,6 +59,7 @@ export class Hud {
     const scale = (s.scale || 1) * clamp(Math.min(this.w / 1280, this.h / 720), 0.7, 1.5);
     if (s.course) this._course(s.course, s.cam, scale);
     this._warnings(m, spec, s, scale);
+    if (s.weapons && !m.crashed) this._weapons(s, m, scale);
     if (s.assist && !m.crashed) { this._runwayPath(s.assist, s, m, scale); this._takeoff(s.assist, m, u, scale, spec.hud === 'fighter'); }
     if (m.crashed) return;
     if (spec.hud === 'fighter') this._fighter(s, m, spec, u, scale);
@@ -146,6 +147,59 @@ export class Hud {
       c.fillRect(this.w / 2 - w / 2, y - 18 * k, w, 36 * k);
       c.fillStyle = INK; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(it, this.w / 2, y + 1);
       y += 44 * k;
+    }
+  }
+
+  /** Weapon panel in the lower left and the sight that goes with the selected weapon: a pipper for guns and rockets, a diamond on
+      the spot a missile will fly to, a falling-line impact marker for bombs. */
+  _weapons(s, m, k) {
+    const c = this.ctx, w = s.weapons, cam = s.cam;
+    const blink = Math.floor(performance.now() / 280) % 2 === 0;
+    const px = 22 * k, W = 232 * k, Hh = 66 * k, py = this.h - Hh - 20 * k;
+    c.fillStyle = 'rgba(21,18,14,0.8)'; c.fillRect(px, py, W, Hh);
+    c.fillStyle = w.count > 0 ? (w.ready ? ORANGE : AMBER) : '#6b2a12'; c.fillRect(px, py, 4 * k, Hh);
+    this._text(w.name.toUpperCase(), px + 16 * k, py + 16 * k, 12.5 * k, PAPER, 'left', COND, '700');
+    this._text(w.count > 0 ? `x ${w.count}` : 'EMPTY', px + W - 12 * k, py + 40 * k, 26 * k, w.count > 0 ? PAPER : ORANGE, 'right', COND, '700');
+    this._text(`${w.index + 1} OF ${w.total}`, px + 16 * k, py + 40 * k, 11 * k, DIM, 'left', COND, '700');
+    this._text('J OR CLICK FIRE   K NEXT', px + 16 * k, py + Hh - 10 * k, 9.5 * k, DIM, 'left', COND, '700');
+    const col = s.view === 'cockpit' ? GREEN : AMBER;
+    c.strokeStyle = col; c.fillStyle = col; c.lineWidth = Math.max(1.4, 1.8 * k);
+    const at = (p) => this.project(cam, p[0] - cam.pos[0], p[1] - cam.pos[1], p[2] - cam.pos[2]);
+    const onScreen = (q) => q && q[0] > 0 && q[0] < this.w && q[1] > 0 && q[1] < this.h;
+    if (w.pipper) {
+      const q = at(w.pipper);
+      if (onScreen(q)) {
+        const r = 15 * k;
+        c.beginPath(); c.arc(q[0], q[1], r, 0, Math.PI * 2); c.stroke();
+        c.beginPath(); c.arc(q[0], q[1], 1.8 * k, 0, Math.PI * 2); c.fill();
+        for (let i = 0; i < 4; i++) { const a = (i * Math.PI) / 2 + Math.PI / 4; c.beginPath(); c.moveTo(q[0] + Math.cos(a) * r, q[1] + Math.sin(a) * r); c.lineTo(q[0] + Math.cos(a) * (r + 7 * k), q[1] + Math.sin(a) * (r + 7 * k)); c.stroke(); }
+        if (!w.ready || w.count <= 0) { c.globalAlpha = 0.5; c.beginPath(); c.moveTo(q[0] - r, q[1] - r); c.lineTo(q[0] + r, q[1] + r); c.stroke(); c.globalAlpha = 1; }
+      }
+    } else if (w.type === 'missile') {
+      const d = w.designation;
+      if (d) {
+        const q = at([d.x, d.y, d.z]);
+        const label = d.dist < 1000 ? Math.round(d.dist) + ' m' : (d.dist / 1000).toFixed(1) + ' km';
+        if (onScreen(q)) {
+          const r = 16 * k;
+          c.beginPath(); c.moveTo(q[0], q[1] - r); c.lineTo(q[0] + r, q[1]); c.lineTo(q[0], q[1] + r); c.lineTo(q[0] - r, q[1]); c.closePath(); c.stroke();
+          const e = 5 * k; c.beginPath(); c.moveTo(q[0] - r - e, q[1] - r - e); c.lineTo(q[0] - r, q[1] - r); c.moveTo(q[0] + r + e, q[1] - r - e); c.lineTo(q[0] + r, q[1] - r); c.moveTo(q[0] - r - e, q[1] + r + e); c.lineTo(q[0] - r, q[1] + r); c.moveTo(q[0] + r + e, q[1] + r + e); c.lineTo(q[0] + r, q[1] + r); c.stroke();
+          this._text(label, q[0], q[1] + r + 18 * k, 12 * k, PAPER, 'center', COND, '700');
+        }
+        this._text('LOCK', this.w / 2, this.h * 0.2, 18 * k, blink ? col : DIM, 'center', COND, '700');
+      } else this._text('NO TARGET', this.w / 2, this.h * 0.2, 14 * k, DIM, 'center', COND, '700');
+    } else if (w.type === 'bomb') {
+      const d = w.impact;
+      if (d) {
+        const q = at([d.x, d.y, d.z]);
+        if (onScreen(q)) {
+          const r = 14 * k;
+          c.beginPath(); c.moveTo(q[0] - r, q[1] - r); c.lineTo(q[0] + r, q[1] + r); c.moveTo(q[0] + r, q[1] - r); c.lineTo(q[0] - r, q[1] + r); c.stroke();
+          c.beginPath(); c.arc(q[0], q[1], r * 1.5, 0, Math.PI * 2); c.stroke();
+          this._text(`${d.t.toFixed(0)} s`, q[0], q[1] + r * 1.5 + 14 * k, 12 * k, PAPER, 'center', COND, '700');
+        }
+        this._text('RELEASE', this.w / 2, this.h * 0.2, 14 * k, blink && onScreen(q) ? col : DIM, 'center', COND, '700');
+      }
     }
   }
 

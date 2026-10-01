@@ -50,7 +50,7 @@ export default defineAircraft({
   },
   skids: [{ p: [-4.45, 0.45, 0], kind: 'tail' }, { p: [0.2, -0.62, 0], kind: 'belly' }, { p: [0, 1.15, 5.55], kind: 'tip' }, { p: [0, 1.15, -5.55], kind: 'tip' }, { p: [3.8, 0, 0], kind: 'nose' }],
   limits: { vne: 89, maxG: 4.4, flapSpeed: 46, gearSpeed: 999, crashVs: 7 },
-  cameras: { cockpit: [0.3, 0.44, -0.3], chase: { distance: 15, height: 4 } },
+  cameras: { cockpit: [0.3, 0.44, -0.3], chase: { distance: 15, height: 4 }, near: { distance: 7.4, height: 2.1 } },
   liveries: [{ id: 'default', name: 'Factory white and red' }],
   animations: [
     { part: 'aileronL', type: 'rotate', axis: [0, 0, 1], channel: 'aileron', gain: 0.5 },

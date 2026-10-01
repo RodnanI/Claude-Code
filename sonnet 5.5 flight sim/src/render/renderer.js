@@ -215,6 +215,35 @@ export class Renderer {
     this.gl.deleteVertexArray(b.vao); this.gl.deleteBuffer(b.buf);
     this.gpuBytes -= b.bytes;
   }
+  /**
+   * A batch of effect particles: up to `capacity` instances of one model, rewritten every frame with updateFx. Same 24-byte
+   * layout as a scenery batch (f32 x, y, z, yaw, scale, u8 tint) but positions are relative to the batch's own origin (ox, oz).
+   */
+  createFx(model, capacity) {
+    const gl = this.gl;
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.gpu.vbo);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribIPointer(0, 4, gl.SHORT, 8, 0);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, capacity * 24, gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 24, 0); gl.vertexAttribDivisor(1, 1);
+    gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 24, 16); gl.vertexAttribDivisor(2, 1);
+    gl.enableVertexAttribArray(3); gl.vertexAttribPointer(3, 4, gl.UNSIGNED_BYTE, true, 24, 20); gl.vertexAttribDivisor(3, 1);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, model.gpu.ibo);
+    gl.bindVertexArray(null);
+    this.gpuBytes += capacity * 24;
+    return { vao, buf, count: 0, model, capacity, bytes: capacity * 24, ox: 0, oz: 0 };
+  }
+  updateFx(b, data, count) {
+    const gl = this.gl;
+    b.count = Math.min(count, b.capacity);
+    if (!b.count) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, b.buf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, data, 0, b.count * 6);
+  }
 
   // ------------------------------------------------------------------ uniforms
   _bindTex(unit, target, tex) {
@@ -330,6 +359,18 @@ export class Renderer {
     }
   }
 
+  _drawFx(p, b, cam) {
+    const gl = this.gl, m = b.model;
+    p.f3('u_origin', b.ox - cam.pos[0], -cam.pos[1], b.oz - cam.pos[2]);
+    p.i3('u_cellOrigin', 0, 0, 0);
+    p.f3('u_worldOrigin', b.ox, 0, b.oz);
+    p.f1('u_cell', m.cell);
+    p.f3('u_modelOff', m.off[0], m.off[1], m.off[2]);
+    gl.bindVertexArray(b.vao);
+    gl.drawElementsInstanced(gl.TRIANGLES, m.gpu.indexCount, m.gpu.indexType, 0, b.count);
+    this.stats.draws++; this.stats.batches++; this.stats.tris += (m.gpu.indexCount / 3) * b.count;
+  }
+
   _drawModel(p, m, cam) {
     const gl = this.gl;
     const mesh = m.mesh;
@@ -381,6 +422,7 @@ export class Renderer {
       P.dModel.use();
       const mreach = (reach + 300) * (reach + 300);
       for (const m of f.models) {
+        if (m.noShadow) continue;
         const dx = m.x - cam.pos[0], dy = m.y - cam.pos[1], dz = m.z - cam.pos[2];
         if (dx * dx + dy * dy + dz * dz < mreach) this._drawModel(P.dModel, m, cam);
       }
@@ -528,6 +570,12 @@ export class Renderer {
     if (f.models && f.models.length) {
       P.model.use(); this._voxUniforms(P.model, f); this._setVP(P.model, this.nearVP);
       for (const m of f.models) this._drawModel(P.model, m, cam);
+    }
+    if (f.fx && f.fx.length) {
+      // explosions, smoke and tracers: instanced cubes and puffs, lit like everything else, glowing through the bloom
+      P.inst.use(); this._voxUniforms(P.inst, f); this._setVP(P.inst, this.nearVP);
+      P.inst.f3('u_tint', 1, 1, 1);
+      for (const b of f.fx) if (b.count) this._drawFx(P.inst, b, cam);
     }
     if (f.cockpit && f.cockpit.length) {
       gl.clear(gl.DEPTH_BUFFER_BIT);

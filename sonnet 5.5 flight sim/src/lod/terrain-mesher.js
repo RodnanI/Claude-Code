@@ -1,4 +1,5 @@
 import { M, PALETTE_FLAGS, FL } from '../voxel/palette.js';
+import { DAMAGE } from '../world/damage.js';
 
 const SKIRT = 3;
 const isWater = (m) => (PALETTE_FLAGS[m] & FL.WATER) !== 0;
@@ -31,10 +32,16 @@ export function sampleColumns(world, x0, z0, cell, N, buf) {
   const { terrain, surface } = world;
   const W = N + 2;
   const s = { h: 0, m: 0, water: NaN };
+  // blasts in or beside this node dig craters into the columns and burn the surface over them
+  const scarred = DAMAGE.count > 0 && DAMAGE.touches(x0 - cell, z0 - cell, x0 + (N + 1) * cell, z0 + (N + 1) * cell);
   for (let j = -1; j <= N; j++) {
     for (let i = -1; i <= N; i++) {
       const a = (j + 1) * W + i + 1;
       buf.surf[a] = terrain.sample(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, cell, s);
+      if (scarred && Number.isNaN(s.water)) {
+        const dh = DAMAGE.dh(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell);
+        if (dh !== 0) { buf.surf[a] += dh; s.bed += dh; }
+      }
       buf.bed[a] = s.bed;
       buf.water[a] = s.water;
       buf.hydro[a] = s.hydro || 0;
@@ -51,10 +58,12 @@ export function sampleColumns(world, x0, z0, cell, N, buf) {
       const gx = (buf.bed[a + 1] - buf.bed[a - 1]) * inv, gz = (buf.bed[a + W] - buf.bed[a - W]) * inv;
       const slope = Math.sqrt(gx * gx + gz * gz);
       sv.m = buf.mm[a]; sv.bed = buf.bed[a]; sv.water = buf.water[a]; sv.hydro = buf.hydro[a];
-      const mat = surface.at(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, h, slope, cell, sv);
+      let mat = surface.at(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, h, slope, cell, sv);
+      let scar = 0;
+      if (scarred && !isWater(mat)) { scar = DAMAGE.mat(x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell); if (scar) mat = scar; }
       buf.mat[a] = mat;
       buf.sub[a] = surface.sub(mat, h, slope);
-      buf.bank[a] = surface.bank ? surface.bank(mat, x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, cell) : 0;
+      buf.bank[a] = scar ? 0 : surface.bank ? surface.bank(mat, x0 + (i + 0.5) * cell, z0 + (j + 0.5) * cell, cell) : 0;
       let top = h;
       if (buf.hydro[a] && !isWater(mat)) top = buf.water[a] + 1.0;
       buf.surf[a] = top;

@@ -46,7 +46,7 @@ export default defineAircraft({
   },
   skids: [{ p: [0.0, 1.1, 4.8], kind: 'tip' }, { p: [0.0, 1.1, -4.8], kind: 'tip' }, { p: [2.05, 0.05, 0], kind: 'nose' }, { p: [0.2, -0.45, 0], kind: 'belly' }, { p: [-4.4, 1.35, 0], kind: 'tail' }],
   limits: { vne: 55, maxG: 4, minG: 1.5, flapSpeed: 30, gearSpeed: 999, crashVs: 6 },
-  cameras: { cockpit: [0.05, 0.76, 0], chase: { distance: 12, height: 3 } },
+  cameras: { cockpit: [0.05, 0.76, 0], chase: { distance: 12, height: 3 }, near: { distance: 6.2, height: 1.7 } },
   liveries: [
     { id: 'default', name: 'Barn find patchwork' },
     { id: 'mailbox', name: 'Mailbox red', remap: { FABRIC_TAN: 'AC_RED', PATCH_A: 'AC_CREAM', PATCH_B: 'AC_ORANGE' } },

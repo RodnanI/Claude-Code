@@ -29,6 +29,7 @@ export const SCHEMA = [
   { key: 'clouds', group: 'Graphics', label: 'Clouds', type: 'select', apply: 'live', options: opt([0, 1, 2, 3], ['Off', 'Sky layers', 'Volumetric', 'Volumetric high']) },
   { key: 'sceneryRange', group: 'Graphics', label: 'Scenery range', type: 'select', apply: 'rebuild', options: opt([0, 250, 600, 1200, 2400, 5000], ['Off', '250 m', '600 m', '1.2 km', '2.4 km', '5 km']) },
   { key: 'traffic', group: 'Graphics', label: 'Traffic', type: 'range', min: 0, max: 300, step: 5, apply: 'live', format: (v) => (v ? v + ' vehicles' : 'Off') },
+  { key: 'particles', group: 'Graphics', label: 'Explosion particles', type: 'range', min: 100, max: 2000, step: 50, apply: 'live', format: (v) => v + ' particles', help: 'Fire, smoke and debris alive at once. Missiles, bombs and rockets make the most of it.' },
   { key: 'voxelEdges', group: 'Graphics', label: 'Voxel edges', type: 'range', min: 0, max: 1, step: 0.05, apply: 'live', format: (v) => (v ? Math.round(v * 100) + '%' : 'Off') },
   { key: 'ao', group: 'Graphics', label: 'Ambient occlusion', type: 'toggle', apply: 'rebuild' },
   { key: 'macro', group: 'Graphics', label: 'Ground variation', type: 'toggle', apply: 'live' },

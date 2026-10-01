@@ -2,13 +2,21 @@ import { clamp, wrapPi, lerp } from '../core/util.js';
 import { mat3 } from '../core/math.js';
 import { SITES } from '../world/layout.js';
 
-export const VIEWS = ['chase', 'cockpit', 'orbit'];
+export const VIEWS = ['chase', 'near', 'cockpit', 'orbit'];
+export const VIEW_LABELS = { chase: 'Far chase', near: 'Close chase', cockpit: 'Cockpit', orbit: 'Orbit' };
+
+/** The two chase placements of an aircraft: its own, or a close one worked out from the far one. */
+export function chaseFor(spec, mode) {
+  const far = spec.cameras.chase;
+  if (mode !== 'near') return far;
+  return spec.cameras.near || { distance: far.distance * 0.46, height: far.height * 0.5 };
+}
 
 const _p = new Float64Array(3), _f = new Float64Array(3), _u = new Float64Array(3);
 const _m = new Float64Array(9), _n = new Float64Array(9), _o = new Float64Array(9);
 
 /**
- * Chase, cockpit and orbit cameras for the player aircraft. Chase follows the flight path with a lagging heading and
+ * Far chase, close chase, cockpit and orbit cameras for the player aircraft. Chase follows the flight path with a lagging heading and
  * keeps clear of the ground; cockpit sits at the pilot eye with G-force head motion, free look and buffet shake.
  */
 export class CameraRig {
@@ -77,6 +85,7 @@ export class CameraRig {
       else this.chase.zoom = clamp(this.chase.zoom * (1 + 0.1 * opts.wheel), 0.5, 3);
     }
     if (m.crashed && this.mode === 'cockpit') this.mode = 'chase';
+    const kick = opts.shake || 0;
     const lx = look ? look.x : 0, ly = look ? look.y : 0;
 
     if (this.mode === 'cockpit') {
@@ -94,7 +103,7 @@ export class CameraRig {
       _f[0] = _m[0]; _f[1] = _m[1]; _f[2] = _m[2];
       _u[0] = _m[3]; _u[1] = _m[4]; _u[2] = _m[5];
       // buffet and turbulence shake
-      const sh = clamp(m.buffet * 0.9 + (m.turbulence || 0) * 0.15 + (m.onGround ? clamp(m.groundSpeed / 60, 0, 1) * 0.06 : 0) + (spec.propulsion.type === 'prop' ? m.c.thr * 0.02 : m.afterburner ? 0.25 : 0), 0, 1.2);
+      const sh = clamp(m.buffet * 0.9 + (m.turbulence || 0) * 0.15 + (m.onGround ? clamp(m.groundSpeed / 60, 0, 1) * 0.06 : 0) + (spec.propulsion.type === 'prop' ? m.c.thr * 0.02 : m.afterburner ? 0.25 : 0) + kick * 2.2, 0, 2.2);
       this.shake += (sh - this.shake) * (1 - Math.exp(-dt * 8));
       const t = this.time, a = this.shake * 0.0065;
       _f[0] += (Math.sin(t * 61) + Math.sin(t * 37.7)) * a; _f[1] += (Math.sin(t * 53.3) + Math.sin(t * 29)) * a; _f[2] += (Math.sin(t * 47.1) + Math.sin(t * 23)) * a;
@@ -124,7 +133,8 @@ export class CameraRig {
     if (!ch.ready) { ch.heading = target; ch.pitch = 0; ch.ready = true; }
     ch.heading += wrapPi(target - ch.heading) * (1 - Math.exp(-dt * (speed > 30 ? 3.2 : 1.8)));
     ch.pitch += (clamp(Math.atan2(m.vel[1], Math.max(speed, 1)) * -0.35, -0.3, 0.3) - ch.pitch) * (1 - Math.exp(-dt * 2));
-    const cs = spec.cameras.chase;
+    const near = this.mode === 'near';
+    const cs = chaseFor(spec, this.mode);
     const D = cs.distance * ch.zoom, H = cs.height * (0.7 + 0.3 * ch.zoom);
     const h = ch.heading + lx;
     const fx = Math.sin(h), fz = -Math.cos(h);
@@ -132,8 +142,12 @@ export class CameraRig {
     const P = ent.pos;
     let x = P[0] - fx * D, z = P[2] - fz * D;
     let y = P[1] + lift;
-    y = Math.max(y, this.ground.h(x, z) + 1.8);
-    const ax = P[0] + fx * D * 0.18, az2 = P[2] + fz * D * 0.18, ay = P[1] + 0.6;
+    y = Math.max(y, this.ground.h(x, z) + (near ? 1.2 : 1.8));
+    const ax = P[0] + fx * D * 0.18, az2 = P[2] + fz * D * 0.18, ay = P[1] + (near ? 0.35 : 0.6);
+    if (kick > 0.002) {
+      const t = this.time;
+      x += (Math.sin(t * 61) + Math.sin(t * 37.7)) * kick * 0.45; y += (Math.sin(t * 53.3) + Math.sin(t * 29)) * kick * 0.45; z += (Math.sin(t * 47.1) + Math.sin(t * 23)) * kick * 0.45;
+    }
     // a fraction of the aircraft bank tilts the horizon for a sense of motion
     mat3.mulVec(_u, ent.rot, 0, 1, 0);
     const bank = 0.14;

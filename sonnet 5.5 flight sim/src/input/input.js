@@ -90,7 +90,7 @@ export class Input {
     const rt = p.buttons[7] ? p.buttons[7].value : 0, lt = p.buttons[6] ? p.buttons[6].value : 0;
     s.throttleRate = rt - lt;
     const b = (i) => !!(p.buttons[i] && p.buttons[i].pressed);
-    const map = { 0: 'brake', 1: 'gear', 2: 'flapsDown', 3: 'flapsUp', 4: 'view', 5: 'airbrake', 9: 'pause', 8: 'map', 12: 'trimUp', 13: 'trimDown' };
+    const map = { 0: 'brake', 1: 'gear', 2: 'flapsDown', 3: 'flapsUp', 4: 'view', 5: 'airbrake', 9: 'pause', 8: 'map', 10: 'fire', 11: 'weapon', 12: 'trimUp', 13: 'trimDown' };
     const now = new Set();
     for (const [i, act] of Object.entries(map)) if (b(+i)) now.add(act);
     for (const act of now) if (!this.padActions.has(act)) this.edge.add(act);
@@ -139,7 +139,12 @@ export class Input {
     if (this.mouse.buttons & 2) { look.x = clamp(look.x + this.mouse.dx * 0.004, -2.6, 2.6); look.y = clamp(look.y + this.mouse.dy * 0.004, -1.2, 1.2); look.active = true; }
     else { look.x *= Math.exp(-dt * 4); look.y *= Math.exp(-dt * 4); look.active = Math.abs(look.x) + Math.abs(look.y) > 0.01; }
     this.mouse.dx = this.mouse.dy = 0;
-    return { pitch: this.axes.pitch, roll: this.axes.roll, yaw: this.axes.yaw, throttle: this.throttle, brake: this.held('brake') ? 1 : 0, airbrake: this.held('airbrake') ? 1 : 0, trim: this.trim };
+    const click = !!(this.mouse.buttons & 1) && this.mouse.inside;
+    const fire = this.held('fire') || click;
+    // a missile or a bomb leaves on the press, a gun or a rocket pod while the trigger is held
+    const fireEdge = fire && !this._fireHeld;
+    this._fireHeld = fire;
+    return { pitch: this.axes.pitch, roll: this.axes.roll, yaw: this.axes.yaw, throttle: this.throttle, brake: this.held('brake') ? 1 : 0, airbrake: this.held('airbrake') ? 1 : 0, trim: this.trim, fire, fireEdge };
   }
 }
 

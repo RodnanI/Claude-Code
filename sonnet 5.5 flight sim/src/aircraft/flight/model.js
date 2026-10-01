@@ -1,6 +1,7 @@
 import { quat, attitudeOf } from '../../core/math.js';
 import { clamp, smoothstep, lerp } from '../../core/util.js';
 import { isa, G, RHO0 } from './atmosphere.js';
+import { storesMass } from '../munitions.js';
 
 export const KT = 1.94384;
 export const FT = 3.28084;
@@ -52,7 +53,7 @@ export class FlightModel {
     this.spec = spec;
     if (typeof ground === 'function') { this._gh = (x, z) => ground(x, z).h; this._gs = (x, z) => ground(x, z).name; } else { this._gh = ground.h; this._gs = ground.surface; }
     this.fuel = opts.fuel ?? spec.mass.fuel * spec.fuelDefault;
-    this.payload = opts.payload ?? spec.mass.payload ?? 0;
+    this.payload = opts.payload ?? (spec.mass.payload ?? 0) + storesMass(spec);
     this.pos = new Float64Array([0, 100, 0]);
     this.vel = new Float64Array(3);
     this.q = quat.create();

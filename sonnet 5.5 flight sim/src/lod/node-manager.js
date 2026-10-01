@@ -6,6 +6,7 @@ import { now } from '../core/perf.js';
 import { Rolling } from '../core/perf.js';
 import { NODE_CELLS } from '../world/config.js';
 import { TREE_MAX_LEVEL } from '../world/scatter/scatter.js';
+import { DAMAGE } from '../world/damage.js';
 
 const NONE = 0, PENDING = 1, READY = 2;
 
@@ -22,6 +23,7 @@ export class NodeManager {
     this.inlineWorld = inline ? world : null;
     this.inlineBurst = inlineBurst;
     this.nodes = new Map();
+    this.dirty = new Set();          // nodes that show ground a blast has changed since they were built
     this.epoch = 0;
     this.frame = 0;
     this.inbox = [];
@@ -67,6 +69,7 @@ export class NodeManager {
   flush() {
     for (const n of this.nodes.values()) this._free(n);
     this.nodes.clear();
+    this.dirty.clear();
     this.inbox.length = 0;
     this.epoch++;
   }
@@ -75,6 +78,31 @@ export class NodeManager {
     if (n.gpu) { this.renderer.freeMesh(n.gpu); n.gpu = null; }
     if (n.tex) { this.renderer.freeTex(n.tex); n.tex = null; }
     if (n.batches) { for (const b of n.batches) this.renderer.freeInstances(b); n.batches = null; }
+  }
+
+  /**
+   * A blast was added to DAMAGE. Give the builders the new list and mark every node that can show it for a rebuild; the old
+   * mesh stays on screen until the new one arrives, so the island never shows a hole while it heals.
+   */
+  blast(b) {
+    if (this.pool && !this.pool.inline) this.pool.broadcast({ type: 'damage', list: DAMAGE.list.map((e) => ({ x: e.x, y: e.y, z: e.z, r: e.r, seed: e.seed, kind: e.kind })), rev: DAMAGE.rev });
+    const reach = b.reach;
+    for (const n of this.nodes.values()) {
+      if (n.state === NONE) continue;
+      if (n.x0 > b.x + reach || n.x0 + n.size < b.x - reach || n.z0 > b.z + reach || n.z0 + n.size < b.z - reach) continue;
+      if (n.cell > Math.max(6, b.r * 0.7)) continue;        // too coarse to show a hole this size
+      n.needRev = DAMAGE.rev;
+      this.dirty.add(n);
+    }
+  }
+
+  /** Forget every scar (a fresh flight): rebuild what was marked, nothing else changes. */
+  healAll() {
+    const had = DAMAGE.count > 0;
+    DAMAGE.clear();
+    if (this.pool && !this.pool.inline) this.pool.broadcast({ type: 'damage', list: [], rev: DAMAGE.rev });
+    if (!had) return;
+    for (const n of this.nodes.values()) if (n.state !== NONE && n.builtRev !== DAMAGE.rev && n.hasScar) { n.needRev = DAMAGE.rev; this.dirty.add(n); }
   }
 
   node(level, ix, iz) {
@@ -185,6 +213,7 @@ export class NodeManager {
         });
       }
     }
+    this._rebuildDirty();
     this._evict(frame);
     let pending = 0;
     for (const n of this.nodes.values()) if (n.state === PENDING) pending++;
@@ -197,16 +226,44 @@ export class NodeManager {
     return out;
   }
 
+  /** Ask for new builds of the nodes a blast changed, nearest the camera first, a few at a time. */
+  _rebuildDirty() {
+    if (!this.dirty.size) return;
+    const cand = [];
+    for (const n of this.dirty) {
+      if (n.state === NONE) { this.dirty.delete(n); continue; }
+      if (n.state === READY && !n.rebuilding) cand.push(n);
+    }
+    if (!cand.length) return;
+    cand.sort((a, b) => (a.dist ?? 1e9) - (b.dist ?? 1e9));
+    const cfg = this.cfg;
+    for (let i = 0; i < cand.length && this.pool.capacity > 0; i++) {
+      const n = cand[i];
+      n.rebuilding = true;
+      this.stats.requests++;
+      this.pool.request({
+        id: n.key, epoch: this.epoch, level: n.level, ix: n.ix, iz: n.iz,
+        cfg: { baseCell: cfg.baseCell, ao: cfg.ao, sceneryMaxLevel: cfg.sceneryMaxLevel, sceneryDensity: cfg.sceneryDensity },
+      });
+    }
+  }
+
   _accept({ id, epoch, result }) {
     if (epoch !== this.epoch) return;
     const n = this.nodes.get(id);
     if (!n) return;
-    if (n.state !== PENDING) return;
+    const rebuild = n.state === READY && n.rebuilding;
+    if (n.state !== PENDING && !rebuild) return;
     this.buildMs.push(result.stats.ms);
     const r = this.renderer;
+    if (rebuild) this._free(n);
     if (result.indexCount > 0) n.gpu = r.uploadMesh(result);
     if (result.tnorm) n.tex = r.uploadTex(result.tnorm, NODE_CELLS, NODE_CELLS);
     n.batches = null;
+    n.rebuilding = false;
+    n.builtRev = result.rev || 0;
+    n.hasScar = !!result.scar;
+    if ((n.needRev || 0) > n.builtRev) this.dirty.add(n); else this.dirty.delete(n);
     if (result.instances.length) {
       const list = [];
       for (const inst of result.instances) {
@@ -245,6 +302,8 @@ export class NodeManager {
       if (r.gpuBytes <= this.gpuBudget * 0.9) break;
       this._free(n);
       n.state = NONE;
+      n.rebuilding = false;
+      this.dirty.delete(n);
     }
   }
 

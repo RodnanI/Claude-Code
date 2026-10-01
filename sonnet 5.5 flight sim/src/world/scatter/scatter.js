@@ -20,8 +20,10 @@ const FORESTY = mats(['FOREST_FLOOR', 'PINE_FLOOR']);
 const GRAZING = mats(['GRASS', 'GRASS_LUSH', 'GRASS_DRY', 'MEADOW']);
 
 export class InstanceBuckets {
-  constructor() { this.map = new Map(); }
+  constructor() { this.map = new Map(); this.ox = 0; this.oz = 0; this.reject = null; }
+  /** x and z are local to the node whose corner is (ox, oz); `reject` is asked in world coordinates (blasts take trees and props out). */
   add(type, variant, x, y, z, yaw, scale, tint) {
+    if (this.reject && this.reject(this.ox + x, y, this.oz + z)) return;
     const key = type + ':' + variant;
     let b = this.map.get(key);
     if (!b) this.map.set(key, (b = { type, variant, n: 0, f: new Float32Array(6 * 64), u: null }));

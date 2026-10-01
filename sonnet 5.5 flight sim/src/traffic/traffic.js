@@ -11,6 +11,7 @@ const SIGNAL_RANGE = 300, SIGNAL_MAX = 64, SIGNAL_LEVELS = [0.05, 0.1, 0.2, 0.4]
 const LEVELS = [0.1, 0.2, 0.4, 0.8];
 const IDM = { T: 1.35, s0: 2.2, delta: 4 };
 
+const WRECK_TINT = [0.07, 0.065, 0.06];
 const unpack = (c) => [(c & 255) / 255, ((c >> 8) & 255) / 255, ((c >> 16) & 255) / 255];
 
 /**
@@ -32,6 +33,7 @@ export class TrafficSystem {
     this.sigRecipes = new Map();
     this.sigNodes = [];
     this.pool = [];
+    this.wrecks = [];
     this.active = 0;
     this._near = [];
     this.stats = { count: 0, spawned: 0, culled: 0, stopped: 0 };
@@ -55,6 +57,23 @@ export class TrafficSystem {
   clear() {
     for (const v of this.vehicles) { const i = v.edge.veh.indexOf(v); if (i >= 0) v.edge.veh.splice(i, 1); }
     this.vehicles.length = 0;
+    this.wrecks.length = 0;
+  }
+
+  /** A blast: every vehicle inside the radius is destroyed and left behind as a charred wreck for a while. Returns them. */
+  killNear(x, z, r) {
+    const out = [];
+    for (let i = this.vehicles.length - 1; i >= 0; i--) {
+      const v = this.vehicles[i];
+      const dx = v.x - x, dz = v.z - z;
+      if (dx * dx + dz * dz > r * r) continue;
+      const k = v.edge.veh.indexOf(v); if (k >= 0) v.edge.veh.splice(k, 1);
+      this.vehicles[i] = this.vehicles[this.vehicles.length - 1]; this.vehicles.pop();
+      this.wrecks.push({ def: v.def, variant: v.variant, x: v.x, y: v.y, z: v.z, yaw: v.yaw + dx * 0.05, t: 0 });
+      if (this.wrecks.length > 60) this.wrecks.shift();
+      out.push(v);
+    }
+    return out;
   }
 
   _pickDef(kind) {
@@ -182,6 +201,7 @@ export class TrafficSystem {
       this._place(v, 0);
     }
     this.stats.count = this.vehicles.length; this.stats.stopped = stopped;
+    for (let i = this.wrecks.length - 1; i >= 0; i--) { this.wrecks[i].t += dt; if (this.wrecks[i].t > 90) this.wrecks.splice(i, 1); }
   }
 
   _recipe(def, variant) {
@@ -214,6 +234,22 @@ export class TrafficSystem {
       n++;
       e.mesh = mesh; e.x = v.x; e.y = v.y; e.z = v.z; e.tint = v.tint;
       mat3.fromAxisAngle(e.rot, 0, 1, 0, v.yaw);
+      list.push(e);
+    }
+    for (const w of this.wrecks) {
+      const dx = w.x - px, dz = w.z - pz, dy = w.y - py;
+      const d = Math.hypot(dx, dy, dz);
+      if (d > maxDist) continue;
+      const want = (1.6 * d) / pxPerRad;
+      let cell = LEVELS[0];
+      for (const l of LEVELS) if (l <= want) cell = l;
+      const mesh = this.models.fromRecipe(`veh:${w.def.id}:${w.variant}:${cell}`, this._recipe(w.def, w.variant), cell, { conservative: cell >= 0.3 });
+      if (!mesh || !mesh.gpu) continue;
+      let e = this.pool[n];
+      if (!e) e = this.pool[n] = { mesh: null, x: 0, y: 0, z: 0, rot: new Float64Array(9), tint: [1, 1, 1], noPost: false };
+      n++;
+      e.mesh = mesh; e.x = w.x; e.y = w.y; e.z = w.z; e.tint = WRECK_TINT;
+      mat3.fromAxisAngle(e.rot, 0, 1, 0, w.yaw);
       list.push(e);
     }
     n = this._emitSignals(list, cam, pxPerRad, n, Math.min(maxDist, SIGNAL_RANGE));

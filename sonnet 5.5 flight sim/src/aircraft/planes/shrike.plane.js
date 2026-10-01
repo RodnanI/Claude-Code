@@ -43,7 +43,7 @@ export default defineAircraft({
     { p: [7.0, 0.0, 0], kind: 'nose' }, { p: [-3.2, -0.55, 1.0], kind: 'belly' }, { p: [-3.2, -0.55, -1.0], kind: 'belly' },
   ],
   limits: { vne: 330, maxG: 9, minG: 3, flapSpeed: 120, gearSpeed: 150, gLimiter: true, crashVs: 6 },
-  cameras: { cockpit: [2.75, 0.85, 0], chase: { distance: 26, height: 6 } },
+  cameras: { cockpit: [2.75, 0.85, 0], chase: { distance: 26, height: 6 }, near: { distance: 12.5, height: 3.1 } },
   hud: 'fighter',
   liveries: [
     { id: 'default', name: 'Air superiority gray' },
@@ -55,10 +55,10 @@ export default defineAircraft({
     { id: 'pylonL2', pos: [-1.0, -0.36, -1.6], kind: 'pylon' }, { id: 'pylonR2', pos: [-1.0, -0.36, 1.6], kind: 'pylon' },
   ],
   weapons: [
-    { id: 'cannon', name: 'M-20 20 mm cannon', type: 'gun', ammo: 510, rate: 100, muzzle: [4.4, -0.3, -0.62], speed: 1050, spread: 0.004, damage: 9 },
-    { id: 'seeker', name: 'SW-9 heat seeker', type: 'missile', stations: ['tipL', 'tipR'], lock: 'ir', range: 9000, speed: 700, turn: 0.35, damage: 90 },
-    { id: 'pods', name: '70 mm rocket pod', type: 'rocket', stations: ['pylonL', 'pylonR'], rounds: 19, speed: 600, damage: 25 },
-    { id: 'bombs', name: 'GP-500 bomb', type: 'bomb', stations: ['pylonL2', 'pylonR2'], mass: 227, damage: 400 },
+    { id: 'cannon', name: 'M-20 20 mm cannon', type: 'gun', munition: 'cannon20', ammo: 510, rate: 100, muzzle: [4.4, -0.3, -0.62], spread: 0.004 },
+    { id: 'seeker', name: 'SW-9 heat seeker', type: 'missile', munition: 'aam', stations: ['tipL', 'tipR'], range: 9000 },
+    { id: 'pods', name: '70 mm rocket pod', type: 'rocket', munition: 'hvar', stations: ['pylonL', 'pylonR'], rounds: 19, muzzleX: 1.25, tube: 0.09 },
+    { id: 'bombs', name: 'GP-500 bomb', type: 'bomb', munition: 'mk82', stations: ['pylonL2', 'pylonR2'] },
   ],
   animations: [
     { part: 'flaperonL', type: 'rotate', axis: [0, 0, 1], channel: 'aileron', gain: 0.4 },

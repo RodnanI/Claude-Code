@@ -2,6 +2,8 @@
    .plane.js suffix. Body axes: +x forward, +y up, +z right wing. Every position is in meters relative to the
    center of gravity, which is the body origin. Angles in radians unless a field says degrees. */
 
+import { MUNITIONS, storesMass } from './munitions.js';
+
 const REQUIRED = ['id', 'name', 'mass', 'inertia', 'wing', 'aero', 'propulsion', 'gear', 'model'];
 
 export function defineAircraft(spec) {
@@ -46,11 +48,18 @@ export function validateAircraft(a) {
   if (Math.abs((a.aero.CLmax - a.aero.CL0) / a.aero.CLa - a.aero.alphaStall) > 0.08) err('alphaStall disagrees with (CLmax - CL0) / CLa');
   const stationIds = new Set();
   for (const s of a.stations) { if (stationIds.has(s.id)) err(`duplicate station ${s.id}`); stationIds.add(s.id); }
+  const weaponIds = new Set();
   for (const w of a.weapons) {
     if (!w.id || !w.type) err('weapon needs id and type');
+    if (weaponIds.has(w.id)) err(`duplicate weapon ${w.id}`);
+    weaponIds.add(w.id);
+    if (!['gun', 'rocket', 'missile', 'bomb'].includes(w.type)) err(`weapon ${w.id} has unknown type ${w.type}`);
+    if (w.munition !== undefined && !MUNITIONS[w.munition]) err(`weapon ${w.id} uses unknown munition ${w.munition}`);
+    if (w.type !== 'gun' && !(w.stations && w.stations.length)) err(`weapon ${w.id} needs stations`);
     for (const st of w.stations || []) if (!stationIds.has(st)) err(`weapon ${w.id} uses unknown station ${st}`);
   }
   for (const l of a.liveries) if (!l.id || !l.name) err('livery needs id and name');
 }
 
-export const totalMass = (a, fuelKg = null, payload = null) => a.mass.empty + (fuelKg ?? a.mass.fuel * a.fuelDefault) + (payload ?? a.mass.payload ?? 0);
+/** Loaded mass: the empty aircraft, its fuel, the crew and cargo and everything hanging on its stations. */
+export const totalMass = (a, fuelKg = null, payload = null) => a.mass.empty + (fuelKg ?? a.mass.fuel * a.fuelDefault) + (payload ?? (a.mass.payload ?? 0) + storesMass(a));

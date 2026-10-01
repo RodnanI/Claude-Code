@@ -5,6 +5,7 @@ import { M } from '../voxel/palette.js';
 import { scatterNode, placeProps, InstanceBuckets } from '../world/scatter/scatter.js';
 import { NODE_CELLS } from '../world/config.js';
 import { hashString } from '../core/util.js';
+import { DAMAGE } from '../world/damage.js';
 import { now } from '../core/perf.js';
 
 /**
@@ -35,6 +36,9 @@ export function createNodeBuilder(world) {
       const x0 = ix * size, z0 = iz * size;
       const builder = new MeshBuilder(2048);
       const buckets = new InstanceBuckets();
+      buckets.ox = x0; buckets.oz = z0;
+      const scar = DAMAGE.count > 0 && DAMAGE.touches(x0 - cell, z0 - cell, x0 + size + cell, z0 + size + cell, 30);
+      if (scar) buckets.reject = (x, y, z) => DAMAGE.removes(x, y, z);
       let structures = 0, structQuads = 0;
       let minY = 0, maxY = 0, tnorm = null;
 
@@ -66,6 +70,7 @@ export function createNodeBuilder(world) {
           const anchorY = Math.floor(d.y / cu + 1e-6) * cu;
           const r = rasterize(recipe, { cell: cu, anchor: [d.x, anchorY, d.z], rot: d.rot || 0, yaw: d.yaw || 0, conservative: cu >= 3 || !!(kit && kit.conservative) });
           if (!r) continue;
+          if (DAMAGE.count) DAMAGE.carveVolume(r.vol, r.i0, r.j0, r.k0, cu, d.y);
           const before = builder.quadCount;
           builder.setBank(d.bank !== undefined ? d.bank : (hashString(d.id) >>> 9) & 3);
           meshVolume(r.vol, { ao: cfg.ao && cu <= 2, builder, scale: f, offset: [r.i0 * f - off[0], r.j0 * f, r.k0 * f - off[2]] });
@@ -85,7 +90,7 @@ export function createNodeBuilder(world) {
       const bounds = [b[0] * cell, Math.min(minY, b[1] * cell), b[2] * cell, b[3] * cell, Math.max(maxY, b[4] * cell), b[5] * cell];
       const instances = buckets.finish();
       return {
-        level, ix, iz, cell,
+        level, ix, iz, cell, rev: DAMAGE.rev, scar,
         vertexData: mesh.vertexData, vertexCount: mesh.vertexCount,
         indexData: mesh.indexData, indexCount: mesh.indexCount,
         bounds,

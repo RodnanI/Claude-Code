@@ -71,6 +71,9 @@ export class NodePool {
     best.w.postMessage({ type: 'node', ...req });
   }
 
+  /** Send one message to every worker (the blast list). Inline building shares the page's own list, so it has nothing to do. */
+  broadcast(msg) { for (const r of this.workers) r.w.postMessage(msg); }
+
   /** Main-thread fallback: build queued requests within a time budget (ms). */
   pump(budgetMs) {
     if (!this.inline) return;

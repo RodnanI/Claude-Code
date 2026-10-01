@@ -18,6 +18,8 @@ export class AircraftEntity {
     this.prevQ = quat.create(); this.curQ = quat.create();
     this.pos = new Float64Array(3); this.q = quat.create(); this.rot = mat3.create();
     this.livery = livery;
+    /** Channels the weapons write (stores left on the stations, bay doors, gun barrels): merged over the flight model's every frame. */
+    this.extra = {};
   }
 
   _snap() {
@@ -64,7 +66,9 @@ export class AircraftEntity {
   emit(models, cockpit, { mode = 'external', camPos, pxPerRad = 900, tint } = {}) {
     if (!this.instance) return;
     const dist = camPos ? Math.hypot(this.pos[0] - camPos[0], this.pos[1] - camPos[1], this.pos[2] - camPos[2]) : 0;
-    this.instance.update(this.model.updateChannels());
+    const ch = this.model.updateChannels();
+    Object.assign(ch, this.extra);
+    this.instance.update(ch);
     this.instance.emit(models, cockpit, { pos: this.pos, rot: this.rot, mode, dist, pxPerRad, tint });
   }
 

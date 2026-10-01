@@ -57,8 +57,8 @@ const TABLE = [
   ['RUST', 0x8a4b2d, 0], ['RUST_DARK', 0x5f3522, 0], ['HAY', 0xd1b25a, F], ['TIRE', 0x1c1c1e, N],
   // foliage
   ['LEAF_PINE', 0x2d5a34, F | C], ['LEAF_PINE_L', 0x3b6f3f, F | C], ['LEAF_OAK', 0x4b7f34, F | C], ['LEAF_OAK_L', 0x62963f, F | C],
-  ['LEAF_BIRCH', 0x7fae45, F | C], ['LEAF_AUTUMN', 0xc1782b, F | C], ['LEAF_PALM', 0x3f8a3a, F], ['TRUNK', 0x5b4127, 0],
-  ['TRUNK_BIRCH', 0xd8d4c8, 0], ['BUSH', 0x3f7532, F | C], ['FLOWER_YELLOW', 0xe0b83a, F],
+  ['LEAF_BIRCH', 0x7fae45, F | C], ['SCORCH', 0x211d1a, 0], ['LEAF_PALM', 0x3f8a3a, F], ['TRUNK', 0x5b4127, 0],
+  ['ASH', 0x9a958f, 0], ['BUSH', 0x3f7532, F | C], ['FLOWER_YELLOW', 0xe0b83a, F],
   // lights
   ['LAMP_SODIUM', 0xffb760, E | N], ['LAMP_WHITE', 0xfff4dc, E | N], ['BEACON_RED', 0xff3b2f, E | N], ['RWY_LIGHT_WHITE', 0xfff6e0, E | N],
   ['RWY_LIGHT_GREEN', 0x3fd27a, E | N], ['RWY_LIGHT_RED', 0xff4b3a, E | N], ['RWY_LIGHT_AMBER', 0xffa630, E | N], ['SIGNAL_RED', 0xff2a1f, E | N],
@@ -158,7 +158,7 @@ const BANK_COLORS = {
    olive and snow-dusted for conifers, and a pale birch, dark and weathered trunk. */
 Object.assign(BANK_COLORS, {
   LEAF_OAK: [0xb4632a, 0xc8a13a, 0x34602a], LEAF_OAK_L: [0xd58a36, 0xe2c24c, 0x4b7534], LEAF_BIRCH: [0xe0a63e, 0xa9c852, 0xc48f36],
-  LEAF_AUTUMN: [0xa8442a, 0xd09a30, 0x8a5a2a], LEAF_PINE: [0x2c5560, 0x4a5a2a, 0xc9d4d6], LEAF_PINE_L: [0x3a6a70, 0x5f6e33, 0xdfe6e8],
+  LEAF_PINE: [0x2c5560, 0x4a5a2a, 0xc9d4d6], LEAF_PINE_L: [0x3a6a70, 0x5f6e33, 0xdfe6e8],
   TRUNK: [0xd8d4c8, 0x3a2f26, 0x8c8478], BUSH: [0x5b7a30, 0x8a7a2e, 0x2f5a3a],
   BOULDER: [0x8a7560, 0x5b5955, 0xb9b3a4],
   MEADOW: [0xb9a95c, 0x5c9a3a, 0x9bb04c], GRASS_DRY: [0xb09a52, 0x8a9a48, 0xa48c4c],
@@ -213,7 +213,7 @@ const OVERRIDES = {
   SIGNAL_RED: [0.4, 0, 3.2], SIGNAL_AMBER: [0.4, 0, 3.2], SIGNAL_GREEN: [0.4, 0, 3.2], HEADLIGHT: [0.2, 0, 14], TAILLIGHT: [0.3, 0, 6],
   NEON_ORANGE: [0.3, 0, 4.5], NEON_WHITE: [0.3, 0, 4.5], NAV_RED: [0.3, 0, 9], NAV_GREEN: [0.3, 0, 9], STROBE: [0.3, 0, 20],
   LEAF_PINE: [0.9, 0, null, 0.35], LEAF_PINE_L: [0.9, 0, null, 0.35], LEAF_OAK: [0.85, 0, null, 0.45], LEAF_OAK_L: [0.85, 0, null, 0.5],
-  LEAF_BIRCH: [0.85, 0, null, 0.5], LEAF_AUTUMN: [0.85, 0, null, 0.5], LEAF_PALM: [0.7, 0, null, 0.45], BUSH: [0.9, 0, null, 0.4],
+  LEAF_BIRCH: [0.85, 0, null, 0.5], SCORCH: [0.96, 0, null, null, 0.14], ASH: [0.97, 0, null, null, 0.1], LEAF_PALM: [0.7, 0, null, 0.45], BUSH: [0.9, 0, null, 0.4],
   GRASS: [0.94, 0, null, 0.22], GRASS_LUSH: [0.94, 0, null, 0.25], MEADOW: [0.94, 0, null, 0.22],
   CAR_PAINT: [0.28, 0.15],
   AC_WHITE: [0.3, 0.2], AC_RED: [0.3, 0.2], AC_ORANGE: [0.3, 0.2], AC_YELLOW: [0.3, 0.2], AC_GRAY_LIGHT: [0.32, 0.4], AC_GRAY: [0.34, 0.45], AC_GRAY_DARK: [0.38, 0.4],
