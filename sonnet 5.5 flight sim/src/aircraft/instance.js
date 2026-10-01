@@ -3,6 +3,8 @@ import { mat3 } from '../core/math.js';
 import { M } from '../voxel/palette.js';
 
 const ONE = [1, 1, 1];
+/** Parts drawn only while something is happening: they do not count toward the size of the aircraft. */
+export const TRANSIENT = new Set(['afterburner', 'muzzle']);
 const kitCache = new WeakMap();
 
 /** Parts of an aircraft, built once per aircraft definition. */
@@ -68,7 +70,7 @@ export class AircraftInstance {
     if (this._extent) return this._extent;
     const lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
     for (const p of this.parts) {
-      if (p.group !== 'exterior') continue;
+      if (p.group !== 'exterior' || TRANSIENT.has(p.visibleWhen)) continue;           // flames and muzzle flashes are not part of the airframe
       const b = p.recipe.bounds(0.25);
       if (!b) continue;
       for (let i = 0; i < 3; i++) {

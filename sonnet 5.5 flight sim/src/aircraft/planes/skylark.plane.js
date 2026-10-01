@@ -23,6 +23,7 @@ export default defineAircraft({
   id: 'skylark',
   name: 'Skylark SK-172',
   manufacturer: 'Meridian Aeroworks',
+  category: 'private',
   role: 'Light trainer',
   order: 1,
   difficulty: 1,

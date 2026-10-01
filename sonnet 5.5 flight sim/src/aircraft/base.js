@@ -11,6 +11,7 @@ export function defineAircraft(spec) {
   const a = {
     manufacturer: 'Independent',
     role: 'General aviation',
+    category: 'private',
     description: '',
     voxel: 0.125,
     interiorVoxel: 0.05,
@@ -44,6 +45,7 @@ export function validateAircraft(a) {
   if (!a.gear.wheels || a.gear.wheels.length < 3) err('gear needs at least three wheels');
   if (typeof a.model !== 'function') err('model must be a function');
   if (!(a.difficulty >= 1 && a.difficulty <= 5)) err('difficulty is a rating from 1 to 5');
+  if (!['military', 'private', 'homebuilt'].includes(a.category)) err('category is military, private or homebuilt');
   if (a.propulsion.type !== 'prop' && a.propulsion.type !== 'jet') err('propulsion.type must be prop or jet');
   if (Math.abs((a.aero.CLmax - a.aero.CL0) / a.aero.CLa - a.aero.alphaStall) > 0.08) err('alphaStall disagrees with (CLmax - CL0) / CLa');
   const stationIds = new Set();

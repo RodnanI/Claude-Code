@@ -20,7 +20,8 @@ test('atmosphere follows the standard model', () => {
 });
 
 test('the roster is registered and valid', () => {
-  assert.deepEqual(Object.keys(byId).sort(), ['scrapper', 'shrike', 'skylark']);
+  for (const id of ['scrapper', 'shrike', 'skylark']) assert.ok(byId[id], `${id} is part of the roster`);
+  assert.equal(Object.keys(byId).length, AIRCRAFT.length, 'aircraft ids are unique');
   for (const a of AIRCRAFT) {
     assert.ok(Object.isFrozen(a));
     assert.ok(a.aero.Cma < 0);

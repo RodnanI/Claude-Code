@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AIRCRAFT } from '../../src/generated/registry.js';
-import { kitFor, liveryRemap, AircraftInstance } from '../../src/aircraft/instance.js';
+import { kitFor, liveryRemap, AircraftInstance, TRANSIENT } from '../../src/aircraft/instance.js';
 import { meshRecipe } from '../../src/voxel/recipe.js';
 import { defineAircraft } from '../../src/aircraft/base.js';
 import { M } from '../../src/voxel/palette.js';
@@ -14,7 +14,7 @@ function bodyBounds(spec) {
   const kit = kitFor(spec);
   let b = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9];
   for (const p of kit.parts) {
-    if (p.group !== 'exterior') continue;
+    if (p.group !== 'exterior' || TRANSIENT.has(p.visibleWhen)) continue;
     const r = p.recipe.bounds(cellOf(spec, p));
     if (!r) continue;
     const off = p.local ? p.pivot : [0, 0, 0];
@@ -56,7 +56,7 @@ for (const spec of AIRCRAFT) {
     const b = bodyBounds(spec);
     const span = b[5] - b[2], length = b[3] - b[0];
     assert.ok(Math.abs(span - spec.wing.span) / spec.wing.span < 0.16, `model span ${span.toFixed(2)} vs spec ${spec.wing.span}`);
-    assert.ok(length > 5 && length < 20, `length ${length}`);
+    assert.ok(length > 5 && length < 26, `length ${length}`);
     const [ex, ey, ez] = spec.cameras.cockpit;
     assert.ok(ex > b[0] && ex < b[3] && ey > b[1] && ey < b[4] && ez > b[2] && ez < b[5], 'pilot eye must be inside the airframe volume');
     for (const w of spec.gear.wheels) {

@@ -19,6 +19,7 @@ export default defineAircraft({
   id: 'scrapper',
   name: 'Scrapper B-1',
   manufacturer: "Cousin Earl's Garage",
+  category: 'homebuilt',
   role: 'Bush plane',
   order: 2,
   difficulty: 4,

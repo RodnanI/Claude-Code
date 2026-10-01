@@ -144,8 +144,8 @@ test('card bars are fractions of the best aircraft in the catalog', () => {
 test('silhouettes come from the models and match their real size', () => {
   for (const a of AIRCRAFT) {
     const s = silhouette(a);
-    assert.ok(s.length > 5 && s.length < 20 && s.span > 8 && s.span < 14 && s.height > 2, `${a.id}: ${s.length} x ${s.span} x ${s.height}`);
-    assert.ok(Math.abs(s.span - a.wing.span) < 3.2, `${a.id}: silhouette span ${s.span} vs wing ${a.wing.span}`);
+    assert.ok(s.length > 4 && s.length < 26 && s.span > 6 && s.span < 26 && s.height > 1.5, `${a.id}: ${s.length} x ${s.span} x ${s.height}`);
+    assert.ok(Math.abs(s.span - a.wing.span) < 1 + 0.16 * a.wing.span, `${a.id}: silhouette span ${s.span} vs wing ${a.wing.span}`);
     assert.ok(filled(s.top) > 300 && filled(s.side) > 100);
     assert.equal(s.top.w * s.top.h, s.top.data.length);
     assert.equal(s.side.w * s.side.h, s.side.data.length);

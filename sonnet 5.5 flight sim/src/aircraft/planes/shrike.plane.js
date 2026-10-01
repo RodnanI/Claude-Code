@@ -12,6 +12,7 @@ export default defineAircraft({
   id: 'shrike',
   name: 'Shrike F-9',
   manufacturer: 'Fort Talon Aerospace',
+  category: 'military',
   role: 'Light fighter',
   order: 3,
   difficulty: 5,

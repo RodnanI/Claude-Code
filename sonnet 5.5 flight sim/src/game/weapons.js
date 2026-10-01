@@ -45,6 +45,12 @@ export class Loadout {
   }
 }
 
+/** Show everything that can hang on the aircraft (the hangar and the test scenes have no weapon system). */
+export function showStores(ent) {
+  for (const st of ent.spec.stations) ent.extra['store_' + st.id] = 1;
+  return ent;
+}
+
 /** Rotation matrix (column major, body +x along f, y up) for a model flying along a direction. */
 function alongDir(out, fx, fy, fz) {
   const l = Math.hypot(fx, fy, fz) || 1;

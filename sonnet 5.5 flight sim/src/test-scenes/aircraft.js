@@ -9,6 +9,7 @@ import { WORLD_SEED } from '../world/config.js';
 import { AIRCRAFT } from '../generated/registry.js';
 import { AircraftEntity } from '../game/aircraft-entity.js';
 import { makeGround } from '../game/ground.js';
+import { showStores } from '../game/weapons.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('gl');
@@ -38,12 +39,13 @@ ent.model.input.throttle = +(params.get('throttle') || 0);
 if (params.get('roll')) { ent.model.input.roll = +params.get('roll'); ent.model.c.ail = +params.get('roll'); }
 if (params.get('pitch')) { ent.model.input.pitch = +params.get('pitch'); ent.model.c.elev = +params.get('pitch'); }
 if (params.get('yaw')) { ent.model.input.yaw = +params.get('yaw'); ent.model.c.rud = +params.get('yaw'); }
+if (params.get('stores') !== '0') showStores(ent);
 ent.model.updateChannels();
 if (params.get('prewarm') !== '0') ent.instance.prewarm([0], true);
 
 const cam = renderer.camera;
 // az is measured from the nose: 0 = looking at the nose from the front, 90 = from the pilot's right
-const st = { az: +(params.get('az') || 35), el: +(params.get('el') || 14), dist: +(params.get('dist') || 16), view: params.get('view') || 'external' };
+const st = { az: +(params.get('az') || 35), el: +(params.get('el') || 14), dist: +(params.get('dist') || 16), view: params.get('view') || 'external', ly: +(params.get('lookyaw') || 0), lp: +(params.get('lookpitch') || 0), eye: params.get('eye') ? params.get('eye').split(',').map(Number) : null };
 let last = performance.now(), frames = 0, acc = 0, paused = false;
 function resize() { renderer.resize(innerWidth, innerHeight, +(params.get('dpr') || 1), s.resolutionScale); }
 addEventListener('resize', resize);
@@ -57,15 +59,18 @@ function frame(t) {
   const list = [], cockpit = [];
   cam.fov = ((st.view === 'cockpit' ? +(params.get('cfov') || 85) : +(params.get('fov') || 50)) * Math.PI) / 180;
   if (st.view === 'cockpit') {
-    const e = spec.cameras.cockpit;
+    const e = st.eye || spec.cameras.cockpit;
     const p = ent.worldPoint([0, 0, 0], e[0], e[1], e[2]);
-    const f = ent.worldPoint([0, 0, 0], e[0] + 1, e[1] - +(params.get('down') || 0), e[2] + +(params.get('side') || 0));
+    // look about the body up axis (positive = right) and then up or down
+    const ly = (st.ly * Math.PI) / 180, lp = (st.lp * Math.PI) / 180;
+    const dx = Math.cos(ly) * Math.cos(lp), dy = Math.sin(lp), dz = Math.sin(ly) * Math.cos(lp);
+    const f = ent.worldPoint([0, 0, 0], e[0] + dx, e[1] + dy - +(params.get('down') || 0), e[2] + dz + +(params.get('side') || 0));
     const u = ent.worldPoint([0, 0, 0], e[0], e[1] + 1, e[2]);
     cam.setPose(p[0], p[1], p[2], f[0] - p[0], f[1] - p[1], f[2] - p[2], u[0] - p[0], u[1] - p[1], u[2] - p[2]);
   } else {
     const hd = ((spawn.heading ?? 0) * Math.PI) / 180;
     const az = hd + (st.az * Math.PI) / 180, el = (st.el * Math.PI) / 180;
-    const c = ent.worldPoint([0, 0, 0], 0, 0.4, 0);
+    const c = ent.worldPoint([0, 0, 0], st.tx ?? 0, st.ty ?? 0.4, st.tz ?? 0);
     const x = c[0] + Math.sin(az) * Math.cos(el) * st.dist, y = c[1] + Math.sin(el) * st.dist, z = c[2] - Math.cos(az) * Math.cos(el) * st.dist;
     cam.setPose(x, y, z, c[0] - x, c[1] - y, c[2] - z);
   }

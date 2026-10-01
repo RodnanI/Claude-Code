@@ -22,7 +22,7 @@ import { AmbientSystem } from '../traffic/ambient.js';
 import { Course, formatTime } from './course.js';
 import { TakeoffAssist, ASSIST_LABEL } from './takeoff-assist.js';
 import { Effects } from './effects.js';
-import { WeaponSystem } from './weapons.js';
+import { WeaponSystem, showStores } from './weapons.js';
 import { DAMAGE } from '../world/damage.js';
 
 const STEP = 1 / 240;
@@ -165,6 +165,7 @@ export class Game extends Emitter {
     if (!spec || !start) return;
     this.preview = new AircraftEntity(spec, { ground: this.ground, registry: this.models, livery });
     this.preview.placeOnGround(start.x, start.z, start.heading);
+    showStores(this.preview);
     this.preview.instance.prewarm([0], false);
     this.previewStart = start;
     this.orbitAz = 0.7;

@@ -1,4 +1,4 @@
-import { kitFor } from './instance.js';
+import { kitFor, TRANSIENT } from './instance.js';
 import { rasterize } from '../voxel/recipe.js';
 import { M } from '../voxel/palette.js';
 
@@ -20,7 +20,7 @@ export function silhouette(spec, cell = 0.2) {
   const parts = [];
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
   for (const p of kit.parts) {
-    if (p.group !== 'exterior') continue;
+    if (p.group !== 'exterior' || TRANSIENT.has(p.visibleWhen)) continue;
     const r = rasterize(p.recipe, { cell, conservative: true, maxCells: 6e6 });
     if (!r) continue;
     const ox = p.local ? Math.round(p.pivot[0] / cell) : 0, oy = p.local ? Math.round(p.pivot[1] / cell) : 0, oz = p.local ? Math.round(p.pivot[2] / cell) : 0;
