@@ -66,7 +66,7 @@ export function wingSurface(k, body, name, W, { z0, z1, frac = 0.28, le = false,
 export function loftSurface(k, body, name, { stations, axis = 'y', box, aft, mat, pivot, grow = 0.03, opts = {} }) {
   const tests = new Map();
   const solidAt = (e) => { let t = tests.get(e); if (!t) { t = loftTest(stations, axis, e); tests.set(e, t); } return t; };
-  const coarse = (c) => (c > 0.12 ? c * 0.5 : 0);                 // a thin fin never vanishes at coarse cells
+  const coarse = (c) => (c > 0.06 ? c * 0.5 : 0);                 // a thin fin never vanishes at coarse cells
   body.fn(box[0], box[1], box[2], box[3], box[4], box[5], (x, y, z, c) => (solidAt(grow + coarse(c))(x, y, z) && aft(x, y, z) ? -1 : 0));
   const part = k.part(name, { pivot, ...opts });
   part.fn(box[0], box[1], box[2], box[3], box[4], box[5], (x, y, z, c) => (solidAt(coarse(c))(x, y, z) && aft(x, y, z) ? mat : 0), { thin: true });
