@@ -1,0 +1,307 @@
+# Glossary
+
+Every term you are likely to hear in your first year, in plain words. Where a lesson covers it in depth, the module number is given in brackets, like [3] for `03_ml_foundations`.
+
+## A
+
+- **A/B test**: randomly split users between the current version (A) and a new one (B), then compare a metric statistically. How companies decide to ship. [2, 8]
+- **Accuracy**: share of predictions that are correct. Misleading with imbalanced classes. [3]
+- **Activation (function)**: the non-linear function after a layer (ReLU, GELU, sigmoid). "Activations" also means the values a layer outputs. [6]
+- **Adam / AdamW**: the default optimizers for neural networks; AdamW handles weight decay properly. [6]
+- **Adapter**: a small set of trainable weights added to a frozen model, like LoRA. [7]
+- **Agent**: an LLM in a loop that calls tools and acts on their results until a task is done. [7]
+- **Alignment**: making model behavior match human intentions and values (helpful, honest, harmless). [7]
+- **ANN (approximate nearest neighbor)**: fast, slightly inexact vector search used by vector databases (HNSW, IVF). [7]
+- **Anomaly detection**: finding unusual data points. [4]
+- **API**: an interface for programs to talk to each other; for LLMs, usually an HTTPS endpoint you send JSON to. [7]
+- **Attention**: mechanism that lets each token gather information from other tokens, weighted by relevance. [7]
+- **AUC**: area under a curve; usually ROC AUC, the probability that a random positive is scored above a random negative. [3]
+- **Augmentation**: creating modified training examples (flips, crops, paraphrases) to improve generalization. [6]
+- **Autoencoder**: network trained to reconstruct its input through a narrow bottleneck. [6]
+- **Autograd / automatic differentiation**: computing gradients automatically by recording operations. [6]
+- **Autoregressive**: generating one token at a time, each conditioned on the previous ones. [7]
+
+## B
+
+- **Backpropagation**: computing all gradients of the loss with the chain rule, from the output backwards. [6]
+- **Bagging**: training models on bootstrap samples and averaging them; the idea behind random forests. [4]
+- **Base model**: an LLM after pretraining only; continues text but does not follow instructions well. [7]
+- **Baseline**: the simplest reasonable approach, which every model must beat. [3]
+- **Batch**: a group of examples processed together. Also "batch job": offline processing of many records. [6, 8]
+- **Batch size**: number of examples per training step. [6]
+- **Bayes' theorem**: rule for updating probabilities with evidence; needs the base rate. [2]
+- **Benchmark**: a standard test set for comparing models (MMLU, SWE-bench). [7]
+- **BERT**: an encoder-only transformer, used for classification and embeddings. [7]
+- **Bias (statistical)**: systematic error from wrong assumptions; underfitting. [3]
+- **Bias (fairness)**: systematically worse or unfair outcomes for some groups. [8]
+- **Bias (parameter)**: the constant term `b` added in a layer. [3, 6]
+- **bf16 / fp16 / fp32**: 16- and 32-bit floating point formats. [6, 7]
+- **BM25**: classic keyword-based ranking function for search. [7]
+- **Boosting**: building models sequentially, each correcting the previous ones' errors. [4]
+- **Bootstrap**: resampling with replacement to estimate uncertainty. [2]
+- **BPE (byte pair encoding)**: subword tokenization algorithm that merges frequent pairs. [7]
+
+## C
+
+- **Calibration**: whether predicted probabilities match observed frequencies. [3]
+- **Canary release**: sending a small share of traffic to a new model before full rollout. [8]
+- **Catastrophic forgetting**: a model losing earlier abilities when trained on something new. [7]
+- **Categorical feature**: a feature with a fixed set of values (country, plan). [5]
+- **Chain of thought**: intermediate reasoning written out before an answer. [7]
+- **Chain rule**: derivative of a composition equals the product of derivatives. [2]
+- **Chat template**: the special-token format that turns a list of messages into one token sequence. [7]
+- **Checkpoint**: saved model weights (and optimizer state) at a point in training. [6]
+- **Chunking**: splitting documents into pieces for retrieval. [7]
+- **Class imbalance**: one class much rarer than others. [3, 5]
+- **Classification**: predicting a category. [3]
+- **Clustering**: grouping similar examples without labels. [4]
+- **CNN (convolutional neural network)**: network that slides learned filters over grids like images. [6]
+- **Cold start**: no history yet for a new user or item. [8]
+- **Concept drift**: the relationship between inputs and the target changes over time. [8]
+- **Confusion matrix**: table of true/false positives/negatives. [3]
+- **Context window**: maximum number of tokens an LLM can consider at once. [7]
+- **Contrastive learning**: training embeddings by pulling related pairs together and pushing unrelated ones apart. [7]
+- **Cosine similarity**: similarity of two vectors' directions, from -1 to 1. [2, 7]
+- **Cross-entropy**: loss for classification and language modeling; minus the log probability of the correct answer. [2, 3]
+- **Cross-validation**: rotating validation folds to estimate performance robustly. [3]
+- **CUDA**: NVIDIA's platform for GPU computing; "on cuda" means running on an NVIDIA GPU. [6]
+
+## D
+
+- **Data drift (covariate shift)**: the input distribution changes over time. [8]
+- **Data leakage**: information unavailable at prediction time sneaking into training or evaluation. [3]
+- **Data pipeline**: automated steps that move and transform data. [8]
+- **Decision tree**: model of nested if/else rules learned from data. [4]
+- **Decoder-only**: transformer that generates left to right with causal attention (GPT style). [7]
+- **Deep learning**: machine learning with multi-layer neural networks. [6]
+- **Diffusion model**: generative model that learns to remove noise step by step. [6]
+- **Distillation**: training a small model to imitate a larger one. [7]
+- **Dot product**: sum of elementwise products; a weighted sum or a similarity. [2]
+- **DPO (direct preference optimization)**: training on preference pairs without a separate reward model. [7]
+- **Dropout**: randomly zeroing activations during training as regularization. [6]
+
+## E
+
+- **Early stopping**: ending training when validation performance stops improving. [3, 6]
+- **Effort (reasoning effort)**: API setting that controls how much a model thinks before answering. [7]
+- **Embedding**: learned dense vector representing a token, text, item or user. [7]
+- **Encoder**: the part of a model that turns input into representations; encoder-only models (BERT) read in both directions. [7]
+- **Ensemble**: combining several models' predictions. [4]
+- **Entropy**: average uncertainty (surprise) of a distribution. [2]
+- **Epoch**: one full pass over the training data. [2, 6]
+- **Evaluation set / eval**: data and graders used to measure a system; "evals" in LLM work. [7]
+- **Explainability**: methods to understand why a model predicts what it does (SHAP, permutation importance). [8]
+- **Exploding gradients**: gradients growing uncontrollably through layers. [6]
+
+## F
+
+- **F1 score**: harmonic mean of precision and recall. [3]
+- **Feature**: an input variable to a model. [3]
+- **Feature engineering**: creating informative features from raw data. [5]
+- **Feature importance**: how much a model relies on each feature. [4]
+- **Feature store**: system that defines features once and serves them consistently for training and production. [8]
+- **Few-shot prompting**: including examples in the prompt. [7]
+- **Fine-tuning**: continuing training of a pretrained model on specific data. [7]
+- **FlashAttention**: fast, memory-efficient exact attention implementation. [7]
+- **FLOPs**: floating point operations; a measure of compute. [7]
+- **Foundation model**: large model pretrained on broad data, adapted to many tasks. [7]
+
+## G
+
+- **GAN (generative adversarial network)**: generator and discriminator trained against each other. [6]
+- **Generalization**: performance on new, unseen data. [3]
+- **GGUF**: file format for quantized models used by llama.cpp and Ollama. [7]
+- **Gini impurity**: how mixed the classes in a node are; used to choose tree splits. [4]
+- **GPU**: graphics processor; thousands of cores that make matrix math fast. [6]
+- **GQA (grouped-query attention)**: query heads share key/value heads to shrink the KV cache. [7]
+- **Gradient**: vector of partial derivatives; points uphill on the loss. [2]
+- **Gradient boosting**: boosting where each tree fits the gradient of the loss (XGBoost, LightGBM, CatBoost). [4]
+- **Gradient clipping**: capping gradient size to prevent instability. [6]
+- **Gradient descent**: repeatedly stepping parameters against the gradient. [2]
+- **Ground truth**: the real, correct labels. [3]
+- **Guardrails**: checks on LLM inputs and outputs to enforce policies. [8]
+
+## H
+
+- **Hallucination**: fluent but false or unsupported model output. [7]
+- **Head (attention head)**: one of several parallel attention computations in a layer. [7]
+- **Hidden layer / hidden state**: internal layers and their output vectors. [6]
+- **HNSW**: graph-based index for approximate nearest neighbor search. [7]
+- **Holdout set**: data kept aside for evaluation. [3]
+- **Hybrid search**: combining keyword and vector search. [7]
+- **Hyperparameter**: a setting chosen before training (learning rate, depth). [3]
+- **Hyperparameter tuning**: searching for good hyperparameters (grid, random, Bayesian search). [5]
+
+## I
+
+- **Imputation**: filling in missing values. [5]
+- **Inductive bias**: assumptions built into a model architecture. [6]
+- **Inference**: using a trained model to make predictions. [3, 7]
+- **In-context learning**: an LLM learning a task from examples in the prompt, without weight updates. [7]
+- **Instruction tuning / SFT**: fine-tuning on instruction-response pairs. [7]
+- **Interpretability**: how well humans can understand a model's internals or decisions. [8]
+
+## J-K
+
+- **Jailbreak**: a prompt designed to bypass a model's safety behavior. [8]
+- **JSON schema**: a specification of JSON structure; used for structured outputs and tool inputs. [7]
+- **k-fold**: cross-validation with k folds. [3]
+- **k-means**: clustering by iteratively assigning points to the nearest of k centroids. [4]
+- **kNN (k-nearest neighbors)**: predict from the k most similar training examples. [4]
+- **KL divergence**: how one probability distribution differs from another. [2]
+- **KV cache**: stored attention keys and values reused during generation. [7]
+
+## L
+
+- **Label**: the target value to predict. [3]
+- **Latency**: time to respond; report p50/p95/p99. [8]
+- **Layer normalization (LayerNorm) / RMSNorm**: normalizing activations per example; standard in transformers. [6, 7]
+- **Learning rate**: step size of gradient descent; the most important hyperparameter. [2, 6]
+- **Learning rate schedule**: changing the learning rate during training (warmup, cosine decay). [6]
+- **Lexical search**: keyword matching search such as BM25. [7]
+- **Linear regression**: predicting a number as a weighted sum of features. [3]
+- **LLM (large language model)**: a large transformer trained to predict text. [7]
+- **LLM-as-judge**: using a model to grade outputs against a rubric. [7]
+- **Logistic regression**: linear classifier with a sigmoid output. [3]
+- **Logits**: raw scores before softmax or sigmoid. [2, 6]
+- **LoRA**: fine-tuning by learning a low-rank update while freezing original weights. [7]
+- **Loss function**: number measuring how wrong a model is; training minimizes it. [3]
+
+## M
+
+- **MAE / MSE / RMSE**: mean absolute error / mean squared error / its square root. [3]
+- **Matrix multiplication**: the core operation of neural networks. [2]
+- **MCP (Model Context Protocol)**: open standard for connecting AI applications to tools and data sources. [7]
+- **Mini-batch**: a small batch used for one gradient step. [2]
+- **Mixed precision**: training with 16-bit math plus 32-bit master weights. [6]
+- **MLE (maximum likelihood estimation)**: choosing parameters that make observed data most probable. [2]
+- **MLOps**: practices for deploying, monitoring and maintaining ML systems. [8]
+- **MLP (multilayer perceptron)**: stack of fully connected layers with activations. [6]
+- **Model card**: documentation of a model's purpose, data, performance and limits. [5, 8]
+- **Model registry**: store of model versions with metadata and stages. [8]
+- **Monitoring**: watching system, data and model metrics in production. [8]
+- **MoE (mixture of experts)**: layers with many expert networks, a few active per token. [7]
+- **Multi-head attention**: several attention heads in parallel. [7]
+- **Multimodal**: handling several data types such as text and images. [6]
+
+## N
+
+- **Naive Bayes**: probabilistic classifier assuming feature independence. [4]
+- **NDCG / MRR / recall@k**: ranking and retrieval metrics. [3, 7]
+- **Neural network**: layers of weighted sums and non-linearities trained by gradient descent. [6]
+- **Next-token prediction**: the training objective of LLMs. [7]
+- **NLL (negative log-likelihood)**: the loss form of maximum likelihood. [2]
+- **Normalization (data)**: scaling features to comparable ranges. [5]
+- **NumPy**: Python's array library. [1]
+
+## O
+
+- **Objective**: what training optimizes, usually the loss. [3]
+- **Offline vs online metrics**: computed on held-out data vs measured on live users. [3]
+- **One-hot encoding**: a 0/1 column per category. [5]
+- **Open-weight model**: a model whose weights are downloadable. [7]
+- **Optimizer**: algorithm that updates weights from gradients (SGD, Adam). [6]
+- **Outlier**: a value far from the rest. [5]
+- **Overfitting**: learning noise in training data; good training, poor generalization. [3]
+
+## P
+
+- **pandas**: Python library for tables (DataFrames). [1]
+- **Parameter**: a learned number inside a model. [3]
+- **PCA**: projecting data onto directions of greatest variance. [4]
+- **PEFT (parameter-efficient fine-tuning)**: methods like LoRA that train few parameters. [7]
+- **Perplexity**: exp of the average cross-entropy; lower means better text prediction. [2, 7]
+- **Pipeline (scikit-learn)**: chained preprocessing and model steps fitted together. [5]
+- **Positional encoding / embedding**: information about token positions added to a transformer. [7]
+- **Precision**: of the predicted positives, the share that are correct. [3]
+- **Prefill / decode**: processing the prompt in parallel / generating tokens one by one. [7]
+- **Pretraining**: the large initial training phase of a foundation model. [7]
+- **Prompt**: the input text given to an LLM. [7]
+- **Prompt caching**: reusing a processed prompt prefix for cheaper, faster requests. [7]
+- **Prompt engineering**: designing and testing prompts systematically. [7]
+- **Prompt injection**: malicious instructions hidden in content an LLM processes. [7, 8]
+- **PSI (population stability index)**: a drift measure comparing two distributions. [8]
+- **p-value**: probability of a result at least this extreme if there were no real effect. [2]
+- **PyTorch**: the main deep learning library. [6]
+
+## Q-R
+
+- **Quantization**: storing numbers with fewer bits (int8, int4). [7]
+- **Query / key / value**: the three vectors each token produces in attention. [7]
+- **RAG (retrieval-augmented generation)**: retrieving documents and adding them to the prompt. [7]
+- **Random forest**: bagged decision trees with random feature subsets. [4]
+- **Rate limit**: cap on API requests or tokens per time window (HTTP 429). [7]
+- **Reasoning model**: an LLM trained to think through problems before answering. [7]
+- **Recall (sensitivity, TPR)**: of the actual positives, the share found. [3]
+- **Red teaming**: deliberately attacking a system to find weaknesses. [7, 8]
+- **Regression**: predicting a number. [3]
+- **Regularization**: techniques that discourage overfitting (L1, L2, dropout). [3]
+- **Reinforcement learning (RL)**: learning from rewards for actions. [3, 7]
+- **Reranker**: a model that reorders retrieved results more accurately. [7]
+- **Residual connection**: adding a layer's input to its output (`x + f(x)`). [6, 7]
+- **Reward model**: a model trained to predict human preferences. [7]
+- **Reward hacking**: optimizing a proxy reward in unintended ways. [7]
+- **RLHF**: reinforcement learning from human feedback. [7]
+- **ROC curve**: true positive rate vs false positive rate across thresholds. [3]
+- **RoPE (rotary position embedding)**: position method used by most modern LLMs. [7]
+
+## S
+
+- **Sampling (decoding)**: choosing the next token from probabilities (temperature, top-k, top-p). [7]
+- **Scaling laws**: predictable improvement with more parameters, data and compute. [7]
+- **scikit-learn**: the standard Python library for classical ML. [5]
+- **Self-attention**: attention where queries, keys and values come from the same sequence. [7]
+- **Self-supervised learning**: labels come from the data itself, like the next word. [3]
+- **Semantic search**: search by meaning using embeddings. [7]
+- **SGD (stochastic gradient descent)**: gradient descent on random examples or mini-batches. [2]
+- **Shadow deployment**: running a new model on live traffic without using its outputs. [8]
+- **SHAP**: method attributing each prediction to feature contributions. [4, 8]
+- **Sigmoid**: function squashing numbers into 0 to 1. [3]
+- **Slice**: a subgroup of data used to check performance (country, device). [3]
+- **Softmax**: turns logits into probabilities summing to 1. [2]
+- **Speculative decoding**: a small model drafts tokens, a big model verifies them. [7]
+- **Stop reason**: why an LLM stopped generating (finished, hit max tokens, tool call, refusal). [7]
+- **Stratified split**: a split that keeps class proportions equal. [3]
+- **Streaming**: receiving output tokens as they are generated. [7]
+- **Structured output**: model output constrained to a schema, often JSON. [7]
+- **Supervised learning**: learning from labeled examples. [3]
+- **SVD**: matrix factorization into rotate, stretch, rotate; basis of PCA and low-rank ideas. [2]
+- **SVM (support vector machine)**: max-margin classifier, optionally with kernels. [4]
+- **System prompt**: instructions that frame an LLM conversation. [7]
+
+## T
+
+- **Target encoding**: replacing a category with the average label for it (leakage risk). [5]
+- **Teacher forcing**: training on true previous tokens rather than the model's own outputs. [7]
+- **Temperature**: scaling of logits before sampling; higher is more random. [7]
+- **Tensor**: an n-dimensional array. [2, 6]
+- **Test set**: data used once for the final performance estimate. [3]
+- **Threshold**: cutoff turning a probability into a decision. [3]
+- **Throughput**: work done per unit of time (requests or tokens per second). [7, 8]
+- **Token**: a unit of text an LLM processes, often a subword. [7]
+- **Tokenizer**: converts text to token ids and back. [7]
+- **Tool use / function calling**: an LLM requesting your code to run a function. [7]
+- **Top-k / top-p (nucleus)**: sampling only from the k most likely tokens / the smallest set covering probability p. [7]
+- **Training-serving skew**: features computed differently in training and production. [8]
+- **Transfer learning**: reusing a model trained on one task for another. [6]
+- **Transformer**: architecture built from attention and MLP blocks; the basis of LLMs. [7]
+- **TTFT (time to first token)**: latency until the first output token. [7]
+
+## U-Z
+
+- **Underfitting**: model too simple; poor on training and new data. [3]
+- **Unsupervised learning**: finding structure without labels. [3]
+- **Validation set**: data for tuning and model selection. [3]
+- **Vanishing gradients**: gradients shrinking toward zero through layers. [6]
+- **Variance (model)**: sensitivity to the particular training data; overfitting. [3]
+- **Vector database**: storage with fast similarity search over embeddings. [7]
+- **Vectorization**: replacing Python loops with array operations. [1]
+- **Vision transformer (ViT)**: transformer applied to image patches. [6]
+- **vLLM**: popular high-throughput LLM serving engine. [7]
+- **Warmup**: gradually increasing the learning rate at the start of training. [6]
+- **Weight**: a learned parameter multiplying an input. [3]
+- **Weight decay**: penalty that shrinks weights, similar to L2 regularization. [6]
+- **Weight tying**: sharing the input embedding and output layer matrices. [7]
+- **word2vec**: early method for learning word embeddings. [7]
+- **XGBoost / LightGBM / CatBoost**: leading gradient boosting libraries. [4]
+- **Zero-shot**: performing a task with instructions but no examples. [7]
