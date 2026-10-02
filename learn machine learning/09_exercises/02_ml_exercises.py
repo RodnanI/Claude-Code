@@ -5,8 +5,8 @@ How to work:
   1. Replace each `raise NotImplementedError` with your own code.
   2. Run:  python 02_ml_exercises.py
   3. The checks print PASS / FAIL / TODO for every function. FAIL messages tell you what went wrong.
-Stuck for more than 30 minutes on one function? Read its solution in solutions/, close the file,
-and write it again from memory. Copying teaches nothing; rewriting does.
+If you are stuck on one function for more than 30 minutes, read its solution in solutions/,
+close the file and write it again from memory.
 """
 
 import numpy as np

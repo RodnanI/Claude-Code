@@ -1,8 +1,8 @@
 # Python Beyond the Basics
 
-You know loops and dictionaries. ML code uses a specific set of extra Python features constantly. This is that set, nothing more. Run `02_python_practice.py` alongside this file.
+You know loops and dictionaries. ML code leans on a handful of further Python features, and this file covers only those. Run `02_python_practice.py` alongside it.
 
-## 1. Functions, properly
+## 1. Functions
 
 ```python
 def train(data, learning_rate=0.01, epochs=10, verbose=False):
@@ -13,11 +13,9 @@ def train(data, learning_rate=0.01, epochs=10, verbose=False):
 w, losses = train(data, epochs=50)   # keyword arguments: order does not matter
 ```
 
-- **Default arguments** are how libraries offer hundreds of options without forcing you to set them. `RandomForestClassifier()` has around 20 parameters with defaults.
-- **Keyword arguments** (`epochs=50`) make calls readable. Use them for anything that is not obvious.
-- **Return a tuple, unpack it**: `n_rows, n_cols = X.shape` is the same idea. You will see this on every page of ML code.
+Default arguments let libraries offer hundreds of options without forcing you to set them; `RandomForestClassifier()` has around 20 parameters with defaults. Keyword arguments (`epochs=50`) make calls readable, so use them whenever the meaning is not obvious. Returning a tuple and unpacking it, as in `n_rows, n_cols = X.shape`, appears on nearly every page of ML code.
 
-Gotcha: never use a mutable default like `def f(history=[])`. The same list is shared across calls. Use `history=None` and create the list inside.
+One trap: do not use a mutable default like `def f(history=[])`, because every call shares the same list. Use `history=None` and create the list inside.
 
 ## 2. Comprehensions
 
@@ -28,7 +26,7 @@ word_lengths = {w: len(w) for w in words}            # dict comprehension
 vocab = {ch: i for i, ch in enumerate(sorted(set(text)))}   # you will write this in the LLM labs
 ```
 
-A comprehension is a loop that builds a collection. Read it right to left: "for each x in numbers, if x is even, keep x".
+A comprehension is a loop that builds a collection. Read `[x for x in numbers if x % 2 == 0]` as "for each x in numbers, if x is even, keep x".
 
 ## 3. enumerate, zip, sorted, min and max with key
 
@@ -41,7 +39,7 @@ ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)   # sort dic
 best_model = max(results, key=lambda r: r["accuracy"])
 ```
 
-`lambda kv: kv[1]` is a tiny unnamed function. `key=` tells sorting what to compare. You will sort "which model was best" and "which tokens are most likely" all the time.
+`lambda kv: kv[1]` is a small unnamed function, and `key=` tells the sort what to compare. You will use this to find the best model or the most likely tokens.
 
 ## 4. Slicing
 
@@ -56,9 +54,9 @@ a[::2]    # every second element
 
 NumPy and PyTorch use the same syntax, extended to many dimensions: `X[:, 0]` is "all rows, column 0".
 
-## 5. Classes: why every model is an object
+## 5. Classes
 
-A model has **state** (its learned numbers) and **behavior** (train, predict). A class bundles both.
+A model has state (its learned numbers) and behavior (train, predict), and a class holds both.
 
 ```python
 class MeanPredictor:
@@ -77,12 +75,9 @@ model.fit([3, 5, 7])
 model.predict(2)    # [5.0, 5.0]
 ```
 
-That is literally the scikit-learn API: create, `fit`, `predict`. Once you understand this class you understand the shape of every scikit-learn model.
+This is the scikit-learn pattern: create, `fit`, `predict`. Every scikit-learn model follows it.
 
-Two more class features you will meet in PyTorch:
-
-- **Inheritance**: `class MyNet(nn.Module):` means "my class is a kind of `nn.Module` and gets all its behavior for free".
-- **`__call__`**: lets an object be called like a function. In PyTorch you write `output = model(x)`, which calls `model.__call__(x)`, which calls your `forward` method.
+PyTorch adds two more class features. With inheritance, `class MyNet(nn.Module):` says your class is a kind of `nn.Module` and picks up its behavior. With `__call__`, an object can be called like a function, so `output = model(x)` calls `model.__call__(x)`, which calls your `forward` method.
 
 ## 6. Modules and imports
 
@@ -93,18 +88,18 @@ import matplotlib.pyplot as plt      # always plt
 from sklearn.linear_model import LogisticRegression
 ```
 
-Use the standard aliases. Writing `import numpy as numpy_lib` makes coworkers stare.
+Stick to the standard aliases; anything else confuses coworkers.
 
 ```python
 if __name__ == "__main__":
     main()
 ```
 
-This means "run `main()` only when this file is run directly, not when it is imported". Every script in this course ends this way. Production code does too.
+This runs `main()` only when the file is executed directly and not when it is imported. Every script in this course ends this way.
 
 ## 7. Errors and tracebacks
 
-When something breaks, Python prints a traceback. **Read it from the bottom up.** The last line is the actual error. The lines above show the chain of calls that led there. Find the last line that points to *your* file: that is usually where the bug is.
+When something breaks, Python prints a traceback. Read it from the bottom up. The last line is the actual error and the lines above show the chain of calls that led to it. The last line that points into your own file is usually where the bug is.
 
 ```python
 try:
@@ -163,11 +158,11 @@ import numpy as np
 rng = np.random.default_rng(42)     # the modern NumPy way
 ```
 
-Reproducibility is a professional requirement. "It worked on my machine once" is not a result.
+Results you cannot reproduce do not count at work.
 
 ## 11. *args and **kwargs
 
-You will read these in library code daily.
+Library code uses these all the time.
 
 ```python
 def log(*args, **kwargs):
@@ -178,7 +173,7 @@ config = {"learning_rate": 0.01, "epochs": 5}
 train(data, **config)     # unpack a dict into keyword arguments
 ```
 
-`**config` is how people pass a config dict straight into a model. Very common.
+`**config` passes a config dict straight into a function or model.
 
 ## 12. Generators and yield
 
@@ -203,16 +198,16 @@ print(a)       # [1, 2, 3, 4]   surprise
 c = a.copy()   # a real copy
 ```
 
-NumPy has the same trap with "views": slicing an array does not copy it. Changing the slice changes the original. Covered in the NumPy lab.
+NumPy has the same trap with views: slicing an array does not copy it, so changing the slice changes the original. The NumPy lab covers this.
 
-## 14. Type hints (read them, use them lightly)
+## 14. Type hints
 
 ```python
 def accuracy(y_true: list[int], y_pred: list[int]) -> float:
     ...
 ```
 
-Python ignores them at runtime. They document what goes in and out, and editors use them to catch mistakes. Library code is full of them.
+Python ignores them at runtime. They document inputs and outputs, and editors use them to catch mistakes. You will read plenty of them in library code and can add them sparingly in your own.
 
 ## 15. Timing code
 
@@ -223,15 +218,8 @@ slow_function()
 print(f"took {time.perf_counter() - start:.3f}s")
 ```
 
-You will use this to see why NumPy is 100 times faster than loops.
+The NumPy lab uses this to show that vectorized code runs about 100 times faster than loops.
 
-## Checklist before moving on
+## Before moving on
 
-You are ready for NumPy if you can, without looking:
-
-- write a function with default arguments that returns two values, and unpack them
-- turn a loop that builds a list into a comprehension
-- sort a dict by its values
-- write a small class with `__init__`, `fit` and `predict`
-- read a traceback and find the line in your code that failed
-- print a float with 3 decimals and a percentage with 1 decimal
+You are ready for NumPy if you can do these without looking anything up: write a function with default arguments that returns two values and unpack them; turn a list-building loop into a comprehension; sort a dict by its values; write a small class with `__init__`, `fit` and `predict`; find the failing line of your own code in a traceback; and print a float to 3 decimals and a percentage to 1.

@@ -1,13 +1,13 @@
 # Inference, Serving and Efficiency
 
-Training happens once. **Inference** (running the model to produce outputs) happens millions of times, so in production it dominates cost and decides user experience. This file explains where the time and money go and the tricks used to cut both. Whether you call APIs or host open models, these ideas explain latency numbers, pricing and design choices.
+Training happens once, while inference (running the model to produce outputs) happens millions of times, so in production it dominates cost and decides the user experience. This file explains where the time and money go and how to reduce both. Whether you call APIs or host open models, these ideas explain latency numbers, pricing and design choices.
 
 ## Two phases of every request
 
-1. **Prefill**: the whole prompt is processed in one parallel pass, filling the KV cache (below). Lots of matrix multiplication, so it is **compute-bound**. Its duration drives **time to first token (TTFT)**, and it grows with prompt length.
-2. **Decode**: output tokens are generated one at a time, each requiring a full forward pass for just one new token. Each step must read all the model weights from memory to do very little math, so decode is **memory-bandwidth-bound**. It drives **tokens per second**.
+1. Prefill: the whole prompt is processed in one parallel pass that fills the KV cache (below). This is mostly matrix multiplication, so it is compute-bound. Its duration drives time to first token (TTFT) and grows with prompt length.
+2. Decode: output tokens are generated one at a time, each needing a full forward pass for one new token. Every step must read all the model weights from memory to do very little math, so decode is memory-bandwidth-bound. It drives tokens per second.
 
-A rough upper bound for single-stream decode speed: `memory bandwidth / bytes of weights`. A 7B model in bf16 is 14 GB; a GPU with about 3.3 TB/s of bandwidth can read it at most ~235 times per second, so at most ~235 tokens/s for one stream, before any overhead. This is why quantization (fewer bytes) speeds up generation, and why batching many users together (reading the weights once for many sequences) is how servers get efficient.
+A rough upper bound for single-stream decode speed is `memory bandwidth / bytes of weights`. A 7B model in bf16 is 14 GB, and a GPU with about 3.3 TB/s of bandwidth can read it at most about 235 times per second, so one stream gets at most about 235 tokens/s before any overhead. This is why quantization (fewer bytes) speeds up generation, and why servers batch many users together, reading the weights once for many sequences.
 
 ## The KV cache
 
@@ -15,33 +15,19 @@ In attention, every new token needs the keys and values of all previous tokens. 
 
 Size per token = `2 (K and V) x layers x KV heads x head size x bytes`.
 
-Example, a 7B-class model with 32 layers, 32 KV heads of size 128, in bf16: 2 x 32 x 32 x 128 x 2 bytes = **524 KB per token**. A 4,000-token conversation needs about 2 GB of cache for that one sequence. Long contexts and many concurrent users make the KV cache, not the weights, the main memory problem.
+Take a 7B-class model with 32 layers and 32 KV heads of size 128, in bf16: 2 x 32 x 32 x 128 x 2 bytes = 524 KB per token. A 4,000-token conversation needs about 2 GB of cache for that one sequence. With long contexts and many concurrent users, the KV cache and not the weights becomes the main memory problem.
 
-Fixes you will hear about:
-
-- **Grouped-query attention (GQA)**: many query heads share a few KV heads (say 8 instead of 32), so the cache is 4x smaller. Standard in modern models.
-- **KV cache quantization**: store the cache in 8 or 4 bits.
-- **PagedAttention** (from vLLM): manage cache memory in pages, like an operating system, so it is not wasted on fragmentation.
-- **Prefix caching**: if many requests share a prefix (the same system prompt or document), compute its KV cache once and reuse it. This is what makes API **prompt caching** cheaper and faster.
-- **Sliding-window attention**: some layers only keep the most recent N tokens.
+Several techniques reduce it. Grouped-query attention (GQA) has many query heads share a few KV heads, say 8 instead of 32, making the cache 4x smaller, and it is standard in modern models. KV cache quantization stores the cache in 8 or 4 bits. PagedAttention (from vLLM) manages cache memory in pages like an operating system, so fragmentation does not waste it. Prefix caching computes the KV cache once when many requests share a prefix, such as the same system prompt or document, and reuses it; this is what makes API prompt caching cheaper and faster. Sliding-window attention keeps only the most recent N tokens in some layers.
 
 ## Batching
 
-A GPU serving one user at a time is mostly idle during decode. Servers batch requests:
+A GPU serving one user at a time is mostly idle during decode, so servers batch requests. Static batching waits for a batch and runs it to completion, which is simple but wasteful because short requests wait for long ones. Continuous (in-flight) batching lets requests join and leave the batch at every step, which gives much higher throughput and is standard in modern serving engines.
 
-- **Static batching**: wait for a batch, run it to completion. Simple, wasteful (short requests wait for long ones).
-- **Continuous (in-flight) batching**: requests join and leave the batch at every step. Much higher throughput. Standard in modern serving engines.
-
-The tradeoff: bigger batches raise **throughput** (tokens per second across all users, so lower cost per token) but can raise **latency** for each user. Product requirements decide the balance.
+Bigger batches raise throughput, meaning tokens per second across all users and so a lower cost per token, but can raise latency for each user. Product requirements decide the balance.
 
 ## Making each token cheaper
 
-- **Quantization** (file 20): 8-bit or 4-bit weights; fp8 compute on recent GPUs.
-- **FlashAttention**: exact attention computed in fast on-chip memory tiles, avoiding the giant T x T matrix.
-- **Kernel fusion and compilation** (`torch.compile`, TensorRT): fewer, bigger GPU operations.
-- **Speculative decoding**: a small fast "draft" model proposes several tokens; the big model checks them all in one parallel pass and keeps the ones it agrees with. When the draft is often right, generation runs 2-3x faster with mathematically the same output distribution.
-- **Mixture of experts**: only a few experts run per token, so compute per token is small relative to total parameters; but all experts must sit in memory.
-- **Distillation**: train a smaller model to imitate the big one on your task.
+Quantization (file 20) uses 8-bit or 4-bit weights, with fp8 compute on recent GPUs. FlashAttention computes exact attention in fast on-chip memory tiles and avoids the giant T x T matrix. Kernel fusion and compilation (`torch.compile`, TensorRT) produce fewer, bigger GPU operations. Speculative decoding has a small, fast draft model propose several tokens, and the big model checks them all in one parallel pass and keeps those it agrees with; when the draft is often right, generation runs 2-3x faster with mathematically the same output distribution. Mixture of experts runs only a few experts per token, so compute per token is small relative to the total parameters, though all experts must sit in memory. Distillation trains a smaller model to imitate the big one on your task.
 
 ## Serving software you will meet
 
@@ -67,23 +53,25 @@ Most expose an HTTP API similar to the commercial ones, so application code chan
 | customization | prompts, some fine-tuning | anything, including weights |
 | latency | network + provider queue | controllable, can be very low on dedicated hardware |
 
-Plenty of companies do both: APIs for complex, low-volume tasks; small self-hosted or fine-tuned models for high-volume simple tasks.
+Many companies do both, using APIs for complex, low-volume tasks and small self-hosted or fine-tuned models for high-volume simple ones.
 
-## Cost levers for API users (in rough order of impact)
+## Cost levers for API users
 
-1. Pick the smallest model that passes your eval, and the lowest effort or thinking level that does.
-2. Shorten prompts: fewer retrieved chunks, compact instructions, no repeated boilerplate.
+In rough order of impact:
+
+1. Pick the smallest model that passes your eval, at the lowest effort or thinking level that passes.
+2. Shorten prompts with fewer retrieved chunks, compact instructions and no repeated boilerplate.
 3. Cache stable prefixes (prompt caching).
-4. Cap and shape outputs: `max_tokens`, concise formats, structured outputs instead of prose.
-5. Batch API for anything not interactive (about half price).
-6. Route: cheap model first, escalate hard cases to a stronger model.
+4. Cap and shape outputs with `max_tokens`, concise formats and structured outputs instead of prose.
+5. Use the batch API for anything not interactive, at about half price.
+6. Route requests: a cheap model first, escalating hard cases to a stronger one.
 7. Cache whole responses for repeated identical questions.
 
-## Latency budget for a product
+## Latency
 
-Users feel TTFT most. For a chat interface, aim for a first token within a second or two and stream the rest. For background jobs, nobody cares about TTFT; optimize cost. For agents, the total time is the sum of many calls plus tool time, so every step's latency matters.
+Users feel TTFT most. For a chat interface, aim for a first token within a second or two and stream the rest. Background jobs do not care about TTFT, so optimize their cost. For agents, total time is the sum of many calls plus tool time, so every step's latency matters.
 
-## Check yourself
+## Questions
 
 1. Why is decode memory-bound while prefill is compute-bound?
 2. Compute the KV cache size for 8,000 tokens with 40 layers, 8 KV heads of size 128, bf16.

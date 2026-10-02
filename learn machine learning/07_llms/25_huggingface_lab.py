@@ -1,7 +1,7 @@
 """
 OPTIONAL: real pretrained models with Hugging Face transformers.
 
-Everything you built by hand, now with production tools:
+The same pieces you built by hand, using production tools:
   1. a real tokenizer (GPT-2's byte-level BPE)
   2. a real model's next-token probabilities
   3. generation with sampling settings

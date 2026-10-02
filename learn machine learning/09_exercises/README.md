@@ -1,6 +1,6 @@
 # Exercises
 
-Reading and running labs builds understanding. Writing the code yourself, from an empty function, builds skill. These four files contain 50 functions to implement, verified by 42 automatic checks.
+Reading and running labs builds understanding, while writing the code yourself from an empty function builds skill. These four files contain 50 functions to implement, verified by 42 automatic checks.
 
 | File | Do it after | What you implement |
 |------|-------------|--------------------|
@@ -12,25 +12,16 @@ Reading and running labs builds understanding. Writing the code yourself, from a
 ## How it works
 
 ```bash
-cd "lean machine learning/09_exercises"
+cd "learn machine learning/09_exercises"
 python 02_ml_exercises.py
 ```
 
-Every function starts as `raise NotImplementedError`. The checks at the bottom report:
+Every function starts as `raise NotImplementedError`. The checks at the bottom report `TODO` for a function you have not started, `FAIL` with a message saying what was expected, or `PASS`. Implement one function, rerun, and repeat. `checks.py` holds the tests and you never need to edit it.
 
-- `TODO`: not started
-- `FAIL`: wrong, with a message saying what was expected
-- `PASS`: correct
+## Getting the most from them
 
-Implement one function, rerun, repeat. `checks.py` holds the tests; you never need to edit it.
-
-## Rules for getting real value
-
-1. **No copying from the labs.** You have seen most of these before. Write them from your understanding; if you must look, close the lab and wait ten minutes before writing.
-2. **Shapes first.** Before writing NumPy code, write the input and output shapes in a comment.
-3. **Use the solutions properly.** If you are stuck for more than 30 minutes, read the solution in `solutions/`, close it, and implement it again from memory the next day.
-4. **Then go further**: after a file passes, reimplement it without loops, or with fewer lines, or explain each function out loud as if in an interview. Several of these are standard interview questions (see `08_industry/08_interview_prep.md`).
+Do not copy from the labs. You have seen most of these before, so write them from your understanding, and if you must look, close the lab and wait ten minutes before writing. Before writing NumPy code, put the input and output shapes in a comment. If you are stuck for more than 30 minutes, read the solution in `solutions/`, close it, and implement it again from memory the next day. After a file passes, reimplement it without loops or in fewer lines, or explain each function out loud as if in an interview, since several of these are standard interview questions (see `08_industry/08_interview_prep.md`).
 
 ## After the exercises
 
-Pick a project from `projects.md`. Projects are where everything connects, and they are what you show in interviews.
+Pick a project from `projects.md`. Projects tie everything together, and they are what you show in interviews.

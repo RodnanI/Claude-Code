@@ -4,11 +4,11 @@ Your first language model: predict the next character from the current one (a "b
 Two ways to build the same model:
   A. count how often each character follows each other character, normalize to probabilities
   B. train a tiny neural network with gradient descent to predict the next character
-They end up with (almost) the same probabilities. That is the key insight of this file:
-a neural language model is a smarter, generalizing way of estimating these probabilities.
+They end up with almost the same probabilities, which shows that a neural language model
+is a generalizing way of estimating them.
 
-You will also: sample text, measure loss and perplexity, and see why one character of
-context is not enough, which motivates attention and transformers.
+The file also samples text, measures loss and perplexity, and shows why one character of
+context is not enough, which is the motivation for attention and transformers.
 
 Inspired by Andrej Karpathy's "makemore" series. Trains on this course's own lessons.
 

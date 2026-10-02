@@ -1,9 +1,9 @@
 """
-Logistic regression: the workhorse of classification. Built from scratch.
+Logistic regression, built from scratch.
 
-Despite the name, it is a CLASSIFIER. It outputs a probability between 0 and 1.
-It is also exactly one neuron with a sigmoid activation, so understanding it
-means you already understand the last layer of many neural networks.
+Despite the name it is a classifier, and it outputs a probability between 0 and 1.
+It is also one neuron with a sigmoid activation, so it is the same thing as the last
+layer of many neural networks.
 
 Problem: will a website visitor buy something? Features: minutes on site, pages viewed.
 
@@ -67,7 +67,7 @@ for p in [0.99, 0.9, 0.5, 0.1, 0.01]:
 
 
 # %% 4. Train with gradient descent
-# A beautiful fact: with sigmoid + cross-entropy, the gradient is simply
+# With sigmoid + cross-entropy, the gradient reduces to
 #   dL/dw = X.T @ (p - y) / n        dL/db = mean(p - y)
 # Same shape as linear regression. (Derivation: chain rule; the sigmoid derivative cancels out.)
 class LogisticRegressionGD:

@@ -7,7 +7,7 @@ production traffic in which things gradually change:
   - weeks 3+: applicants get younger (a marketing campaign targets students)  -> DATA drift
   - weeks 5+: a new device type "tablet" appears                               -> DATA drift (categorical)
   - weeks 7+: the link between income and default weakens (economic shock)     -> CONCEPT drift
-Can monitoring tell these apart? (Spoiler: drift metrics alone cannot. You need labels too.)
+Can monitoring tell these apart? Drift metrics alone cannot, and you need labels too.
 
 Run it:  python 05_drift_monitoring_lab.py
 """

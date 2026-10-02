@@ -1,8 +1,8 @@
-# Choosing an Algorithm (and the Ones Not Covered in Labs)
+# Choosing an Algorithm
 
-Beginners obsess over picking the algorithm. Practitioners know the order of what matters: **problem framing, then data quality, then features, then evaluation, then algorithm.** Still, you need a map. Here it is.
+Beginners fixate on the choice of algorithm, but it matters less than problem framing, data quality, features and evaluation, in that order. You still need a map, and this file gives one, including the methods the labs skip.
 
-## Models you have built so far, in one table
+## Models built so far
 
 | Model | Learns | Needs scaling | Handles non-linear | Interpretable | Training cost | Prediction cost |
 |-------|--------|---------------|-------------------|---------------|---------------|-----------------|
@@ -14,71 +14,57 @@ Beginners obsess over picking the algorithm. Practitioners know the order of wha
 | gradient boosting | many shallow trees in sequence | no | yes | via importance / SHAP | medium | low |
 | neural network (module 6) | layers of weights | yes | yes | hard | high | low to high |
 
-## Models you should know by name
+## Models to know by name
 
 ### Support vector machines (SVM)
 
-An SVM finds the boundary between classes with the **widest margin**: the street between the classes is made as wide as possible, and only the points on the edge of the street (the **support vectors**) define it. With the **kernel trick**, an SVM can draw curved boundaries by implicitly mapping data into a higher-dimensional space where a straight boundary works. The RBF (Gaussian) kernel is the common choice.
+An SVM finds the boundary between classes with the widest margin, so the street between the classes is as wide as possible and only the points on its edge, the support vectors, define it. With the kernel trick it can draw curved boundaries by implicitly mapping the data into a higher-dimensional space where a straight boundary works; the RBF (Gaussian) kernel is the usual choice.
 
-Where they stand today: excellent on small to medium datasets with many features (text classification in the 2000s, bioinformatics). They scale poorly beyond about 100,000 examples, need feature scaling, and output scores rather than probabilities. In industry they have mostly been replaced by boosting for tabular data and neural networks for text and images, but they still show up in interviews and older systems.
+SVMs did well on small to medium datasets with many features, such as text classification in the 2000s and bioinformatics. They scale poorly beyond about 100,000 examples, need feature scaling, and output scores instead of probabilities. Industry has mostly replaced them with boosting for tabular data and neural networks for text and images, but they still appear in interviews and older systems.
 
 ### Regularized linear models
 
-- **Ridge** (L2), **Lasso** (L1), **Elastic Net** (both). Linear regression with the penalties from module 3. Lasso doubles as feature selection.
-- Logistic regression in scikit-learn is regularized by default (`C=1.0`). Remember: smaller C means *stronger* regularization.
+Ridge (L2), Lasso (L1) and Elastic Net (both) are linear regression with the penalties from module 3, and Lasso doubles as feature selection. Logistic regression in scikit-learn is regularized by default (`C=1.0`), and a smaller C means stronger regularization.
 
-Linear models are underrated. They are fast, stable, explainable to regulators and executives, and with good features they are often within a few points of fancy models. Many banks still run logistic regression scorecards for exactly these reasons.
+Linear models are underrated. They are fast, stable and easy to explain to regulators and executives, and with good features they often land within a few points of fancier models. Many banks still run logistic regression scorecards for these reasons.
 
 ### Clustering beyond k-means
 
-- **DBSCAN / HDBSCAN**: clusters are dense regions; finds odd shapes and labels outliers as noise. No need to choose k.
-- **Gaussian mixture models**: soft clustering; each point gets a probability of belonging to each cluster.
-- **Hierarchical (agglomerative) clustering**: builds a tree of merges; you cut it at the level you want.
+DBSCAN and HDBSCAN treat clusters as dense regions, find odd shapes, label outliers as noise and do not need k chosen in advance. Gaussian mixture models do soft clustering, giving each point a probability of belonging to each cluster. Hierarchical (agglomerative) clustering builds a tree of merges that you cut at the level you want.
 
 ### Anomaly detection
 
-- **Isolation Forest**: random trees isolate anomalies in few splits, because anomalies are few and different. The usual first choice.
-- **One-class SVM**, **Local Outlier Factor**: alternatives.
-- Simple statistics (z-scores, percentiles, rolling averages) often beat all of them for monitoring metrics. Try them first.
+Isolation Forest is the usual first choice: random trees isolate anomalies in few splits because anomalies are few and different. One-class SVM and Local Outlier Factor are alternatives. For monitoring metrics, simple statistics such as z-scores, percentiles and rolling averages often beat all of them, so try those first.
 
 ### Dimensionality reduction beyond PCA
 
-- **t-SNE** and **UMAP**: non-linear, great for 2D pictures of embeddings. Distances between clusters in the picture are not meaningful.
-- **Autoencoders** (module 6): neural networks that compress and rebuild data.
+t-SNE and UMAP are non-linear and good for 2D pictures of embeddings, though distances between clusters in the picture mean little. Autoencoders (module 6) are neural networks that compress and rebuild data.
 
 ### Recommender systems
 
-- **Collaborative filtering**: "users who liked X also liked Y". Matrix factorization learns a vector for every user and item so that their dot product predicts the rating (the low-rank idea from module 2).
-- **Two-tower models**: one neural network embeds users, another embeds items; recommend items whose embeddings are closest to the user's. This is how large platforms do candidate retrieval, followed by a ranking model (often boosted trees or a neural ranker).
+Collaborative filtering rests on the idea that users who liked X also liked Y. Matrix factorization learns a vector for every user and item so that their dot product predicts the rating, which is the low-rank idea from module 2. Two-tower models use one neural network to embed users and another to embed items, then recommend the items closest to the user. Large platforms use this for candidate retrieval and follow it with a ranking model, often boosted trees or a neural ranker.
 
 ### Time series forecasting
 
-- Classical statistics: **exponential smoothing**, **ARIMA**, seasonal decomposition. Strong for few series with clear patterns.
-- **Boosted trees with lag features** (sales 1, 7 and 28 days ago, rolling means, calendar features). Dominant in practice and in forecasting competitions.
-- Deep learning and pretrained "foundation" forecasting models exist and are improving; evaluate them against the simple baselines, which are hard to beat.
-- The most important baseline: **seasonal naive** ("same as last week"). Many fancy forecasts lose to it.
+Classical statistics (exponential smoothing, ARIMA, seasonal decomposition) works well for a few series with clear patterns. Boosted trees with lag features, such as sales 1, 7 and 28 days ago, rolling means and calendar features, dominate in practice and in forecasting competitions. Deep learning and pretrained foundation forecasting models exist and are improving, but compare them with the simple baselines, which are hard to beat. The baseline that matters most is seasonal naive, meaning "same as last week", and many sophisticated forecasts lose to it.
 
-## A decision flow for a new problem
+## Approaching a new problem
 
-1. **Is it really an ML problem?** Could a rule, a SQL query or a lookup table do it?
-2. **What kind?** Regression, classification, ranking, clustering, generation?
-3. **What data?**
+1. Is it really an ML problem? Could a rule, a SQL query or a lookup table do it?
+2. What kind? Regression, classification, ranking, clustering, generation?
+3. What data?
    - Tabular: start with a dumb baseline, then logistic or linear regression, then gradient boosting (HistGradientBoosting, LightGBM, XGBoost or CatBoost). Random forest as a sanity check.
    - Text: TF-IDF plus logistic regression as a baseline; then embeddings from a pretrained model plus a simple classifier; then fine-tuning or an LLM with good prompts. Measure which is good enough for the cost.
    - Images, audio: fine-tune a pretrained deep network. Never train from scratch unless you have a very good reason and a lot of data.
    - Time series: seasonal naive baseline, then boosted trees with lag features.
-4. **Constraints?** Latency (milliseconds per prediction?), cost, interpretability, regulation, how often it must be retrained, who maintains it.
-5. **Evaluate properly** (module 3): right split, right metric, honest test.
+4. Constraints? Latency (milliseconds per prediction?), cost, interpretability, regulation, how often it must be retrained, who maintains it.
+5. Evaluate properly (module 3): right split, right metric, honest test.
 
-## The rules that actually matter
+## Rules of thumb
 
-- **Always start with a baseline.** Most common class, mean, last value, a simple rule. You cannot claim a model works without it.
-- **Simple and good beats complex and slightly better.** Every extra point of accuracy must pay for its complexity in maintenance, compute and explainability.
-- **Better data beats better algorithms.** Cleaning labels, adding a strong feature or getting more relevant data usually helps more than switching models.
-- **For tabular data, try gradient boosting before neural networks.**
-- **For unstructured data, start from a pretrained model.**
+Start with a baseline (most common class, mean, last value, a simple rule), since you cannot claim a model works without one. Prefer a simple, good model to a complex one that is slightly better, because each extra point of accuracy has to pay for its maintenance, compute and explainability. Better data usually helps more than a better algorithm, so clean labels, add a strong feature or collect more relevant data before switching models. For tabular data, try gradient boosting before neural networks, and for unstructured data start from a pretrained model.
 
-## Check yourself
+## Questions
 
 1. You have 2,000 rows of customer data with 15 features and need an explainable model for a credit decision. What do you try first and why?
 2. You need to group 50,000 support tickets by topic without labels. Outline an approach.

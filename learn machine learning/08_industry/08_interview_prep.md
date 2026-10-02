@@ -1,15 +1,15 @@
 # Interview Preparation
 
-Questions you are likely to get for junior data science, ML engineering and AI engineering roles, with short answers. Do not memorize the answers. Make sure you could explain each one in your own words, with an example, and answer the obvious follow-up. Every answer points back to a lesson in this course.
+These are questions you are likely to get for junior data science, ML engineering and AI engineering roles, with short answers. Do not memorize the answers. You should be able to explain each in your own words, with an example, and handle the obvious follow-up. Each answer corresponds to a lesson in this course.
 
 ## How ML interviews are usually structured
 
-1. **Recruiter screen**: motivation, background, logistics.
-2. **Coding**: Python data manipulation, sometimes algorithm questions, sometimes "implement X from scratch with NumPy".
-3. **ML fundamentals**: concepts below.
-4. **Practical / take-home**: a dataset and a question; judged on process, correctness and communication.
-5. **ML system design** (file 07), more for engineering roles.
-6. **Behavioral**: past projects, collaboration, mistakes.
+1. Recruiter screen: motivation, background and logistics.
+2. Coding: Python data manipulation, sometimes algorithm questions, sometimes "implement X from scratch with NumPy".
+3. ML fundamentals: the concepts below.
+4. Practical or take-home: a dataset and a question, judged on process, correctness and communication.
+5. ML system design (file 07), mostly for engineering roles.
+6. Behavioral: past projects, collaboration and mistakes.
 
 ## Fundamentals
 
@@ -81,7 +81,7 @@ ROC AUC measures ranking quality across thresholds (probability a random positiv
 From the business costs of false positives and false negatives, using validation data: minimize expected cost or meet a required precision or recall.
 
 **MAE vs RMSE?**
-MAE is the average absolute error, robust to outliers. RMSE squares errors first, so it punishes large errors more.
+MAE is the average absolute error and is less affected by outliers. RMSE squares errors first, so it punishes large errors more.
 
 **What is calibration?**
 Whether predicted probabilities match observed frequencies. Check with reliability diagrams; fix with Platt scaling or isotonic regression.
@@ -101,7 +101,7 @@ Gradients shrink or blow up through many layers. Handled with ReLU-family activa
 Dropout randomly zeroes activations during training as regularization; turned off at inference. BatchNorm normalizes with batch statistics in training and running averages at inference. Hence `model.eval()`.
 
 **Adam vs SGD?**
-Adam adapts the step size per parameter using running averages of gradients and squared gradients; fast and robust default. SGD with momentum is simpler and sometimes generalizes slightly better in vision.
+Adam adapts the step size per parameter using running averages of gradients and squared gradients, and it is a fast and reliable default. SGD with momentum is simpler and sometimes generalizes slightly better in vision.
 
 **Your training loss is not decreasing. What do you check?**
 Data and labels, the learning rate, that gradients flow and `optimizer.step()` runs, loss at initialization, whether the model can overfit one small batch.
@@ -169,24 +169,10 @@ Understand why it is missing, then impute (median, most frequent, model-based), 
 
 `09_exercises` drills most of these with automatic checks.
 
-## Behavioral questions (prepare stories)
+## Behavioral questions
 
-Prepare short stories (situation, what you did, result, what you learned) for:
+Prepare short stories, each covering the situation, what you did, the result and what you learned. You need one about a project you are proud of, with numbers, one about a time your model or analysis was wrong and what you did, one about a disagreement with a colleague or stakeholder, one about explaining something technical to a non-technical person, and one about learning something quickly under pressure. Interviewers respond better to honesty about mistakes and what you changed afterwards than to a flawless story.
 
-- a project you are proud of, with numbers
-- a time your model or analysis was wrong, and what you did
-- a disagreement with a colleague or stakeholder
-- explaining something technical to a non-technical person
-- learning something quickly under pressure
+## Take-home assignments
 
-Honesty about mistakes, with what you changed afterwards, impresses more than a flawless story.
-
-## Take-home assignments: how to stand out
-
-1. Read the question twice. Answer the question asked.
-2. Explore the data and say what you found (problems included).
-3. Split properly and build a baseline first.
-4. Choose metrics that fit the problem and justify them.
-5. Keep the modeling reasonable; do not tune for days.
-6. Write a short, clear summary: approach, results with uncertainty, limitations, next steps.
-7. Clean, runnable code with instructions. A reviewer who cannot run your notebook stops reading.
+Read the question twice and answer the one asked. Explore the data and report what you found, problems included. Split properly and build a baseline first. Choose metrics that fit the problem and justify them. Keep the modeling reasonable rather than tuning for days. Write a short summary covering the approach, results with uncertainty, limitations and next steps. Submit clean, runnable code with instructions, because a reviewer who cannot run your notebook stops reading.

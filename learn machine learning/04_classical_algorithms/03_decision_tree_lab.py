@@ -1,10 +1,10 @@
 """
 Decision tree classifier, from scratch. The tree is stored as nested dicts.
 
-A decision tree is a pile of if/else statements learned from data. At each step it asks
+A decision tree is a set of if/else statements learned from data. At each step it asks
 the yes/no question about one feature that best separates the classes.
-Trees are the building block of random forests and gradient boosting, which are the
-best tools for tabular data in industry. Understand one tree and you understand the parts.
+Random forests and gradient boosting, the best tools for tabular data in industry, are
+built from trees, so one tree shows you the parts.
 
 Run it:  python 03_decision_tree_lab.py   (a few seconds)
 """

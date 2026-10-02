@@ -1,6 +1,6 @@
 """
 Probability and statistics lab. Read 05_probability_and_statistics.md first.
-Most things here are checked by SIMULATION: when in doubt, simulate.
+Most results here are checked by simulation. When unsure, simulate.
 
 Run it:  python 06_probability_lab.py
 """

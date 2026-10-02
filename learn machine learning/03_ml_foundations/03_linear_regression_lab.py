@@ -1,8 +1,8 @@
 """
 Linear regression with NumPy: many features, vectorized, scaled, evaluated.
 
-Same idea as the pure Python file, but how it is actually written. Then we check
-our from-scratch version against scikit-learn.
+This is the same idea as the pure Python file, written the way it is done in practice.
+We then check our version against scikit-learn.
 
 Run it:  python 03_linear_regression_lab.py
 """

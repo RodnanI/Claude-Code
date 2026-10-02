@@ -1,37 +1,24 @@
-# Career Playbook: Your First Year in Machine Learning
+# Career Playbook
 
-Technical skill gets you hired. Habits decide how fast you grow after that. This file is the advice most people only get after a few painful years.
+Technical skill gets you hired, and your habits decide how fast you grow afterwards. This file collects advice that most people only receive after a few hard years.
 
 ## Your first 90 days
 
-### Weeks 1-2: orient
+### Weeks 1-2
 
-- Get your environment working: access, repositories, data warehouse, compute, experiment tracking. Write down every setup step that was not documented and add it to the docs. That is your first contribution.
-- Learn the business: what does the company sell, who are the customers, which metrics leadership watches, and which of them your team moves.
-- Read before you write: the team's design docs, the main pipelines, the models in production, recent postmortems.
-- Meet people: your manager, teammates, the data engineers you depend on, the product manager, the people who use your team's outputs. Ask each: "What do you wish the ML team did differently?"
+Get your environment working, including access, repositories, the data warehouse, compute and experiment tracking. Write down every setup step that was not documented and add it to the docs, which makes a good first contribution. Learn the business: what the company sells, who the customers are, which metrics leadership watches and which of them your team moves. Read before you write, starting with the team's design docs, the main pipelines, the models in production and recent postmortems. Meet your manager, teammates, the data engineers you depend on, the product manager and the people who use your team's outputs, and ask each what they wish the ML team did differently.
 
-### Weeks 3-6: a small, real win
+### Weeks 3-6
 
-- Take a small, well-defined task: fix a bug, add a test, add monitoring, speed up a pipeline, improve a dashboard.
-- Ship it through the normal process (code review, deployment). You learn the whole path to production on something low-risk.
-- Shadow on-call or incident handling if your team does it.
+Take a small, well-defined task, such as fixing a bug, adding a test, adding monitoring, speeding up a pipeline or improving a dashboard. Ship it through the normal process of code review and deployment, which teaches you the whole path to production on something low-risk. Shadow on-call or incident handling if your team does it.
 
-### Weeks 7-12: own something
+### Weeks 7-12
 
-- Own a scoped project end to end: framing, data, baseline, evaluation, a written result.
-- Write a short design doc before building, even if nobody asks. Ask for feedback on it.
-- Present the result: what you did, what you found, what you recommend, what you are unsure about.
+Own a scoped project from start to finish: framing, data, baseline, evaluation and a written result. Write a short design doc before building even if nobody asks, and ask for feedback on it. Present the result, covering what you did, what you found, what you recommend and what you are unsure about.
 
 ## Habits that compound
 
-- **Keep a work log**: what you did, decisions and why, commands you ran, results. It makes status updates, performance reviews and debugging much easier.
-- **Ask good questions**: "I am trying to do X. I tried A and B. I expected C but got D. I think the cause might be E. Can you help me check?" Respectful of time, and it often answers itself while you write it.
-- **The 30-minute rule**: stuck for 30 minutes with no progress? Ask. Stuck for 3 days silently is the most common junior failure.
-- **Communicate status before anyone asks**, especially bad news.
-- **Review other people's code**: you learn the codebase and how seniors think.
-- **Write the TL;DR first** in every message, document and email: the conclusion, then the details.
-- **Make your results reproducible**: commit, config, data version, command. Future you is a different person with no memory of today.
+Keep a work log of what you did, decisions and the reasons, commands you ran and results; it makes status updates, performance reviews and debugging much easier. Ask questions in a form like "I am trying to do X. I tried A and B. I expected C but got D. I think the cause might be E. Can you help me check?", which respects the other person's time and often answers itself as you write it. If you have been stuck for 30 minutes with no progress, ask; the most common junior failure is being stuck silently for three days. Report status before anyone asks, especially bad news. Review other people's code, which teaches you the codebase and how seniors think. Put the conclusion first in every message, document and email, then the details. Make your results reproducible with the commit, config, data version and command, because future you will not remember today.
 
 ## Common junior mistakes
 
@@ -48,21 +35,17 @@ Technical skill gets you hired. Habits decide how fast you grow after that. This
 
 ## Communicating results
 
-- Titles of charts state the conclusion ("Fraud recall doubles with device features"), not the topic ("Recall by model").
-- Lead with the impact in business units.
-- Include what did not work. It saves others from repeating it and builds trust.
-- Show a few concrete examples of model behavior, good and bad.
-- End with a recommendation and next steps.
+Give charts titles that state the conclusion ("Fraud recall doubles with device features") and not the topic ("Recall by model"). Lead with the impact in business units. Include what did not work, which saves others from repeating it and builds trust. Show a few concrete examples of model behavior, good and bad. End with a recommendation and next steps.
 
 ## What to learn next (after this course)
 
-Prioritize by your role, but these pay off almost everywhere:
+Your role should set the priorities, but these pay off in most jobs:
 
-1. **SQL**, properly: joins, window functions, query performance. You will use it daily.
-2. **Software engineering**: testing, packaging, code review, Docker, a cloud platform.
-3. **Statistics for experiments**: A/B testing, power, causal inference basics.
-4. **One deep specialty**: ranking/recommendations, forecasting, NLP and LLM systems, computer vision, or ML infrastructure.
-5. **Reading code of serious projects**: scikit-learn, PyTorch modules, Hugging Face transformers, nanoGPT.
+1. SQL, learned properly, including joins, window functions and query performance. You will use it daily.
+2. Software engineering: testing, packaging, code review, Docker and a cloud platform.
+3. Statistics for experiments: A/B testing, power and the basics of causal inference.
+4. One deep specialty, such as ranking and recommendations, forecasting, NLP and LLM systems, computer vision or ML infrastructure.
+5. Reading the code of serious projects such as scikit-learn, PyTorch modules, Hugging Face transformers and nanoGPT.
 
 ### Resources worth your time
 
@@ -77,7 +60,7 @@ Books:
 
 Courses and videos:
 
-- Andrej Karpathy, "Neural Networks: Zero to Hero" (YouTube): micrograd, makemore, GPT, tokenizers. The perfect continuation of modules 6 and 7.
+- Andrej Karpathy, "Neural Networks: Zero to Hero" (YouTube): micrograd, makemore, GPT and tokenizers. It follows on directly from modules 6 and 7.
 - 3Blue1Brown: "Essence of Linear Algebra" and the neural network series. Intuition for the math.
 - StatQuest (Josh Starmer): clear explanations of statistics and classical ML.
 - fast.ai, "Practical Deep Learning for Coders": top-down, practical.
@@ -101,28 +84,24 @@ Papers to read (in roughly this order):
 
 ## How to read a paper (three passes)
 
-1. **Five minutes**: title, abstract, figures, conclusion. What problem, what claim, what evidence?
-2. **One hour**: the method and experiments, skipping proofs. What are the baselines? Are the comparisons fair? What is missing?
-3. **Deep dive** (only for papers that matter to your work): reproduce a result, read the code, work through the math.
+1. Spend five minutes on the title, abstract, figures and conclusion. What problem does it address, what does it claim, and what is the evidence?
+2. Spend an hour on the method and experiments, skipping proofs. What are the baselines, are the comparisons fair, and what is missing?
+3. For papers that matter to your work, go deeper: reproduce a result, read the code and work through the math.
 
 Be skeptical of: missing baselines, cherry-picked examples, no error bars, evaluation on contaminated benchmarks, and claims that do not match the experiments.
 
 ## Staying current without drowning
 
-The field produces more than anyone can read. Pick a small number of sources (a couple of lab and practitioner blogs, the Hugging Face papers page or a curated weekly summary, the major conferences: NeurIPS, ICML, ICLR, ACL, CVPR) and ignore the rest. When something new appears, ask: does it change anything I build this quarter? Usually the answer is no, and that is fine. Fundamentals change slowly; tools change monthly.
+The field produces more than anyone can read. Pick a few sources, such as a couple of lab and practitioner blogs, the Hugging Face papers page or a curated weekly summary, and the major conferences (NeurIPS, ICML, ICLR, ACL, CVPR), and ignore the rest. When something new appears, ask whether it changes anything you build this quarter. Usually it does not. Fundamentals change slowly and tools change monthly.
 
 ## A portfolio that gets interviews
 
-- Two or three **deep** projects beat twenty tutorial copies.
-- Each project: a real question, messy data, a baseline, honest evaluation, a short write-up with results and limitations, clean runnable code.
-- Deploy at least one: a small API or app that someone can actually use.
-- One LLM project with an evaluation set will stand out more than one with a slick demo and no numbers.
-- See `09_exercises/projects.md` for ideas.
+Two or three deep projects beat twenty tutorial copies. Each should have a real question, messy data, a baseline, honest evaluation, a short write-up of results and limitations, and clean runnable code. Deploy at least one as a small API or app that someone can use. An LLM project with an evaluation set stands out more than one with a slick demo and no numbers. `09_exercises/projects.md` has ideas.
 
-## About the hype and the anxiety
+## Hype and anxiety
 
-Every few months someone announces that AI will replace the people building it. Tools do change what the job looks like: a lot of boilerplate code is now written with AI assistance, and you should get fluent with these tools. What stays valuable: understanding problems, knowing whether results are real, evaluating systems properly, designing reliable systems and explaining them to humans. That is what this course trained. Keep building those.
+Every few months someone announces that AI will replace the people building it. Tools do change the job, and a lot of boilerplate code is now written with AI assistance, so get fluent with them. What keeps its value is understanding problems, knowing whether results are real, evaluating systems properly, designing reliable systems and explaining them to people, which is what this course trained.
 
-## Integrity at work
+## Integrity
 
-You will be asked, directly or indirectly, to make numbers look better than they are, to ship before something is ready, or to use data in ways that feel wrong. Say what you see, in writing, with facts. Your reputation for honest numbers is the most valuable thing you build in this career, and it takes one fudged result to lose it.
+Sooner or later you will be asked, directly or indirectly, to make numbers look better than they are, to ship before something is ready, or to use data in ways that feel wrong. Say what you see, in writing, with facts. Your reputation for honest numbers is the most valuable thing you build in this career, and a single fudged result can destroy it.

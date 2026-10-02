@@ -1,11 +1,11 @@
 """
 A complete GPT, trained from scratch on this course's own lessons. Read 09_transformer_architecture.md.
 
-Every piece of a real LLM is here: token + position embeddings, causal multi-head
+It has every piece of a real LLM: token and position embeddings, causal multi-head
 self-attention, MLP blocks, residual connections, LayerNorm, weight tying, AdamW,
-warmup + cosine learning rate schedule, gradient clipping, train/validation loss,
+warmup and cosine learning rate schedule, gradient clipping, train and validation loss,
 checkpointing, and sampling with temperature and top-k.
-It is character-level and tiny, so it trains on a laptop CPU in a few minutes.
+It works on characters and is tiny, so it trains on a laptop CPU in a few minutes.
 
 Inspired by Andrej Karpathy's nanoGPT and his video "Let's build GPT: from scratch, in code".
 

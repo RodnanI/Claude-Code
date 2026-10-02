@@ -2,8 +2,8 @@
 k-means clustering, from scratch. Unsupervised learning: no labels at all.
 
 Goal: split data into k groups so that points in a group are close to the group's center.
-Uses in industry: customer segmentation, grouping documents or support tickets by topic,
-compressing colors in images, building vocabularies of "visual words", and choosing
+In industry it is used for customer segmentation, grouping documents or support tickets
+by topic, compressing image colors, building vocabularies of "visual words" and picking
 diverse examples from huge datasets.
 
 Run it:  python 06_kmeans_lab.py
@@ -70,7 +70,7 @@ for k in range(1, 9):
     print(f"{k:>2}   {best:>8.1f}")
 # Inertia always drops as k grows (k = n gives 0). Look for the "elbow" where adding
 # clusters stops helping much: here at k = 4. In business, k is often chosen by what
-# the marketing team can act on, not by a curve. Be honest about that.
+# the marketing team can act on, not by a curve. State that plainly in the write-up.
 
 
 # %% 5. scikit-learn

@@ -1,9 +1,9 @@
 """
 Decoding strategies: how a probability distribution becomes text.
 
-An LLM outputs probabilities for the next token. HOW you pick from them changes the output
-as much as the model does. API parameters like temperature, top_p and top_k are these
-functions. Covered: greedy, temperature, top-k, top-p (nucleus), min-p, beam search,
+An LLM outputs probabilities for the next token, and how you pick from them changes the
+output as much as the model does. API parameters like temperature, top_p and top_k are
+these functions. Covered: greedy, temperature, top-k, top-p (nucleus), min-p, beam search,
 repetition penalties, and sequence log-probabilities.
 
 Run it:  python 11_sampling_lab.py
@@ -188,8 +188,8 @@ for s in ["the model learns from the training data", "data the training from lea
 # - Brainstorming, creative writing: higher temperature (0.7 to 1.0), maybe top-p 0.9-0.95.
 # - Change temperature OR top-p, not both at once, unless you have tested combinations.
 # - Temperature 0 is not a guarantee of identical outputs in production (batching and hardware
-#   nondeterminism), so never build logic that assumes it.
+#   nondeterminism), so do not build logic that assumes it.
 # - Many newer API models no longer accept sampling parameters at all. Current Claude models
 #   (for example Claude Opus 5.5) reject temperature, top_p and top_k; you steer them with an
 #   "effort" setting and with instructions instead. Open models you run yourself (Hugging Face,
-#   vLLM, Ollama, llama.cpp) still expose every knob in this file. Always read the model's docs.
+#   vLLM, Ollama, llama.cpp) still expose every knob in this file. Read the model's docs.

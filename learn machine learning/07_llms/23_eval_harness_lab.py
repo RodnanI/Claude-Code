@@ -1,5 +1,5 @@
 """
-An evaluation harness: test cases, graders, version comparison, regressions, confidence.
+An evaluation harness covering test cases, graders, version comparison, regressions and confidence.
 Read 22_evaluating_llms.md first.
 
 Two rule-based "systems" (v1 and v2) stand in for two prompt versions so the lab runs offline.

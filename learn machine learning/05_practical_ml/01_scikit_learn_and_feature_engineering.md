@@ -1,6 +1,6 @@
 # scikit-learn and Feature Engineering
 
-You have built models from scratch, so you know what is inside them. At work you will not write your own logistic regression. You will use scikit-learn (and LightGBM, XGBoost, PyTorch), and your value comes from **how you prepare data, structure the workflow and evaluate**. This file covers both halves: the library and the craft of features.
+You have built models from scratch, so you know what is inside them. At work you will not write your own logistic regression; you will use scikit-learn, LightGBM, XGBoost and PyTorch, and your contribution lies in preparing data, structuring the workflow and evaluating. This file covers the library and the craft of features.
 
 Labs: `02_sklearn_workflow_lab.py`, then the big one, `03_end_to_end_churn_project.py`.
 
@@ -18,14 +18,11 @@ model.predict_proba(X_new)                # probabilities (classifiers)
 model.score(X_test, y_test)               # default metric (accuracy or R2). Usually not the one you want
 ```
 
-Two kinds of objects:
+There are two kinds of objects. Estimators (models) have `fit` and `predict`, as in `LogisticRegression` and `RandomForestClassifier`. Transformers have `fit` and `transform`, plus `fit_transform`, as in `StandardScaler`, `OneHotEncoder` and `SimpleImputer`; they learn something from training data, such as a mean or a list of categories, and apply it to any data.
 
-- **Estimators / models**: `fit` + `predict`. `LogisticRegression`, `RandomForestClassifier`.
-- **Transformers**: `fit` + `transform` (+ `fit_transform`). `StandardScaler`, `OneHotEncoder`, `SimpleImputer`. They learn something from training data (a mean, a list of categories) and apply it to any data.
+`fit` should only ever see training data, while `transform` and `predict` can see anything.
 
-Golden rule: **`fit` only ever sees training data.** `transform` and `predict` can see anything.
-
-### Pipelines: the most important tool in the library
+### Pipelines
 
 ```python
 from sklearn.pipeline import Pipeline
@@ -40,15 +37,11 @@ pipe.fit(X_train, y_train)      # fits the scaler on train, transforms, fits the
 pipe.predict(X_test)            # transforms test with TRAIN statistics, then predicts
 ```
 
-Why pipelines matter so much:
+Pipelines matter for three reasons. They prevent leakage, because cross-validation refits every step inside each fold. They give you one object to deploy, with preprocessing and model together, which avoids the common and expensive bug of forgetting to scale in production. And grid search can tune preprocessing choices and model hyperparameters together (`model__C`, `scale__with_mean`).
 
-1. **No leakage**: cross-validation refits every step inside each fold automatically.
-2. **One object to deploy**: preprocessing and model travel together. No "we forgot to scale in production" bugs. This is a real, common, expensive bug.
-3. **Tunable**: grid search can tune preprocessing choices and model hyperparameters together (`model__C`, `scale__with_mean`).
+### ColumnTransformer
 
-### ColumnTransformer: different columns, different treatment
-
-Real tables mix numbers and categories:
+Real tables mix numbers and categories, and each needs its own treatment:
 
 ```python
 from sklearn.compose import ColumnTransformer
@@ -65,7 +58,7 @@ preprocess = ColumnTransformer([
 full = Pipeline([("prep", preprocess), ("model", LogisticRegression(max_iter=1000))])
 ```
 
-`handle_unknown="ignore"` matters: production will send a category you never saw in training (a new country, a new plan). Without it the pipeline crashes.
+`handle_unknown="ignore"` matters because production will send a category you never saw in training, such as a new country or plan. Without it the pipeline crashes.
 
 ### Model selection tools
 
@@ -79,7 +72,7 @@ full = Pipeline([("prep", preprocess), ("model", LogisticRegression(max_iter=100
 | `RandomizedSearchCV(pipe, param_distributions, n_iter=30)` | try random combinations. Usually better than grid search for the same budget |
 | `cross_val_predict` | out-of-fold predictions for every training row (great for threshold tuning) |
 
-Always set `scoring` explicitly. The default (accuracy) is wrong for most real problems. Bigger libraries for tuning: Optuna (very popular), Ray Tune.
+Set `scoring` explicitly, because the default (accuracy) is wrong for most real problems. For larger tuning jobs, Optuna and Ray Tune are the usual libraries.
 
 ### Saving models
 
@@ -89,36 +82,29 @@ joblib.dump(pipe, "model.joblib")
 pipe = joblib.load("model.joblib")
 ```
 
-Two warnings:
+Load with the same library versions you saved with, and record them next to the model. Also, joblib and pickle files can execute code when loaded, so never load a model file from an untrusted source. The `safetensors` format exists for deep learning for this reason.
 
-- Load with the **same library versions** you saved with. Record them next to the model.
-- joblib and pickle files can **execute code when loaded**. Never load a model file from an untrusted source. (For deep learning, the `safetensors` format exists for this reason.)
+### Common pitfalls
 
-### Pitfalls that bite everyone once
-
-- `LogisticRegression(C=...)`: C is the *inverse* of regularization strength. Small C = strong regularization.
-- Forgetting `random_state` and wondering why results change.
-- Forgetting that `score()` is accuracy.
-- `class_weight="balanced"` helps imbalanced problems for many models, but it distorts predicted probabilities. If you need calibrated probabilities, recalibrate.
-- Passing pandas DataFrames in training and NumPy arrays in production (column order silently changes). Keep one format, preferably DataFrames with named columns.
+In `LogisticRegression(C=...)`, C is the inverse of regularization strength, so a small C means strong regularization. Leaving out `random_state` makes results change between runs. `score()` is accuracy. `class_weight="balanced"` helps imbalanced problems for many models but distorts predicted probabilities, so recalibrate if you need them calibrated. Training on pandas DataFrames and serving NumPy arrays changes column order without any warning, so keep one format, preferably DataFrames with named columns.
 
 ## Part 2: Feature engineering
 
-A **feature** is any input the model gets. Feature engineering is turning raw data into inputs that make the pattern easy to learn. On tabular problems it is often worth more than any model change.
+A feature is any input the model gets. Feature engineering turns raw data into inputs that make the pattern easier to learn, and on tabular problems it is often worth more than any change of model.
 
 ### Numeric features
 
-- **Scaling**: standardization `(x - mean) / std` for linear models, kNN, SVMs, neural nets. Trees do not need it. `RobustScaler` uses median and IQR when outliers exist.
-- **Log transform** for skewed positive values (income, prices, counts): `np.log1p(x)`. Makes linear relationships more likely and tames outliers.
-- **Clipping (winsorizing)**: cap values at, say, the 1st and 99th percentile.
-- **Ratios and differences**: `price_per_m2 = price / size`, `spend_change = spend_this_month - spend_last_month`. Models (especially linear ones) do not invent these on their own easily.
-- **Binning**: turn age into age groups. Loses information; useful for linear models and for explaining.
+- Scaling: standardization, `(x - mean) / std`, suits linear models, kNN, SVMs and neural nets, while trees do not need it. `RobustScaler` uses the median and IQR when outliers exist.
+- Log transform: use `np.log1p(x)` on skewed positive values such as income, prices and counts. It makes linear relationships more likely and tames outliers.
+- Clipping (winsorizing): cap values at, say, the 1st and 99th percentile.
+- Ratios and differences, such as `price_per_m2 = price / size` or `spend_change = spend_this_month - spend_last_month`. Models, linear ones especially, rarely find these on their own.
+- Binning: turn age into age groups. It loses information but helps linear models and explanations.
 
 ### Categorical features
 
 | Method | How | When |
 |--------|-----|------|
-| one-hot | one 0/1 column per category | few categories (up to ~50). The default |
+| one-hot | one 0/1 column per category | few categories (up to ~50); the usual default |
 | ordinal | map to 0, 1, 2 in a meaningful order | ordered categories (small < medium < large), and tree models |
 | target encoding | replace category with the average label for that category, computed out-of-fold | many categories (zip codes, product IDs). Leakage risk: must be done inside CV (`sklearn.preprocessing.TargetEncoder` does this) |
 | frequency encoding | replace category with how often it appears | high cardinality, quick win |
@@ -129,54 +115,35 @@ Group rare categories into "other". Clean spelling variants first ("UK", "uk ", 
 
 ### Missing values
 
-First ask **why** it is missing. Missing because a sensor failed at random is different from missing because the customer refused to answer (which itself carries information).
+First ask why the value is missing. A sensor that failed at random is different from a customer who refused to answer, which itself carries information.
 
-- **Simple imputation**: median for numbers, most frequent or a constant "missing" for categories.
-- **Missing indicators**: add a 0/1 column "was this missing?" (`SimpleImputer(add_indicator=True)`). Often predictive.
-- **Model-native handling**: HistGradientBoosting, LightGBM and XGBoost learn which way missing values should go at each split.
-- **Do not** fill with 0 or -999 blindly for linear models: it creates fake extreme values.
+For simple imputation, use the median for numbers and the most frequent value or a constant "missing" for categories. A missing indicator, a 0/1 column asking "was this missing?" (`SimpleImputer(add_indicator=True)`), is often predictive. HistGradientBoosting, LightGBM and XGBoost learn which way missing values should go at each split. For linear models, do not fill with 0 or -999 blindly, because that creates fake extreme values.
 
 ### Dates and times
 
-- Extract parts: hour, day of week, month, is_weekend, is_holiday.
-- **Time since** something: days since signup, days since last purchase. Often the strongest features in customer problems.
-- **Cyclical encoding**: hour 23 and hour 0 are neighbors, but as numbers they are far apart. Encode with `sin(2*pi*hour/24)` and `cos(2*pi*hour/24)` for models that care (linear, neural).
-- Time zones and daylight saving: a classic source of silent bugs. Store UTC, convert deliberately.
+Extract parts such as hour, day of week, month, is_weekend and is_holiday. Time since an event, such as days since signup or since the last purchase, is often the strongest feature in customer problems. Hour 23 and hour 0 are neighbors but far apart as numbers, so for linear and neural models encode them with `sin(2*pi*hour/24)` and `cos(2*pi*hour/24)`. Time zones and daylight saving cause silent bugs, so store UTC and convert deliberately.
 
-### Aggregations: where the real power is
+### Aggregations
 
-The best features in industry are usually **aggregates of behavior over time windows**:
-
-- number of logins in the last 7, 30, 90 days
-- average order value over the last 3 months
-- number of failed payments in the last year
-- trend: last 30 days vs the 30 before
-
-They must be computed **as of the prediction time** (point-in-time correctness, module 3). Getting this right is a big part of why companies build feature stores.
+The best features in industry are usually aggregates of behavior over time windows, such as logins in the last 7, 30 and 90 days, average order value over the last 3 months, failed payments in the last year, or the last 30 days against the 30 before. They must be computed as of the prediction time (point-in-time correctness, module 3), and getting that right is a large part of why companies build feature stores.
 
 ### Text features
 
-- Bag of words and **TF-IDF** (term frequency times inverse document frequency) with n-grams, plus a linear model: a strong, cheap baseline.
-- **Embeddings** from a pretrained model (module 7): one dense vector per text that captures meaning. Feed them to any model.
+Bag of words or TF-IDF (term frequency times inverse document frequency) with n-grams, plus a linear model, makes a strong and cheap baseline. Embeddings from a pretrained model (module 7) give one dense vector per text that captures meaning, and any model can take them as input.
 
 ### Imbalanced classes
 
-- Use the right metric (PR AUC, recall at a fixed precision, cost).
-- Try `class_weight="balanced"` or tune the decision threshold. Threshold tuning alone often solves the "imbalance problem".
-- Resampling (undersampling the majority, oversampling the minority, SMOTE) only inside cross-validation folds, never before splitting. Its benefits are often smaller than people expect; compare honestly.
+Use a suitable metric (PR AUC, recall at a fixed precision, cost). Try `class_weight="balanced"` or tune the decision threshold; threshold tuning alone often solves the imbalance problem. Resample (undersample the majority, oversample the minority, SMOTE) only inside cross-validation folds and never before splitting, and compare honestly, since the benefit is often smaller than people expect.
 
 ### Feature selection
 
-- Remove leaky features (the most important selection you will ever do).
-- Remove IDs, constants, near-duplicates.
-- L1 regularization or permutation importance to find dead weight.
-- Do not obsess. Gradient boosting tolerates many useless features. Fewer features mainly help with speed, maintenance and explanation.
+Remove leaky features first, as this is the most valuable selection you can make. Then remove IDs, constants and near-duplicates, and use L1 regularization or permutation importance to find dead weight. Do not overdo it, since gradient boosting tolerates many useless features and fewer features mainly help speed, maintenance and explanation.
 
-### Domain knowledge beats everything
+### Domain knowledge
 
-Spend an hour with the people who know the business. "Customers who call support twice in a week usually cancel" is a feature idea no algorithm will give you, and it will beat a week of hyperparameter tuning.
+Spend an hour with people who know the business. A remark like "customers who call support twice in a week usually cancel" gives you a feature no algorithm would, and it can beat a week of hyperparameter tuning.
 
-## Check yourself
+## Questions
 
 1. Why does a pipeline prevent leakage during cross-validation?
 2. A `country` column has 180 values, most of them rare. How would you encode it for logistic regression? For LightGBM?

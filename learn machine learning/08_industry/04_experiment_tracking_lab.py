@@ -1,9 +1,9 @@
 """
 Experiment tracking from scratch: what MLflow / Weights & Biases do, in 60 lines.
 
-Every run records: parameters, metrics, code version, data fingerprint, library versions,
-seed, duration. Then you can compare runs, pick the best, and REPRODUCE it exactly.
-Without this, "which settings gave us 97.3% last month?" has no answer.
+Every run records parameters, metrics, code version, data fingerprint, library versions,
+seed and duration. You can then compare runs, pick the best and reproduce it exactly.
+Without this, there is no answer to "which settings gave us 97.3% last month?".
 
 Run it:  python 04_experiment_tracking_lab.py   (under a minute)
 """

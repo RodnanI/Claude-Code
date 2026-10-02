@@ -1,12 +1,11 @@
 """
-END-TO-END PROJECT: predict which subscribers will cancel in the next 60 days.
+End-to-end project: predict which subscribers will cancel in the next 60 days.
 
-This is what a real ML task at a company looks like, compressed into one file:
-messy data, a hidden leakage trap, baselines, pipelines, model comparison, a decision
-threshold chosen with money, an honest test, explanations, slices, and a saved model
-with a model card.
+This compresses a real company ML task into one file: messy data, a leakage trap,
+baselines, pipelines, model comparison, a decision threshold chosen with money, a final
+test, explanations, slices, and a saved model with a model card.
 
-Read it top to bottom like a story. Then rebuild it yourself without looking.
+Read it top to bottom, then rebuild it yourself without looking.
 
 Run it:  python 03_end_to_end_churn_project.py   (under a minute)
 """
@@ -36,7 +35,7 @@ pd.set_option("display.max_columns", 20)
 SNAPSHOT = pd.Timestamp("2026-01-01")      # the date on which we make predictions
 
 
-# %% 0. The business problem (always write this down first)
+# %% 0. The business problem (write this down first)
 # StreamBox, a fictional video streaming service, loses subscribers every month.
 # The retention team can send a discount offer:
 OFFER_COST = 15.0        # dollars per customer who receives the offer

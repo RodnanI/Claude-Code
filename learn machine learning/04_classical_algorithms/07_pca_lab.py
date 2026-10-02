@@ -1,12 +1,12 @@
 """
 PCA (principal component analysis), from scratch.
 
-PCA finds the directions in which data varies most, then describes each point using only
-the few most important directions. Uses: visualizing high-dimensional data in 2D,
-compressing features, removing noise, speeding up other models.
+PCA finds the directions in which data varies most and describes each point using only
+the few most important ones. It is used to visualize high-dimensional data in 2D, compress
+features, remove noise and speed up other models.
 
-It connects to the linear algebra module: the directions are eigenvectors of the
-covariance matrix, and libraries compute them with SVD.
+The directions are eigenvectors of the covariance matrix (module 2), and libraries compute
+them with SVD.
 
 Run it:  python 07_pca_lab.py
 """

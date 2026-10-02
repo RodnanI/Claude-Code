@@ -1,15 +1,15 @@
 # Agents and Tool Use
 
-A plain LLM can only produce text. With **tool use**, it can ask your code to do things: search a database, call an API, run a calculation, read a file, send an email. An **agent** is an LLM running in a loop, choosing tools, reading their results and deciding what to do next until the task is done. Coding assistants, research assistants and customer-service automations are agents. `19_agent_loop_lab.py` builds the loop; it runs offline with a scripted stand-in model or live with Claude.
+A plain LLM can only produce text. With tool use, it can ask your code to search a database, call an API, run a calculation, read a file or send an email. An agent is an LLM running in a loop: it chooses tools, reads their results and decides what to do next until the task is done. Coding assistants, research assistants and customer-service automations are agents. `19_agent_loop_lab.py` builds the loop, and it runs offline with a scripted stand-in model or live with Claude.
 
-## How tool use actually works
+## How tool use works
 
-The model never executes anything. The protocol is:
+The model never executes anything. The protocol has four steps:
 
-1. You send the conversation plus **tool definitions**: a name, a description and a JSON schema for the inputs.
-2. The model replies with a **tool_use** block: "call `get_order_status` with `{"order_id": "A-1042"}`". The response's `stop_reason` is `tool_use`.
-3. **Your code** runs the function and sends back a **tool_result** block with the output, linked by the tool call's id.
-4. The model continues: maybe another tool call, maybe a final answer.
+1. You send the conversation plus tool definitions, each with a name, a description and a JSON schema for the inputs.
+2. The model replies with a `tool_use` block, such as "call `get_order_status` with `{"order_id": "A-1042"}`", and the response's `stop_reason` is `tool_use`.
+3. Your code runs the function and sends back a `tool_result` block with the output, linked by the tool call's id.
+4. The model continues, with another tool call or a final answer.
 
 ```python
 tools = [{
@@ -24,7 +24,7 @@ tools = [{
 }]
 ```
 
-The description is a prompt. Write it like documentation for a new colleague: what it does, when to use it, what it returns, its limits.
+The description is a prompt, so write it as documentation for a new colleague: what the tool does, when to use it, what it returns and its limits.
 
 ## The agent loop
 
@@ -38,21 +38,13 @@ repeat (with a maximum number of steps and a budget):
     append all tool_results in ONE user message
 ```
 
-Details that matter:
-
-- **Parallel calls**: one response can contain several tool calls. Run them and return all results together in one message.
-- **Errors are results**: if a tool fails, return a `tool_result` with `is_error: true` and a helpful message ("Order id must look like A-1234"). The model can often recover. Do not crash the loop.
-- **Stop conditions**: max iterations, max cost, max time. Agents can loop.
-- **Other stop reasons**: `max_tokens` (truncated), `refusal`, `pause_turn` (long server-side work paused; resend to continue). Handle them explicitly.
+Several details matter. One response can contain several tool calls, so run them all and return the results together in one message. If a tool fails, return a `tool_result` with `is_error: true` and a helpful message ("Order id must look like A-1234"), because the model can often recover; do not crash the loop. Agents can loop forever, so set stop conditions on iterations, cost and time. Handle the other stop reasons explicitly too: `max_tokens` (truncated), `refusal`, and `pause_turn` (long server-side work was paused; resend to continue).
 
 ## Workflows versus agents
 
-Not every LLM system should be an agent.
+Not every LLM system should be an agent. In a workflow, your code decides the steps (classify, retrieve, draft, check), which makes it predictable, testable and cheap. In an agent, the model decides the steps, which suits open-ended tasks but costs more, is harder to test and lets errors compound.
 
-- **Workflow**: your code decides the steps (classify, then retrieve, then draft, then check). Predictable, testable, cheap.
-- **Agent**: the model decides the steps. Flexible, handles open-ended tasks, but costs more, is harder to test, and errors compound.
-
-Reliability compounds badly: if each step succeeds 95% of the time, a 10-step chain succeeds about 60% of the time (0.95^10). Start with the simplest design that works: a single call, then a fixed workflow, and only then an agent. Build an agent when the task is genuinely open-ended, valuable enough to justify the cost, and errors can be caught (tests, review, undo).
+Reliability compounds badly. If each step succeeds 95% of the time, a 10-step chain succeeds about 60% of the time (0.95^10). Start with the simplest design that works, which means a single call, then a fixed workflow, and only then an agent. An agent makes sense when the task is open-ended, valuable enough to justify the cost, and its errors can be caught through tests, review or undo.
 
 Common building blocks, from simple to complex:
 
@@ -67,45 +59,25 @@ Common building blocks, from simple to complex:
 
 ## Designing good tools
 
-- **Few, well-designed tools** beat dozens of overlapping ones. Every tool definition costs tokens and decision effort.
-- **Clear names and descriptions**, including when NOT to use the tool.
-- **Strict input schemas**, with enums for fixed choices. Many APIs can enforce schema-valid arguments (strict tool use).
-- **Return concise, relevant output.** A tool that returns 50,000 tokens of raw JSON burns money and attention. Summarize, paginate, filter.
-- **Meaningful errors** the model can act on.
-- **Safe by construction**: read-only where possible, idempotent writes, confirmation for anything irreversible.
+A few well-designed tools beat dozens of overlapping ones, since every definition costs tokens and decision effort. Give tools clear names and descriptions, including when not to use them, and strict input schemas with enums for fixed choices; many APIs can enforce schema-valid arguments (strict tool use). Keep output concise, because a tool that returns 50,000 tokens of raw JSON burns money and attention, so summarize, paginate and filter. Return errors the model can act on. Make tools safe by construction: read-only where possible, idempotent writes, and confirmation for anything irreversible.
 
 ## Context management
 
-Every tool call and result is appended to the conversation, so long agent runs fill the context window and get expensive. Techniques:
-
-- trim or clear old tool results that are no longer needed
-- summarize (compact) older history
-- give sub-agents their own fresh context for reading-heavy subtasks and return only conclusions
-- store notes and progress in files or a memory tool instead of the conversation
+Every tool call and result is appended to the conversation, so long agent runs fill the context window and get expensive. You can trim or clear old tool results that are no longer needed, summarize older history, give sub-agents a fresh context for reading-heavy subtasks and have them return only conclusions, or store notes and progress in files or a memory tool instead of the conversation.
 
 ## MCP: the Model Context Protocol
 
-MCP is an open standard (introduced by Anthropic in 2024 and widely adopted since) for connecting AI applications to tools and data. A service exposes an **MCP server** (tools, resources, prompts); any MCP-capable **client** (a chat app, an IDE assistant, your own agent) can use it without custom integration code. Think of it as USB for AI tools: write the integration once, use it from many applications. When you hear "we have an MCP server for our ticketing system", it means agents can be plugged into it directly.
+MCP is an open standard, introduced by Anthropic in 2024 and widely adopted since, for connecting AI applications to tools and data. A service exposes an MCP server (tools, resources, prompts), and any MCP-capable client, such as a chat app, an IDE assistant or your own agent, can use it without custom integration code. You write the integration once and use it from many applications. When someone says they have an MCP server for their ticketing system, agents can be plugged into it directly.
 
-## Security: agents raise the stakes
+## Security
 
-A chatbot that says something wrong is embarrassing. An agent that does something wrong (deletes data, sends an email, spends money) is an incident.
-
-- **Least privilege**: only the tools and permissions the task needs. Scoped API keys.
-- **Human in the loop** for consequential or irreversible actions.
-- **Sandboxing**: run model-written code in isolated containers with no secrets and limited network.
-- **Prompt injection through tool results**: a web page or email the agent reads can contain instructions. Treat tool output as untrusted data; never let it silently expand the agent's permissions.
-- **Budgets and rate limits**: cap steps, tokens and money per task.
-- **Audit logs**: record every tool call with inputs and outputs.
+A chatbot that says something wrong is embarrassing, but an agent that does something wrong, such as deleting data, sending an email or spending money, causes an incident. Give the agent only the tools and permissions the task needs, with scoped API keys, and keep a human in the loop for consequential or irreversible actions. Run model-written code in isolated containers with no secrets and limited network. A web page or email the agent reads can contain instructions (prompt injection through tool results), so treat tool output as untrusted data and never let it silently widen the agent's permissions. Cap steps, tokens and money per task, and record every tool call with its inputs and outputs in an audit log.
 
 ## Evaluating agents
 
-- **Task success rate** on a set of realistic tasks with checkable outcomes (tests pass, the right record was updated, the answer matches).
-- **Cost and latency per completed task**, not per call. A cheaper model that needs three times more steps may cost more.
-- **Trajectory review**: read the full transcripts of failures. Patterns (wrong tool, bad arguments, giving up early, looping) point to fixes in tool design or prompts.
-- **Multiple runs**: agents are non-deterministic; report success rates over several runs.
+Measure the task success rate on realistic tasks with checkable outcomes, such as tests passing, the right record updated or the answer matching. Track cost and latency per completed task and not per call, since a cheaper model that needs three times more steps may cost more. Read the full transcripts of failures: patterns like the wrong tool, bad arguments, giving up early or looping point to fixes in tool design or prompts. Agents are non-deterministic, so report success rates over several runs.
 
-## Check yourself
+## Questions
 
 1. Who executes a tool call, the model or your code? Why does that matter for security?
 2. The model calls two tools in one response. How do you send the results back?

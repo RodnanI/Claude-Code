@@ -1,10 +1,9 @@
 """
 pandas: tables of data.
 
-A DataFrame is a table: named columns, one row per record. Think of it as a dict
-of columns (you know dicts) with superpowers. In industry, almost every ML
-project starts with pandas: load, inspect, clean, reshape, then hand NumPy
-arrays to a model.
+A DataFrame is a table with named columns and one row per record. It works like a
+dict of columns, with many extra operations. Almost every ML project in industry
+starts with pandas: load, inspect, clean, reshape, then hand NumPy arrays to a model.
 
 Run it:  python 04_pandas_lab.py
 """
@@ -33,7 +32,7 @@ df = pd.DataFrame(raw)
 print(df)
 
 
-# %% 2. First look: ALWAYS do these four things with a new dataset
+# %% 2. First look: do these four things with every new dataset
 print("\nshape:", df.shape)
 print("\ndtypes:\n", df.dtypes)
 print("\nmissing values per column:\n", df.isna().sum())
@@ -100,7 +99,7 @@ drinks_info = pd.DataFrame({
 })
 merged = df.merge(drinks_info, on="drink", how="left")   # left join: keep every order
 print("\nmerged:\n", merged[["order_id", "drink", "has_milk", "caffeine_mg"]])
-# Always check row counts after a merge. If they grow, your key was not unique and rows got duplicated.
+# Check row counts after a merge. If they grow, your key was not unique and rows got duplicated.
 assert len(merged) == len(df), "merge duplicated rows"
 
 

@@ -2,10 +2,10 @@
 k-Nearest Neighbors (kNN), from scratch.
 
 The simplest real classifier: to label a new point, find the k most similar training
-points and let them vote. No training at all, the model IS the data.
+points and let them vote. There is no training step, because the model is the data.
 
-Why it matters beyond itself: vector search in RAG systems (module 7) is nearest-neighbor
-search over embeddings. Same idea, billions of points, clever indexes.
+It also matters beyond itself, since vector search in RAG systems (module 7) is
+nearest-neighbor search over embeddings, with billions of points and cleverer indexes.
 
 Run it:  python 01_knn_lab.py
 """

@@ -4,8 +4,8 @@ Plus the warmup + cosine learning rate schedule used to train LLMs.
 Read 04_training_deep_networks.md first.
 
 Test function: the Rosenbrock "banana" f(x, y) = (1 - x)^2 + 100 * (y - x^2)^2.
-The minimum is at (1, 1), at the bottom of a long, curved, narrow valley. Finding the
-valley is easy. Moving along it is hard, which is a good model of real loss landscapes.
+The minimum is at (1, 1), at the bottom of a long, curved, narrow valley. Reaching the
+valley is easy and moving along it is hard, as in real loss landscapes.
 
 Run it:  python 05_optimizers_lab.py
 """
@@ -89,7 +89,7 @@ for name, opt in racers.items():
         path.append(w.copy())
     paths[name] = np.array(path)
     print(f"  {name:<22} loss {rosenbrock(w):.2e}   position {np.round(w, 4).tolist()}")
-# Each optimizer got a reasonably tuned learning rate. A fair comparison ALWAYS tunes each one:
+# Each optimizer got a reasonably tuned learning rate. A fair comparison tunes each one:
 # "Adam beat SGD" means nothing if SGD ran with a bad learning rate.
 
 xx, yy = np.meshgrid(np.linspace(-2, 2, 300), np.linspace(-1, 3, 300))

@@ -1,6 +1,6 @@
 # Linear Algebra for Machine Learning
 
-Linear algebra is the language data and models are written in. A dataset is a matrix. A model is mostly matrix multiplications. An LLM's understanding of a word is a vector. You do not need proofs. You need intuition and the ability to track shapes.
+A dataset is a matrix, a model is mostly matrix multiplications, and an LLM represents each word as a vector. You do not need proofs for any of this, only some intuition and the habit of tracking shapes.
 
 Run `02_linear_algebra_lab.py` while reading.
 
@@ -15,33 +15,32 @@ Run `02_linear_algebra_lab.py` while reading.
 
 "Tensor" in ML just means "n-dimensional array". PyTorch is named after it.
 
-## Vectors: two ways to see them
+## Vectors
 
 A house with size 120 m2, 4 bedrooms and age 5 years is the vector `[120, 4, 5]`.
 
-1. **As a point** in 3D "feature space". Similar houses are nearby points. kNN, clustering and embedding search all rely on this picture.
-2. **As an arrow** from the origin. Arrows have a direction and a length. This picture explains the dot product and cosine similarity.
+You can picture it as a point in a 3D feature space, where similar houses sit close together; kNN, clustering and embedding search all rely on this view. You can also picture it as an arrow from the origin with a direction and a length, which explains the dot product and cosine similarity.
 
 Adding vectors adds them element by element. Multiplying by a scalar stretches them: `2 * [1, 3] = [2, 6]`.
 
-## The dot product: the most important operation in ML
+## The dot product
 
 ```
 a . b = a1*b1 + a2*b2 + ... + an*bn
 [1, 2, 3] . [4, 5, 6] = 4 + 10 + 18 = 32
 ```
 
-It has two meanings and you must hold both in your head:
+It is used in two ways.
 
-**Meaning 1: a weighted sum.** A linear model predicting house price is a dot product of features with weights:
+First, as a weighted sum. A linear model predicting house price is a dot product of features with weights:
 
 ```
 price = 2*size + 10*bedrooms - 1*age + 50  =  [size, bedrooms, age] . [2, 10, -1] + 50
 ```
 
-The weights say how much each feature matters. A single neuron in a neural network is exactly this, followed by a non-linear function.
+The weights say how much each feature matters. A single neuron in a neural network is this same sum followed by a non-linear function.
 
-**Meaning 2: similarity.** The dot product is large when two vectors point the same way, zero when perpendicular, negative when opposite. Geometrically:
+Second, as a similarity score. The dot product is large when two vectors point the same way, zero when perpendicular, negative when opposite. Geometrically:
 
 ```
 a . b = |a| * |b| * cos(angle between them)
@@ -51,18 +50,18 @@ Attention in transformers scores "how relevant is word A to word B" with a dot p
 
 ## Length, distance and cosine similarity
 
-- **Length (L2 norm)**: `|a| = sqrt(a1^2 + a2^2 + ...)`. Pythagoras in many dimensions.
-- **L1 norm**: `|a1| + |a2| + ...`. Shows up in L1 regularization.
-- **Euclidean distance**: `|a - b|`, the straight-line distance between two points.
-- **Cosine similarity**: `(a . b) / (|a| * |b|)`. The dot product with length removed, so it only measures direction. Ranges from -1 to 1.
+- Length (L2 norm): `|a| = sqrt(a1^2 + a2^2 + ...)`, which is Pythagoras in many dimensions.
+- L1 norm: `|a1| + |a2| + ...`, used in L1 regularization.
+- Euclidean distance: `|a - b|`, the straight-line distance between two points.
+- Cosine similarity: `(a . b) / (|a| * |b|)`. This is the dot product with the length divided out, so it measures direction only and ranges from -1 to 1.
 
-Cosine similarity is the default for comparing text embeddings, because the direction carries meaning and the length mostly does not.
+Text embeddings are usually compared with cosine similarity, since their direction carries meaning and their length mostly does not.
 
-## Matrices: also two views
+## Matrices
 
-**View 1: a stack of vectors.** A dataset with 100 rows and 3 columns is 100 vectors of length 3. Convention everywhere: **rows are examples, columns are features**.
+A matrix can be read as a stack of vectors. A dataset with 100 rows and 3 columns is 100 vectors of length 3, and the convention everywhere is that rows are examples and columns are features.
 
-**View 2: a function that transforms vectors.** Multiplying a vector by a matrix moves it: rotates, stretches, squashes, projects. A neural network layer is a learned transformation of this kind.
+It can also be read as a function on vectors. Multiplying a vector by a matrix rotates, stretches, squashes or projects it, and a neural network layer is a learned transformation of this kind.
 
 ## Matrix multiplication
 
@@ -74,7 +73,7 @@ shapes: (n, d) @ (d, k) -> (n, k)
              these must match
 ```
 
-This shape rule will save you hundreds of hours. Before any matrix multiply, say the shapes out loud.
+Check this shape rule before every matrix multiply and you will avoid a large share of bugs.
 
 Examples you will see:
 
@@ -84,18 +83,17 @@ Examples you will see:
 | `X @ W` | (100, 3) @ (3, 16) -> (100, 16) | a layer turning 3 features into 16 |
 | `Q @ K.T` | (T, d) @ (d, T) -> (T, T) | attention scores between every pair of T tokens |
 
-Matrix multiplication is **not commutative**: `A @ B` is usually not `B @ A`, and often the shapes do not even allow it.
+Matrix multiplication is not commutative: `A @ B` is usually not `B @ A`, and the shapes often do not allow it.
 
-Why it matters so much: matrix multiplication is extremely parallel, which is why GPUs (thousands of small cores) make deep learning fast. Most of the compute in training an LLM is matrix multiplication.
+It also parallelizes very well, which is why GPUs, with thousands of small cores, speed up deep learning. Most of the compute in training an LLM goes into matrix multiplication.
 
 ## Transpose
 
-`A.T` flips rows and columns: shape `(n, d)` becomes `(d, n)`. You use it constantly to make shapes line up, for example `X.T @ errors` when computing gradients.
+`A.T` flips rows and columns, so shape `(n, d)` becomes `(d, n)`. It is often needed to make shapes line up, as in `X.T @ errors` when computing gradients.
 
 ## Identity and inverse
 
-- The **identity matrix** `I` has ones on the diagonal and zeros elsewhere. `I @ x = x`. The "do nothing" transformation.
-- The **inverse** `A^-1` undoes `A`: `A^-1 @ A = I`. Only square matrices that do not squash space flat have one.
+The identity matrix `I` has ones on the diagonal and zeros elsewhere, and `I @ x = x`, so it does nothing. The inverse `A^-1` undoes `A`, meaning `A^-1 @ A = I`. Only square matrices that do not flatten space have one.
 
 Linear regression has a famous closed-form solution, the **normal equation**:
 
@@ -103,33 +101,29 @@ Linear regression has a famous closed-form solution, the **normal equation**:
 w = (X.T @ X)^-1 @ X.T @ y
 ```
 
-In practice nobody computes the inverse directly (it is slow and numerically unstable). Use `np.linalg.lstsq` or `np.linalg.solve`. Know the formula exists, because interviewers love it.
+In practice nobody computes the inverse directly, since it is slow and numerically unstable; use `np.linalg.lstsq` or `np.linalg.solve`. You should still know the formula, because interviewers ask about it.
 
 ## Rank and redundant features
 
-If one column of your data is a combination of others (price in euros and price in dollars, or `total = a + b` alongside `a` and `b`), the matrix has lower **rank** than its number of columns. The features carry redundant information. This is called **multicollinearity**: it makes linear model coefficients unstable and uninterpretable, even when predictions look fine.
+If one column of your data is a combination of others (price in euros and price in dollars, or `total = a + b` alongside `a` and `b`), the matrix has lower **rank** than its number of columns. The features carry redundant information. This is called multicollinearity, and it makes linear model coefficients unstable and hard to interpret even when predictions look fine.
 
 ## Eigenvectors and eigenvalues (intuition only)
 
-For most matrices, there are special directions that the transformation only stretches without rotating. Those directions are **eigenvectors**, and the stretch factors are **eigenvalues**:
+Most matrices have special directions that they stretch without rotating. Those directions are eigenvectors and the stretch factors are eigenvalues:
 
 ```
 A @ v = lambda * v
 ```
 
-Where you meet them: the eigenvectors of a dataset's covariance matrix are the directions in which the data varies most. That is **PCA** (principal component analysis), covered in module 4.
+You meet them in PCA (principal component analysis, module 4): the eigenvectors of a dataset's covariance matrix are the directions in which the data varies most.
 
-## SVD: every matrix is rotate, stretch, rotate
+## SVD
 
-The **singular value decomposition** writes any matrix as `A = U @ diag(S) @ V.T`. The singular values `S` say how important each direction is. Keep only the largest few and you get the best possible **low-rank approximation** of the matrix.
+The singular value decomposition writes any matrix as `A = U @ diag(S) @ V.T`, which is a rotation, a stretch and another rotation. The singular values `S` say how important each direction is. Keeping only the largest few gives the best low-rank approximation of the matrix.
 
-Low rank is a big idea in modern ML:
+Low rank turns up in several places. PCA is computed with SVD. Recommender systems factor a huge users-by-items matrix into two thin ones. LoRA, a popular cheap way to fine-tune LLMs, assumes the change to a weight matrix is low rank and learns it as a product of two thin matrices; module 7 builds this.
 
-- PCA is computed with SVD.
-- Recommender systems factor a huge users-by-items matrix into two thin ones.
-- **LoRA**, the most popular way to fine-tune LLMs cheaply, assumes the *change* to a weight matrix is low rank and learns it as the product of two thin matrices. Module 7 builds this.
-
-The lab compresses a matrix with SVD so you can see it.
+The lab compresses a matrix with SVD so you can see the effect.
 
 ## Tensors and batch dimensions
 
@@ -143,7 +137,7 @@ Real code adds dimensions for batches:
 | tokens into an LLM | (B, T) | batch, sequence length (integer token ids) |
 | hidden states in an LLM | (B, T, C) | batch, time (position), channels (embedding size) |
 
-Matrix multiplication with extra leading dimensions just repeats the 2D multiplication for each batch element. `(B, T, C) @ (C, 4C) -> (B, T, 4C)`.
+With extra leading dimensions, matrix multiplication repeats the 2D product for each batch element. `(B, T, C) @ (C, 4C) -> (B, T, 4C)`.
 
 ## Cheat sheet
 
@@ -159,7 +153,7 @@ Matrix multiplication with extra leading dimensions just repeats the 2D multipli
 | eigen decomposition | `np.linalg.eigh(C)` | directions of a symmetric matrix |
 | SVD | `np.linalg.svd(A, full_matrices=False)` | rotate, stretch, rotate |
 
-## Check yourself
+## Questions
 
 1. What shape does `(64, 10) @ (10, 3)` produce? Can you compute `(10, 3) @ (64, 10)`?
 2. Two embedding vectors have cosine similarity 0.98. What does that suggest about the words?

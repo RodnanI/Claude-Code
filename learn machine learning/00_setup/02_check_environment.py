@@ -4,8 +4,8 @@ Check that your environment is ready for this course.
 Run it:
     python 02_check_environment.py
 
-It prints which libraries are installed, their versions, and whether PyTorch
-can see a GPU. Nothing here changes your system.
+It prints which libraries are installed, their versions and whether PyTorch
+can see a GPU. It changes nothing on your system.
 """
 
 import importlib

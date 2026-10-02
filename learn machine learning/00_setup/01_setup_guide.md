@@ -1,6 +1,6 @@
 # Setup Guide
 
-Get this right once and you never think about it again. Get it wrong and you will lose whole evenings to "module not found" errors.
+Do this once and you can mostly forget it. A broken setup costs whole evenings of "module not found" errors.
 
 ## 1. Install Python
 
@@ -11,14 +11,14 @@ python --version      # Windows
 python3 --version     # Mac / Linux, sometimes plain "python" works too
 ```
 
-Newer is not always better in ML. Big libraries like PyTorch lag behind the newest Python release by a few months. 3.11 or 3.12 is the safe choice.
+Take 3.11 or 3.12 rather than the newest release, because big libraries like PyTorch trail new Python versions by a few months.
 
-## 2. Virtual environments (non-negotiable)
+## 2. Virtual environments
 
-A virtual environment is a private folder of packages for one project. Without one, every project shares the same packages and eventually two projects need different versions of the same library and everything breaks. Every company you work at will use them (or something equivalent like conda, poetry or uv).
+A virtual environment is a private folder of packages for one project. Without one, every project shares the same packages and eventually two projects need different versions of the same library and everything breaks. Companies use them or an equivalent such as conda, poetry or uv.
 
 ```bash
-cd "lean machine learning"          # quotes because the name has spaces
+cd "learn machine learning"          # quotes because the name has spaces
 python -m venv .venv                # create it (once)
 
 # activate it (every time you open a new terminal)
@@ -32,7 +32,7 @@ When it is active, your terminal prompt starts with `(.venv)`. If you see "Modul
 
 ### What `requirements.txt` is
 
-A list of packages a project needs. Every serious Python project has one (or a `pyproject.toml`). When you join a company, the first thing you do with a repo is create an environment and install its requirements.
+A list of the packages a project needs. Most Python projects have one, or a `pyproject.toml`. On a new repo at work, you create an environment and install its requirements first.
 
 ### PyTorch note
 
@@ -48,35 +48,34 @@ On a Mac with Apple Silicon, the normal `pip install torch` gives you GPU accele
 
 Use **VS Code** (free) with the "Python" and "Jupyter" extensions from Microsoft. PyCharm Community is also fine.
 
-Things to learn in your editor this week:
+Learn these in your editor in the first week:
 
 - Select the interpreter: Ctrl+Shift+P (Cmd+Shift+P on Mac), "Python: Select Interpreter", pick the one inside `.venv`.
 - Run a file: the play button, or `python file.py` in the terminal.
 - Run a cell: every `.py` file in this course has `# %%` markers. VS Code shows "Run Cell" above them. This runs just that block in an interactive window, like a notebook.
-- Go to definition: Ctrl+click on a function name. You will do this thousands of times reading library code at work.
-- The debugger: click left of a line number to set a breakpoint, then "Run and Debug". Stepping through code line by line and looking at variables beats `print` for anything complicated.
+- Go to definition: Ctrl+click on a function name. You will do this constantly when reading library code.
+- The debugger: click left of a line number to set a breakpoint, then "Run and Debug". For anything complicated, stepping through line by line and inspecting variables beats `print`.
 
 ## 4. Jupyter notebooks
 
-A notebook (`.ipynb`) mixes code cells, output and text. Data scientists live in them.
+A notebook (`.ipynb`) mixes code cells, output and text. Data scientists use them all day.
 
 ```bash
 pip install jupyter
 jupyter lab
 ```
 
-Know their weakness: cells can run in any order, so a notebook can show results that cannot be reproduced by running it top to bottom. At work, notebooks are for exploration. Anything that goes to production gets moved into `.py` files. That is why this course uses `.py` files with `# %%` cells: you get the interactive feel without the hidden-state mess.
+Their weakness is that cells can run in any order, so a notebook can show results you cannot reproduce by running it top to bottom. At work, notebooks are for exploration, and anything headed for production is moved into `.py` files. This course uses `.py` files with `# %%` cells for that reason: you get interactive running without the hidden state.
 
 ## 5. Free GPUs when you need them
 
 You do not need a GPU for this course. When you want to train bigger things later:
 
-- **Google Colab**: free notebook with a GPU in your browser. Upload a `.py` file or paste cells.
-- **Kaggle Notebooks**: also free GPU hours, plus thousands of datasets.
+Google Colab gives you a free notebook with a GPU in the browser; upload a `.py` file or paste cells. Kaggle Notebooks also offer free GPU hours.
 
-## 6. Git, minimum viable version
+## 6. Git
 
-Every company uses git. Learn these now:
+Every company uses git. Start with these commands:
 
 ```bash
 git status                    # what changed
@@ -102,7 +101,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 setx ANTHROPIC_API_KEY "sk-ant-..."     # then open a new terminal
 ```
 
-Every lab that uses a key works without one too: it explains what it would have done and shows you the exact request.
+Labs that use a key also run without one. They print what they would have sent instead.
 
 ## 8. Check everything
 
@@ -110,7 +109,7 @@ Every lab that uses a key works without one too: it explains what it would have 
 python 00_setup/02_check_environment.py
 ```
 
-If something is missing, it tells you the exact command to fix it.
+If something is missing, it prints the command that fixes it.
 
 ## Troubleshooting
 
@@ -119,6 +118,6 @@ If something is missing, it tells you the exact command to fix it.
 | `python` not found on Windows | Reinstall Python with "Add to PATH" ticked, or use `py` instead of `python` |
 | `ModuleNotFoundError` | Activate the venv. Then check your editor uses the venv interpreter |
 | `pip` installs but import still fails | You have two Pythons. Use `python -m pip install ...` so pip matches the Python you run |
-| Path errors because of spaces | Put quotes around paths: `cd "lean machine learning"` |
+| Path errors because of spaces | Put quotes around paths: `cd "learn machine learning"` |
 | Plots do not appear | They are saved to `outputs/` next to each script either way. Open the PNG |
 | torch install is huge or fails | Use the CPU index URL above |

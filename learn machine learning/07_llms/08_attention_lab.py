@@ -3,7 +3,7 @@ Attention, step by step, in NumPy. Read 07_attention.md first.
 
   1. single-head causal self-attention with every intermediate printed
   2. why we scale by sqrt(d)
-  3. a HAND-DESIGNED head that copies the previous token (attention is a programmable lookup)
+  3. a hand-designed head that copies the previous token (attention is a programmable lookup)
   4. attention ignores word order unless you add positions
   5. multi-head attention with the real reshapes
   6. check against PyTorch

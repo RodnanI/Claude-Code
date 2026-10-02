@@ -1,8 +1,8 @@
 """
 Plotting with matplotlib.
 
-You plot to understand data and to debug training. A loss curve tells you more
-in two seconds than a table of numbers does in two minutes.
+Plots help you understand data and debug training. A loss curve shows in two
+seconds what a table of numbers takes two minutes to show.
 
 Run it:  python 05_plotting_lab.py
 Plots are saved to outputs/ next to this file. If a window opens, close it to continue.

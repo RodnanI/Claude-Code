@@ -1,5 +1,5 @@
 """
-Data leakage lab: four ways to fool yourself, and the fix for each.
+Data leakage lab: four ways leakage inflates results, and the fix for each.
 Read 09_data_splits_and_leakage.md first.
 
 Run it:  python 10_leakage_lab.py   (takes about 10 seconds)
@@ -18,7 +18,7 @@ rng = np.random.default_rng(0)
 
 # %% 1. Feature selection leakage: making pure noise look predictive
 # 200 examples, 5,000 features of PURE NOISE, random labels. Nothing here can be predicted.
-# The honest answer is 50% accuracy.
+# The correct answer is 50% accuracy.
 X = rng.normal(size=(200, 5000))
 y = rng.integers(0, 2, 200)
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
@@ -70,7 +70,7 @@ print(f"   honest model test AUC:           {auc_honest:.3f}")
 print(f"   leaky model test AUC:            {auc_leaky:.3f}   <- looks amazing")
 print(f"   leaky model in production:       {auc_production:.3f}   <- the 0.92 was never real")
 print(f"   leaky model feature importances: {importance}")
-# The giveaway: one feature dominates importance. Always ask why.
+# The giveaway is one feature dominating the importances. Find out why.
 
 
 # %% 3. Group leakage: the model recognizes patients, not disease

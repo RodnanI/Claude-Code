@@ -1,5 +1,5 @@
 """
-Automatic checks for the exercise files. You do not need to edit (or read) this file.
+Automatic checks for the exercise files. You do not need to edit or read this file.
 
 Each exercise file ends with:
     import checks

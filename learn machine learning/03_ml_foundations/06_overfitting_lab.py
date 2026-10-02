@@ -2,8 +2,8 @@
 Overfitting, underfitting, regularization, learning curves and bias vs variance.
 Read 05_generalization_and_overfitting.md first.
 
-The setup: the true pattern is a sine wave. We only see 20 noisy points of it.
-We fit polynomials of increasing degree and watch what happens on NEW points.
+Setup: the true pattern is a sine wave, and we see only 20 noisy points of it.
+We fit polynomials of increasing degree and check how they do on new points.
 
 Run it:  python 06_overfitting_lab.py
 """

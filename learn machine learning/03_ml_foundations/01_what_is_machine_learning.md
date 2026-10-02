@@ -11,7 +11,7 @@ Machine learning:          inputs + outputs (examples)  ->  rules (a model)
 
 A spam filter written by hand is a pile of `if` statements: "if the email contains 'FREE MONEY', mark as spam". It breaks the moment spammers change wording. A learned spam filter looks at 100,000 emails already marked spam or not spam and figures out the patterns itself, including ones no human would think of. When spammers adapt, you retrain on new examples.
 
-## The vocabulary (memorize this table)
+## Vocabulary
 
 You will hear several names for the same thing, depending on whether the speaker came from statistics, computer science or a particular company.
 
@@ -30,10 +30,7 @@ You will hear several names for the same thing, depending on whether the speaker
 | generalization | out-of-sample performance | how well the model does on data it never saw |
 | ground truth | gold labels | the real correct answers, usually labeled by humans or observed later |
 
-Two that confuse beginners:
-
-- **Parameters vs hyperparameters**: parameters are learned (the slope of a line, the weights of a network). Hyperparameters are chosen by you (how fast to learn, how big the model is). "Hyperparameter tuning" means trying different settings and picking the best on validation data.
-- **Training vs inference**: training happens once (or periodically) and is expensive. Inference happens every time a user needs a prediction and must be fast and cheap. At companies, these are often run by different systems and even different teams.
+Beginners mix up two pairs of terms. Parameters are learned (the slope of a line, the weights of a network), while hyperparameters are set by you (the learning rate, the size of the model). Tuning hyperparameters means trying several settings and keeping the one that scores best on validation data. Training happens once or now and then and costs a lot. Inference happens every time a user wants a prediction, so it has to be fast and cheap. Companies often run the two on separate systems, sometimes with separate teams.
 
 ## Kinds of machine learning
 
@@ -41,19 +38,19 @@ Two that confuse beginners:
 
 Every training example comes with a label. The model learns to map features to labels.
 
-- **Regression**: predict a number. House price, delivery time, demand for next week.
-- **Classification**: predict a category.
-  - **binary**: two classes (spam / not spam, churn / stay, fraud / legit)
-  - **multi-class**: one of many (which digit, which product category)
-  - **multi-label**: several can be true at once (tags on a photo: "beach", "dog", "sunset")
+- Regression: predict a number. House price, delivery time, demand for next week.
+- Classification: predict a category.
+  - binary: two classes (spam / not spam, churn / stay, fraud / legit)
+  - multi-class: one of many (which digit, which product category)
+  - multi-label: several can be true at once (tags on a photo: "beach", "dog", "sunset")
 
-Most business ML is supervised. The hard part is usually getting good labels, not choosing the model.
+Most business ML is supervised, and the hard part is usually getting good labels.
 
 ### Unsupervised learning: no answers, find structure
 
-- **Clustering**: group similar examples (customer segments).
-- **Dimensionality reduction**: compress many features into a few while keeping the important structure (PCA, visualizing embeddings).
-- **Anomaly detection**: find things that look unlike the rest (broken sensors, unusual transactions).
+- Clustering: group similar examples (customer segments).
+- Dimensionality reduction: compress many features into a few while keeping the important structure (PCA, visualizing embeddings).
+- Anomaly detection: find things that look unlike the rest (broken sensors, unusual transactions).
 
 ### Self-supervised learning: the labels hide inside the data
 
@@ -65,9 +62,9 @@ An agent takes actions in an environment and gets rewards. It learns which actio
 
 ### Other terms you will hear
 
-- **Semi-supervised**: a few labeled examples plus many unlabeled ones.
-- **Transfer learning**: start from a model trained on a big general task and adapt it to your small specific one. The default approach for images and text today. Fine-tuning an LLM is transfer learning.
-- **Online learning**: the model updates continuously as new data arrives.
+- Semi-supervised: a few labeled examples plus many unlabeled ones.
+- Transfer learning: start from a model trained on a big general task and adapt it to your small specific one. The default approach for images and text today. Fine-tuning an LLM is transfer learning.
+- Online learning: the model updates continuously as new data arrives.
 
 ## Anatomy of every model
 
@@ -79,19 +76,19 @@ training   = repeatedly nudge parameters to make loss smaller
 
 Linear regression, decision trees, neural networks and GPT all fit this template. They differ in what `f` looks like, which loss they use and how they search for good parameters.
 
-## The workflow (you will repeat this your whole career)
+## The workflow
 
-1. **Frame the problem.** What decision will the prediction drive? What is a good enough result? What does a mistake cost? Skipping this step is the number one reason ML projects fail.
-2. **Get data.** Find it, query it, join it, label it.
-3. **Explore it.** Distributions, missing values, weird values, how the label relates to features.
-4. **Split it.** Training, validation, test. Before you do anything clever.
-5. **Build a baseline.** The simplest thing: predict the average, the most common class, or a single rule. Your model must beat this.
-6. **Train models and iterate.** Feature engineering, try models, tune hyperparameters on validation data.
-7. **Evaluate once on the test set.** Honest estimate of real-world performance.
-8. **Deploy.** Put it where it makes decisions.
-9. **Monitor and retrain.** The world changes and models decay.
+1. Frame the problem. What decision will the prediction drive? What is a good enough result? What does a mistake cost? Skipping this step is the number one reason ML projects fail.
+2. Get data. Find it, query it, join it, label it.
+3. Explore it. Distributions, missing values, weird values, how the label relates to features.
+4. Split it. Training, validation, test. Before you do anything clever.
+5. Build a baseline. The simplest thing: predict the average, the most common class, or a single rule. Your model must beat this.
+6. Train models and iterate. Feature engineering, try models, tune hyperparameters on validation data.
+7. Evaluate once on the test set. Honest estimate of real-world performance.
+8. Deploy. Put it where it makes decisions.
+9. Monitor and retrain. The world changes and models decay.
 
-Steps 1-3 and 8-9 are where junior people underinvest and senior people spend their time.
+Junior people tend to rush steps 1-3 and 8-9, and those are where experienced people spend most of their time.
 
 ## Structured versus unstructured data
 
@@ -103,25 +100,25 @@ Steps 1-3 and 8-9 are where junior people underinvest and senior people spend th
 | audio | waveforms | deep learning, usually pretrained |
 | time series | values over time | depends: boosted trees with lag features, classical statistics, sometimes deep models |
 
-Blunt advice: if someone proposes a neural network for a tabular dataset with 5,000 rows, ask why gradient boosting was not tried first.
+If someone proposes a neural network for a tabular dataset of 5,000 rows, ask why they did not try gradient boosting first.
 
-## Where LLMs fit in this picture
+## Where LLMs fit
 
-An LLM is a deep neural network (a transformer), trained with self-supervised learning to predict the next token, then fine-tuned with supervised learning and reinforcement learning to follow instructions. Everything in modules 2 to 6 is a building block of it. In industry, "AI engineering" (building products on top of LLMs) and classical ML engineering now overlap heavily: both need data handling, evaluation, deployment and monitoring.
+An LLM is a deep neural network (a transformer), trained with self-supervised learning to predict the next token, then fine-tuned with supervised learning and reinforcement learning to follow instructions. Modules 2 to 6 cover its parts. "AI engineering" (building products on LLMs) and classical ML engineering now overlap a lot, since both need data handling, evaluation, deployment and monitoring.
 
-## When NOT to use machine learning
+## When not to use machine learning
 
 - A simple rule solves it. If "flag orders over 10,000 dollars from new accounts" catches 95% of the problem, ship the rule.
 - You have no data, or no way to get labels.
 - Every mistake is unacceptable and must be explainable (some legal and safety settings).
 - The pattern changes faster than you can retrain.
-- Nobody will act on the prediction. A model nobody uses has zero value, however accurate.
+- Nobody will act on the prediction. An unused model is worth nothing, however accurate.
 
-## The goal is generalization
+## Generalization
 
-A model that gets every training example right has learned nothing useful if it fails on new examples. Memorizing is easy. Generalizing is the whole game. The next files show how models fail to generalize (overfitting), how to measure generalization honestly (splits and metrics), and the sneaky ways people fool themselves (data leakage).
+A model that gets every training example right has learned nothing if it fails on new ones. Memorizing is easy; the difficulty is doing well on unseen data. The next files cover how models fail at this (overfitting), how to measure it (splits and metrics), and how people fool themselves without noticing (data leakage).
 
-## Check yourself
+## Questions
 
 1. Classify each as regression, binary, multi-class or multi-label: predicting tomorrow's temperature; detecting which of 5 languages a text is in; tagging a movie with genres; predicting whether a loan defaults.
 2. Is the learning rate a parameter or a hyperparameter? What about the weights of a neural network?

@@ -1,9 +1,9 @@
 """
 PyTorch basics: tensors, autograd, modules, losses, the training loop, saving.
 
-PyTorch is the dominant deep learning library in research and in most LLM work
-(Hugging Face, vLLM, nanoGPT and nearly every open model are PyTorch). Everything here
-maps onto something you already built by hand:
+PyTorch is the dominant deep learning library in research and most LLM work
+(Hugging Face, vLLM, nanoGPT and nearly every open model use it). Everything here
+corresponds to something you already built by hand:
   tensors   = NumPy arrays that can live on a GPU and track gradients
   autograd  = your Value class, for whole arrays
   nn.Module = your Neuron / Layer / MLP classes

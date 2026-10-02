@@ -1,8 +1,8 @@
 """
-NumPy: the foundation of all numerical Python.
+NumPy, the base of numerical Python.
 
 pandas, scikit-learn and (in spirit) PyTorch are built on the ideas in this file.
-If you master shapes, axis and broadcasting here, everything later gets easier.
+Learn shapes, axis and broadcasting here and the later modules become easier.
 
 Run it:  python 03_numpy_lab.py
 """
@@ -43,7 +43,7 @@ print("linspace:", grid)
 print("dice:", dice)
 
 
-# %% 3. Shape, the most important attribute in ML
+# %% 3. Shape, the attribute you check most in ML
 # A dataset is a 2D array: one ROW per example, one COLUMN per feature.
 # 5 houses, 3 features each: size (m2), bedrooms, age (years)
 X = np.array([
@@ -87,7 +87,7 @@ print("sizes in square feet:", X[:, 0] * 10.764)
 print("mean of each column (axis=0):", X.mean(axis=0))   # shape (3,)
 print("sum of each row     (axis=1):", X.sum(axis=1))    # shape (5,)
 print("overall max:", X.max())
-# Memory trick: axis=0 means "the 0th dimension disappears". (5, 3) -> (3,)
+# To remember: axis=0 means "the 0th dimension disappears". (5, 3) -> (3,)
 
 
 # %% 6. Broadcasting: arrays of different shapes working together
@@ -178,7 +178,7 @@ y_train, y_test = y[train_idx], y[test_idx]
 print("train rows:", train_idx, "| test rows:", test_idx)
 print("shapes:", X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-# IMPORTANT habit: compute scaling statistics on TRAIN only, then apply them to test.
+# Compute scaling statistics on the training data only, then apply them to the test data.
 mu, sigma = X_train.mean(axis=0), X_train.std(axis=0)
 X_train_s = (X_train - mu) / sigma
 X_test_s = (X_test - mu) / sigma         # test uses TRAIN statistics. Why? See 03_ml_foundations.

@@ -4,10 +4,8 @@ Your first machine learning model, in pure Python. No libraries.
 Problem: a delivery company wants to predict delivery time (minutes) from distance (km).
 Model:   minutes = w * distance + b      (a straight line with 2 parameters)
 
-We will find w and b three ways:
-  1. guessing
-  2. brute-force search
-  3. gradient descent (the way everything from here to GPT is trained)
+We find w and b three ways: guessing, brute-force search, and gradient descent,
+which is how everything from here to GPT is trained.
 
 Run it:  python 02_first_model_pure_python.py
 """
@@ -30,7 +28,7 @@ def mean_squared_error(w, b):
     """Average of (prediction - truth)^2 over all examples. Lower is better.
 
     Why squared? It is always positive, it punishes big misses much more than small
-    ones, and it has a nice smooth derivative. It is the default regression loss.
+    ones, and its derivative is smooth. It is the default regression loss.
     """
     total = 0.0
     for d, m in data:
@@ -87,7 +85,7 @@ for step in range(3001):
     b -= learning_rate * grad_b
     if step in (0, 10, 100, 500, 1000, 3000):
         print(f"step {step:>4}: w={w:.3f}  b={b:.3f}  MSE={mean_squared_error(w, b):.3f}")
-# Notice: w settles fast, b crawls. The slope gets big gradients (distances are large numbers),
+# w settles fast and b crawls. The slope gets big gradients (distances are large numbers),
 # the intercept gets small ones. Scaling features fixes this imbalance (next lab).
 
 

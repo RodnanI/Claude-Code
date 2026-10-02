@@ -1,11 +1,11 @@
 """
 Naive Bayes spam filter, from scratch with dicts.
 
-This was THE spam filter of the early 2000s. It is also your first language model of
-sorts: it assigns a probability to text by multiplying word probabilities. LLMs do the
-same thing with a vastly better model of which words follow which.
+This was the standard spam filter of the early 2000s. It is also a rough first language
+model, since it assigns a probability to text by multiplying word probabilities. LLMs do
+the same with a far better model of which words follow which.
 
-Ideas you will meet again: tokenization, vocabularies, log probabilities, smoothing.
+It introduces tokenization, vocabularies, log probabilities and smoothing, which return later.
 
 Run it:  python 02_naive_bayes_lab.py
 """
@@ -76,7 +76,7 @@ print(tokenize("WIN a FREE iPhone now, click the link!"))
 # Bayes: P(class | words) is proportional to P(class) * P(words | class)
 # The NAIVE assumption: words are independent given the class, so
 #   P(words | class) = P(w1 | class) * P(w2 | class) * ...
-# Obviously false ("credit" and "card" are not independent), yet it works surprisingly well.
+# This is clearly false ("credit" and "card" are not independent), yet it works well in practice.
 class NaiveBayes:
     def __init__(self, alpha=1.0):
         self.alpha = alpha                      # Laplace smoothing strength (explained below)
@@ -186,7 +186,7 @@ print("\nscikit-learn predictions:", sk_preds.tolist())
 # context or meaning: "free" in "feel free to ask" counts as spammy. Modern spam filters use
 # richer features and neural models, and the text understanding in module 7 fixes the
 # order problem entirely. Still, Naive Bayes trains in milliseconds and makes a strong
-# baseline for text classification. Always try a cheap baseline first.
+# baseline for text classification. Try a cheap baseline first.
 
 # %% Your turn
 # 1. Add 5 spam and 5 ham messages of your own. Does accuracy on the new messages change?

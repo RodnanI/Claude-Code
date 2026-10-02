@@ -1,6 +1,6 @@
 # Using LLM APIs
 
-Most LLM work in companies starts here: your code sends text to a model hosted by a provider and gets text back. The API surface is small, but using it well (cost, latency, reliability, safety) is a real skill. Examples use Anthropic's Claude API and its Python SDK; the concepts transfer to every provider. Lab: `14_llm_api_lab.py` (works without an API key in dry-run mode).
+Most LLM work in companies starts here: your code sends text to a model hosted by a provider and gets text back. The API is small, but getting cost, latency, reliability and safety right takes skill. The examples use Anthropic's Claude API and its Python SDK, and the ideas carry over to other providers. The lab is `14_llm_api_lab.py`, which runs in dry-run mode without an API key.
 
 ## What a call looks like
 
@@ -33,17 +33,17 @@ for block in response.content:
 | `output_config` | e.g. `effort` (how much the model thinks), `format` (force JSON matching a schema) |
 | `stream` / `.stream()` | receive tokens as they are generated |
 
-About sampling knobs: older models and open models expose `temperature`, `top_p`, `top_k` (lab 11). Many current API models no longer accept them; for example current Claude models reject them and instead offer an **effort** level (`low`, `medium`, `high`, `xhigh`, `max`) that controls how much the model reasons before answering. Read the docs of the exact model you use.
+Older models and open models expose sampling settings such as `temperature`, `top_p` and `top_k` (lab 11). Many current API models no longer accept them. Current Claude models reject them and offer an effort level (`low`, `medium`, `high`, `xhigh`, `max`) that controls how much the model reasons before answering. Check the docs for the exact model you use.
 
 ### The response
 
 | Field | Meaning |
 |-------|---------|
-| `content` | a list of **blocks**: `text`, `thinking` (reasoning), `tool_use` (a requested function call). Check each block's `type` |
+| `content` | a list of blocks: `text`, `thinking` (reasoning) and `tool_use` (a requested function call). Check each block's `type` |
 | `stop_reason` | why it stopped: `end_turn` (finished), `max_tokens` (cut off!), `tool_use` (wants a tool), `refusal` (declined), `stop_sequence`, `pause_turn` |
 | `usage` | `input_tokens`, `output_tokens`, plus cache read/write counts. This is your bill |
 
-**Always check `stop_reason` before trusting `content`.** An answer cut off by `max_tokens` looks fine in a log until someone reads the last line.
+Check `stop_reason` before trusting `content`. An answer cut off by `max_tokens` looks fine in a log until someone reads the last line.
 
 ## The API is stateless
 
@@ -57,7 +57,7 @@ history.append({"role": "user", "content": "What is my name?"})
 reply = call(history)       # works only because the history includes the first exchange
 ```
 
-Consequences: every turn re-sends (and re-bills) all previous turns, long conversations get expensive and eventually hit the context limit, and "memory" features in products are text being stored and put back into prompts. Long-running apps summarize or trim old turns (some APIs offer server-side compaction for this).
+This means every turn re-sends, and re-bills, all previous turns, so long conversations get expensive and eventually hit the context limit. Memory features in products are stored text put back into prompts. Long-running apps summarize or trim old turns, and some APIs offer server-side compaction for this.
 
 ## Streaming
 
@@ -70,7 +70,7 @@ with client.messages.stream(model=..., max_tokens=..., messages=...) as stream:
     final = stream.get_final_message()     # full message + usage at the end
 ```
 
-Two latency numbers matter: **time to first token (TTFT)** and **output tokens per second**. Streaming does not make generation faster; it makes waiting feel shorter and avoids HTTP timeouts on long outputs.
+Two latency numbers matter: time to first token (TTFT) and output tokens per second. Streaming does not speed up generation. It makes the wait feel shorter and avoids HTTP timeouts on long outputs.
 
 ## Tokens, money and choosing a model
 
@@ -90,14 +90,9 @@ output: 50,000 x   300 =  15M tokens/day
 on a $2 / $10 model: 100 x $2 + 15 x $10 = $350/day, about $10,500/month
 ```
 
-How professionals choose:
+A usual process for choosing a model is to prototype with a capable one to learn what is possible, build an evaluation set (file 22), then test cheaper or faster models and lower effort levels against it and keep the cheapest that clears the quality bar. After that, reduce tokens with shorter prompts, fewer retrieved documents, caching and tighter output formats.
 
-1. Prototype with a capable model to learn what is possible.
-2. Build an evaluation set (file 22).
-3. Try cheaper or faster models and lower effort levels against it. Keep the cheapest one that passes the quality bar.
-4. Reduce tokens: shorter prompts, fewer retrieved documents, caching, tighter output formats.
-
-Count tokens with the provider's tool (`client.messages.count_tokens(...)`). Never estimate one provider's tokens with another provider's tokenizer.
+Count tokens with the provider's own tool (`client.messages.count_tokens(...)`) and not another provider's tokenizer.
 
 ## Structured outputs
 
@@ -117,13 +112,13 @@ response = client.messages.create(
 )
 ```
 
-The SDK also offers `client.messages.parse(..., output_format=MyPydanticModel)` that returns a validated object. Even with guaranteed-valid JSON, validate the *content* (is the category plausible?) before acting on it.
+The SDK also offers `client.messages.parse(..., output_format=MyPydanticModel)`, which returns a validated object. Even when the JSON is guaranteed valid, check the content, for example whether the category is plausible, before acting on it.
 
 ## Prompt caching
 
 If many requests share a long identical beginning (a big system prompt, a document, tool definitions), the provider can cache that prefix. Cached input tokens are billed at a small fraction of the normal price (10% or less for cache reads on current Claude models, with a premium of about 25% on the first write) and are processed faster.
 
-Rules: caching matches an **exact prefix**, so put stable content first and anything that changes (the user's question, today's date, IDs) last. Check `usage.cache_read_input_tokens` to confirm it works; a timestamp at the top of your system prompt silently kills every cache hit.
+Caching matches an exact prefix, so put stable content first and anything that changes (the user's question, today's date, IDs) last. Check `usage.cache_read_input_tokens` to confirm it works, because a timestamp at the top of your system prompt silently kills every cache hit.
 
 ## Batch processing
 
@@ -131,21 +126,13 @@ For work that does not need an answer right now (classifying a million old ticke
 
 ## Reliability
 
-- **Rate limits** (HTTP 429): you sent too many requests or tokens per minute. Retry with **exponential backoff** (wait 1s, 2s, 4s... plus randomness). The official SDKs already retry a couple of times.
-- **Server errors and overload** (5xx): retry with backoff.
-- **Client errors** (400, 401, 404): your request is wrong; retrying will not help. Fix the code.
-- **Timeouts**: long outputs should stream.
-- **Refusals**: models can decline requests (`stop_reason: "refusal"`). Handle it explicitly. Some APIs can automatically retry a declined request on a fallback model; the lab enables Anthropic's server-side fallback and explains it.
-- **Log request IDs** and token usage for every call. When something goes wrong in production, you will need them.
+Rate limits (HTTP 429) mean you sent too many requests or tokens per minute. Retry with exponential backoff, waiting 1s, 2s, 4s and so on with some randomness; the official SDKs already retry a couple of times. Server errors and overload (5xx) also deserve a retry with backoff. Client errors (400, 401, 404) mean the request is wrong and retrying will not help, so fix the code. Long outputs should stream to avoid timeouts. Models can decline requests (`stop_reason: "refusal"`), and your code should handle that explicitly. Some APIs can retry a declined request on a fallback model, and the lab enables Anthropic's server-side fallback and explains it. Log request IDs and token usage for every call, because you will need them when something goes wrong in production.
 
 ## Security and privacy
 
-- **Never put API keys in code** or in git. Environment variables locally, a secrets manager in production. Leaked keys get abused within minutes of being pushed to a public repository.
-- **Treat model output as untrusted input**: never pass it straight into a shell, SQL query or `eval()`.
-- **Prompt injection**: text the model reads (web pages, emails, documents, tool results) can contain instructions that try to hijack it. Keep privileges minimal, require confirmation for consequential actions, keep untrusted content clearly separated (file 15 and 18).
-- **Data handling**: know what you are allowed to send to a third-party API (personal data, health data, customer contracts) and the provider's retention terms. Ask your company's security or legal team before sending sensitive data.
+Keep API keys out of code and git, using environment variables locally and a secrets manager in production; leaked keys get abused within minutes of reaching a public repository. Treat model output as untrusted input, and never pass it straight into a shell, SQL query or `eval()`. Text the model reads (web pages, emails, documents, tool results) can contain instructions that try to hijack it, which is prompt injection, so keep privileges minimal, require confirmation for consequential actions and keep untrusted content clearly separated (files 15 and 18). Know what you may send to a third-party API, such as personal data, health data and customer contracts, and what the provider's retention terms are, and ask your security or legal team before sending anything sensitive.
 
-## Check yourself
+## Questions
 
 1. A response has `stop_reason == "max_tokens"`. What happened and what do you do?
 2. Why does a 30-turn conversation cost far more per turn than the first turn?

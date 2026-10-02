@@ -1,8 +1,8 @@
 # How Machine Learning Works Inside Companies
 
-Courses teach models. Companies pay for outcomes. The gap between those two is where most junior people struggle and where good ones stand out quickly. This file is the map of the territory you are about to enter.
+Courses teach models, but companies pay for outcomes. Most junior people struggle in the gap between the two, and the good ones stand out by closing it quickly. This file describes what you are about to walk into.
 
-## The roles (titles vary wildly between companies)
+## Roles
 
 | Role | Spends most time on | Typical tools | What a junior is expected to do |
 |------|--------------------|---------------|---------------------------------|
@@ -15,48 +15,34 @@ Courses teach models. Companies pay for outcomes. The gap between those two is w
 | ML platform / MLOps engineer | the infrastructure everyone else uses | Kubernetes, CI/CD, registries, feature stores | automation, reliability |
 | Research scientist / engineer | new methods, training large models | PyTorch, distributed training, papers | experiments, careful ablations |
 
-Two blunt observations:
-
-- In small companies one person does several of these. Learn enough of each to be dangerous.
-- The fastest way to be valuable as a junior is to be the person whose numbers can be trusted. Correctness beats cleverness.
+Titles vary a lot between companies, and in small ones one person does several of these jobs, so learn a little of each. The quickest way to be valuable as a junior is to be the person whose numbers can be trusted, because correctness matters more than cleverness.
 
 ## The life of an ML project
 
-1. **Problem framing** (with a product manager or business owner)
-   - What decision will this prediction change, and who makes it?
-   - What happens today without ML? (That is your baseline.)
-   - What does a wrong prediction cost, in each direction?
-   - What is "good enough" to ship? Agree on it before you start, or the goalposts will move.
-   - Constraints: latency, cost per prediction, explainability, regulation, privacy.
-2. **Data audit**: where does the data live, who owns it, how good is it, are there labels, can we legally use it, what is available at prediction time?
-3. **Baseline**: a heuristic, the current process, or a simple model. Many projects end here, successfully.
-4. **Iteration**: features, models, evaluation (modules 3 to 7).
-5. **Design review**: a written proposal reviewed by peers and stakeholders.
-6. **Productionization**: pipelines, tests, serving, monitoring (file 02).
-7. **Online test**: shadow mode, then an A/B test on the business metric.
-8. **Launch** and a short report on the measured impact.
-9. **Operate**: monitoring, retraining, incident response, documentation.
-10. **Retire** it when it is no longer worth its maintenance.
+1. Problem framing, with a product manager or business owner. Ask what decision the prediction will change and who makes it, what happens today without ML (that is your baseline), what a wrong prediction costs in each direction, and what counts as good enough to ship. Agree on that last point before you start or the goalposts will move. Note the constraints on latency, cost per prediction, explainability, regulation and privacy.
+2. Data audit: where the data lives, who owns it, how good it is, whether labels exist, whether you may legally use it, and what is available at prediction time.
+3. Baseline: a heuristic, the current process or a simple model. Many projects end here, successfully.
+4. Iteration on features, models and evaluation (modules 3 to 7).
+5. Design review: a written proposal reviewed by peers and stakeholders.
+6. Productionization: pipelines, tests, serving and monitoring (file 02).
+7. Online test: shadow mode, then an A/B test on the business metric.
+8. Launch, with a short report on the measured impact.
+9. Operation: monitoring, retraining, incident response and documentation.
+10. Retirement, once the model is no longer worth its maintenance.
 
-Junior people focus on step 4. The people who get promoted care about all ten.
+Junior people concentrate on step 4, while the people who get promoted attend to all ten.
 
-## Writing it down: the documents you will see
+## Documents
 
-- **Design doc**: problem, goals and non-goals, success metrics, data, approach, alternatives considered, risks, evaluation plan, rollout plan, open questions. One to six pages. Writing one before building saves weeks.
-- **Experiment report**: what you tried, results with uncertainty, what you concluded, what you would do next. Include the failures.
-- **Model card**: what the model is for and not for, training data, metrics overall and per slice, limitations (module 5 project generates one).
-- **Runbook**: what to do when the model or pipeline breaks at 3am.
-- **Postmortem** (blameless): what went wrong, why, and what changes prevent it again.
+A design doc covers the problem, goals and non-goals, success metrics, data, approach, alternatives considered, risks, evaluation plan, rollout plan and open questions, in one to six pages. Writing one before you build saves weeks. An experiment report says what you tried, the results with uncertainty, what you concluded and what you would do next, and it includes the failures. A model card states what the model is and is not for, its training data, metrics overall and per slice, and its limitations; the module 5 project generates one. A runbook says what to do when the model or pipeline breaks at 3am. A blameless postmortem explains what went wrong, why, and which changes prevent a repeat.
 
 ## Talking to stakeholders
 
-- Translate metrics into the stakeholder's units: money, hours saved, customers retained, risk reduced. "Recall improved 6 points" means nothing to a sales director; "catches about 120 more fraudulent orders a month, worth roughly 40,000 dollars" does.
-- State uncertainty plainly. "Between 3% and 7% fewer cancellations" is honest; "5.2%" pretends to precision you do not have.
-- Say no, or "not yet", with reasons. A model on unusable data is worse than no model, because people will trust it.
-- Show examples, not only aggregates. Five concrete predictions with explanations build more trust than a ROC curve.
-- Bad news early is a gift. Surprises late are career damage.
+Translate metrics into the stakeholder's units, such as money, hours saved, customers retained or risk reduced. "Recall improved 6 points" means nothing to a sales director, while "catches about 120 more fraudulent orders a month, worth roughly 40,000 dollars" does. State uncertainty plainly: "between 3% and 7% fewer cancellations" is honest, and "5.2%" claims precision you do not have. Say no, or "not yet", and give reasons, because a model on unusable data is worse than no model when people trust it. Show examples as well as aggregates, since five concrete predictions with explanations build more trust than a ROC curve. Report bad news early; surprises late do real damage to your reputation.
 
-## Why ML projects fail (in order of frequency, roughly)
+## Why ML projects fail
+
+The causes below are listed in rough order of frequency.
 
 1. The problem was not worth solving, or nobody acts on the predictions.
 2. No usable data or labels, discovered late.
@@ -66,38 +52,25 @@ Junior people focus on step 4. The people who get promoted care about all ten.
 6. The model decayed and nobody noticed.
 7. The model was too complex to maintain after its author left.
 
-Notice that "the algorithm was not good enough" is rarely the cause.
+The algorithm not being good enough is rarely the cause.
 
 ## Technical debt in ML
 
-A classic paper, "Hidden Technical Debt in Machine Learning Systems" (Sculley et al., 2015), observed that the model code is a tiny box in a large system of data collection, feature extraction, configuration, serving and monitoring. Common debts:
+The paper "Hidden Technical Debt in Machine Learning Systems" (Sculley et al., 2015) observed that the model code is a small box inside a large system of data collection, feature extraction, configuration, serving and monitoring. It lists several common debts. Glue code and pipeline jungles are scripts piled on scripts that nobody fully understands. Entanglement, summed up as "changing anything changes everything", means that changing one feature's preprocessing shifts every downstream behavior. Hidden feedback loops arise when the model's predictions influence the data it is later retrained on, as when a recommender only learns about items it already shows. Undeclared consumers are other teams that quietly depend on your model's outputs, so changing them breaks things you did not know about. Configuration debt is hundreds of untested settings.
 
-- **Glue code and pipeline jungles**: scripts on scripts that nobody fully understands.
-- **Entanglement (CACE: "changing anything changes everything")**: change one feature's preprocessing and every downstream behavior shifts.
-- **Hidden feedback loops**: the model's predictions influence the data it is later retrained on (a recommender only learns about items it already shows).
-- **Undeclared consumers**: other teams quietly depend on your model's outputs; changing them breaks things you did not know about.
-- **Configuration debt**: hundreds of settings, untested.
-
-Fighting it: simple designs, tests, documentation, ownership, and deleting things that are no longer needed.
+The remedies are simple designs, tests, documentation, clear ownership and deleting what is no longer needed.
 
 ## Data reality
 
-- Data has owners, access requests and approval processes. Start them early.
-- Personal data comes with legal obligations (privacy laws, retention rules, consent). Ask before you copy a production table to your laptop. Actually, do not copy production data to your laptop.
-- Labels are expensive. Options: existing business outcomes (did the customer churn?), human labeling (in-house experts or vendors, with clear guidelines and quality checks), weak or programmatic labeling, and LLM-assisted labeling with human spot checks.
-- Label noise is normal. Measure agreement between labelers before blaming the model.
+Data has owners, access requests and approval processes, so start those early. Personal data brings legal obligations on privacy, retention and consent, and you should not copy production data to your laptop. Labels are expensive. You can take them from existing business outcomes (did the customer churn?), from human labeling by in-house experts or vendors with clear guidelines and quality checks, from weak or programmatic labeling, or from LLM-assisted labeling with human spot checks. Label noise is normal, so measure agreement between labelers before blaming the model.
 
 ## Engineering habits that make you trusted
 
-- Code in git, reviewed by someone else. Small pull requests.
-- Notebooks for exploration, modules and tests for anything reused or deployed.
-- Reproducible results: pinned environments, fixed seeds, logged configs, versioned data snapshots.
-- Every number you report can be regenerated from a commit and a command.
-- Read the existing code before writing new code. Ask why things are the way they are before changing them.
+Keep code in git and have someone else review it, in small pull requests. Use notebooks for exploration and modules with tests for anything reused or deployed. Make results reproducible with pinned environments, fixed seeds, logged configs and versioned data snapshots, so every number you report can be regenerated from a commit and a command. Read the existing code before writing new code, and ask why things are the way they are before changing them.
 
 ## Build versus buy
 
-Before building a model, check: is there an API that does this (speech-to-text, OCR, translation, a general LLM)? A vendor product? An open-source model? Building from scratch is justified when the problem is core to the business, the data is unique, or off-the-shelf options fail your evaluation. Your time is the most expensive resource in the project.
+Before building a model, check whether an API already does the job (speech-to-text, OCR, translation, a general LLM), or a vendor product, or an open-source model. Building from scratch is justified when the problem is core to the business, the data is unique, or off-the-shelf options fail your evaluation. Your time is the most expensive resource in the project.
 
 ## Workplace vocabulary
 
@@ -115,7 +88,7 @@ Before building a model, check: is there an API that does this (speech-to-text, 
 | north star metric | the one metric the company or team optimizes |
 | guardrail metric | a metric that must not get worse while you optimize another |
 
-## Check yourself
+## Questions
 
 1. A manager asks for "a model that predicts which customers are unhappy". Write the framing questions you would ask.
 2. Your model is 4 points better offline but adds 300 ms of latency to checkout. Who decides whether that is acceptable, and with what information?

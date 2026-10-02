@@ -1,6 +1,6 @@
 # Tokenization
 
-Neural networks eat numbers, not text. A **tokenizer** converts text into a sequence of integers (token ids) and back. It sounds like boring plumbing. It is responsible for a surprising number of LLM quirks, it determines what you pay for API calls, and every model has its own. Then build one in `03_bpe_tokenizer_lab.py`.
+Neural networks take numbers, not text. A tokenizer converts text into a sequence of integers (token ids) and back. It looks like plumbing, but it explains many LLM quirks, determines what you pay for API calls, and differs for every model. `03_bpe_tokenizer_lab.py` builds one.
 
 ## Three ways to cut text
 
@@ -8,13 +8,13 @@ Neural networks eat numbers, not text. A **tokenizer** converts text into a sequ
 |------|-----------|-----------------|----------|
 | characters | tiny (~100-300) | very long | the model must learn spelling from scratch; long sequences make attention expensive |
 | words | huge (millions) | short | unknown words ("unbelievableness", typos, names, new slang) have no id; "run", "runs", "running" share nothing |
-| **subwords** | 30K-260K | medium | the compromise every modern LLM uses |
+| subwords | 30K-260K | medium | the compromise every modern LLM uses |
 
 Subword tokenization keeps common words whole (" the", " learning") and splits rare words into reusable pieces (" token" + "ization"). Nothing is ever unknown, because in the worst case text falls back to individual bytes.
 
 ## Byte Pair Encoding (BPE)
 
-The most common subword algorithm (GPT models and Llama 3 use byte-level BPE, for example). Training is beautifully simple:
+This is the most common subword algorithm; GPT models and Llama 3 use byte-level BPE, for example. Training is simple:
 
 1. Start with the 256 possible bytes as the vocabulary. Any text in any language (and emoji, and code) is a sequence of UTF-8 bytes.
 2. Count every pair of adjacent tokens in the training text.
@@ -23,41 +23,27 @@ The most common subword algorithm (GPT models and Llama 3 use byte-level BPE, fo
 
 Encoding new text replays the learned merges in the order they were learned. Decoding looks up each id's bytes and joins them.
 
-Real tokenizers add two things:
+Real tokenizers add two things. Pre-tokenization first splits text with a regular expression into chunks (words with their leading space, numbers, runs of punctuation) so merges never cross those boundaries, which is why " the" with its leading space is a typical token. Special tokens are ids reserved for markers that never appear in normal text, such as end of text, the start and end of each chat message, tool calls and padding, and the chat format you send through an API is turned into these.
 
-- **Pre-tokenization**: a regular expression first splits text into chunks (words with their leading space, numbers, punctuation runs) so merges never cross those boundaries. That is why " the" with its leading space is a typical token.
-- **Special tokens**: ids reserved for markers that never appear in normal text: end of text, start and end of each chat message, tool calls, padding. The chat format you send through an API is turned into these.
+WordPiece (BERT) and Unigram (in the SentencePiece library, used by T5 and many multilingual models) pursue the same goal with different merge rules.
 
-Other algorithms you will see named: **WordPiece** (BERT), **Unigram** (in the SentencePiece library, used by T5 and many multilingual models). Same goal, different merge rules.
+## Vocabulary size
 
-## Vocabulary size is a trade-off
-
-- **Bigger vocabulary**: fewer tokens per text, so more text fits in the context window and generation needs fewer steps. But the embedding table and output layer grow (vocab_size x hidden_size each), and rare tokens get little training.
-- **Smaller vocabulary**: smaller matrices, more tokens per text.
-
-Modern LLMs have moved from 32K-50K toward 100K-260K tokens, largely to handle many languages and code efficiently.
+A bigger vocabulary means fewer tokens per text, so more text fits in the context window and generation needs fewer steps. The cost is that the embedding table and output layer grow (vocab_size x hidden_size each) and rare tokens get little training. A smaller vocabulary gives smaller matrices but more tokens per text. Modern LLMs have moved from 32K-50K toward 100K-260K tokens, largely to handle many languages and code efficiently.
 
 ## Rules of thumb
 
-- English: about **4 characters per token**, or about **0.75 words per token**. 1,000 tokens is roughly 750 English words.
-- Other languages often need more tokens for the same meaning, sometimes 2-3 times more, especially for scripts underrepresented in the tokenizer's training data. Same content, higher cost and less fits in context. The lab shows this.
-- Code tokenization depends heavily on whitespace handling; indentation can cost a lot of tokens in older tokenizers.
+English averages about 4 characters, or 0.75 words, per token, so 1,000 tokens is roughly 750 words. Other languages often need 2-3 times more tokens for the same meaning, especially scripts that were underrepresented in the tokenizer's training data, which means higher cost and less fitting in context; the lab shows this. Code tokenization depends heavily on whitespace handling, and indentation can cost many tokens in older tokenizers.
 
 ## Quirks caused by tokenization
 
-- **Leading spaces matter**: "learning", " learning" and " Learning" are different tokens with different ids.
-- **Letter counting**: "How many r's in strawberry?" was a famous failure. The model sees maybe 2-3 tokens, not 10 letters. It has to have memorized the spelling of each token.
-- **Arithmetic**: numbers split into arbitrary chunks ("12345" might be "123" + "45"), so digit-level operations are awkward. This is one reason tools and code execution help.
-- **Trailing whitespace** in a prompt can push the model into an unusual token boundary and degrade output.
-- **Glitch tokens**: tokens that appeared in the tokenizer's training data but almost never in the model's training data have nearly untrained embeddings. Early GPT models produced bizarre output for a few such strings.
+Leading spaces matter, because "learning", " learning" and " Learning" are different tokens with different ids. Letter counting fails: "How many r's in strawberry?" was a famous failure, since the model sees perhaps 2-3 tokens and not 10 letters, and has to have memorized the spelling of each token. Numbers split into arbitrary chunks ("12345" might be "123" + "45"), which makes digit-level arithmetic awkward and is one reason tools and code execution help. Trailing whitespace in a prompt can push the model onto an unusual token boundary and degrade output. Glitch tokens are tokens that appeared in the tokenizer's training data but almost never in the model's, so their embeddings are nearly untrained, and early GPT models produced bizarre output for a few such strings.
 
-## Tokens are money and limits
+## Tokens and cost
 
-- APIs charge **per token**, with separate prices for input and output tokens (output is usually several times more expensive per token).
-- Context windows, rate limits and maximum output lengths are all measured in tokens.
-- Count tokens with the provider's own tokenizer or token-counting endpoint. Never estimate one model's tokens with another model's tokenizer when it matters.
+APIs charge per token, with separate prices for input and output tokens, and output usually costs several times more per token. Context windows, rate limits and maximum output lengths are also measured in tokens. When precision matters, count tokens with the provider's own tokenizer or token-counting endpoint, not another model's tokenizer.
 
-Back-of-envelope example: a support bot that sends a 3,000-token prompt (instructions + retrieved documents) and gets 300 tokens back, 100,000 times a day, uses 300 million input tokens and 30 million output tokens daily. Multiply by your provider's per-million prices. This calculation decides architectures (caching, smaller models, shorter prompts).
+A rough example: a support bot that sends a 3,000-token prompt (instructions plus retrieved documents) and gets 300 tokens back, 100,000 times a day, uses 300 million input tokens and 30 million output tokens daily. Multiply by your provider's per-million prices. Calculations like this decide architecture choices such as caching, smaller models and shorter prompts.
 
 ## In practice
 
@@ -68,9 +54,9 @@ Back-of-envelope example: a support bot that sends a 3,000-token prompt (instruc
 | `sentencepiece` | T5, many multilingual models, older Llama |
 | provider token counting endpoints | Claude and other API models |
 
-The tokenizer is part of the model. Using the wrong tokenizer with a model produces garbage, silently.
+The tokenizer is part of the model, and using the wrong one gives garbage output without any error.
 
-## Check yourself
+## Questions
 
 1. Why does byte-level BPE never produce an "unknown token"?
 2. What does a larger vocabulary buy you, and what does it cost?
