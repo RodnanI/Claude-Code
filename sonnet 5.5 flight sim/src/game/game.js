@@ -241,6 +241,7 @@ export class Game extends Emitter {
     const a = (v.windDir + 180) * DEG;                   // direction the wind blows toward
     m.wind[0] = Math.sin(a) * v.windSpeed; m.wind[2] = -Math.cos(a) * v.windSpeed;
     m.turbulence = v.turbulence;
+    m.ignoreG = !!v.ignoreG;
   }
 
   _discrete() {

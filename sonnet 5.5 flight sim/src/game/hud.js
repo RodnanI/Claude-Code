@@ -147,7 +147,7 @@ export class Hud {
     if (m.ias > spec.limits.vne * 0.97 && !m.onGround) items.push('OVERSPEED');
     if (!m.onGround && spec.gear.retractable && m.c.gear < 0.99 && m.agl < 120 && m.vel[1] < -1 && m.ias < spec.limits.gearSpeed) items.push('GEAR');
     if (m.fuel < m.spec.mass.fuel * 0.08 && m.fuel > 0) items.push('LOW FUEL'); else if (m.fuel <= 0) items.push('NO FUEL');
-    if (m.gLoad > spec.limits.maxG * 0.9) items.push('G LIMIT');
+    if (!m.ignoreG && m.gLoad > spec.limits.maxG * 0.9) items.push('G LIMIT');
     if (s.assist && s.assist.terrain && !m.onGround) items.push('TERRAIN');
     if (!items.length) return;
     const blink = Math.floor(performance.now() / 260) % 2 === 0;
@@ -392,7 +392,7 @@ export class Hud {
     const rd = (label, val, x, y, warn) => { this._text(label, x, y, 10 * k, col, 'left', COND); this._text(val, x + 40 * k, y, 14 * k, warn ? ORANGE : col, 'left'); };
     const bx = cx - W * 0.35, by = cy + H * 0.2;
     rd('M', m.mach.toFixed(2), bx, by);
-    rd('G', m.gLoad.toFixed(1), bx, by + 22 * k, m.gLoad > spec.limits.maxG * 0.85);
+    rd('G', m.gLoad.toFixed(1), bx, by + 22 * k, !m.ignoreG && m.gLoad > spec.limits.maxG * 0.85);
     rd('AOA', (m.ias > 12 ? m.alpha * 57.2958 : 0).toFixed(1), bx, by + 44 * k, m.stallWarn > 0.5); // meaningless at walking pace, where wind alone gives huge angles
     const rx = cx + W * 0.3;
     rd('THR', m.afterburner ? 'AB' : String(Math.round(m.c.thr * 100)), rx, by);

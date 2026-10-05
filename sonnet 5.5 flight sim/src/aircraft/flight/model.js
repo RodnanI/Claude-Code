@@ -61,6 +61,7 @@ export class FlightModel {
     this.wind = new Float64Array(3);
     this.turbulence = 0;
     this.structural = opts.structural ?? true;
+    this.ignoreG = false;               // set from settings: no over-G airframe failure
     /* Control inputs: pitch positive = pull (nose up), roll and yaw positive = right. gear 1 = down. */
     this.input = { pitch: 0, roll: 0, yaw: 0, throttle: 0, brake: 0, flaps: 0, gear: 1, airbrake: 0, trim: 0 };
     /* Actual surface positions, smoothed toward the inputs. gear is extension (1 = down and locked). */
@@ -377,7 +378,7 @@ export class FlightModel {
     // structural limits
     if (this.structural && !this.onGround) {
       if (this.ias > a.limits.vne * 1.22) { this._crash('airframe failure: overspeed'); return; }
-      if (this.gLoad > a.limits.maxG * 1.65 || this.gLoad < -a.limits.maxG * 0.85) { this._crash(`airframe failure: ${this.gLoad.toFixed(1)} G`); return; }
+      if (!this.ignoreG && (this.gLoad > a.limits.maxG * 1.65 || this.gLoad < -a.limits.maxG * 0.85)) { this._crash(`airframe failure: ${this.gLoad.toFixed(1)} G`); return; }
     }
 
     // animation state

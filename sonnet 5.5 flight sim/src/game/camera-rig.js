@@ -91,7 +91,7 @@ export class CameraRig {
     if (this.mode === 'cockpit') {
       const e = spec.cameras.cockpit;
       // head reacts to load factor and lateral acceleration, smoothed
-      const gy = clamp((m.gLoad - 1) * -0.012, -0.05, 0.03);
+      const gy = m.ignoreG ? 0 : clamp((m.gLoad - 1) * -0.012, -0.05, 0.03);
       this.head.y += (gy - this.head.y) * (1 - Math.exp(-dt * 6));
       this.head.z += (clamp(m.beta * 0.06, -0.03, 0.03) - this.head.z) * (1 - Math.exp(-dt * 5));
       ent.worldPoint(_p, e[0], e[1] + this.head.y, e[2] + this.head.z);

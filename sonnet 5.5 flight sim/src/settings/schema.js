@@ -60,6 +60,7 @@ export const SCHEMA = [
   { key: 'takeoffAssist', group: 'Controls', label: 'Takeoff assist', type: 'select', default: 'guide', apply: 'live',
     options: [{ value: 'off', label: 'Off' }, { value: 'guide', label: 'Runway guidance' }, { value: 'auto', label: 'Automatic takeoff' }],
     help: 'Guidance shows the centerline, the rotation speed and what to do next. Automatic flies the whole takeoff and the first climb, and gives the controls back the moment you touch them, or once the climb is established. T cycles the mode in flight.' },
+  { key: 'ignoreG', group: 'Controls', label: 'Ignore G-force', type: 'toggle', default: false, apply: 'live', help: 'The airframe never breaks from pulling or pushing too hard, the G LIMIT warning stays quiet and the cockpit view no longer sags under load. Overspeed and hard landings still count.' },
   { key: 'sensitivity', group: 'Controls', label: 'Control response', type: 'range', min: 0.3, max: 2, step: 0.05, default: 1, apply: 'live', format: (v) => v.toFixed(2) + 'x' },
   { key: 'deadzone', group: 'Controls', label: 'Gamepad deadzone', type: 'range', min: 0, max: 0.4, step: 0.01, default: 0.08, apply: 'live', format: (v) => v.toFixed(2) },
 
