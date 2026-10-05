@@ -70,9 +70,10 @@ const PCV = makeCanvas(64, 56), PCX = ctx2d(PCV);
 const POCV = makeCanvas(66, 58), POCX = ctx2d(POCV);
 const PWCV = makeCanvas(66, 58), PWCX = ctx2d(PWCV);
 const POX = 32, POY = 46;
+const MF = { sh: '#7a6a68', base: '#b8a7a0', hi: '#e2d5ca', belly: '#f4eadf' };
 
 function chainInit(n, x, y) { const a = []; for (let i = 0; i < n; i++) a.push({ x, y: y + i, px: x, py: y + i }); return a; }
-function chainStep(ch, rx, ry, seg, grav, damp, wx, wave, t) {
+function chainStep(ch, rx, ry, seg, grav, damp, wx, wave, t, shape, k = 0.1) {
   ch[0].x = rx; ch[0].y = ry; ch[0].px = rx; ch[0].py = ry;
   for (let i = 1; i < ch.length; i++) {
     const p = ch[i];
@@ -80,6 +81,7 @@ function chainStep(ch, rx, ry, seg, grav, damp, wx, wave, t) {
     p.px = p.x; p.py = p.y;
     p.x += vx + wx + (wave ? sin(t * 0.12 + i * 0.9) * wave : 0);
     p.y += vy + grav;
+    if (shape) { const s = shape(i); p.x += (rx + s[0] - p.x) * k; p.y += (ry + s[1] - p.y) * k; }
   }
   for (let k = 0; k < 3; k++) {
     for (let i = 1; i < ch.length; i++) {
@@ -113,9 +115,9 @@ function renderMouse(p, pose) {
   }
   if (pose.curl) {
     const cx = ox, cy = oy - 7;
-    blob(c, cx, cy, 6, 6, C.fu1, C.fu2, C.fu3);
-    DISC(c, cx - 2, cy - 5, 3, C.fu1); DISC(c, cx - 2, cy - 5, 1, C.pk0);
-    DISC(c, cx + 3, cy - 4, 3, C.fu2); DISC(c, cx + 3, cy - 4, 1, C.pk1);
+    blob(c, cx, cy, 6, 6, MF.sh, MF.base, MF.hi);
+    DISC(c, cx - 2, cy - 5, 3, MF.sh); DISC(c, cx - 2, cy - 5, 1, C.pk0);
+    DISC(c, cx + 3, cy - 4, 3, MF.base); DISC(c, cx + 3, cy - 4, 1, C.pk1);
     R(c, cx - 5, cy + 1, 10, 2, C.rd2);
     R(c, cx + 3, cy - 1, 2, 2, C.ink); PX(c, cx + 3, cy - 1, C.wh);
     R(c, cx + 6, cy, 2, 2, C.pk1);
@@ -127,22 +129,22 @@ function renderMouse(p, pose) {
     const bf = pose.bf || [0, 0], ff = pose.ff || [0, 0];
     R(c, ox - 4 + bf[0], oy - 2 + bf[1], 3, 2, C.pk0);
     // body
-    blob(c, ox, oy - 5 + floor(cr / 2), 4, 3 - (cr > 1 ? 1 : 0), C.fu1, C.fu2, null);
-    ELL(c, ox + 1, oy - 4 + floor(cr / 2), 2, 1, C.fu3);
+    blob(c, ox, oy - 5 + floor(cr / 2), 4, 3 - (cr > 1 ? 1 : 0), MF.sh, MF.base, null);
+    ELL(c, ox + 1, oy - 4 + floor(cr / 2), 2, 1, MF.belly);
     // front foot
     R(c, ox + 1 + ff[0], oy - 2 + ff[1], 3, 2, C.pk1);
     PX(c, ox + 3 + ff[0], oy - 2 + ff[1], C.pk2);
     // head
     const hx = ox + 1 + lean, hy = oy - 12 + cr;
     const eb = pose.earBack || 0, eu = pose.earUp || 0;
-    DISC(c, hx - 4 - eb, hy - 5 - eu, 3, C.fu1);
+    DISC(c, hx - 4 - eb, hy - 5 - eu, 3, MF.sh);
     DISC(c, hx - 4 - eb, hy - 5 - eu, 1, C.pk0);
-    DISC(c, hx, hy, 4, C.fu1);
-    DISC(c, hx, hy - 1, 3, C.fu2);
-    R(c, hx - 2, hy - 3, 2, 1, C.fu3);
+    DISC(c, hx, hy, 4, MF.sh);
+    DISC(c, hx, hy - 1, 3, MF.base);
+    R(c, hx - 2, hy - 3, 2, 1, MF.hi);
     // snout + nose
-    ELL(c, hx + 4, hy + 1, 2, 1, C.fu2);
-    R(c, hx + 3, hy, 3, 1, C.fu3);
+    ELL(c, hx + 4, hy + 1, 2, 1, MF.base);
+    R(c, hx + 3, hy, 3, 1, MF.hi);
     R(c, hx + 6, hy - 1, 2, 2, C.pk1);
     PX(c, hx + 6, hy - 1, C.pk3);
     if (pose.mouth) { R(c, hx + 3, hy + 2, 3, 1, C.pk0); PX(c, hx + 4, hy + 3, C.pk0); }
@@ -160,17 +162,17 @@ function renderMouse(p, pose) {
     R(c, hx - 4, hy + 3, 7, 2, C.rd2);
     R(c, hx - 4, hy + 4, 7, 1, C.rd1);
     PX(c, hx - 1, hy + 3, C.rd3);
-    // front ear
-    DISC(c, hx + 1 - eb, hy - 6 - eu, 3, C.fu2);
-    DISC(c, hx + 1 - eb, hy - 6 - eu, 1, C.pk1);
-    PX(c, hx - eb, hy - 8 - eu, C.fu3);
+    if (!pose.hatOff) drawHat(c, p, hx - 1, hy - 5, pose);
+    // front ear sits over the hat brim
+    DISC(c, hx + 2 - eb, hy - 6 - eu, 3, MF.base);
+    DISC(c, hx + 2 - eb, hy - 6 - eu, 1, C.pk1);
+    PX(c, hx + 1 - eb, hy - 8 - eu, MF.hi);
     // arm + hand
     if (pose.hand) {
       const sx = ox + 1, sy = oy - 7 + floor(cr / 2);
-      LINE(c, sx, sy, ox + pose.hand[0], oy + pose.hand[1], C.fu1, 1);
+      LINE(c, sx, sy, ox + pose.hand[0], oy + pose.hand[1], MF.sh, 1);
       R(c, ox + pose.hand[0] - 1, oy + pose.hand[1] - 1, 2, 2, C.pk1);
     }
-    if (!pose.hatOff) drawHat(c, p, hx - 1, hy - 4, pose);
   }
   // outline pass
   const o = POCX;

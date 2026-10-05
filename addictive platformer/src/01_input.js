@@ -46,6 +46,7 @@ const Input = {
   m: {},
   lastCode: null,
   anyPressed: false,
+  typedQ: [], typed: [], typedBack: false, typedEnter: false, typedEsc: false,
   init() {
     this.setBinds(PRESETS.wasd);
     const block = new Set(['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace']);
@@ -53,6 +54,7 @@ const Input = {
       if (block.has(e.code) || (!e.ctrlKey && !e.metaKey && e.code !== 'F11' && e.code !== 'F12' && e.code !== 'F5')) e.preventDefault();
       AudioSys.unlock();
       if (!e.repeat) this.queue.push(e.code);
+      if (e.key && e.key.length === 1) this.typedQ.push(e.key);
       this.held.add(e.code);
     });
     window.addEventListener('keyup', (e) => { this.held.delete(e.code); });
@@ -66,6 +68,8 @@ const Input = {
     const q = this.queue;
     this.lastCode = q.length ? q[q.length - 1] : null;
     this.anyPressed = q.length > 0;
+    this.typed = this.typedQ.slice(); this.typedQ.length = 0;
+    this.typedBack = q.includes('Backspace'); this.typedEnter = q.includes('Enter') || q.includes('NumpadEnter'); this.typedEsc = q.includes('Escape');
     const step = (st, codes) => {
       let p = false, d = false;
       for (const c of codes) { if (q.includes(c)) p = true; if (this.held.has(c)) d = true; }

@@ -4,25 +4,25 @@
 const BIOMES = [
   {
     key: 'cellar', name: 'THE DAMP CELLAR', sub: 'smells like regret and old cheese', music: 'cellar',
-    ambient: '#5f5868', gw: 5, gh: 3, dir: 'right', boss: 0,
+    ambient: '#746a76', gw: 5, gh: 3, dir: 'right', boss: 0,
     enemies: [['roach', 5], ['slime', 3], ['spider', 2], ['rat', 2], ['fly', 2]], flyers: ['fly'],
     hazard: 'mousetrap', prop: 'barrel', light: '#ffb45a', bg: [C.night, '#170f14'],
   },
   {
     key: 'living', name: 'THE LIVING ROOM', sub: 'nobody has lived here in years', music: 'living',
-    ambient: '#6f6460', gw: 6, gh: 3, dir: 'right', boss: 1,
+    ambient: '#82746c', gw: 6, gh: 3, dir: 'right', boss: 1,
     enemies: [['dust', 4], ['soldier', 3], ['moth', 2], ['monkey', 2], ['worm', 2], ['roach', 1]], flyers: ['moth'],
     hazard: 'tacks', prop: 'books', light: '#ffd88a', bg: ['#1b1d1a', '#121411'],
   },
   {
     key: 'kitchen', name: 'THE KITCHEN', sub: 'everything in here is a weapon', music: 'kitchen',
-    ambient: '#77706c', gw: 6, gh: 4, dir: 'right', boss: 2,
+    ambient: '#8c857c', gw: 6, gh: 4, dir: 'right', boss: 2,
     enemies: [['chef', 4], ['meatball', 3], ['wasp', 2], ['knight', 2], ['pepper', 3]], flyers: ['wasp'],
     hazard: 'burner', prop: 'jar', light: '#fff0c8', bg: ['#1c1a1d', '#141215'],
   },
   {
     key: 'cattree', name: 'THE CAT TREE', sub: 'abandon all hope. bring snacks.', music: 'cattree',
-    ambient: '#4c4f66', gw: 3, gh: 6, dir: 'up', boss: 3,
+    ambient: '#5e6280', gw: 3, gh: 6, dir: 'up', boss: 3,
     enemies: [['kitten', 4], ['yarn', 3], ['wisp', 2], ['knight', 1], ['chef', 1], ['monkey', 1]], flyers: ['wisp'],
     hazard: 'glass', prop: 'block', light: '#bfe8ff', bg: ['#0e1426', '#0a0d1a'],
   },
@@ -155,10 +155,10 @@ function tileBack(c, x, y, tx, ty, bk) {
         const bx = b * 16 + off, x0 = max(0, bx), x1 = min(16, bx + 16);
         if (x1 <= x0) continue;
         const h = hash2(floor((tx * 16 + bx + 16) / 16), gy, 21);
-        R(c, x + x0, y + r * 8, x1 - x0, 7, h < 0.3 ? '#2a1f26' : h < 0.85 ? '#241920' : '#33252c');
-        if (bx >= 0 && bx < 16) R(c, x + bx, y + r * 8, 1, 7, '#181015');
+        R(c, x + x0, y + r * 8, x1 - x0, 7, h < 0.3 ? '#21171d' : h < 0.85 ? '#1c1419' : '#271c23');
+        if (bx >= 0 && bx < 16) R(c, x + bx, y + r * 8, 1, 7, '#130d11');
       }
-      R(c, x, y + r * 8 + 7, 16, 1, '#181015');
+      R(c, x, y + r * 8 + 7, 16, 1, '#130d11');
     }
   } else if (bk === 'living') {
     for (let i = 0; i < 16; i += 4) R(c, x + i, y, 4, 16, ((tx * 4 + i / 4) & 1) ? '#24382f' : '#1f312a');
