@@ -328,6 +328,7 @@ const Game = {
     if (pl) pl.draw();
     for (const p of lv.projs) p.draw();
     Parts.draw(true);
+    this.drawShafts(cx, cy);
     Bubbles.draw();
     FText.draw();
     if (Debug.boxes) for (const b of Debug.list) { g.strokeStyle = '#f00'; g.strokeRect(b.x, b.y, b.w, b.h); }
@@ -337,6 +338,7 @@ const Game = {
     g.restore();
     Light.render(cx, cy);
     Light.apply();
+    this.drawFore(cx, cy);
     g.drawImage(Gfx.vig, 0, 0);
     if (pl && !pl.dead && pl.hp < pl.maxHp * 0.25) {
       const a = 0.12 + 0.08 * sin(this.frame * 0.12);
@@ -345,6 +347,43 @@ const Game = {
     }
     if (Run && Run.curse > 0) { g.fillStyle = rgba(C.vi1, 0.12); g.fillRect(0, 0, W, H); }
     if (FX.flashA > 0) { g.globalAlpha = FX.flashA; R(g, 0, 0, W, H, FX.flashCol); g.globalAlpha = 1; }
+  },
+  drawShafts(cx, cy) {
+    if (!lv.shafts) return;
+    const col = lv.bk === 'cattree' ? '#9ab8ff' : lv.bk === 'kitchen' ? '#fff4d8' : '#ffd890';
+    g.globalCompositeOperation = 'lighter';
+    for (const s of lv.shafts) {
+      if (s.x + 120 < cx || s.x - 120 > cx + W || s.y > cy + H || s.y + s.h < cy) continue;
+      const sway = sin(this.frame * 0.01 + s.ph) * 6;
+      g.globalAlpha = 0.045 + 0.015 * sin(this.frame * 0.02 + s.ph);
+      POLY(g, [s.x, s.y, s.x + s.w, s.y, s.x + s.w + 70 + sway, s.y + s.h, s.x + 40 + sway, s.y + s.h], col);
+      g.globalAlpha *= 0.6;
+      POLY(g, [s.x + s.w * 0.3, s.y, s.x + s.w * 0.7, s.y, s.x + s.w * 0.7 + 60 + sway, s.y + s.h, s.x + s.w * 0.3 + 50 + sway, s.y + s.h], col);
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+  },
+  drawFore(cx, cy) {
+    if (!lv.fore) return;
+    const col = lv.bk === 'cattree' ? '#05060c' : '#080406';
+    for (const f of lv.fore) {
+      const sx = round((f.x - cx - W / 2) * 1.35 + W / 2), sy = round((f.y - cy - H / 2) * 1.15 + H / 2);
+      if (sx < -60 || sx > W + 60) continue;
+      g.globalAlpha = 0.88;
+      const s = f.s;
+      switch (f.kind) {
+        case 'chain': for (let y = -10; y < sy; y += 9) { RING(g, sx, y, 3, col, 2); R(g, sx - 1, y + 4, 2, 5, col); } DISC(g, sx, sy + 4, 6 * s, col); break;
+        case 'pipe': R(g, sx - 6 * s, -10, 12 * s, H + 20, col); for (let y = (sy % 60) - 60; y < H; y += 60) R(g, sx - 8 * s, y, 16 * s, 5, col); break;
+        case 'roots': for (let k = 0; k < 5; k++) { let x = sx + k * 5 - 10, y = -5; for (let j = 0; j < 8; j++) { const nx = x + sin(k * 3 + j) * 6, ny = y + 14; LINE(g, x, y, nx, ny, col, 2); x = nx; y = ny; } } break;
+        case 'leg': POLY(g, [sx - 14 * s, -10, sx + 14 * s, -10, sx + 9 * s, H + 10, sx - 9 * s, H + 10], col); break;
+        case 'cord': for (let y = -10; y < H; y += 6) R(g, sx + round(sin(y * 0.05) * 8), y, 3, 6, col); break;
+        case 'pan': LINE(g, sx, -10, sx, sy - 20, col, 2); DISC(g, sx, sy, 22 * s, col); R(g, sx - 3, sy - 22 * s - 26, 6, 26, col); break;
+        case 'hook': LINE(g, sx, -10, sx, sy, col, 3); RING(g, sx + 5, sy, 6, col, 3); break;
+        case 'rope': R(g, sx - 7 * s, -10, 14 * s, H + 20, col); break;
+        case 'feather': LINE(g, sx, sy - 30, sx + 10, sy + 30, col, 2); for (let k = 0; k < 8; k++) LINE(g, sx + k * 1.2, sy - 26 + k * 7, sx - 10 + k, sy - 20 + k * 7, col); break;
+      }
+    }
+    g.globalAlpha = 1;
   },
   drawTrans() {
     const T = this.trans;

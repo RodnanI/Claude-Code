@@ -2,7 +2,7 @@
 // Squeak the mouse: movement, dodges, ground pound, health, healing, taunts and animation.
 
 const PH = {
-  run: 2.15, accG: 0.42, accA: 0.3, fricG: 0.48, fricA: 0.12, gHold: 0.21, gUp: 0.5, gFall: 0.38, maxFall: 6.2,
+  run: 2.4, accG: 0.46, accA: 0.32, fricG: 0.48, fricA: 0.12, gHold: 0.21, gUp: 0.5, gFall: 0.38, maxFall: 6.2,
   jump: 5.2, djump: 4.6, slide: 1.25, wjx: 2.9, wjy: 5.0, coyote: 7, jbuf: 8, roll: 3.6, rollT: 22, dash: 4.8, dashT: 12,
 };
 const SLOT_KEYS = ['atk1', 'atk2', 'skill1', 'skill2'];

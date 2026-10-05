@@ -156,7 +156,7 @@ class ItemDrop extends Ent {
     }
     glow(this.cx, fy + 8, 12, col, 0.35);
     spr(this.spr, this.cx, fy + 17);
-    if (this.price) txt(this.price + '●', this.cx, this.bot + 4, Run.gold >= this.price ? C.yl1 : C.rd3, { a: 'c', f: '3', ol: C.ink });
+    if (this.price) txt(this.price + '\u25cf', this.cx, this.bot + 4, Run.gold >= this.price ? C.yl1 : C.rd3, { a: 'c', f: '3', ol: C.ink });
   }
 }
 
@@ -289,7 +289,7 @@ class Door extends Ent {
     spr(SPR.door[this.locked ? 0 : 1], this.cx, this.bot + 1);
     if (!this.locked) {
       glow(this.cx, this.y + 18, 16, C.yl0, 0.25 + 0.1 * sin(this.t * 0.1));
-      if (!this.hint) txt('↑', this.cx, this.y - 10 + round(sin(this.t * 0.15) * 2), C.yl1, { a: 'c', ol: C.ink });
+      if (!this.hint) txt('\u2191', this.cx, this.y - 10 + round(sin(this.t * 0.15) * 2), C.yl1, { a: 'c', ol: C.ink });
     } else txt('LOCKED', this.cx, this.y - 8, C.st4, { a: 'c', f: '3', ol: C.ink });
   }
 }
@@ -441,7 +441,7 @@ class Hoarder extends NPC {
       const n = Run.crumbs;
       Save.data.crumbs += n; Run.banked += n; Run.crumbs = 0; Save.write();
       sfx('levelup');
-      FText.add(this.cx, this.y - 10, '+' + n + ' ◆ BANKED', C.br5, { life: 80 });
+      FText.add(this.cx, this.y - 10, '+' + n + ' \u25c6 BANKED', C.br5, { life: 80 });
       Bubbles.say(this, pick(['delicious. i mean. safe.', 'into the pile they go', 'ooh, crunchy ones']), 120);
     }
     UI.open(new HoarderMenu());
@@ -501,6 +501,30 @@ class Sign extends Ent {
   constructor(x, y, text) { super(x - 8, y - 16, 16, 16); this.text = text; this.cd = 0; }
   update() { this.t++; if (this.cd > 0) this.cd--; if (this.cd <= 0 && nearPlayer(this, 40)) { Bubbles.say(this, typeof this.text === 'function' ? this.text() : this.text, 240); this.cd = 260; } }
   draw() { spr(SPR.sign, this.cx, this.bot + 1); }
+}
+class Board extends Ent {
+  constructor(x, y) { super(x - 62, y - 70, 124, 64); }
+  draw() {
+    const x = round(this.x), y = round(this.y), w = this.w, h = this.h;
+    R(g, x - 1, y - 1, w + 2, h + 2, C.ink); R(g, x, y, w, h, C.br2); R(g, x + 2, y + 2, w - 4, h - 4, '#e9dcc0');
+    for (let i = 0; i < 6; i++) R(g, x + 4, y + 13 + i * 8, w - 8, 1, '#d6c6a6');
+    DISC(g, x + 6, y + 5, 1, C.rd2); DISC(g, x + w - 6, y + 5, 1, C.rd2);
+    txt('HOW TO SQUEAK', x + w / 2, y + 4, C.rd1, { a: 'c', f: '3' });
+    const L = (a) => Input.label(a);
+    const rows = [
+      ['MOVE', L('left') + ' ' + L('right'), 'JUMP', L('jump')],
+      ['ATTACK', L('atk1') + ' ' + L('atk2'), 'DODGE', L('dodge')],
+      ['SKILLS', L('skill1') + ' ' + L('skill2'), 'HEAL', L('heal')],
+      ['USE', L('interact'), 'SQUEAK', L('taunt')],
+      ['MAP', L('map'), 'PAUSE', L('pause')],
+    ];
+    rows.forEach((r, i) => {
+      const yy = y + 15 + i * 8;
+      txt(r[0], x + 6, yy, C.br1, { f: '3' }); txt(r[1], x + 38, yy, C.ink, { f: '3' });
+      txt(r[2], x + 66, yy, C.br1, { f: '3' }); txt(r[3], x + 94, yy, C.ink, { f: '3' });
+    });
+    txt('DOWN+JUMP IN AIR = BONK', x + w / 2, y + h - 9, C.rd1, { a: 'c', f: '3' });
+  }
 }
 class Rack extends Ent {
   constructor(x, y) { super(x - 12, y - 24, 24, 24); this.prompt = 'ARMORY'; this.used = false; }
@@ -614,6 +638,7 @@ function populate(L) {
       case 'exit': L.items.push(new Door(s.x, s.y, 'exit')); break;
       case 'pipe': L.items.push(new Pipe(s.x, s.y)); break;
       case 'm_w': L.items.push(new Wardrobe(s.x, s.y)); break;
+      case 'm_b': L.items.push(new Board(s.x, s.y)); break;
       case 'm_g': L.items.push(new Sign(s.x, s.y, hubTip)); break;
       case 'm_d': L.enemies.push(makeEnemy('dummy', s.x, s.y, false)); break;
       case 'm_h': L.items.push(new Hoarder(s.x, s.y)); break;

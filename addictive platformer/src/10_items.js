@@ -119,7 +119,7 @@ const hasAff = (it, id) => it && it.aff.some((a) => a.id === id);
 const affV = (it, id) => { const a = it && it.aff.find((x) => x.id === id); return a ? a.v : 0; };
 function itemDesc(it) {
   const lines = [it.def.desc];
-  for (const a of it.aff) lines.push('{y}• ' + AFFIXES[a.id].desc.replace('{v}', a.v) + '{/}');
+  for (const a of it.aff) lines.push('{y}\u2022 ' + AFFIXES[a.id].desc.replace('{v}', a.v) + '{/}');
   return lines;
 }
 function itemDps(it) {
@@ -594,7 +594,7 @@ function explode(x, y, r, dmg, o = {}) {
   } else {
     for (const e of lv.enemies) {
       if (e.dead || dist(e.cx, e.cy, x, y) > r + e.w / 2) continue;
-      const dealt = e.hurt(dmg, { cx: x, cy: y }, { kb: o.kb || 3.5, launchY: -3, dir: sign(e.cx - x) || 1, crit: e.status.freeze ? true : false, burn: o.burn, src: o.src });
+      const dealt = e.hurt(dmg, { cx: x, cy: y, team: 'p' }, { kb: o.kb || 3.5, launchY: -3, dir: sign(e.cx - x) || 1, crit: e.status.freeze ? true : false, burn: o.burn, src: o.src });
       if (o.freeze) e.addStatus('freeze', o.freeze);
       if (dealt && o.src) onDealt(pl, o.src, e, dealt, false);
     }

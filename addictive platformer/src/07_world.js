@@ -228,7 +228,7 @@ const MAPS = {
     '#.................======....................',
     '#...........................................',
     '#....................................L......',
-    '#...........................................',
+    '#...........b...............................',
     '#..Y..w....g.....d.......h.......k.....X....',
     '############################################',
     '############################################',
@@ -587,6 +587,13 @@ function genMapLevel(key, bk, kind) {
   return L;
 }
 function finishLevel(L, rng) {
+  // foreground silhouettes and light shafts for depth
+  L.fore = []; L.shafts = [];
+  const kinds = { cellar: ['chain', 'pipe', 'roots'], living: ['leg', 'cord', 'leg'], kitchen: ['pan', 'hook', 'pan'], cattree: ['rope', 'rope', 'feather'] }[L.bk] || ['chain'];
+  const nf = max(2, floor((L.tw * L.th) / 700));
+  for (let i = 0; i < nf; i++) L.fore.push({ x: rng.int(0, L.tw * TS), y: rng.int(0, L.th * TS), kind: rng.pick(kinds), s: rng.range(0.8, 1.3) });
+  const ns = max(1, floor((L.tw * L.th) / 1100));
+  for (let i = 0; i < ns; i++) L.shafts.push({ x: rng.int(0, L.tw * TS), y: rng.int(0, L.th * TS - 200), w: rng.int(18, 40), h: rng.int(160, 260), ph: rng.range(0, 6) });
   // emitters for ambient life
   for (let i = 0; i < 40; i++) {
     const x = rng.int(1, L.tw - 2), y = rng.int(1, L.th - 2);

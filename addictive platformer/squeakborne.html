@@ -159,7 +159,7 @@ const MENU_KEYS = {
   ok: ['Enter', 'Space', 'KeyJ', 'KeyZ', 'KeyE'], back: ['Escape', 'Backspace', 'KeyK', 'KeyX'],
 };
 const KEY_LABELS = {
-  Space: 'SPACE', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', ShiftLeft: 'SHIFT',
+  Space: 'SPACE', ArrowLeft: '\u2190', ArrowRight: '\u2192', ArrowUp: '\u2191', ArrowDown: '\u2193', ShiftLeft: 'SHIFT',
   ShiftRight: 'RSHIFT', ControlLeft: 'CTRL', ControlRight: 'RCTRL', AltLeft: 'ALT', AltRight: 'RALT', Escape: 'ESC',
   Enter: 'ENTER', Backspace: 'BKSP', Tab: 'TAB', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/',
   BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', CapsLock: 'CAPS',
@@ -891,10 +891,10 @@ const FONT5_SRC = {
   '#': [10, 10, 31, 10, 31, 10, 10], '<': [2, 4, 8, 16, 8, 4, 2], '>': [8, 4, 2, 1, 2, 4, 8], '=': [0, 0, 31, 0, 31, 0, 0],
   '[': [14, 8, 8, 8, 8, 8, 14], ']': [14, 2, 2, 2, 2, 2, 14], '_': [0, 0, 0, 0, 0, 0, 31], '&': [12, 18, 20, 8, 21, 18, 13],
   '$': [4, 15, 20, 14, 5, 30, 4], '^': [4, 10, 17, 0, 0, 0, 0], '~': [0, 0, 8, 21, 2, 0, 0], '|': [4, 4, 4, 4, 4, 4, 4],
-  '♥': [0, 10, 31, 31, 14, 4, 0], '●': [0, 14, 31, 31, 31, 14, 0], '◆': [0, 4, 14, 31, 14, 4, 0],
-  '→': [0, 4, 2, 31, 2, 4, 0], '←': [0, 4, 8, 31, 8, 4, 0], '↑': [4, 14, 21, 4, 4, 4, 0], '↓': [0, 4, 4, 4, 21, 14, 4],
-  '★': [4, 4, 31, 14, 10, 17, 0], '☠': [14, 31, 21, 31, 14, 10, 0], '•': [0, 0, 4, 14, 4, 0, 0], '×': [0, 17, 10, 4, 10, 17, 0],
-  '■': [0, 14, 14, 14, 14, 14, 0], '□': [0, 14, 10, 10, 10, 14, 0],
+  '\u2665': [0, 10, 31, 31, 14, 4, 0], '\u25cf': [0, 14, 31, 31, 31, 14, 0], '\u25c6': [0, 4, 14, 31, 14, 4, 0],
+  '\u2192': [0, 4, 2, 31, 2, 4, 0], '\u2190': [0, 4, 8, 31, 8, 4, 0], '\u2191': [4, 14, 21, 4, 4, 4, 0], '\u2193': [0, 4, 4, 4, 21, 14, 4],
+  '\u2605': [4, 4, 31, 14, 10, 17, 0], '\u2620': [14, 31, 21, 31, 14, 10, 0], '\u2022': [0, 0, 4, 14, 4, 0, 0], '\u00d7': [0, 17, 10, 4, 10, 17, 0],
+  '\u25a0': [0, 14, 14, 14, 14, 14, 0], '\u25a1': [0, 14, 10, 10, 10, 14, 0],
 };
 const FONT3_SRC = {
   A: [2, 5, 7, 5, 5], B: [6, 5, 6, 5, 6], C: [3, 4, 4, 4, 3], D: [6, 5, 5, 5, 6], E: [7, 4, 6, 4, 7], F: [7, 4, 6, 4, 4],
@@ -906,9 +906,9 @@ const FONT3_SRC = {
   6: [7, 4, 7, 5, 7], 7: [7, 1, 1, 2, 2], 8: [7, 5, 7, 5, 7], 9: [7, 5, 7, 1, 7],
   ' ': [0, 0, 0, 0, 0], '.': [0, 0, 0, 0, 2], '!': [2, 2, 2, 0, 2], '-': [0, 0, 7, 0, 0], '+': [0, 2, 7, 2, 0], '%': [5, 1, 2, 4, 5],
   ':': [0, 2, 0, 2, 0], '/': [1, 1, 2, 4, 4], '?': [6, 1, 2, 0, 2], '(': [1, 2, 2, 2, 1], ')': [4, 2, 2, 2, 4], x: [0, 5, 2, 5, 0],
-  "'": [2, 2, 0, 0, 0], ',': [0, 0, 0, 2, 4], '↑': [2, 7, 2, 2, 2], '↓': [2, 2, 2, 7, 2], '←': [0, 2, 6, 2, 0], '→': [0, 2, 3, 2, 0],
-  '[': [3, 2, 2, 2, 3], ']': [6, 2, 2, 2, 6], '●': [0, 2, 7, 2, 0], '◆': [0, 2, 7, 2, 0], '☠': [7, 5, 7, 2, 0], '•': [0, 0, 2, 0, 0],
-  '=': [0, 7, 0, 7, 0], '*': [5, 2, 5, 0, 0], '"': [5, 5, 0, 0, 0], '<': [1, 2, 4, 2, 1], '>': [4, 2, 1, 2, 4], '&': [2, 5, 2, 5, 3], ';': [0, 2, 0, 2, 4], '■': [0, 7, 7, 7, 0], '□': [0, 7, 5, 7, 0], '#': [5, 7, 5, 7, 5],
+  "'": [2, 2, 0, 0, 0], ',': [0, 0, 0, 2, 4], '\u2191': [2, 7, 2, 2, 2], '\u2193': [2, 2, 2, 7, 2], '\u2190': [0, 2, 6, 2, 0], '\u2192': [0, 2, 3, 2, 0],
+  '[': [3, 2, 2, 2, 3], ']': [6, 2, 2, 2, 6], '\u25cf': [0, 2, 7, 2, 0], '\u25c6': [0, 2, 7, 2, 0], '\u2620': [7, 5, 7, 2, 0], '\u2022': [0, 0, 2, 0, 0],
+  '=': [0, 7, 0, 7, 0], '*': [5, 2, 5, 0, 0], '"': [5, 5, 0, 0, 0], '<': [1, 2, 4, 2, 1], '>': [4, 2, 1, 2, 4], '&': [2, 5, 2, 5, 3], ';': [0, 2, 0, 2, 4], '\u25a0': [0, 7, 7, 7, 0], '\u25a1': [0, 7, 5, 7, 0], '#': [5, 7, 5, 7, 5],
 };
 const Fonts = {};
 function buildFont(name, src, gw, gh, spaceW) {
@@ -1227,7 +1227,7 @@ const Cam = {
     const e = this.target;
     if (!e) return [this.x, this.y];
     let tx = e.x + e.w / 2 - W / 2 + this.look;
-    let ty = e.y + e.h / 2 - H / 2 - 18 + this.lookY;
+    let ty = e.y + e.h / 2 - H * 0.6 + this.lookY;
     if (this.lockX !== null) tx = this.lockX;
     if (lv && lv.kind === 'boss') ty = 1e5;
     return [tx, ty];
@@ -2429,7 +2429,7 @@ const MAPS = {
     '#.................======....................',
     '#...........................................',
     '#....................................L......',
-    '#...........................................',
+    '#...........b...............................',
     '#..Y..w....g.....d.......h.......k.....X....',
     '############################################',
     '############################################',
@@ -2788,6 +2788,13 @@ function genMapLevel(key, bk, kind) {
   return L;
 }
 function finishLevel(L, rng) {
+  // foreground silhouettes and light shafts for depth
+  L.fore = []; L.shafts = [];
+  const kinds = { cellar: ['chain', 'pipe', 'roots'], living: ['leg', 'cord', 'leg'], kitchen: ['pan', 'hook', 'pan'], cattree: ['rope', 'rope', 'feather'] }[L.bk] || ['chain'];
+  const nf = max(2, floor((L.tw * L.th) / 700));
+  for (let i = 0; i < nf; i++) L.fore.push({ x: rng.int(0, L.tw * TS), y: rng.int(0, L.th * TS), kind: rng.pick(kinds), s: rng.range(0.8, 1.3) });
+  const ns = max(1, floor((L.tw * L.th) / 1100));
+  for (let i = 0; i < ns; i++) L.shafts.push({ x: rng.int(0, L.tw * TS), y: rng.int(0, L.th * TS - 200), w: rng.int(18, 40), h: rng.int(160, 260), ph: rng.range(0, 6) });
   // emitters for ambient life
   for (let i = 0; i < 40; i++) {
     const x = rng.int(1, L.tw - 2), y = rng.int(1, L.th - 2);
@@ -3084,7 +3091,7 @@ class ItemDrop extends Ent {
     }
     glow(this.cx, fy + 8, 12, col, 0.35);
     spr(this.spr, this.cx, fy + 17);
-    if (this.price) txt(this.price + '●', this.cx, this.bot + 4, Run.gold >= this.price ? C.yl1 : C.rd3, { a: 'c', f: '3', ol: C.ink });
+    if (this.price) txt(this.price + '\u25cf', this.cx, this.bot + 4, Run.gold >= this.price ? C.yl1 : C.rd3, { a: 'c', f: '3', ol: C.ink });
   }
 }
 
@@ -3217,7 +3224,7 @@ class Door extends Ent {
     spr(SPR.door[this.locked ? 0 : 1], this.cx, this.bot + 1);
     if (!this.locked) {
       glow(this.cx, this.y + 18, 16, C.yl0, 0.25 + 0.1 * sin(this.t * 0.1));
-      if (!this.hint) txt('↑', this.cx, this.y - 10 + round(sin(this.t * 0.15) * 2), C.yl1, { a: 'c', ol: C.ink });
+      if (!this.hint) txt('\u2191', this.cx, this.y - 10 + round(sin(this.t * 0.15) * 2), C.yl1, { a: 'c', ol: C.ink });
     } else txt('LOCKED', this.cx, this.y - 8, C.st4, { a: 'c', f: '3', ol: C.ink });
   }
 }
@@ -3369,7 +3376,7 @@ class Hoarder extends NPC {
       const n = Run.crumbs;
       Save.data.crumbs += n; Run.banked += n; Run.crumbs = 0; Save.write();
       sfx('levelup');
-      FText.add(this.cx, this.y - 10, '+' + n + ' ◆ BANKED', C.br5, { life: 80 });
+      FText.add(this.cx, this.y - 10, '+' + n + ' \u25c6 BANKED', C.br5, { life: 80 });
       Bubbles.say(this, pick(['delicious. i mean. safe.', 'into the pile they go', 'ooh, crunchy ones']), 120);
     }
     UI.open(new HoarderMenu());
@@ -3429,6 +3436,30 @@ class Sign extends Ent {
   constructor(x, y, text) { super(x - 8, y - 16, 16, 16); this.text = text; this.cd = 0; }
   update() { this.t++; if (this.cd > 0) this.cd--; if (this.cd <= 0 && nearPlayer(this, 40)) { Bubbles.say(this, typeof this.text === 'function' ? this.text() : this.text, 240); this.cd = 260; } }
   draw() { spr(SPR.sign, this.cx, this.bot + 1); }
+}
+class Board extends Ent {
+  constructor(x, y) { super(x - 62, y - 70, 124, 64); }
+  draw() {
+    const x = round(this.x), y = round(this.y), w = this.w, h = this.h;
+    R(g, x - 1, y - 1, w + 2, h + 2, C.ink); R(g, x, y, w, h, C.br2); R(g, x + 2, y + 2, w - 4, h - 4, '#e9dcc0');
+    for (let i = 0; i < 6; i++) R(g, x + 4, y + 13 + i * 8, w - 8, 1, '#d6c6a6');
+    DISC(g, x + 6, y + 5, 1, C.rd2); DISC(g, x + w - 6, y + 5, 1, C.rd2);
+    txt('HOW TO SQUEAK', x + w / 2, y + 4, C.rd1, { a: 'c', f: '3' });
+    const L = (a) => Input.label(a);
+    const rows = [
+      ['MOVE', L('left') + ' ' + L('right'), 'JUMP', L('jump')],
+      ['ATTACK', L('atk1') + ' ' + L('atk2'), 'DODGE', L('dodge')],
+      ['SKILLS', L('skill1') + ' ' + L('skill2'), 'HEAL', L('heal')],
+      ['USE', L('interact'), 'SQUEAK', L('taunt')],
+      ['MAP', L('map'), 'PAUSE', L('pause')],
+    ];
+    rows.forEach((r, i) => {
+      const yy = y + 15 + i * 8;
+      txt(r[0], x + 6, yy, C.br1, { f: '3' }); txt(r[1], x + 38, yy, C.ink, { f: '3' });
+      txt(r[2], x + 66, yy, C.br1, { f: '3' }); txt(r[3], x + 94, yy, C.ink, { f: '3' });
+    });
+    txt('DOWN+JUMP IN AIR = BONK', x + w / 2, y + h - 9, C.rd1, { a: 'c', f: '3' });
+  }
 }
 class Rack extends Ent {
   constructor(x, y) { super(x - 12, y - 24, 24, 24); this.prompt = 'ARMORY'; this.used = false; }
@@ -3542,6 +3573,7 @@ function populate(L) {
       case 'exit': L.items.push(new Door(s.x, s.y, 'exit')); break;
       case 'pipe': L.items.push(new Pipe(s.x, s.y)); break;
       case 'm_w': L.items.push(new Wardrobe(s.x, s.y)); break;
+      case 'm_b': L.items.push(new Board(s.x, s.y)); break;
       case 'm_g': L.items.push(new Sign(s.x, s.y, hubTip)); break;
       case 'm_d': L.enemies.push(makeEnemy('dummy', s.x, s.y, false)); break;
       case 'm_h': L.items.push(new Hoarder(s.x, s.y)); break;
@@ -3575,7 +3607,7 @@ function hubTip() {
 // Squeak the mouse: movement, dodges, ground pound, health, healing, taunts and animation.
 
 const PH = {
-  run: 2.15, accG: 0.42, accA: 0.3, fricG: 0.48, fricA: 0.12, gHold: 0.21, gUp: 0.5, gFall: 0.38, maxFall: 6.2,
+  run: 2.4, accG: 0.46, accA: 0.32, fricG: 0.48, fricA: 0.12, gHold: 0.21, gUp: 0.5, gFall: 0.38, maxFall: 6.2,
   jump: 5.2, djump: 4.6, slide: 1.25, wjx: 2.9, wjy: 5.0, coyote: 7, jbuf: 8, roll: 3.6, rollT: 22, dash: 4.8, dashT: 12,
 };
 const SLOT_KEYS = ['atk1', 'atk2', 'skill1', 'skill2'];
@@ -4230,7 +4262,7 @@ const hasAff = (it, id) => it && it.aff.some((a) => a.id === id);
 const affV = (it, id) => { const a = it && it.aff.find((x) => x.id === id); return a ? a.v : 0; };
 function itemDesc(it) {
   const lines = [it.def.desc];
-  for (const a of it.aff) lines.push('{y}• ' + AFFIXES[a.id].desc.replace('{v}', a.v) + '{/}');
+  for (const a of it.aff) lines.push('{y}\u2022 ' + AFFIXES[a.id].desc.replace('{v}', a.v) + '{/}');
   return lines;
 }
 function itemDps(it) {
@@ -4705,7 +4737,7 @@ function explode(x, y, r, dmg, o = {}) {
   } else {
     for (const e of lv.enemies) {
       if (e.dead || dist(e.cx, e.cy, x, y) > r + e.w / 2) continue;
-      const dealt = e.hurt(dmg, { cx: x, cy: y }, { kb: o.kb || 3.5, launchY: -3, dir: sign(e.cx - x) || 1, crit: e.status.freeze ? true : false, burn: o.burn, src: o.src });
+      const dealt = e.hurt(dmg, { cx: x, cy: y, team: 'p' }, { kb: o.kb || 3.5, launchY: -3, dir: sign(e.cx - x) || 1, crit: e.status.freeze ? true : false, burn: o.burn, src: o.src });
       if (o.freeze) e.addStatus('freeze', o.freeze);
       if (dealt && o.src) onDealt(pl, o.src, e, dealt, false);
     }
@@ -6543,7 +6575,7 @@ function drawHUD() {
   R(g, bx, by + 7, hpw, 2, rgba('#000000', 0.25));
   for (let i = 1; i < 8; i++) R(g, bx + round((bw * i) / 8), by, 1, 9, rgba(C.ink, 0.35));
   txt(round(max(0, p.hp)) + '/' + p.maxHp, bx + bw / 2, by + 2, '#fff6ea', { a: 'c', f: '3', ol: C.ink });
-  if (Run.curse > 0) { txt('☠' + Run.curse, bx + bw + 6, by + 1, C.vi2, { ol: C.ink }); }
+  if (Run.curse > 0) { txt('\u2620' + Run.curse, bx + bw + 6, by + 1, C.vi2, { ol: C.ink }); }
   // cheese charges
   for (let i = 0; i < p.maxFlasks; i++) {
     const has = i < p.flasks;
@@ -6554,8 +6586,8 @@ function drawHUD() {
   }
   if (p.healT > 0) txt('NOM', bx + p.maxFlasks * 13 + 4, by + 16, C.yl1, { f: '3', ol: C.ink });
   // currency
-  txt('● ' + Run.gold, bx, by + 30, C.yl1, { ol: C.ink });
-  txt('◆ ' + Run.crumbs, bx + 60, by + 30, C.br5, { ol: C.ink });
+  txt('\u25cf ' + Run.gold, bx, by + 30, C.yl1, { ol: C.ink });
+  txt('\u25c6 ' + Run.crumbs, bx + 60, by + 30, C.br5, { ol: C.ink });
   // stats
   const st = Run.stats;
   txt('{r}' + st.fury + ' {t}' + st.cunning + ' {y}' + st.grit, bx, by + 42, C.wh, { f: '3', ol: C.ink });
@@ -6632,7 +6664,7 @@ function drawItemCard(it, x, y, price, noCompare) {
   const same = pl.slots.filter((s, i) => s && (it.def.kind === 'skill' ? i >= 2 : i < 2));
   if (same.length && !noCompare) txt('VS ' + same.map((s) => (s.def.kind === 'melee' ? itemDps(s) : itemDps(s))).join(' / '), x + 196, y + 20, C.st3, { f: '3', a: 'r' });
   lines.forEach((l, i) => txt(l, x + 6, y + 30 + i * 7, C.fu3, { f: '3' }));
-  if (price) txt('PRICE ' + price + ' ●', x + 196, y + 4, Run.gold >= price ? C.yl1 : C.rd3, { f: '3', a: 'r' });
+  if (price) txt('PRICE ' + price + ' \u25cf', x + 196, y + 4, Run.gold >= price ? C.yl1 : C.rd3, { f: '3', a: 'r' });
 }
 function roomAt(x, y) {
   if (!lv) return null;
@@ -6695,7 +6727,7 @@ class Menu {
       const col = dis ? C.dk3 : s ? C.yl1 : C.fu3;
       if (val) { txt(lab, cx - 8, y, col, { a: 'r', ol: C.ink }); txt(val, cx + 8, y, s ? C.wh : C.st4, { ol: C.ink }); }
       else txt(lab, cx, y, col, { a: 'c', ol: C.ink, wave: s ? 1 : 0, t: this.t });
-      if (s) { const w = val ? 0 : textW(lab) / 2; txt('→', cx - (val ? textW(lab) + 18 : w + 12), y, C.yl1, { ol: C.ink }); }
+      if (s) { const w = val ? 0 : textW(lab) / 2; txt('\u2192', cx - (val ? textW(lab) + 18 : w + 12), y, C.yl1, { ol: C.ink }); }
       y += it.gap || 13;
     });
     const it = this.items[this.sel];
@@ -6729,7 +6761,7 @@ class ChoiceMenu {
       wrapText(o.label.toUpperCase(), cw - 10).forEach((l, k) => txt(l, x + cw / 2, y + 42 + k * 10, o.col, { a: 'c', ol: C.ink }));
       wrapText(o.desc, cw - 12, '3').forEach((l, k) => txt(l, x + cw / 2, y + 66 + k * 8, C.fu3, { a: 'c', f: '3' }));
     });
-    txt('← → CHOOSE   [' + keyLabel(MENU_KEYS.ok[0]) + '/' + Input.label('jump') + '] CONFIRM   [ESC] LATER', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
+    txt('\u2190 \u2192 CHOOSE   [' + keyLabel(MENU_KEYS.ok[0]) + '/' + Input.label('jump') + '] CONFIRM   [ESC] LATER', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
   }
 }
 class SwapMenu {
@@ -6753,7 +6785,7 @@ class SwapMenu {
     drawItemCard(this.drop.it, W / 2 - 100, 54);
     this.slots.forEach((s, k) => {
       const it = pl.slots[s], x = k === 0 ? 40 : W - 200;
-      txt('[' + Input.label(SLOT_KEYS[s]) + '] or ' + (k ? '→' : '←'), x + 80, 150, C.yl1, { a: 'c', ol: C.ink });
+      txt('[' + Input.label(SLOT_KEYS[s]) + '] or ' + (k ? '\u2192' : '\u2190'), x + 80, 150, C.yl1, { a: 'c', ol: C.ink });
       if (it) drawItemCard(it, x, 162, 0, true);
     });
     txt('[ESC] KEEP CURRENT GEAR', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
@@ -6788,8 +6820,8 @@ class HoarderMenu {
   draw() {
     dimBg(0.78);
     txt("THE HOARDER'S PILE", W / 2, 16, C.br5, { a: 'c', sc: 2, ol: C.ink });
-    txt('◆ ' + Save.data.crumbs + ' CRUMBS BANKED', W / 2, 38, C.br5, { a: 'c', ol: C.ink });
-    ['BLUEPRINTS', 'UPGRADES'].forEach((tb, i) => txt((this.tab === i ? '→ ' : '') + tb, W / 2 + (i ? 70 : -70), 54, this.tab === i ? C.yl1 : C.st3, { a: 'c', ol: C.ink }));
+    txt('\u25c6 ' + Save.data.crumbs + ' CRUMBS BANKED', W / 2, 38, C.br5, { a: 'c', ol: C.ink });
+    ['BLUEPRINTS', 'UPGRADES'].forEach((tb, i) => txt((this.tab === i ? '\u2192 ' : '') + tb, W / 2 + (i ? 70 : -70), 54, this.tab === i ? C.yl1 : C.st3, { a: 'c', ol: C.ink }));
     const L = this.list();
     if (!L.length) txt(this.tab === 0 ? 'NO BLUEPRINTS FOUND YET. ELITES AND CHESTS DROP THEM.' : 'YOU BOUGHT EVERYTHING. TOUCH GRASS.', W / 2, 110, C.st4, { a: 'c', f: '3' });
     const start = max(0, min(this.sel - 4, L.length - 9));
@@ -6798,11 +6830,11 @@ class HoarderMenu {
       panel(70, y, W - 140, 14, s ? C.dk1 : C.night, s ? C.yl1 : C.dk2);
       if (e.bp) spr(itemIcon(ITEMS[e.id]), 82, y + 15);
       txt(e.name.toUpperCase(), e.bp ? 94 : 78, y + 4, s ? C.yl1 : C.fu3, { f: '3' });
-      txt(e.cost + ' ◆', W - 78, y + 4, Save.data.crumbs >= e.cost ? C.br5 : C.rd3, { a: 'r', f: '3' });
+      txt(e.cost + ' \u25c6', W - 78, y + 4, Save.data.crumbs >= e.cost ? C.br5 : C.rd3, { a: 'r', f: '3' });
     });
     const e = L[this.sel];
     if (e) wrapText(e.desc, 320, '3').forEach((l, i) => txt(l, W / 2, 222 + i * 8, C.st4, { a: 'c', f: '3', ol: C.ink }));
-    txt('← → TAB   ↑ ↓ SELECT   [ENTER] BUY   [ESC] LEAVE', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
+    txt('\u2190 \u2192 TAB   \u2191 \u2193 SELECT   [ENTER] BUY   [ESC] LEAVE', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
   }
 }
 class MapView {
@@ -6829,7 +6861,7 @@ class MapView {
       if (col) R(g, ox + it.cx / TS * sc - 1, oy + it.cy / TS * sc - 1, 3, 3, col);
     }
     if (this.t % 30 < 20) R(g, ox + (pl.cx / TS) * sc - 1, oy + (pl.cy / TS) * sc - 2, 3, 4, C.wh);
-    txt('{y}■{/} EXIT  {o}■{/} CHEST  {r}■{/} SNACK  {g}■{/} SHOP  {c}■{/} FOOD', W / 2, H - 14, C.st4, { a: 'c', f: '3' });
+    txt('{y}\u25a0{/} EXIT  {o}\u25a0{/} CHEST  {r}\u25a0{/} SNACK  {g}\u25a0{/} SHOP  {c}\u25a0{/} FOOD', W / 2, H - 14, C.st4, { a: 'c', f: '3' });
   }
 }
 
@@ -6909,7 +6941,7 @@ const Title = {
     txt('A ROGUELITE ABOUT A MOUSE WITH A NEEDLE AND A GRUDGE', lx, ly + 34, C.fu3, { a: 'c', f: '3', ol: C.ink });
     {
       this.menu.draw(W / 2, 112);
-      txt('↑↓ NAVIGATE   ENTER / SPACE / J  SELECT', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
+      txt('\u2191\u2193 NAVIGATE   ENTER / SPACE / J  SELECT', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
       const S = Save.data.stats;
       txt('RUNS ' + S.runs + '   WINS ' + S.wins + '   CRUMBS ' + Save.data.crumbs + '   HATS ' + Save.data.hats.length + '/' + Object.keys(HATS).length, W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
     }
@@ -7001,7 +7033,7 @@ function drawCredits(t, y0) {
 // ---------------- options ----------------
 function optionsMenu(back) {
   const S = Save.data.settings;
-  const vol = (k) => ({ value: () => '■'.repeat(round(S[k] * 10)) + '□'.repeat(10 - round(S[k] * 10)), left: () => { S[k] = max(0, round((S[k] - 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); }, right: () => { S[k] = min(1, round((S[k] + 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); } });
+  const vol = (k) => ({ value: () => '\u25a0'.repeat(round(S[k] * 10)) + '\u25a1'.repeat(10 - round(S[k] * 10)), left: () => { S[k] = max(0, round((S[k] - 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); }, right: () => { S[k] = min(1, round((S[k] + 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); } });
   const tog = (k, after) => ({ value: () => (S[k] ? 'ON' : 'OFF'), ok: () => { S[k] = !S[k]; Save.write(); if (after) after(); }, left: () => { S[k] = !S[k]; Save.write(); if (after) after(); }, right: () => { S[k] = !S[k]; Save.write(); if (after) after(); } });
   const items = [
     Object.assign({ label: 'MUSIC' }, vol('music')),
@@ -7010,6 +7042,7 @@ function optionsMenu(back) {
     Object.assign({ label: 'SCREEN FLASHES' }, tog('flash')),
     Object.assign({ label: 'DAMAGE NUMBERS' }, tog('dmgNums')),
     Object.assign({ label: 'RUN TIMER' }, tog('timer')),
+    { label: 'FULLSCREEN', value: () => (document.fullscreenElement ? 'ON' : 'OFF'), ok: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { /* not allowed here */ } } },
     Object.assign({ label: 'PIXEL PERFECT' }, tog('pixelPerfect', () => Gfx.resize())),
     Object.assign({ label: 'SCANLINES' }, tog('scanlines')),
     { label: 'CONTROLS', ok: () => { Game.subMenu = new ControlsMenu(() => { Game.subMenu = null; }); } },
@@ -7484,6 +7517,7 @@ const Game = {
     if (pl) pl.draw();
     for (const p of lv.projs) p.draw();
     Parts.draw(true);
+    this.drawShafts(cx, cy);
     Bubbles.draw();
     FText.draw();
     if (Debug.boxes) for (const b of Debug.list) { g.strokeStyle = '#f00'; g.strokeRect(b.x, b.y, b.w, b.h); }
@@ -7493,6 +7527,7 @@ const Game = {
     g.restore();
     Light.render(cx, cy);
     Light.apply();
+    this.drawFore(cx, cy);
     g.drawImage(Gfx.vig, 0, 0);
     if (pl && !pl.dead && pl.hp < pl.maxHp * 0.25) {
       const a = 0.12 + 0.08 * sin(this.frame * 0.12);
@@ -7501,6 +7536,43 @@ const Game = {
     }
     if (Run && Run.curse > 0) { g.fillStyle = rgba(C.vi1, 0.12); g.fillRect(0, 0, W, H); }
     if (FX.flashA > 0) { g.globalAlpha = FX.flashA; R(g, 0, 0, W, H, FX.flashCol); g.globalAlpha = 1; }
+  },
+  drawShafts(cx, cy) {
+    if (!lv.shafts) return;
+    const col = lv.bk === 'cattree' ? '#9ab8ff' : lv.bk === 'kitchen' ? '#fff4d8' : '#ffd890';
+    g.globalCompositeOperation = 'lighter';
+    for (const s of lv.shafts) {
+      if (s.x + 120 < cx || s.x - 120 > cx + W || s.y > cy + H || s.y + s.h < cy) continue;
+      const sway = sin(this.frame * 0.01 + s.ph) * 6;
+      g.globalAlpha = 0.045 + 0.015 * sin(this.frame * 0.02 + s.ph);
+      POLY(g, [s.x, s.y, s.x + s.w, s.y, s.x + s.w + 70 + sway, s.y + s.h, s.x + 40 + sway, s.y + s.h], col);
+      g.globalAlpha *= 0.6;
+      POLY(g, [s.x + s.w * 0.3, s.y, s.x + s.w * 0.7, s.y, s.x + s.w * 0.7 + 60 + sway, s.y + s.h, s.x + s.w * 0.3 + 50 + sway, s.y + s.h], col);
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+  },
+  drawFore(cx, cy) {
+    if (!lv.fore) return;
+    const col = lv.bk === 'cattree' ? '#05060c' : '#080406';
+    for (const f of lv.fore) {
+      const sx = round((f.x - cx - W / 2) * 1.35 + W / 2), sy = round((f.y - cy - H / 2) * 1.15 + H / 2);
+      if (sx < -60 || sx > W + 60) continue;
+      g.globalAlpha = 0.88;
+      const s = f.s;
+      switch (f.kind) {
+        case 'chain': for (let y = -10; y < sy; y += 9) { RING(g, sx, y, 3, col, 2); R(g, sx - 1, y + 4, 2, 5, col); } DISC(g, sx, sy + 4, 6 * s, col); break;
+        case 'pipe': R(g, sx - 6 * s, -10, 12 * s, H + 20, col); for (let y = (sy % 60) - 60; y < H; y += 60) R(g, sx - 8 * s, y, 16 * s, 5, col); break;
+        case 'roots': for (let k = 0; k < 5; k++) { let x = sx + k * 5 - 10, y = -5; for (let j = 0; j < 8; j++) { const nx = x + sin(k * 3 + j) * 6, ny = y + 14; LINE(g, x, y, nx, ny, col, 2); x = nx; y = ny; } } break;
+        case 'leg': POLY(g, [sx - 14 * s, -10, sx + 14 * s, -10, sx + 9 * s, H + 10, sx - 9 * s, H + 10], col); break;
+        case 'cord': for (let y = -10; y < H; y += 6) R(g, sx + round(sin(y * 0.05) * 8), y, 3, 6, col); break;
+        case 'pan': LINE(g, sx, -10, sx, sy - 20, col, 2); DISC(g, sx, sy, 22 * s, col); R(g, sx - 3, sy - 22 * s - 26, 6, 26, col); break;
+        case 'hook': LINE(g, sx, -10, sx, sy, col, 3); RING(g, sx + 5, sy, 6, col, 3); break;
+        case 'rope': R(g, sx - 7 * s, -10, 14 * s, H + 20, col); break;
+        case 'feather': LINE(g, sx, sy - 30, sx + 10, sy + 30, col, 2); for (let k = 0; k < 8; k++) LINE(g, sx + k * 1.2, sy - 26 + k * 7, sx - 10 + k, sy - 20 + k * 7, col); break;
+      }
+    }
+    g.globalAlpha = 1;
   },
   drawTrans() {
     const T = this.trans;

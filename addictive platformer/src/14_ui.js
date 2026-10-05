@@ -65,7 +65,7 @@ function drawHUD() {
   R(g, bx, by + 7, hpw, 2, rgba('#000000', 0.25));
   for (let i = 1; i < 8; i++) R(g, bx + round((bw * i) / 8), by, 1, 9, rgba(C.ink, 0.35));
   txt(round(max(0, p.hp)) + '/' + p.maxHp, bx + bw / 2, by + 2, '#fff6ea', { a: 'c', f: '3', ol: C.ink });
-  if (Run.curse > 0) { txt('☠' + Run.curse, bx + bw + 6, by + 1, C.vi2, { ol: C.ink }); }
+  if (Run.curse > 0) { txt('\u2620' + Run.curse, bx + bw + 6, by + 1, C.vi2, { ol: C.ink }); }
   // cheese charges
   for (let i = 0; i < p.maxFlasks; i++) {
     const has = i < p.flasks;
@@ -76,8 +76,8 @@ function drawHUD() {
   }
   if (p.healT > 0) txt('NOM', bx + p.maxFlasks * 13 + 4, by + 16, C.yl1, { f: '3', ol: C.ink });
   // currency
-  txt('● ' + Run.gold, bx, by + 30, C.yl1, { ol: C.ink });
-  txt('◆ ' + Run.crumbs, bx + 60, by + 30, C.br5, { ol: C.ink });
+  txt('\u25cf ' + Run.gold, bx, by + 30, C.yl1, { ol: C.ink });
+  txt('\u25c6 ' + Run.crumbs, bx + 60, by + 30, C.br5, { ol: C.ink });
   // stats
   const st = Run.stats;
   txt('{r}' + st.fury + ' {t}' + st.cunning + ' {y}' + st.grit, bx, by + 42, C.wh, { f: '3', ol: C.ink });
@@ -154,7 +154,7 @@ function drawItemCard(it, x, y, price, noCompare) {
   const same = pl.slots.filter((s, i) => s && (it.def.kind === 'skill' ? i >= 2 : i < 2));
   if (same.length && !noCompare) txt('VS ' + same.map((s) => (s.def.kind === 'melee' ? itemDps(s) : itemDps(s))).join(' / '), x + 196, y + 20, C.st3, { f: '3', a: 'r' });
   lines.forEach((l, i) => txt(l, x + 6, y + 30 + i * 7, C.fu3, { f: '3' }));
-  if (price) txt('PRICE ' + price + ' ●', x + 196, y + 4, Run.gold >= price ? C.yl1 : C.rd3, { f: '3', a: 'r' });
+  if (price) txt('PRICE ' + price + ' \u25cf', x + 196, y + 4, Run.gold >= price ? C.yl1 : C.rd3, { f: '3', a: 'r' });
 }
 function roomAt(x, y) {
   if (!lv) return null;
@@ -217,7 +217,7 @@ class Menu {
       const col = dis ? C.dk3 : s ? C.yl1 : C.fu3;
       if (val) { txt(lab, cx - 8, y, col, { a: 'r', ol: C.ink }); txt(val, cx + 8, y, s ? C.wh : C.st4, { ol: C.ink }); }
       else txt(lab, cx, y, col, { a: 'c', ol: C.ink, wave: s ? 1 : 0, t: this.t });
-      if (s) { const w = val ? 0 : textW(lab) / 2; txt('→', cx - (val ? textW(lab) + 18 : w + 12), y, C.yl1, { ol: C.ink }); }
+      if (s) { const w = val ? 0 : textW(lab) / 2; txt('\u2192', cx - (val ? textW(lab) + 18 : w + 12), y, C.yl1, { ol: C.ink }); }
       y += it.gap || 13;
     });
     const it = this.items[this.sel];
@@ -251,7 +251,7 @@ class ChoiceMenu {
       wrapText(o.label.toUpperCase(), cw - 10).forEach((l, k) => txt(l, x + cw / 2, y + 42 + k * 10, o.col, { a: 'c', ol: C.ink }));
       wrapText(o.desc, cw - 12, '3').forEach((l, k) => txt(l, x + cw / 2, y + 66 + k * 8, C.fu3, { a: 'c', f: '3' }));
     });
-    txt('← → CHOOSE   [' + keyLabel(MENU_KEYS.ok[0]) + '/' + Input.label('jump') + '] CONFIRM   [ESC] LATER', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
+    txt('\u2190 \u2192 CHOOSE   [' + keyLabel(MENU_KEYS.ok[0]) + '/' + Input.label('jump') + '] CONFIRM   [ESC] LATER', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
   }
 }
 class SwapMenu {
@@ -275,7 +275,7 @@ class SwapMenu {
     drawItemCard(this.drop.it, W / 2 - 100, 54);
     this.slots.forEach((s, k) => {
       const it = pl.slots[s], x = k === 0 ? 40 : W - 200;
-      txt('[' + Input.label(SLOT_KEYS[s]) + '] or ' + (k ? '→' : '←'), x + 80, 150, C.yl1, { a: 'c', ol: C.ink });
+      txt('[' + Input.label(SLOT_KEYS[s]) + '] or ' + (k ? '\u2192' : '\u2190'), x + 80, 150, C.yl1, { a: 'c', ol: C.ink });
       if (it) drawItemCard(it, x, 162, 0, true);
     });
     txt('[ESC] KEEP CURRENT GEAR', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
@@ -310,8 +310,8 @@ class HoarderMenu {
   draw() {
     dimBg(0.78);
     txt("THE HOARDER'S PILE", W / 2, 16, C.br5, { a: 'c', sc: 2, ol: C.ink });
-    txt('◆ ' + Save.data.crumbs + ' CRUMBS BANKED', W / 2, 38, C.br5, { a: 'c', ol: C.ink });
-    ['BLUEPRINTS', 'UPGRADES'].forEach((tb, i) => txt((this.tab === i ? '→ ' : '') + tb, W / 2 + (i ? 70 : -70), 54, this.tab === i ? C.yl1 : C.st3, { a: 'c', ol: C.ink }));
+    txt('\u25c6 ' + Save.data.crumbs + ' CRUMBS BANKED', W / 2, 38, C.br5, { a: 'c', ol: C.ink });
+    ['BLUEPRINTS', 'UPGRADES'].forEach((tb, i) => txt((this.tab === i ? '\u2192 ' : '') + tb, W / 2 + (i ? 70 : -70), 54, this.tab === i ? C.yl1 : C.st3, { a: 'c', ol: C.ink }));
     const L = this.list();
     if (!L.length) txt(this.tab === 0 ? 'NO BLUEPRINTS FOUND YET. ELITES AND CHESTS DROP THEM.' : 'YOU BOUGHT EVERYTHING. TOUCH GRASS.', W / 2, 110, C.st4, { a: 'c', f: '3' });
     const start = max(0, min(this.sel - 4, L.length - 9));
@@ -320,11 +320,11 @@ class HoarderMenu {
       panel(70, y, W - 140, 14, s ? C.dk1 : C.night, s ? C.yl1 : C.dk2);
       if (e.bp) spr(itemIcon(ITEMS[e.id]), 82, y + 15);
       txt(e.name.toUpperCase(), e.bp ? 94 : 78, y + 4, s ? C.yl1 : C.fu3, { f: '3' });
-      txt(e.cost + ' ◆', W - 78, y + 4, Save.data.crumbs >= e.cost ? C.br5 : C.rd3, { a: 'r', f: '3' });
+      txt(e.cost + ' \u25c6', W - 78, y + 4, Save.data.crumbs >= e.cost ? C.br5 : C.rd3, { a: 'r', f: '3' });
     });
     const e = L[this.sel];
     if (e) wrapText(e.desc, 320, '3').forEach((l, i) => txt(l, W / 2, 222 + i * 8, C.st4, { a: 'c', f: '3', ol: C.ink }));
-    txt('← → TAB   ↑ ↓ SELECT   [ENTER] BUY   [ESC] LEAVE', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
+    txt('\u2190 \u2192 TAB   \u2191 \u2193 SELECT   [ENTER] BUY   [ESC] LEAVE', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
   }
 }
 class MapView {
@@ -351,7 +351,7 @@ class MapView {
       if (col) R(g, ox + it.cx / TS * sc - 1, oy + it.cy / TS * sc - 1, 3, 3, col);
     }
     if (this.t % 30 < 20) R(g, ox + (pl.cx / TS) * sc - 1, oy + (pl.cy / TS) * sc - 2, 3, 4, C.wh);
-    txt('{y}■{/} EXIT  {o}■{/} CHEST  {r}■{/} SNACK  {g}■{/} SHOP  {c}■{/} FOOD', W / 2, H - 14, C.st4, { a: 'c', f: '3' });
+    txt('{y}\u25a0{/} EXIT  {o}\u25a0{/} CHEST  {r}\u25a0{/} SNACK  {g}\u25a0{/} SHOP  {c}\u25a0{/} FOOD', W / 2, H - 14, C.st4, { a: 'c', f: '3' });
   }
 }
 
@@ -431,7 +431,7 @@ const Title = {
     txt('A ROGUELITE ABOUT A MOUSE WITH A NEEDLE AND A GRUDGE', lx, ly + 34, C.fu3, { a: 'c', f: '3', ol: C.ink });
     {
       this.menu.draw(W / 2, 112);
-      txt('↑↓ NAVIGATE   ENTER / SPACE / J  SELECT', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
+      txt('\u2191\u2193 NAVIGATE   ENTER / SPACE / J  SELECT', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
       const S = Save.data.stats;
       txt('RUNS ' + S.runs + '   WINS ' + S.wins + '   CRUMBS ' + Save.data.crumbs + '   HATS ' + Save.data.hats.length + '/' + Object.keys(HATS).length, W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
     }
@@ -523,7 +523,7 @@ function drawCredits(t, y0) {
 // ---------------- options ----------------
 function optionsMenu(back) {
   const S = Save.data.settings;
-  const vol = (k) => ({ value: () => '■'.repeat(round(S[k] * 10)) + '□'.repeat(10 - round(S[k] * 10)), left: () => { S[k] = max(0, round((S[k] - 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); }, right: () => { S[k] = min(1, round((S[k] + 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); } });
+  const vol = (k) => ({ value: () => '\u25a0'.repeat(round(S[k] * 10)) + '\u25a1'.repeat(10 - round(S[k] * 10)), left: () => { S[k] = max(0, round((S[k] - 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); }, right: () => { S[k] = min(1, round((S[k] + 0.1) * 10) / 10); AudioSys.applyVolumes(); Save.write(); } });
   const tog = (k, after) => ({ value: () => (S[k] ? 'ON' : 'OFF'), ok: () => { S[k] = !S[k]; Save.write(); if (after) after(); }, left: () => { S[k] = !S[k]; Save.write(); if (after) after(); }, right: () => { S[k] = !S[k]; Save.write(); if (after) after(); } });
   const items = [
     Object.assign({ label: 'MUSIC' }, vol('music')),
@@ -532,6 +532,7 @@ function optionsMenu(back) {
     Object.assign({ label: 'SCREEN FLASHES' }, tog('flash')),
     Object.assign({ label: 'DAMAGE NUMBERS' }, tog('dmgNums')),
     Object.assign({ label: 'RUN TIMER' }, tog('timer')),
+    { label: 'FULLSCREEN', value: () => (document.fullscreenElement ? 'ON' : 'OFF'), ok: () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { /* not allowed here */ } } },
     Object.assign({ label: 'PIXEL PERFECT' }, tog('pixelPerfect', () => Gfx.resize())),
     Object.assign({ label: 'SCANLINES' }, tog('scanlines')),
     { label: 'CONTROLS', ok: () => { Game.subMenu = new ControlsMenu(() => { Game.subMenu = null; }); } },

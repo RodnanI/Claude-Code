@@ -24,7 +24,7 @@ const MENU_KEYS = {
   ok: ['Enter', 'Space', 'KeyJ', 'KeyZ', 'KeyE'], back: ['Escape', 'Backspace', 'KeyK', 'KeyX'],
 };
 const KEY_LABELS = {
-  Space: 'SPACE', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', ShiftLeft: 'SHIFT',
+  Space: 'SPACE', ArrowLeft: '\u2190', ArrowRight: '\u2192', ArrowUp: '\u2191', ArrowDown: '\u2193', ShiftLeft: 'SHIFT',
   ShiftRight: 'RSHIFT', ControlLeft: 'CTRL', ControlRight: 'RCTRL', AltLeft: 'ALT', AltRight: 'RALT', Escape: 'ESC',
   Enter: 'ENTER', Backspace: 'BKSP', Tab: 'TAB', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/',
   BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', CapsLock: 'CAPS',
