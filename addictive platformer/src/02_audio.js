@@ -246,12 +246,12 @@ function parseSong(S) {
   return { S, len, lead, chords: S.chords.map(chordTones) };
 }
 const Music = {
-  name: '', cur: null, step: 0, next: 0,
+  name: '', cur: null, step: 0, next: 0, loop: 0,
   play(name) {
     if (this.name === name) return;
     this.name = name;
     this.cur = SONGS[name] ? parseSong(SONGS[name]) : null;
-    this.step = 0;
+    this.step = 0; this.loop = 0;
     if (AudioSys.ctx) this.next = AudioSys.ctx.currentTime + 0.12;
   },
   stop() { this.play(''); },
@@ -268,6 +268,7 @@ const Music = {
       this.playStep(this.step, this.next, spb);
       this.next += spb * sw;
       this.step = (this.step + 1) % this.cur.len;
+      if (this.step === 0) this.loop++;
     }
   },
   playStep(i, t, spb) {
@@ -276,7 +277,10 @@ const Music = {
     const ch = P.chords[bar];
     const v = S.vol || 1;
     const ln = P.lead[i];
-    if (ln) mNote(t, ln.m + (S.leadOct || 0), ln.len * spb * 0.95, S.leadWave || 'p25', 0.055 * v, true);
+    // loop variation: every other pass lifts the first half an octave, every fourth pass drops the lead for a breakdown
+    const lp = this.loop % 4, half = bar < P.chords.length / 2;
+    const lift = lp === 1 && half ? 12 : 0, mute = lp === 3 && !half;
+    if (ln && !mute) mNote(t, ln.m + (S.leadOct || 0) + lift, ln.len * spb * 0.95, lift ? 'p12' : S.leadWave || 'p25', 0.055 * v, true);
     // bass
     const bassRoot = 36 + ch.root + (ch.root > 6 ? -12 : 0);
     const bs = S.bass;

@@ -210,6 +210,7 @@ class Enemy extends Ent {
       if (o.billiard && !this.boss && abs(kb) > 2.5 && this.state !== 'launched') {
         this.state = 'launched'; this.st = 0; this.vx = dir * min(9, kb * 1.6); this.vy = -3.2;
         this.bumped = new Set(); this.launchDmg = dmg * 0.8;
+        if (chance(0.35)) Bubbles.say(this, pick(['WHEEEE', 'AAAAAA', 'not again', 'I CAN FLY', 'tell my mom', 'worth it']), 60);
       }
       if (this.state === 'wind' && (o.crit || o.stun || this.d.weight < 1) && !this.elite && !this.boss) { this.state = 'rec'; this.st = 0; this.cd = 40; }
       sfx(o.crit ? 'crit' : 'hit', this.cx);

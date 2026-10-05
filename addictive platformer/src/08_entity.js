@@ -29,7 +29,7 @@ const Bubbles = {
     for (const b of this.list) {
       const lines = wrapText(b.text, 120, '3');
       const w = max(...lines.map((l) => textW(l, '3'))) + 6, h = lines.length * 7 + 4;
-      const x = round(b.ent.cx - w / 2);
+      const x = round(clamp(b.ent.cx - w / 2, Cam.x + 3, Cam.x + W - w - 3));
       let y = round(b.ent.y - h - 10 - (b.ent.bubbleY || 0));
       for (let k = 0; k < 6; k++) { const hit = placed.find((r) => x < r.x + r.w + 2 && x + w + 2 > r.x && y < r.y + r.h + 4 && y + h + 4 > r.y); if (!hit) break; y = hit.y - h - 5; }
       placed.push({ x, y, w, h });

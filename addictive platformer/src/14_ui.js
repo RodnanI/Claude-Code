@@ -369,7 +369,8 @@ const Title = {
   build() {
     const S = Save.data;
     const items = [
-      { label: 'START RUN', ok: () => Game.startHub(MR.int(1, 999999999), S.spice) },
+      { label: 'START RUN', ok: () => { Game.seedLabel = null; Game.startHub(MR.int(1, 999999999), S.spice); } },
+      { label: 'DAILY RUN', ok: () => { const d = new Date(); const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); Game.seedLabel = 'DAILY ' + key; Game.startHub(hashStr('daily' + key), S.spice); }, desc: 'Same levels for everyone today. Compare times with friends.' },
       { label: 'SEEDED RUN', ok: () => { this.sub = new SeedMenu(); } },
     ];
     if (S.spiceMax > 0) items.push({ label: 'SPICE', value: () => S.spice + ' ' + SPICE[S.spice].name.toUpperCase(), left: () => { S.spice = max(0, S.spice - 1); Save.write(); }, right: () => { S.spice = min(S.spiceMax, S.spice + 1); Save.write(); }, desc: () => SPICE[S.spice].desc });
