@@ -7645,6 +7645,41 @@ function drawGallery(t) {
 window.__sq = { Game, get Run() { return Run; }, get lv() { return lv; }, get pl() { return pl; }, Debug, Save, genBiomeLevel, BIOMES, ROOMS, MAPS, STAGES, Input, ev: (s) => eval(s) };
 
 window.addEventListener('load', () => Game.init());
+// cheats menu: Ctrl+Shift+X toggles
+const Cheats = {
+  el: null, god: false,
+  init() {
+    const d = this.el = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:12px;left:12px;z-index:9;display:none;background:#1b1210;color:#f2d98a;border:2px solid #f2d98a;font:12px monospace;padding:10px;width:200px';
+    const btn = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.style.cssText = 'display:block;width:100%;margin:3px 0;background:#3a2620;color:#f2d98a;border:1px solid #8a6a3a;font:inherit;cursor:pointer;text-align:left'; b.onclick = () => { fn(); b.blur(); this.status(); }; d.appendChild(b); };
+    d.innerHTML = '<b>CHEATS</b> <span style="opacity:.6">Ctrl+Shift+X</span><div id="cht-s" style="margin:6px 0;color:#c9a"></div>';
+    btn('+500 banked crumbs', () => { Save.data.crumbs += 500; Save.write(); });
+    btn('+100 run crumbs', () => { if (Run) Run.crumbs += 100; });
+    btn('+500 buttons (gold)', () => { if (Run) Run.gold += 500; });
+    btn('Full heal', () => { if (pl) pl.hp = pl.maxHp; });
+    btn('Toggle god mode', () => { this.god = !this.god; });
+    btn('Unlock all hats', () => { Save.data.hats = Object.keys(HATS); Save.write(); });
+    btn('Unlock all blueprints', () => { Save.data.unlocked = Object.keys(BLUEPRINT_COST); Save.write(); });
+    btn('Unlock all upgrades', () => { UPGRADES.forEach((u) => (Save.data.upg[u.id] = 1)); Save.write(); });
+    btn('Unlock max spice', () => { Save.data.spiceMax = SPICE.length - 1; Save.write(); });
+    btn('Kill all enemies', () => { if (lv && lv.enemies) lv.enemies.forEach((e) => { if (!e.dead) e.hurt(1e6, pl, { kb: 0, force: true }); }); });
+    document.body.appendChild(d);
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.code === 'KeyX') { e.preventDefault(); e.stopImmediatePropagation(); this.toggle(); }
+    }, true);
+    setInterval(() => { if (this.god && pl) { pl.hp = pl.maxHp; pl.inv = max(pl.inv, 2); } }, 16);
+  },
+  toggle() {
+    const open = this.el.style.display === 'none';
+    this.el.style.display = open ? 'block' : 'none';
+    if (open) { this.status(); if (Game.state === 'play') Game.pause(); }
+  },
+  status() {
+    this.el.querySelector('#cht-s').textContent = 'bank ' + Save.data.crumbs + (Run ? ' | run ' + Run.crumbs + ' | gold ' + Run.gold : '') + (this.god ? ' | GOD' : '');
+  },
+};
+window.addEventListener('load', () => Cheats.init());
+
 
 })();
 </script>
