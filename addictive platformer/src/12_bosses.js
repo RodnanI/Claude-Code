@@ -7,8 +7,8 @@ Object.assign(ENEMY, {
   barry: { name: 'Barry', hp: 1, dmg: 15, w: 14, h: 18, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
   kevin: { name: 'Kevin', hp: 1, dmg: 18, w: 20, h: 22, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
   vacuum: { name: 'Vacuum-Tron 3000', hp: 1, dmg: 16, w: 66, h: 22, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
-  roachchef: { name: 'Monsieur Roach', hp: 1, dmg: 17, w: 20, h: 40, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
-  mittens: { name: 'Mittens', hp: 1, dmg: 24, w: 90, h: 70, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
+  roachchef: { name: 'Monsieur Roach', hp: 1, dmg: 14, w: 20, h: 40, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
+  mittens: { name: 'Mittens', hp: 1, dmg: 16, w: 90, h: 70, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
   paw: { name: 'Paw', hp: 1, dmg: 24, w: 30, h: 24, ai: 'none', weight: 99, gold: [0, 0], crumbs: [0, 0] },
 });
 const BOSS_INFO = [
@@ -579,7 +579,7 @@ class Paw extends Enemy {
     switch (this.state) {
       case 'hold': {
         this.intangible = true; this.down = false;
-        const hx = this.cat.cx + this.side * 150, hy = this.cat.y - 30;
+        const hx = this.cat.hdX + this.side * 150, hy = this.cat.hdY + 20;
         this.x = lerp(this.x, hx - this.w / 2, 0.08); this.y = lerp(this.y, hy, 0.08);
         break;
       }
@@ -608,7 +608,7 @@ class Paw extends Enemy {
           this.x += -this.side * 9; this.y = fy - this.h;
           if (pl && overlap(this, pl)) pl.hurt(this.cat.dmg, this, { cause: 'a paw swipe', kb: 5 });
           if (this.t % 2 === 0) puff(this.cx, fy - 2, 1, C.fu3);
-          if ((this.side < 0 && this.x > lv.tw * TS) || (this.side > 0 && this.x < -this.w)) { this.state = 'hold'; this.st = 0; this.y = this.cat.y - 60; this.x = this.cat.cx + this.side * 150; }
+          if ((this.side < 0 && this.x > lv.tw * TS) || (this.side > 0 && this.x < -this.w)) { this.state = 'hold'; this.st = 0; this.y = this.cat.hdY; this.x = this.cat.hdX + this.side * 150; }
         }
         break;
       }
@@ -646,9 +646,10 @@ class Mittens extends Boss {
     this.flying = true; this.noPlat = true;
     this.lives = 9; this.bar = 0; this.barHp = this.maxHp / 3;
     this.headLow = 0; this.mouth = 0; this.lookX = 0; this.blink = 0;
-    this.hx = x; this.hy = y;
+    this.hx = x; this.hy0 = 100; this.hdX = x; this.hdY = 100;
+    this.w = 100; this.h = 100;
     this.paws = [new Paw(this, -1), new Paw(this, 1)];
-    for (const p of this.paws) { p.x = x + p.side * 150; p.y = y - 40; lv.enemies.push(p); }
+    for (const p of this.paws) { p.x = x + p.side * 150; p.y = 110; lv.enemies.push(p); }
     this.laser = null; this.intangible = true;
   }
   floorY() { return (lv.th - 3) * TS; }
@@ -681,9 +682,9 @@ class Mittens extends Boss {
     const headTarget = this.state === 'bite' && this.st > 20 ? 1 : 0;
     this.headLow = lerp(this.headLow, headTarget, 0.08);
     this.intangible = this.headLow < 0.6;
-    const baseY = this.hy, lowY = fy - 64;
-    this.y = lerp(baseY, lowY, this.headLow) + sin(this.t * 0.03) * 3;
-    if (this.state !== 'bite') this.x = lerp(this.x, this.hx - this.w / 2 + this.lookX * 6, 0.05);
+    this.hdY = lerp(this.hy0, fy - 84, this.headLow) + sin(this.t * 0.03) * 3;
+    if (this.state !== 'bite') this.hdX = lerp(this.hdX, this.hx + this.lookX * 6, 0.05);
+    this.x = this.hdX - 50; this.y = fy - 100;
     if (this.laser) this.updLaser();
     switch (this.state) {
       case 'trans':
@@ -717,7 +718,7 @@ class Mittens extends Boss {
         this.mouth = this.st > 50 ? 1 : 0;
         if (this.st === 1) { sfx('hack'); this.sayBig('HACK. HACK. HURK.', C.st4); }
         if (this.st === 60) {
-          for (let i = 0; i < 1 + this.bar; i++) lv.projs.push(new Proj(this.cx, this.y + 50, (t.cx > this.cx ? 1 : -1) * (2.5 + i), -3, { team: 'e', kind: 'hairball', dmg: this.dmg * 0.8, grav: 0.22, bouncy: true, life: 300, w: 12, h: 12, breakable: false, cause: 'a hairball. gross.', onBounce: (p) => { sfx('splat', p.cx); FX.shake(0.15); } }));
+          for (let i = 0; i < 1 + this.bar; i++) lv.projs.push(new Proj(this.hdX, this.hdY + 60, (t.cx > this.hdX ? 1 : -1) * (2.5 + i), -3, { team: 'e', kind: 'hairball', dmg: this.dmg * 0.8, grav: 0.22, bouncy: true, life: 300, w: 12, h: 12, breakable: false, cause: 'a hairball. gross.', onBounce: (p) => { sfx('splat', p.cx); FX.shake(0.15); } }));
           sfx('splat');
         }
         if (this.st > 80) { this.mouth = 0; this.endAtk(40); }
@@ -740,9 +741,9 @@ class Mittens extends Boss {
         break;
       case 'bite':
         this.mouth = this.st > 40 && this.st < 70 ? 1 : 0;
-        if (this.st < 20) this.x = lerp(this.x, clamp(t.cx, 6 * TS, (lv.tw - 6) * TS) - this.w / 2, 0.1);
+        if (this.st < 20) this.hdX = lerp(this.hdX, clamp(t.cx, 6 * TS, (lv.tw - 6) * TS), 0.1);
         if (this.st === 20) sfx('hiss');
-        if (this.st === 56) { sfx('snap', this.cx); FX.shake(0.4); this.strike({ x: this.x + 10, y: this.y + 30, w: this.w - 20, h: 44 }, 1.3); }
+        if (this.st === 56) { sfx('snap', this.cx); FX.shake(0.4); this.strike({ x: this.hdX - 60, y: fy - 40, w: 120, h: 40 }, 1.3); }
         if (this.st === 70) this.sayBig(pick(['*yawn*', 'mrrp', '*grooming*']), C.st4);
         if (this.st > 170) this.endAtk(40);
         break;
@@ -778,7 +779,7 @@ class Mittens extends Boss {
     super.die();
   }
   drawBack() {
-    const x = round(this.hx + this.lookX * 2), y = round(this.y);
+    const x = round(this.hdX), y = round(this.hdY);
     const L = liveSpr('cathead', 150, 110, (c) => {
       const cx = 75, cy = 62, low = this.headLow;
       POLY(c, [cx - 62, cy - 20, cx - 30, cy - 46, cx - 52, cy - 62], C.or1); POLY(c, [cx - 54, cy - 26, cx - 36, cy - 42, cx - 49, cy - 54], C.pk1);
@@ -802,12 +803,9 @@ class Mittens extends Boss {
       for (const s of [-1, 1]) for (let i = 0; i < 3; i++) LINE(c, cx + s * 30, cy + 14 + i * 4, cx + s * 70, cy + 6 + i * 8, C.fu4);
       if (low > 0.6) txt('BOOP', cx, cy + 6, C.yl1, { a: 'c', f: '3', c });
     });
-    const sc = 1.6;
-    g.save(); g.translate(x, y + 30);
-    const src = this.flash > 0 && this.headLow > 0.6 ? null : L.b;
-    if (src) g.drawImage(src, round(-src.width * sc / 2), round(-src.height * sc / 2), round(src.width * sc), round(src.height * sc));
-    else { drawLive(L, 0, 0, false, true, 0.5, 0.5); }
-    g.restore();
+    let src = L.b;
+    if (this.flash > 0 && this.headLow > 0.6) { const c = L.cc; c.clearRect(0, 0, L.c.width, L.c.height); c.drawImage(L.b, 0, 0); c.globalCompositeOperation = 'source-in'; c.fillStyle = '#fff'; c.fillRect(0, 0, L.c.width, L.c.height); c.globalCompositeOperation = 'source-over'; src = L.c; }
+    g.drawImage(src, x - src.width, y - src.height, src.width * 2, src.height * 2);
   }
   draw() {
     if (this.laser) {

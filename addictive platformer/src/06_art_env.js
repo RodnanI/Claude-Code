@@ -87,11 +87,16 @@ function solidLiving(c, x, y, tx, ty, m) {
   }
 }
 function solidKitchen(c, x, y, tx, ty, m) {
-  for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) {
-    const dark = ((tx * 2 + a + ty * 2 + b) & 1) === 1;
-    R(c, x + a * 8, y + b * 8, 8, 8, dark ? C.st1 : C.fu3);
-    R(c, x + a * 8, y + b * 8, 8, 1, dark ? C.st2 : C.fu4);
-    R(c, x + a * 8, y + b * 8 + 7, 8, 1, dark ? C.st0 : C.fu2);
+  R(c, x, y, 16, 16, '#8f877f');
+  for (let r = 0; r < 4; r++) {
+    const off = ((ty * 4 + r) & 1) * 4;
+    for (let b = -1; b < 3; b++) {
+      const bx = b * 8 + off, x0 = max(0, bx), x1 = min(16, bx + 8);
+      if (x1 <= x0) continue;
+      const h = hash2(floor((tx * 16 + bx + 8) / 8), ty * 4 + r, 43);
+      R(c, x + x0, y + r * 4, x1 - x0, 3, h < 0.15 ? '#a39a90' : h < 0.85 ? '#b6ada2' : '#c4bcb0');
+      R(c, x + x0, y + r * 4, x1 - x0, 1, '#cfc7bb');
+    }
   }
   if (hash2(tx, ty, 41) < 0.2) { PX(c, x + 3, y + 10, C.br2); PX(c, x + 4, y + 11, C.br2); }
   if (m & 1) {

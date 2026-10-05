@@ -45,6 +45,11 @@ function moveBody(e) {
     for (let i = 0; i < n; i++) {
       const nx = e.x + sx;
       if (rectSolid(nx, e.y, e.w, e.h)) {
+        if (e.cornerFix && e.vy > -1.2) {
+          let lift = 0;
+          for (let k = 1; k <= 7; k++) if (!rectSolid(nx, e.y - k, e.w, e.h)) { lift = k; break; }
+          if (lift) { e.y -= lift; e.x = nx; if (e.vy > 0) e.vy = 0; continue; }
+        }
         e.x = sx > 0 ? floor((nx + e.w) / TS) * TS - e.w : (floor(nx / TS) + 1) * TS;
         e.hitWall = sign(sx); e.vx = 0; break;
       }

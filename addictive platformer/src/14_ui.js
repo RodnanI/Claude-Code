@@ -35,7 +35,7 @@ const UI = {
       txt(b.sub, W / 2, 128, C.fu3, { a: 'c', ol: C.ink });
       g.globalAlpha = 1;
     }
-    if (this.card) {
+    if (this.card && !this.modal) {
       const c = this.card, k = ease.outBack(min(1, (220 - c.t) / 30)), out = c.t < 30 ? c.t / 30 : 1;
       g.globalAlpha = out;
       const y = lerp(30, 58, k);
@@ -114,7 +114,7 @@ function drawHUD() {
   // boss bar
   const b = lv && lv.boss;
   if (b && !b.dead && b.state !== 'sleep') {
-    const w = 260, x = W / 2 - w / 2, y = H - 22;
+    const w = 220, x = W / 2 - w / 2 + 14, y = H - 22;
     txt(b.info.name, W / 2, y - 10, C.yl2, { a: 'c', ol: C.ink });
     R(g, x - 2, y - 2, w + 4, 10, C.ink);
     R(g, x, y, w, 6, C.dk1);
@@ -140,7 +140,7 @@ function drawHUD() {
     }
   }
 }
-function drawItemCard(it, x, y, price) {
+function drawItemCard(it, x, y, price, noCompare) {
   const lines = itemDesc(it).flatMap((l) => wrapText(l, 188, '3'));
   const h = 30 + lines.length * 7 + 12;
   y = min(y, H - h - 36);
@@ -152,7 +152,7 @@ function drawItemCard(it, x, y, price) {
   const dlab = it.def.kind === 'melee' ? 'DPS ' + itemDps(it) : it.def.id === 'sugar' ? 'BUFF' : 'DMG ' + itemDps(it);
   txt(dlab, x + 24, y + 20, C.wh, { f: '3' });
   const same = pl.slots.filter((s, i) => s && (it.def.kind === 'skill' ? i >= 2 : i < 2));
-  if (same.length) txt('VS ' + same.map((s) => (s.def.kind === 'melee' ? itemDps(s) : itemDps(s))).join(' / '), x + 196, y + 20, C.st3, { f: '3', a: 'r' });
+  if (same.length && !noCompare) txt('VS ' + same.map((s) => (s.def.kind === 'melee' ? itemDps(s) : itemDps(s))).join(' / '), x + 196, y + 20, C.st3, { f: '3', a: 'r' });
   lines.forEach((l, i) => txt(l, x + 6, y + 30 + i * 7, C.fu3, { f: '3' }));
   if (price) txt('PRICE ' + price + ' ●', x + 196, y + 4, Run.gold >= price ? C.yl1 : C.rd3, { f: '3', a: 'r' });
 }
@@ -276,7 +276,7 @@ class SwapMenu {
     this.slots.forEach((s, k) => {
       const it = pl.slots[s], x = k === 0 ? 40 : W - 200;
       txt('[' + Input.label(SLOT_KEYS[s]) + '] or ' + (k ? '→' : '←'), x + 80, 150, C.yl1, { a: 'c', ol: C.ink });
-      if (it) drawItemCard(it, x, 162);
+      if (it) drawItemCard(it, x, 162, 0, true);
     });
     txt('[ESC] KEEP CURRENT GEAR', W / 2, H - 12, C.st3, { a: 'c', f: '3', ol: C.ink });
   }
@@ -363,6 +363,7 @@ const Title = {
     Music.play('title');
     this.mouse = { x: 0, y: 0, w: 8, h: 14, face: 1, vx: 0, t: 0, hat: Save.data.hat, tail: chainInit(7, 0, 0), scarf: chainInit(6, 0, 0), get cx() { return this.x + 4; }, get bot() { return this.y + 14; } };
     this.mouse.x = 300; this.mouse.y = 196;
+    this.mouse.tail = chainInit(7, 296, 206); this.mouse.scarf = chainInit(6, 297, 200);
     this.build();
   },
   build() {
@@ -418,17 +419,17 @@ const Title = {
     // the mouse
     const m = this.mouse;
     renderMouse(m, { t, bob: 0, lean: 0, bf: [0, 0], ff: [0, 0], earBack: 0, earUp: 0, eye: (t % 200) < 6 ? 'blink' : 'o', hand: [4, -7], crouch: (t % 80) < 40 ? 0 : 1 });
-    drawMouseAt(m, m.cx, m.bot + 1, 1, 1, 0, false);
-    drawShape(g, m.cx + 4, m.bot - 6, -1.2, SHAPES.needle);
+    drawMouseAt(m, m.cx, m.bot + 1, 2, 2, 0, false);
+    drawShape(g, m.cx + 9, m.bot - 12, -1.2, SHAPES.needle, 2);
     // dust motes
     for (let i = 0; i < 26; i++) { const x = (i * 97 + t * (0.2 + (i % 5) * 0.05)) % W, y = (i * 53 + sin(t * 0.01 + i) * 20) % 200; PX(g, x, y, i % 3 ? '#4a3a40' : '#8a7060'); }
+    if (this.sub) { dimBg(0.9); this.sub.draw(); return; }
     // logo
     const lx = W / 2, ly = 28;
     txt('SQUEAKBORNE', lx + 2, ly + 3, C.rd1, { a: 'c', sc: 4 });
     txt('SQUEAKBORNE', lx, ly, C.yl1, { a: 'c', sc: 4, ol: C.ink, wave: 1.2, t });
     txt('A ROGUELITE ABOUT A MOUSE WITH A NEEDLE AND A GRUDGE', lx, ly + 34, C.fu3, { a: 'c', f: '3', ol: C.ink });
-    if (this.sub) { dimBg(0.55); this.sub.draw(); }
-    else {
+    {
       this.menu.draw(W / 2, 112);
       txt('↑↓ NAVIGATE   ENTER / SPACE / J  SELECT', W / 2, H - 22, C.st3, { a: 'c', f: '3', ol: C.ink });
       const S = Save.data.stats;
@@ -637,7 +638,7 @@ function drawDeath() {
   rows.forEach(([k, v], i) => { const y = 82 + i * 12; if (t > 30 + i * 6) { txt(k, W / 2 - 8, y, C.st4, { a: 'r', ol: C.ink }); txt(String(v), W / 2 + 8, y, C.yl1, { ol: C.ink }); } });
   if (t > 90) txt(D.tip, W / 2, 190, C.gr3, { a: 'c', f: '3', ol: C.ink });
   if (t > 100 && D.unlocks.length) txt('NEW THIS RUN: ' + D.unlocks.join(', '), W / 2, 204, C.or2, { a: 'c', f: '3', ol: C.ink });
-  if (t > 110 && t % 50 < 36) txt('[' + Input.label('jump') + '] TRY AGAIN       [ESC] TITLE', W / 2, 232, C.yl1, { a: 'c', ol: C.ink });
+  if (t > 55 && t % 50 < 36) txt('[' + Input.label('jump') + '] TRY AGAIN       [ESC] TITLE', W / 2, 232, C.yl1, { a: 'c', ol: C.ink });
 }
 function drawVictory() {
   const t = Game.stateT;
@@ -645,13 +646,22 @@ function drawVictory() {
   DISC(g, 400, 60, 26, '#eef5ff');
   for (let i = 0; i < 40; i++) PX(g, (i * 113) % W, (i * 37) % 150, i % 4 ? '#6a7aa0' : C.wh);
   // sleeping cat & tiny proud mouse
-  ELL(g, 140, 236, 70, 22, C.or0); ELL(g, 140, 232, 66, 20, C.or1); DISC(g, 200, 222, 22, C.or1);
-  POLY(g, [186, 206, 192, 192, 198, 206], C.or1); POLY(g, [204, 206, 212, 192, 216, 208], C.or1);
-  R(g, 192, 220, 8, 2, C.ink); R(g, 206, 220, 8, 2, C.ink);
-  txt('z', 226 + sin(t * 0.05) * 3, 196 - (t % 60) / 6, C.fu3, { sc: 2 });
+  const breathe = round(sin(t * 0.04) * 1.5);
+  const L = liveSpr('sleepcat', 190, 80, (c) => {
+    ELL(c, 84, 56 - breathe, 72, 22 + breathe, C.or0); ELL(c, 84, 53 - breathe, 69, 20 + breathe, C.or1);
+    for (let i = 0; i < 6; i++) LINE(c, 38 + i * 16, 36 - breathe, 34 + i * 16, 50, C.or0, 2);
+    ELL(c, 70, 72, 46, 5, C.or0); ELL(c, 70, 71, 44, 4, C.or1); for (let i = 0; i < 4; i++) R(c, 34 + i * 18, 69, 3, 5, C.or0);
+    POLY(c, [138, 34, 144, 14, 154, 30], C.or1); POLY(c, [160, 30, 170, 14, 176, 36], C.or1); PX(c, 145, 22, C.pk1); PX(c, 169, 22, C.pk1);
+    DISC(c, 157, 46, 22, C.or1); ELL(c, 157, 56, 13, 8, C.fu4);
+    LINE(c, 145, 44, 151, 46, C.ink); LINE(c, 163, 46, 169, 44, C.ink); POLY(c, [154, 50, 160, 50, 157, 54], C.pk1);
+    LINE(c, 134, 52, 120, 50, C.fu4); LINE(c, 134, 55, 120, 57, C.fu4); LINE(c, 180, 52, 188, 50, C.fu4);
+    ELL(c, 132, 70, 12, 5, C.fu4); ELL(c, 176, 70, 10, 5, C.fu4);
+  });
+  drawLive(L, 150, 262, false, false);
+  for (let i = 0; i < 3; i++) { const k = ((t + i * 40) % 120) / 120; g.globalAlpha = 1 - k; txt('z', 232 + sin(t * 0.05 + i) * 4 + k * 14, 200 - k * 40, C.fu3, { sc: 1 + (i === 2 ? 1 : 0), ol: C.ink }); g.globalAlpha = 1; }
   if (Title.mouse) {
     const m = Title.mouse;
-    m.x = 196; m.y = 186 - 14 - 12; m.t++;
+    m.x = 118; m.y = 214 - 14 - breathe; m.t++;
     chainStep(m.tail, m.cx - 4, m.bot - 4, 2.1, 0.03, 0.86, -0.1, 0.12, t, (i) => [-i * 2, i * 0.5 - i * i * 0.2], 0.09);
     chainStep(m.scarf, m.cx - 3, m.bot - 10, 1.9, 0.03, 0.85, -0.3, 0.25, t, (i) => [-i * 1.9, i * 0.3], 0.06);
     renderMouse(m, { t, eye: 'happy', hand: [3, -13], bob: t % 40 < 20 ? 0 : -1 });

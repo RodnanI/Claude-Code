@@ -68,7 +68,7 @@ const Game = {
         break;
       case 'dead':
         this.stepWorldPassive();
-        if (this.stateT > 110 && (Input.p('jump') || Input.mpress('ok'))) this.startHub(MR.int(1, 999999999), Save.data.spice);
+        if (this.stateT > 55 && (Input.p('jump') || Input.mpress('ok'))) this.startHub(MR.int(1, 999999999), Save.data.spice);
         else if (this.stateT > 60 && Input.mpress('back')) this.toTitle();
         break;
       case 'win':
@@ -273,6 +273,7 @@ const Game = {
     sfx('fanfare');
     if (!Title.mouse) Title.enter();
     Title.mouse.hat = Save.data.hat;
+    UI.card = null; UI.bannerD = null;
     this.setState('win');
   },
   debugStart(stage) {

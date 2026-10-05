@@ -1,7 +1,7 @@
 // SQUEAKBORNE :: enemies
 // Data-driven creatures with shared AI archetypes, status effects, billiard launches and elites.
 
-const hpScale = () => [1, 2.3, 4.2, 6.8][Run.biome()] * SPICE[Run.spice].hp;
+const hpScale = () => [1, 2.15, 3.7, 5.8][Run.biome()] * SPICE[Run.spice].hp;
 const dmgScale = (base) => base * [1, 1.55, 2.2, 3.0][Run ? Run.biome() : 0] * (Run ? SPICE[Run.spice].dmg : 1);
 
 const ENEMY = {

@@ -510,6 +510,7 @@ const Cam = {
     let tx = e.x + e.w / 2 - W / 2 + this.look;
     let ty = e.y + e.h / 2 - H / 2 - 18 + this.lookY;
     if (this.lockX !== null) tx = this.lockX;
+    if (lv && lv.kind === 'boss') ty = 1e5;
     return [tx, ty];
   },
   update() {
