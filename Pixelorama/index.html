@@ -217,12 +217,12 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:3px;bac
 
 /* right column */
 #rightcol{background:var(--panel);display:flex;flex-direction:column;min-height:0;overflow-y:auto;overflow-x:hidden}
-.cbig{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cbig{display:flex;align-items:center;gap:8px;margin-bottom:18px}
 .cslot{width:44px;height:30px;border-radius:5px;border:2px solid var(--line2);cursor:pointer;position:relative;background-image:linear-gradient(45deg,#888 25%,transparent 25%,transparent 75%,#888 75%),linear-gradient(45deg,#888 25%,#bbb 25%,#bbb 75%,#888 75%);background-size:10px 10px;background-position:0 0,5px 5px}
 .cslot i{position:absolute;inset:0;border-radius:3px}
 .cslot.act{outline:2px solid var(--tx);outline-offset:1px}
 .cslot.l{border-color:var(--acc)}.cslot.r{border-color:var(--sec)}
-.cslot b{position:absolute;bottom:-14px;left:0;right:0;text-align:center;font-size:9px;font-weight:600;color:var(--mute);letter-spacing:.5px}
+.cslot b{position:absolute;top:calc(100% + 6px);left:-4px;right:-4px;text-align:center;font-size:9px;line-height:1;font-weight:600;color:var(--mute);letter-spacing:.5px}
 #sv,#hue,#alpha{display:block;width:100%;border-radius:4px;cursor:crosshair;border:1px solid var(--line2)}
 #sv{height:140px}#hue,#alpha{height:14px;margin-top:6px}
 .cinputs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:8px}
@@ -243,8 +243,10 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:3px;bac
 .prow select{flex:1}
 #prevbox{position:relative;background:var(--canvas-bg);border:1px solid var(--line);border-radius:4px;height:170px;overflow:hidden}
 #prevcv{position:absolute;inset:0;width:100%;height:100%}
-.rtabs{display:flex;gap:2px}
-.rtabs button{border:0;background:none;color:var(--mute);padding:3px 6px;border-radius:3px;cursor:pointer;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600}
+.rtabs{display:flex;gap:1px;flex-wrap:wrap;min-width:0}
+.ph:has(.rtabs){height:auto;min-height:26px;padding-block:2px}
+.rtabs button{border:0;background:none;color:var(--mute);padding:3px 4px;border-radius:3px;cursor:pointer;font-size:10px;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+.rtabs button:hover{color:var(--tx2)}
 .rtabs button.on{color:var(--tx);background:var(--raise)}
 #histlist{max-height:180px;overflow-y:auto;font-size:11.5px}
 .hrow{padding:3px 6px;border-radius:3px;cursor:pointer;display:flex;gap:6px}
@@ -413,6 +415,36 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .thm-foot kbd{font-family:var(--mono);font-size:10px;padding:0 4px;border:1px solid var(--line2);border-radius:3px;color:var(--tx2)}
 .thm-foot button{background:var(--raise);border:1px solid var(--line2);border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--tx2)}
 .thm-foot button:hover{color:var(--tx);border-color:var(--acc-d)}
+/* command palette */
+.cmdk{display:flex;align-items:center;gap:7px;height:22px;margin:auto 0 auto 14px;padding:0 5px 0 7px;min-width:0;flex:0 1 250px;border:1px solid var(--line2);border-radius:5px;background:var(--panel);color:var(--mute);cursor:pointer;font-size:11.5px}
+.cmdk:hover{border-color:var(--acc-d);color:var(--tx2)}
+.cmdk>span{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmdk img{opacity:.7;image-rendering:pixelated}
+@media (max-width:1380px){.cmdk{flex-basis:30px}.cmdk>span,.cmdk kbd{display:none}}
+.cmd-bg{position:fixed;inset:0;z-index:250;background:#0007;animation:fade .1s}
+.cmd{position:fixed;left:50%;top:10vh;transform:translateX(-50%);z-index:251;width:min(660px,94vw);max-height:74vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:10px;box-shadow:0 24px 70px #000b;overflow:hidden;animation:cmdIn .14s cubic-bezier(.2,.9,.3,1)}
+@keyframes cmdIn{from{opacity:0;transform:translate(-50%,-10px)}}
+.cmd-q{display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.cmd-q img{image-rendering:pixelated;opacity:.8}
+.cmd-q input{flex:1;height:48px;border:0!important;background:none;font-size:15px;padding:0;outline:none}
+.cmd-q .cnt{color:var(--mute);font:11px var(--mono);white-space:nowrap}
+.cmd-l{overflow-y:auto;padding:5px;min-height:60px}
+.cmd-h{padding:9px 10px 4px;color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.9px}
+.cmd-r{display:flex;align-items:center;gap:10px;padding:0 10px;height:32px;border-radius:6px;cursor:pointer;position:relative}
+.cmd-r.on{background:var(--sel)}
+.cmd-r.on::before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:2px;background:var(--acc)}
+.cmd-r .cat{flex:0 0 76px;color:var(--mute);font-size:9.5px;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmd-r .ic{width:16px;height:16px;flex:0 0 16px;display:flex;align-items:center;justify-content:center;border-radius:3px}
+.cmd-r .ic img{image-rendering:pixelated}
+.cmd-r .lb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--tx);font-size:12.5px}
+.cmd-r .lb mark{background:none;color:var(--acc);font-weight:700}
+.cmd-r .lb .sub{color:var(--mute);margin-left:8px;font-size:11px}
+.cmd-r .tick{color:var(--ok);font-weight:700;width:12px;text-align:center}
+.cmd-r .pal{display:flex;height:12px;width:64px;border-radius:2px;overflow:hidden;box-shadow:0 0 0 1px var(--line2)}.cmd-r .pal i{flex:1}
+.cmd-r.dis{opacity:.42}
+.cmd-f{display:flex;flex-wrap:wrap;gap:4px 16px;padding:7px 14px;border-top:1px solid var(--line);color:var(--mute);font-size:11px;background:var(--bg2)}
+.cmd-f kbd{margin-right:4px}
+.cmd-none{padding:26px 16px;color:var(--mute);text-align:center;line-height:1.6}
 </style>
 </head>
 <body>
@@ -422,6 +454,7 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
   <header id="menubar">
     <div class="logo"><canvas id="logo" width="9" height="9"></canvas><span>Pixelorama<span style="color:var(--acc)">.web</span></span></div>
     <nav id="menus" style="display:flex"></nav>
+    <button class="cmdk" id="cmdk-btn" title="Command palette: search every action, tool, layer and palette"></button>
     <div class="mb-right" id="gtools"></div>
   </header>
   <div id="main">
@@ -519,6 +552,7 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
   <footer id="statusbar">
     <span><span class="sdot" style="background:var(--acc)"></span><b id="st-tool">Pencil</b></span>
     <span>XY <b id="st-pos">-, -</b></span>
+    <span id="st-col" title="Color under the cursor (all visible layers)"></span>
     <span>Size <b id="st-size">64 x 64</b></span>
     <span id="st-sel"></span>
     <span id="st-msg" style="color:var(--tx2);font-family:var(--font)"></span>
@@ -575,8 +609,8 @@ const THEMES = [
   ['matcha', 'Matcha', 'light', 'Soft green tea, leaf accent'], ['blossom', 'Blossom', 'light', 'Pale pink, raspberry and teal'],
   ['solar', 'Solar', 'light', 'Solarized cream, blue and rust']
 ].map(([id, name, kind, desc]) => ({ id, name, kind, desc }));
-const TC = { acc: '#f2a541', accD: '#b9781f', sec: '#4fb3a1', tx: '#ebe5d8', mute: '#8a8274' };
-function refreshTC() { const cs = getComputedStyle(document.documentElement), g = (v, d) => cs.getPropertyValue(v).trim() || d; Object.assign(TC, { acc: g('--acc', TC.acc), accD: g('--acc-d', TC.accD), sec: g('--sec', TC.sec), tx: g('--tx', TC.tx), mute: g('--mute', TC.mute) }); }
+const TC = { acc: '#f2a541', accD: '#b9781f', sec: '#4fb3a1', tx: '#ebe5d8', mute: '#8a8274', warn: '#e5574a', ok: '#8ccf6b', chkA: '#5b5850', chkB: '#46433d' };
+function refreshTC() { const cs = getComputedStyle(document.documentElement), g = (v, d) => cs.getPropertyValue(v).trim() || d; Object.assign(TC, { acc: g('--acc', TC.acc), accD: g('--acc-d', TC.accD), sec: g('--sec', TC.sec), tx: g('--tx', TC.tx), mute: g('--mute', TC.mute), warn: g('--warn', TC.warn), ok: g('--ok', TC.ok), chkA: g('--checker-a', TC.chkA), chkB: g('--checker-b', TC.chkB) }); }
 const PREF_DEFAULTS = {
   theme: 'graphite', checkerSize: 8, pixelGrid: true, pixelGridZoom: 8, pixelGridColor: '#00000055',
   grid: false, gridType: 'rect', gridW: 8, gridH: 8, gridOX: 0, gridOY: 0, gridColor: '#f2a54166', isoW: 16,
@@ -587,7 +621,8 @@ const PREF_DEFAULTS = {
   smartShapes: true, smartHold: true, smartHoldMs: 550, circleTol: 0.86, smartAxisSnap: 12,
   onion: false, onionPast: 1, onionFuture: 1, onionAlpha: 0.35, onionTint: true, onionPastColor: '#e5574a', onionFutureColor: '#4fb3a1',
   autosave: true, maxUndo: 120, zoomStep: 1.25, defaultW: 64, defaultH: 64, recentColors: [], uiPanels: {},
-  firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}, kidx: { open: false, x: -1, y: 70, w: 320, h: 460 }
+  firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}, kidx: { open: false, x: -1, y: 70, w: 320, h: 460 },
+  cmdRecent: []
 };
 const Prefs = (() => {
   let p = {};
@@ -1001,7 +1036,7 @@ function compose(p, fi, opts) {
   if (!opts) { const c = p._comp[fi]; if (c && c.key === key) return c.cv; }
   let cv;
   if (!opts) { const c = p._comp[fi] ||= { cv: document.createElement('canvas') }; cv = c.cv; c.key = key; }
-  else cv = document.createElement('canvas');
+  else cv = opts.fresh ? document.createElement('canvas') : (compose._scratch ||= document.createElement('canvas')); // scratch: callers draw it right away
   cv.width = p.w; cv.height = p.h;
   const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.imageSmoothingEnabled = false;
   drawStack(ctx, p.layers, p.frames[fi], p, 0, opts);
@@ -1056,11 +1091,11 @@ function maskSegments(mask, w, hh) {
 let _rq = 0, _full = false;
 function requestRender(full) { if (full) _full = true; if (!_rq) _rq = requestAnimationFrame(render); }
 let _checker = null, _checkerKey = '';
-function checkerPattern(ctx) {
-  const cs = getComputedStyle(document.documentElement), a = cs.getPropertyValue('--checker-a').trim(), b = cs.getPropertyValue('--checker-b').trim();
-  const s = Prefs.checkerSize, key = a + b + s;
-  if (key !== _checkerKey) { const c = document.createElement('canvas'); c.width = c.height = s * 2; const x = c.getContext('2d'); x.fillStyle = a; x.fillRect(0, 0, s * 2, s * 2); x.fillStyle = b; x.fillRect(s, 0, s, s); x.fillRect(0, s, s, s); _checker = c; _checkerKey = key; }
-  return ctx.createPattern(_checker, 'repeat');
+/* 2x2 checker scaled by the pattern transform; cells snap to whole image pixels so they never beat against the pixel grid */
+function checkerPattern(ctx, x0, y0, z) {
+  const key = TC.chkA + TC.chkB;
+  if (key !== _checkerKey) { const c = document.createElement('canvas'); c.width = c.height = 2; const x = c.getContext('2d'); x.fillStyle = TC.chkA; x.fillRect(0, 0, 2, 2); x.fillStyle = TC.chkB; x.fillRect(1, 0, 1, 1); x.fillRect(0, 1, 1, 1); _checker = c; _checkerKey = key; }
+  const pat = ctx.createPattern(_checker, 'repeat'); pat.setTransform(new DOMMatrix().translate(x0, y0).scale(Math.max(1, Math.round(Prefs.checkerSize / z)) * z)); return pat;
 }
 function tinted(cv, color, key) {
   const t = tmpCanvas(key, cv.width, cv.height); t.ctx.drawImage(cv, 0, 0);
@@ -1078,8 +1113,7 @@ function render() {
   const tileX = Prefs.tile === 'both' || Prefs.tile === 'x', tileY = Prefs.tile === 'both' || Prefs.tile === 'y';
   // drop shadow + checker
   ctx.fillStyle = '#0006'; ctx.fillRect(x0 + 4, y0 + 4, cw, ch);
-  const pat = checkerPattern(ctx); pat.setTransform(new DOMMatrix().translate(x0, y0));
-  ctx.fillStyle = pat;
+  ctx.fillStyle = checkerPattern(ctx, x0, y0, z);
   ctx.fillRect(x0 - (tileX ? cw : 0), y0 - (tileY ? ch : 0), cw * (tileX ? 3 : 1), ch * (tileY ? 3 : 1));
   const ref = p.ref;
   const drawRef = () => { if (ref && ref.visible && ref.img) { ctx.globalAlpha = ref.opacity; ctx.imageSmoothingEnabled = ref.scale < 1; ctx.drawImage(ref.img, V.rx(ref.x), V.ry(ref.y), ref.img.width * ref.scale * z, ref.img.height * ref.scale * z); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = 1; } };
@@ -2447,7 +2481,6 @@ const Clip = {
     }
   }
 };
-function activeTextCommit() {}
 </script>
 <script>
 /* ================= INPUT: pointer, wheel, keyboard, guides, paste ================= */
@@ -2492,7 +2525,7 @@ function initInput() {
     const s = V.evPt(e), f = V.toImg(s.x, s.y), p = App.p; if (!p) return;
     const cx = Math.floor(f.x), cy = Math.floor(f.y);
     App.cursor = { x: cx, y: cy, fx: f.x, fy: f.y, inside: true };
-    $('#st-pos').textContent = cx + ', ' + cy;
+    $('#st-pos').textContent = cx + ', ' + cy; statusColor(cx, cy);
     const D = Input.down;
     if (D && D.pan) { panBy(s.x - D.x, s.y - D.y); D.x = s.x; D.y = s.y; return; }
     if (D && D.guide) { const v = D.guide.axis === 'x' ? Math.round(f.x) : Math.round(f.y); D.guide.pos = v; App.hoverGuide = D.guide; status('Guide at ' + v + ' (drag onto a ruler to delete)'); requestRender(); return; }
@@ -2520,7 +2553,7 @@ function initInput() {
     if (D.tool) { const t = Tools[D.tool]; t.up && t.up(toolCtx(e, D.slot, s, f)); requestRender(); }
   };
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
-  el.addEventListener('pointerleave', () => { App.cursor.inside = false; $('#st-pos').textContent = '-, -'; requestRender(); });
+  el.addEventListener('pointerleave', () => { App.cursor.inside = false; $('#st-pos').textContent = '-, -'; statusColor(-1, -1); requestRender(); });
   el.addEventListener('dblclick', e => e.preventDefault());
   el.addEventListener('wheel', e => {
     e.preventDefault(); const s = V.evPt(e);
@@ -2552,6 +2585,13 @@ function initInput() {
     if (item && (!Clip.data || (App.blurTime || 0) > Clip.time)) { const file = item.getAsFile(); loadImageFile(file).then(img => { const d = imgToData(img); Clip.paste(false, d); }); }
     else Clip.paste(false);
   });
+}
+let _stColKey = '';
+function statusColor(x, y) {
+  const p = App.p, el = $('#st-col'); let k = '';
+  if (p && x >= 0 && y >= 0 && x < p.w && y < p.h) { const d = compose(p, p.frame).getContext('2d').getImageData(x, y, 1, 1).data; k = d[3] ? rgbaToHex([d[0], d[1], d[2], d[3]]) : 'clear'; }
+  if (k === _stColKey) return; _stColKey = k; el.innerHTML = '';
+  if (k) el.append(h('span', { class: 'sdot', style: { background: k === 'clear' ? 'repeating-conic-gradient(#888 0 25%,#ccc 0 50%) 0 0/4px 4px' : k, boxShadow: '0 0 0 1px var(--line2)' } }), h('b', null, k === 'clear' ? 'transparent' : k));
 }
 function isTyping(t) { return t && (t.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'button'].includes(t.type) || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable); }
 const CODE_KEYS = { Comma: ',', Period: '.', BracketLeft: '[', BracketRight: ']', Slash: '/', Minus: '-', Equal: '=', Semicolon: ';', Quote: "'", Backquote: '`', Backslash: '\\' };
@@ -2662,8 +2702,9 @@ function buildGlobalToolbar() {
     host.append(b);
   }
   host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', id: 'kidx-btn', title: 'Shortcut index' + kt('keyIndex'), onclick: () => KIdx.toggle() }, 'Keys'), h('button', { class: 'gt', id: 'thm-btn', title: 'Theme picker' + kt('themePicker') + ', cycle with ' + (A.themeNext.keys || 'the View menu'), onclick: e => ThemePick.toggle(e.currentTarget) }, h('span', { class: 'thm-dot' }, ...['--bg2', '--acc', '--sec'].map(v => h('i', { style: { background: 'var(' + v + ')' } }))), 'Theme'), h('button', { class: 'gt', title: 'Quick tour of the basics', onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt', title: 'Watch an animation get made, step by step', onclick: () => Demo.start() }, 'Guided demo'));
-  updateGlobalToolbar();
+  updateGlobalToolbar(); updateCmdBtn();
 }
+function updateCmdBtn() { const b = $('#cmdk-btn'), k = A.cmdPalette && A.cmdPalette.keys; b.innerHTML = ''; b.append(iconImg('zoom', 12, themeTx()), h('span', null, 'Search commands…'), k ? h('kbd', null, k) : ''); b.onclick = () => Cmd.open(); }
 function updateGlobalToolbar() {
   $$('#gtools .gt[data-g]').forEach(b => { const k = b.dataset.g; const on = k === 'radial' ? Prefs.symRadial > 1 : k === 'tile' ? Prefs.tile !== 'off' : k === 'zen' ? $('#app').classList.contains('zen') : !!Prefs[k]; b.classList.toggle('on', on); });
   $('#st-snap').textContent = Snap.summary();
@@ -2802,7 +2843,7 @@ function previewRange(p) { const sel = $('#pv-tag').value; const t = p.tags.find
 function prevGeom() { const cv = $('#prevcv'), box = $('#prevbox'), dpr = devicePixelRatio || 1, W = box.clientWidth, H = box.clientHeight; if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; } const p = App.p; let z = Math.min((W - 10) / p.w, (H - 10) / p.h); if (z >= 1) z = Math.floor(z); return { cv, W, H, dpr, z, x: Math.round((W - p.w * z) / 2), y: Math.round((H - p.h * z) / 2) }; }
 function drawPreview() {
   const p = App.p; if (!p) return; const g = prevGeom(), c = g.cv.getContext('2d'); c.setTransform(g.dpr, 0, 0, g.dpr, 0, 0); c.clearRect(0, 0, g.W, g.H); c.imageSmoothingEnabled = false;
-  c.fillStyle = checkerPattern(c); c.fillRect(g.x, g.y, p.w * g.z, p.h * g.z);
+  c.fillStyle = checkerPattern(c, g.x, g.y, g.z); c.fillRect(g.x, g.y, p.w * g.z, p.h * g.z);
   const fi = Prev.tab === 'nav' ? p.frame : Math.min(Prev.fi, p.frames.length - 1);
   c.drawImage(compose(p, fi), g.x, g.y, p.w * g.z, p.h * g.z);
   if (Prev.tab === 'nav') { const a = V.toImg(0, 0), b = V.toImg(VP.W, VP.H); c.strokeStyle = TC.acc; c.lineWidth = 2; c.strokeRect(g.x + Math.min(a.x, b.x) * g.z, g.y + a.y * g.z, Math.abs(b.x - a.x) * g.z, (b.y - a.y) * g.z); }
@@ -3276,7 +3317,7 @@ const MENUS = [
   ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
   ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['themePicker', '-', ...THEMES.map(t => 'theme_' + t.id), '-', 'themeNext', 'themePrev']], 'zen', 'fullscreen']],
   ['Snap', ['snap', '-', ...SNAP_MODES.map(m => 'snap_' + m[0]), '-', ['Angle set', ['ang_pixel', 'ang_15', 'ang_22.5', 'ang_30', 'ang_45']], 'snapPanel', '-', 'smart', 'smartHold']],
-  ['Help', ['tour', 'demo', '-', 'keyIndex', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
+  ['Help', ['cmdPalette', '-', 'tour', 'demo', '-', 'keyIndex', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
 ];
 function buildMenus() {
   const nav = $('#menus'); nav.innerHTML = ''; let open = null;
@@ -3304,7 +3345,7 @@ function applyKeyPrefs(rebuild) {
   KEYMAP = null; if (!rebuild) return;
   $$('.mi[data-a]').forEach(el => { const k = A[el.dataset.a].keys; let kb = el.querySelector('.kb'); if (!k) { if (kb) kb.remove(); return; } if (!kb) el.append(kb = h('span', { class: 'kb' })); kb.textContent = k; });
   if (App.p) buildTimelineBar();
-  KIdx.draw();
+  KIdx.draw(); updateCmdBtn();
 }
 function bindKey(id, combo) {
   const a = A[id], moved = [];
@@ -3390,7 +3431,7 @@ const Img_ops = {
         const i = y * p.w + x; if (p.sel && !p.sel[i]) continue;
         const dx = x + .5 - cx, dy = y + .5 - cy, sx = (dx * cs - dy * sn + cx) * k, sy = (dx * sn + dy * cs + cy) * k;
         const X = Math.floor(sx), Y = Math.floor(sy), si = Math.floor(Y / k) * p.w + Math.floor(X / k);
-        d32[i] = X >= 0 && Y >= 0 && X < src.w && Y < src.h && (!p.sel || p.sel[si] || algo === 'rotsprite') ? s32[Y * src.w + X] : 0;
+        d32[i] = X >= 0 && Y >= 0 && X < src.w && Y < src.h && (!p.sel || p.sel[si]) ? s32[Y * src.w + X] : 0;
       }
     });
   },
@@ -3688,7 +3729,7 @@ function quantize(frames, max) { // returns palette [[r,g,b]], map(colorKey -> i
     let boxes = [cols];
     while (boxes.length < max) {
       boxes.sort((a, b) => b.length - a.length); const bx = boxes.shift(); if (bx.length < 2) { boxes.push(bx); break; }
-      const rng = [0, 1, 2].map(c => Math.max(...bx.map(x => x[c])) - Math.min(...bx.map(x => x[c]))); const ch = rng.indexOf(Math.max(...rng));
+      const rng = [0, 1, 2].map(c => { let lo = 255, hi = 0; for (const x of bx) { if (x[c] < lo) lo = x[c]; if (x[c] > hi) hi = x[c]; } return hi - lo; }); const ch = rng.indexOf(Math.max(...rng));
       bx.sort((a, b) => a[ch] - b[ch]); const m = bx.length >> 1; boxes.push(bx.slice(0, m), bx.slice(m));
     }
     cols = boxes.map(b => [0, 1, 2].map(c => Math.round(b.reduce((s, x) => s + x[c], 0) / b.length)));
@@ -4249,6 +4290,129 @@ async function DemoScript(D) {
     await D.click('#pl-fwd');
   } finally { restore(); }
 }
+</script>
+<script>
+/* ================= COMMAND PALETTE (Ctrl+K): one box for every action, tool, layer, palette and typed value ================= */
+/* fuzzy match: every space separated token must hit; substring hits beat scattered letters, word starts beat the middle */
+function fuzzy(q, s) {
+  const t = s.toLowerCase(), toks = q.toLowerCase().split(/\s+/).filter(Boolean), hits = [];
+  const ws = i => i === 0 || !/[a-z0-9]/.test(t[i - 1]);
+  let score = 0;
+  for (const tok of toks) {
+    let at = -1;
+    for (let i = t.indexOf(tok); i >= 0; i = t.indexOf(tok, i + 1)) { if (ws(i)) { at = i; break; } if (at < 0) at = i; }
+    if (at >= 0) { score += 8 + tok.length * 4 + (ws(at) ? 10 : 0) + (at === 0 ? 6 : 0); for (let k = 0; k < tok.length; k++) hits.push(at + k); continue; }
+    let pos = 0, prev = -2;
+    for (const ch of tok) {
+      let i = -1;
+      for (let j = t.indexOf(ch, pos); j >= 0; j = t.indexOf(ch, j + 1)) { if (j === prev + 1 || ws(j)) { i = j; break; } if (i < 0) i = j; }
+      if (i < 0) return null;
+      score += 1 + (i === prev + 1 ? 4 : 0) + (ws(i) ? 5 : 0) - Math.min(3, (i - prev - 1) * .15); hits.push(i); prev = i; pos = i + 1;
+    }
+  }
+  return { score: score - t.length * .04, hits };
+}
+const Cmd = {
+  el: null, rows: [], sel: 0, _cat: null,
+  cats() { // action id -> menu path, computed once from MENUS
+    if (this._cat) return this._cat; const m = {};
+    const walk = (items, path) => items.forEach(it => { if (Array.isArray(it)) walk(it[1], it[0]); else if (it !== '-' && !(it in m)) m[it] = path; });
+    MENUS.forEach(([t, items]) => walk(items, t)); return (this._cat = m);
+  },
+  base() {
+    const cat = this.cats(), out = [], p = App.p;
+    for (const id in A) { if (id === 'cmdPalette') continue; const a = A[id]; out.push({ id: 'a:' + id, label: a.label, cat: cat[id] || 'Other', keys: [a.keys, ...(a.alt || [])].filter(Boolean).join(' / '), en: a.en, ck: a.ck, run: () => a.run() }); }
+    for (const id of TOOL_ORDER) { if (id === '|') continue; const t = Tools[id]; out.push({ id: 't:' + id, label: t.name, cat: 'Tool', sub: 'tool', keys: t.key, icon: t.icon, ck: () => App.slots.left.tool === id, run: () => { setTool('left', id); status('Left tool: ' + t.name); }, alt: () => { setTool('right', id); status('Right tool: ' + t.name); } }); }
+    for (const k in Palettes.all) { const pl = Palettes.all[k]; out.push({ id: 'p:' + k, label: k, cat: 'Palette', sub: pl.colors.filter(Boolean).length + ' colors', pal: pl.colors.filter(Boolean), ck: () => Palettes.cur === pl, run: () => Palettes.set(k) }); }
+    rowsOf(p).forEach(({ node: n }) => out.push({ id: 'l:' + n.id, label: n.name, cat: 'Layer', sub: n.type === 'group' ? 'group' : 'layer', volatile: true, ck: () => App.p.layerId === n.id, run: () => setLayer(n.id) }));
+    p.tags.forEach(t => out.push({ id: 'g:' + t.id, label: t.name, cat: 'Tag', sub: 'frames ' + (t.from + 1) + '-' + (t.to + 1), volatile: true, run: () => { setFrame(t.from); $('#pv-tag').value = t.id; } }));
+    return out;
+  },
+  dynamic(q) { // values typed straight into the box: colors, sizes, zoom, frames, fps, brush size
+    const out = [], p = App.p, s = q.trim(); let m;
+    if ((m = s.match(/^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i)) && (/^#/.test(s) || /[a-f]/i.test(m[1]))) { const c = hexToRgba(m[1]); if (c) out.push({ id: 'x:col', label: 'Set left color to ' + rgbaToHex(c), cat: 'Color', color: c, run: () => App.setColor('left', c), alt: () => App.setColor('right', c) }); }
+    if ((m = s.match(/^(\d{1,4})\s*[x×*]\s*(\d{1,4})$/i))) { const w = +m[1], hh = +m[2]; if (w && hh && w <= 4096 && hh <= 4096) out.push(
+      { id: 'x:new', label: 'New project ' + w + ' x ' + hh, cat: 'File', run: () => createProject(w, hh, 'Untitled ' + (App.projects.length + 1)) },
+      { id: 'x:rs', label: 'Resize canvas to ' + w + ' x ' + hh, cat: 'Image', sub: 'anchored at the center', run: () => Img_ops.resizeCanvas(w, hh, Math.round((w - p.w) / 2), Math.round((hh - p.h) / 2)) },
+      { id: 'x:sc', label: 'Scale image to ' + w + ' x ' + hh, cat: 'Image', sub: 'nearest neighbor', run: () => Img_ops.scale(w, hh, 'nearest') }); }
+    if ((m = s.match(/^(?:zoom\s*)?(\d{1,5})\s*%$/i))) { const z = clamp(+m[1] / 100, .05, 256); out.push({ id: 'x:z', label: 'Zoom to ' + Math.round(z * 100) + '%', cat: 'View', run: () => zoomAt(z) }); }
+    if ((m = s.match(/^(?:frame|f)?\s*(\d{1,4})$/i)) && +m[1] >= 1 && +m[1] <= p.frames.length) out.push({ id: 'x:f', label: 'Go to frame ' + m[1], cat: 'Animation', run: () => setFrame(+m[1] - 1) });
+    if ((m = s.match(/^(\d{1,2})\s*fps$/i) || s.match(/^fps\s*(\d{1,2})$/i))) { const f = clamp(+m[1], 1, 60); out.push({ id: 'x:fps', label: 'Play at ' + f + ' frames per second', cat: 'Animation', run: () => { App.p.fps = f; App.p.dirty = true; updateTimelineBar(); } }); }
+    if ((m = s.match(/^(?:brush|size)\s*(\d{1,2})$/i))) { const n = clamp(+m[1], 1, 64), set = slot => { const o = toolOpts(slot, App.slots[slot].tool); if ('size' in o) { o.size = n; Bus.emit('toolopts'); requestRender(); } else toast('The ' + slot + ' tool has no brush size'); }; out.push({ id: 'x:bs', label: 'Brush size ' + n + ' px', cat: 'Tool', run: () => set('left'), alt: () => set('right') }); }
+    return out;
+  },
+  toggle() { if (this.el) this.close(); else this.open(); },
+  open() {
+    if (this.el || dialogs.length || App.demoLock) return; closePopovers(); commitPending();
+    const inp = h('input', { type: 'text', spellcheck: 'false', placeholder: 'Search actions, tools, layers, palettes… or type 32x32, #ff0044, 400%, 12' });
+    const cnt = h('span', { class: 'cnt' }), list = h('div', { class: 'cmd-l' });
+    const bg = h('div', { class: 'cmd-bg', onpointerdown: () => this.close() });
+    const box = h('div', { class: 'cmd', role: 'dialog' }, h('div', { class: 'cmd-q' }, iconImg('zoom', 16, themeTx()), inp, cnt), list,
+      h('div', { class: 'cmd-f' }, h('span', null, h('kbd', null, '↑↓'), 'move'), h('span', null, h('kbd', null, 'Enter'), 'run'), h('span', null, h('kbd', null, 'Alt+Enter'), 'tools and colors go to the right button'), h('span', null, h('kbd', null, 'Esc'), 'close')));
+    this.el = { bg, box, inp, list, cnt }; this.all = this.base(); this.sel = 0;
+    inp.addEventListener('input', () => { this.sel = 0; this.draw(); });
+    inp.addEventListener('keydown', e => {
+      const k = e.key, n = this.rows.length;
+      if (k === 'Escape' || ((e.ctrlKey || e.metaKey) && /^k$/i.test(k))) { e.preventDefault(); this.close(); }
+      else if (k === 'ArrowDown' || k === 'ArrowUp') { e.preventDefault(); if (n) this.pick((this.sel + (k === 'ArrowDown' ? 1 : -1) + n) % n); }
+      else if (k === 'PageDown' || k === 'PageUp') { e.preventDefault(); if (n) this.pick(clamp(this.sel + (k === 'PageDown' ? 8 : -8), 0, n - 1)); }
+      else if (k === 'Enter') { e.preventDefault(); if (n) this.run(this.rows[this.sel], e.altKey); }
+      else return;
+      e.stopPropagation();
+    });
+    list.addEventListener('pointermove', e => { const r = e.target.closest('.cmd-r'); if (r && +r.dataset.i !== this.sel) this.pick(+r.dataset.i, true); });
+    list.addEventListener('click', e => { const r = e.target.closest('.cmd-r'); if (r) this.run(this.rows[+r.dataset.i], e.altKey); });
+    list.addEventListener('contextmenu', e => { const r = e.target.closest('.cmd-r'); e.preventDefault(); if (r) this.run(this.rows[+r.dataset.i], true); });
+    document.body.append(bg, box); this.draw(); setTimeout(() => inp.focus(), 0);
+  },
+  close() { if (!this.el) return; this.el.bg.remove(); this.el.box.remove(); this.el = null; VP.el.focus({ preventScroll: true }); },
+  rank(q) {
+    if (!q.trim()) { // recent first, then everything in menu order
+      const byId = new Map(this.all.map(r => [r.id, r])), rec = Prefs.cmdRecent.map(id => byId.get(id)).filter(Boolean);
+      return { groups: [['Recent', rec.slice(0, 8)], ['Everything', this.all.filter(r => !rec.slice(0, 8).includes(r))]] };
+    }
+    const scored = [];
+    for (const r of this.dynamic(q)) scored.push({ r, s: 1e3, hits: [] });
+    const multi = /\s/.test(q.trim());
+    for (const r of this.all) { const f = fuzzy(q, r.label) || (multi && r.cat && fuzzy(q, r.cat + ' ' + r.label)); if (!f || f.score < 6) continue; const ri = Prefs.cmdRecent.indexOf(r.id); scored.push({ r, s: f.score + (ri >= 0 ? 8 - ri * .3 : 0) + (r.en && !r.en() ? -6 : 0), hits: fuzzy(q, r.label) ? f.hits : [] }); }
+    scored.sort((a, b) => b.s - a.s);
+    return { groups: [[null, scored.slice(0, 80).map(x => Object.assign(x.r, { _hits: x.hits }))]] };
+  },
+  draw() {
+    const E = this.el, q = E.inp.value, { groups } = this.rank(q); E.list.innerHTML = ''; this.rows = [];
+    for (const [title, rows] of groups) {
+      if (!rows.length) continue; if (title) E.list.append(h('div', { class: 'cmd-h' }, title));
+      for (const r of rows) { const i = this.rows.length; this.rows.push(r); E.list.append(this.row(r, i, q.trim() ? r._hits : [])); }
+    }
+    if (!this.rows.length) E.list.append(h('div', { class: 'cmd-none' }, 'Nothing matches "' + q + '".', h('br'), 'Values work too: 64x64, #3e8948, 400%, frame 12, 10 fps, brush 4.'));
+    E.cnt.textContent = q.trim() ? this.rows.length + (this.rows.length === 80 ? '+' : '') + ' hits' : this.all.length + ' commands';
+    this.pick(Math.min(this.sel, this.rows.length - 1));
+  },
+  row(r, i, hits) {
+    const hs = new Set(hits), lb = h('span', { class: 'lb' });
+    let run = ''; const flush = on => { if (run) lb.append(on ? h('mark', null, run) : run); run = ''; };
+    [...r.label].forEach((ch, k) => { const on = hs.has(k); if (k && on !== hs.has(k - 1)) flush(!on); run += ch; }); flush(hs.has(r.label.length - 1));
+    if (r.sub) lb.append(h('span', { class: 'sub' }, r.sub));
+    const ic = h('span', { class: 'ic' });
+    if (r.icon) ic.append(iconImg(r.icon, 16, themeTx(), TC.acc)); else if (r.color) ic.style.background = cssColor(r.color);
+    const ck = r.ck && r.ck();
+    return h('div', { class: 'cmd-r' + (r.en && !r.en() ? ' dis' : ''), 'data-i': i, title: r.alt ? 'Enter or click: left button. Alt+Enter or right click: right button' : '' },
+      h('span', { class: 'cat' }, r.cat), ic, lb, r.pal ? h('span', { class: 'pal' }, r.pal.slice(0, 16).map(c => h('i', { style: { background: cssColor(c) } }))) : null,
+      h('span', { class: 'tick' }, ck ? '✓' : ''), r.keys ? h('kbd', null, r.keys) : null);
+  },
+  pick(i, fromMouse) {
+    if (!this.el) return; this.sel = Math.max(0, i);
+    $$('.cmd-r', this.el.list).forEach(el => el.classList.toggle('on', +el.dataset.i === this.sel));
+    if (!fromMouse) { const on = $('.cmd-r.on', this.el.list); if (on) on.scrollIntoView({ block: 'nearest' }); }
+  },
+  run(r, alt) {
+    if (!r) return; if (r.en && !r.en()) { toast(r.label.replace('…', '') + ' is not available right now'); return; }
+    this.close();
+    if (!r.volatile && !r.id.startsWith('x:')) { Prefs.cmdRecent = [r.id, ...Prefs.cmdRecent.filter(x => x !== r.id)].slice(0, 12); savePrefs(); }
+    try { (alt && r.alt ? r.alt : r.run)(); } catch (e) { console.error(e); toast('Could not run ' + r.label + ': ' + e.message, 4000); }
+  }
+};
+act('cmdPalette', 'Command palette…', 'Ctrl+K', () => Cmd.toggle(), { alt: ['Ctrl+Shift+P'] });
 </script>
 <script>
 /* ================= BOOT ================= */
