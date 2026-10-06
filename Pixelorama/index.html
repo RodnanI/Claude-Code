@@ -6,7 +6,7 @@
 <title>Pixelorama Web</title>
 <meta name="description" content="A standalone, desktop-first pixel art and animation editor inspired by Pixelorama.">
 <style>
-:root{
+:root,[data-theme=graphite]{
   --bg:#171613; --bg2:#1e1c19; --panel:#24221e; --panel2:#2b2924; --raise:#33302a; --line:#3b3831; --line2:#4a463d;
   --tx:#ebe5d8; --tx2:#b9b1a2; --mute:#8a8274; --acc:#f2a541; --acc-d:#b9781f; --acc-tx:#1b1408;
   --sec:#4fb3a1; --sec-d:#2f7d70; --warn:#e5574a; --ok:#8ccf6b; --sel:#f2a54133; --hover:#ffffff0d;
@@ -23,8 +23,77 @@
 [data-theme=mono]{
   --bg:#101010; --bg2:#161616; --panel:#1c1c1c; --panel2:#232323; --raise:#2c2c2c; --line:#333; --line2:#444;
   --tx:#e6e6e6; --tx2:#b0b0b0; --mute:#808080; --acc:#e8e8e8; --acc-d:#9a9a9a; --acc-tx:#111;
-  --sec:#ff6b57; --sec-d:#b44434; --sel:#ffffff22; --canvas-bg:#0b0b0b;
+  --sec:#ff6b57; --sec-d:#b44434; --sel:#ffffff22; --hover:#ffffff0d; --canvas-bg:#0b0b0b;
+  --checker-a:#575757; --checker-b:#424242;
 }
+[data-theme=sumi]{
+  --bg:#141414; --bg2:#1a1919; --panel:#201f1e; --panel2:#272524; --raise:#302e2c; --line:#363432; --line2:#46433f;
+  --tx:#ece8e1; --tx2:#b5afa6; --mute:#837d75; --acc:#e5452f; --acc-d:#a32a19; --acc-tx:#fff4ef;
+  --sec:#d9b45a; --sec-d:#9a7c32; --warn:#ff7a5c; --ok:#9cc46a; --sel:#e5452f30; --hover:#ffffff0c; --canvas-bg:#0e0e0e;
+  --checker-a:#555352; --checker-b:#424040;
+}
+[data-theme=oxblood]{
+  --bg:#170f10; --bg2:#1d1315; --panel:#24181a; --panel2:#2b1d20; --raise:#352428; --line:#3d2a2e; --line2:#4f373c;
+  --tx:#f0e2df; --tx2:#c2a9a6; --mute:#8f7572; --acc:#ec6f7f; --acc-d:#a8404f; --acc-tx:#1e0a0d;
+  --sec:#9cc2a0; --sec-d:#5e8a63; --warn:#ff8a5c; --sel:#ec6f7f30; --hover:#ffffff0c; --canvas-bg:#110b0c;
+  --checker-a:#5c5052; --checker-b:#473d3f;
+}
+[data-theme=tide]{
+  --bg:#0d1517; --bg2:#111b1e; --panel:#152225; --panel2:#1a292d; --raise:#213337; --line:#28393e; --line2:#35494f;
+  --tx:#dcebea; --tx2:#9fb9b8; --mute:#6f8a8a; --acc:#4fd6b0; --acc-d:#2a9378; --acc-tx:#04140f;
+  --sec:#ff8f6b; --sec-d:#b85a3d; --sel:#4fd6b02e; --hover:#ffffff0c; --canvas-bg:#091012;
+  --checker-a:#4e5859; --checker-b:#3c4546;
+}
+[data-theme=fjord]{
+  --bg:#1b1f26; --bg2:#20252d; --panel:#262c35; --panel2:#2c333d; --raise:#353d49; --line:#3b4350; --line2:#4b5563;
+  --tx:#e4e9f0; --tx2:#aeb8c6; --mute:#7c8796; --acc:#8fc6d9; --acc-d:#5a90a3; --acc-tx:#0d1a20;
+  --sec:#e3a77a; --sec-d:#a6714a; --sel:#8fc6d930; --hover:#ffffff0c; --canvas-bg:#15181e;
+  --checker-a:#565b63; --checker-b:#43474e;
+}
+[data-theme=market]{
+  --bg:#0e111c; --bg2:#121626; --panel:#171c2e; --panel2:#1c2236; --raise:#252c44; --line:#2a3249; --line2:#38415c;
+  --tx:#e8eaf3; --tx2:#a9afc6; --mute:#767d98; --acc:#ffd23f; --acc-d:#b8931c; --acc-tx:#1a1400;
+  --sec:#ff4f8b; --sec-d:#b3305d; --sel:#ffd23f2b; --hover:#ffffff0c; --canvas-bg:#0a0c15;
+  --checker-a:#50535f; --checker-b:#3d404b;
+}
+[data-theme=dmg]{
+  --bg:#162310; --bg2:#1c2c14; --panel:#22361a; --panel2:#29411f; --raise:#324d26; --line:#3a552c; --line2:#4b6a39;
+  --tx:#dcebb0; --tx2:#adc47f; --mute:#80995a; --acc:#9bbc0f; --acc-d:#6b8a0a; --acc-tx:#0f380f;
+  --sec:#e6c84f; --sec-d:#a68b25; --ok:#9bbc0f; --sel:#9bbc0f33; --hover:#ffffff0c; --canvas-bg:#0f1a0a;
+  --checker-a:#5a6b4a; --checker-b:#47563a;
+}
+[data-theme=phosphor]{
+  --bg:#050705; --bg2:#080b08; --panel:#0b100b; --panel2:#0f160f; --raise:#152015; --line:#1a2a1a; --line2:#264026;
+  --tx:#a6fca6; --tx2:#6bc96b; --mute:#478f47; --acc:#3dff6e; --acc-d:#1fa844; --acc-tx:#021004;
+  --sec:#ffb000; --sec-d:#a87400; --warn:#ff5544; --ok:#3dff6e; --sel:#3dff6e26; --hover:#3dff6e0d; --canvas-bg:#030403;
+  --checker-a:#3a423a; --checker-b:#2b312b; --shadow:0 10px 30px #000c;
+}
+[data-theme=chalk]{
+  --bg:#e6e8ea; --bg2:#eef0f2; --panel:#f4f5f6; --panel2:#fafbfb; --raise:#ffffff; --line:#d3d7db; --line2:#bcc2c8;
+  --tx:#1c2024; --tx2:#454c54; --mute:#78808a; --acc:#e0412f; --acc-d:#a82a1c; --acc-tx:#ffffff;
+  --sec:#16867a; --sec-d:#0e5c53; --warn:#c8321f; --ok:#3f8f2f; --sel:#e0412f24; --hover:#0000000a; --shadow:0 10px 30px #1c202430;
+  --canvas-bg:#d6d9dd; --checker-a:#f2f3f4; --checker-b:#d7dade;
+}
+[data-theme=matcha]{
+  --bg:#d8dcc8; --bg2:#e1e5d2; --panel:#e9ecdd; --panel2:#f1f3e8; --raise:#fafbf4; --line:#c3c9ae; --line2:#adb594;
+  --tx:#1f2716; --tx2:#435036; --mute:#6f7a60; --acc:#4d7a1f; --acc-d:#335413; --acc-tx:#f4f9ea;
+  --sec:#b5562e; --sec-d:#7f3a1d; --warn:#b8382a; --ok:#4d7a1f; --sel:#4d7a1f26; --hover:#0000000a; --shadow:0 10px 30px #2d361f40;
+  --canvas-bg:#c9cfb6; --checker-a:#eceee3; --checker-b:#d0d4c2;
+}
+[data-theme=blossom]{
+  --bg:#ecdde0; --bg2:#f2e5e8; --panel:#f7ecee; --panel2:#fbf3f4; --raise:#fffafb; --line:#e0c8cd; --line2:#cfafb6;
+  --tx:#2c1a1f; --tx2:#5a4047; --mute:#8c6f76; --acc:#c2305a; --acc-d:#8c1d3e; --acc-tx:#fff3f6;
+  --sec:#2f7f72; --sec-d:#1d564c; --warn:#b8282a; --ok:#3f8a4a; --sel:#c2305a22; --hover:#0000000a; --shadow:0 10px 30px #5a2a3540;
+  --canvas-bg:#e0cdd1; --checker-a:#f6eef0; --checker-b:#dfd2d5;
+}
+[data-theme=solar]{
+  --bg:#eee8d5; --bg2:#f3eddb; --panel:#f7f1df; --panel2:#fdf6e3; --raise:#fffbef; --line:#ddd5bd; --line2:#c9c0a5;
+  --tx:#073642; --tx2:#3e5961; --mute:#7f8f8f; --acc:#268bd2; --acc-d:#1a6399; --acc-tx:#fdf6e3;
+  --sec:#cb4b16; --sec-d:#93350f; --warn:#dc322f; --ok:#859900; --sel:#268bd224; --hover:#0000000a; --shadow:0 10px 30px #07364230;
+  --canvas-bg:#e2dbc6; --checker-a:#f5f0e1; --checker-b:#ddd6c3;
+}
+:root{color-scheme:dark}
+:root[data-theme=paper],:root[data-theme=chalk],:root[data-theme=matcha],:root[data-theme=blossom],:root[data-theme=solar]{color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:12px/1.35 var(--font);overflow:hidden;user-select:none;-webkit-user-select:none}
 input,select,textarea,button{font:inherit;color:inherit}
@@ -282,7 +351,7 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 /* tutorials */
 .tour-mask{position:fixed;inset:0;z-index:500;pointer-events:none}
 .tour-mask svg{width:100%;height:100%}
-.tour-ring{position:fixed;z-index:501;border:2px solid var(--acc);border-radius:7px;box-shadow:0 0 0 4px #f2a54133;pointer-events:none;transition:all .35s cubic-bezier(.3,.8,.3,1)}
+.tour-ring{position:fixed;z-index:501;border:2px solid var(--acc);border-radius:7px;box-shadow:0 0 0 4px var(--sel);pointer-events:none;transition:all .35s cubic-bezier(.3,.8,.3,1)}
 .tour-card{position:fixed;z-index:502;width:330px;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;box-shadow:var(--shadow);padding:14px;transition:left .35s,top .35s}
 .tour-card h3{margin:0 0 6px;font-size:14px}
 .tour-card p{margin:0 0 10px;color:var(--tx2);line-height:1.5}
@@ -312,6 +381,38 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .demo-dots i:hover{outline:1px solid var(--tx)}
 #intro{position:fixed;inset:0;z-index:5000;background:#0f0d0b;cursor:pointer;touch-action:none;user-select:none}#intro canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .drop-zone{position:fixed;inset:12px;border:3px dashed var(--acc);border-radius:16px;z-index:700;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--acc);background:#0008;pointer-events:none}
+/* theme picker */
+.thm-dot{display:inline-flex;width:14px;height:14px;border-radius:3px;overflow:hidden;border:1px solid var(--line2);flex:none}
+.thm-dot i{flex:1}
+.thm-pop{width:476px;max-width:calc(100vw - 12px);padding:12px 12px 10px}
+.thm-pop .thm-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+.thm-pop .thm-head h5{margin:0}
+.thm-pop .thm-head span{color:var(--mute);font-size:11px}
+.thm-grp{color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.8px;margin:10px 0 6px}
+.thm-grp:first-of-type{margin-top:0}
+.thm-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.thm-item{padding:0;border:0;background:none;border-radius:6px;cursor:pointer;outline:2px solid transparent;outline-offset:1px;transition:outline-color .12s,transform .12s}
+.thm-item:hover{outline-color:var(--line2);transform:translateY(-1px)}
+.thm-item:focus-visible{outline-color:var(--tx2)}
+.thm-item.cur{outline-color:var(--acc)}
+.thm-card{display:block;border:1px solid var(--line2);border-radius:5px;overflow:hidden;background:var(--bg);color:var(--tx);text-align:left}
+.thm-mock{display:grid;grid-template-columns:12px 1fr 14px;grid-template-rows:7px 1fr;height:50px;background:var(--bg)}
+.thm-mock .mb{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:2px;padding:0 3px}
+.thm-mock .mb b{width:9px;height:3px;border-radius:1px;background:var(--mute)}.thm-mock .mb b:first-child{background:var(--acc)}
+.thm-mock .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:4px}
+.thm-mock .rail i{width:6px;height:6px;border-radius:1px;background:var(--tx2)}.thm-mock .rail i:first-child{background:var(--acc)}
+.thm-mock .cv{background:var(--canvas-bg);display:flex;align-items:center;justify-content:center}
+.thm-mock .art{width:26px;height:22px;background:conic-gradient(var(--checker-a) 25%,var(--checker-b) 0 50%,var(--checker-a) 0 75%,var(--checker-b) 0) 0 0/6px 6px;position:relative;box-shadow:0 0 0 1px var(--line)}
+.thm-mock .art::before{content:"";position:absolute;left:5px;top:5px;width:9px;height:9px;background:var(--acc)}
+.thm-mock .art::after{content:"";position:absolute;right:4px;bottom:4px;width:7px;height:7px;background:var(--sec)}
+.thm-mock .side{background:var(--panel2);border-left:1px solid var(--line);display:flex;flex-direction:column;gap:3px;padding:4px 3px}
+.thm-mock .side i{height:3px;border-radius:1px;background:var(--line2)}.thm-mock .side i:nth-child(2){background:var(--sec)}
+.thm-name{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:4px 6px;font-size:11px;background:var(--panel2);border-top:1px solid var(--line);white-space:nowrap}
+.thm-name em{font-style:normal;color:var(--acc);font-family:var(--mono)}
+.thm-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);color:var(--mute);font-size:11px}
+.thm-foot kbd{font-family:var(--mono);font-size:10px;padding:0 4px;border:1px solid var(--line2);border-radius:3px;color:var(--tx2)}
+.thm-foot button{background:var(--raise);border:1px solid var(--line2);border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--tx2)}
+.thm-foot button:hover{color:var(--tx);border-color:var(--acc-d)}
 </style>
 </head>
 <body>
@@ -463,6 +564,19 @@ function toast(msg, ms = 2200) {
 function status(msg) { const el = $('#st-msg'); if (el) el.textContent = msg || ''; }
 
 /* ---------- preferences ---------- */
+/* themes: CSS owns the palettes, this is the catalogue. TC mirrors the live palette for canvas drawing. */
+const THEMES = [
+  ['graphite', 'Graphite', 'dark', 'Warm charcoal, amber accent'], ['sumi', 'Sumi', 'dark', 'Ink black, vermilion and gold'],
+  ['oxblood', 'Oxblood', 'dark', 'Deep wine, rose and sage'], ['tide', 'Tide', 'dark', 'Dark teal, seafoam and coral'],
+  ['fjord', 'Fjord', 'dark', 'Cool slate, ice and peach'], ['market', 'Night Market', 'dark', 'Midnight navy, neon yellow'],
+  ['dmg', 'DMG', 'dark', 'Handheld olive greens'], ['phosphor', 'Phosphor', 'dark', 'CRT green on black'],
+  ['mono', 'Mono', 'dark', 'Neutral greys, high contrast'],
+  ['paper', 'Paper', 'light', 'Warm parchment, burnt orange'], ['chalk', 'Chalk', 'light', 'Clean cool white, signal red'],
+  ['matcha', 'Matcha', 'light', 'Soft green tea, leaf accent'], ['blossom', 'Blossom', 'light', 'Pale pink, raspberry and teal'],
+  ['solar', 'Solar', 'light', 'Solarized cream, blue and rust']
+].map(([id, name, kind, desc]) => ({ id, name, kind, desc }));
+const TC = { acc: '#f2a541', accD: '#b9781f', sec: '#4fb3a1', tx: '#ebe5d8', mute: '#8a8274' };
+function refreshTC() { const cs = getComputedStyle(document.documentElement), g = (v, d) => cs.getPropertyValue(v).trim() || d; Object.assign(TC, { acc: g('--acc', TC.acc), accD: g('--acc-d', TC.accD), sec: g('--sec', TC.sec), tx: g('--tx', TC.tx), mute: g('--mute', TC.mute) }); }
 const PREF_DEFAULTS = {
   theme: 'graphite', checkerSize: 8, pixelGrid: true, pixelGridZoom: 8, pixelGridColor: '#00000055',
   grid: false, gridType: 'rect', gridW: 8, gridH: 8, gridOX: 0, gridOY: 0, gridColor: '#f2a54166', isoW: 16,
@@ -1016,8 +1130,8 @@ function render() {
   // symmetry axes
   if (Prefs.showAxes) {
     ctx.setLineDash([6, 4]); ctx.lineWidth = 1;
-    if (Prefs.symX) { const sx = Math.round(V.rx(p.symX / 2 + .5)) + .5; ctx.strokeStyle = '#f2a541cc'; ctx.beginPath(); ctx.moveTo(sx, y0 - 14); ctx.lineTo(sx, y0 + ch + 14); ctx.stroke(); }
-    if (Prefs.symY) { const sy = Math.round(V.ry(p.symY / 2 + .5)) + .5; ctx.strokeStyle = '#4fb3a1cc'; ctx.beginPath(); ctx.moveTo(x0 - 14, sy); ctx.lineTo(x0 + cw + 14, sy); ctx.stroke(); }
+    if (Prefs.symX) { const sx = Math.round(V.rx(p.symX / 2 + .5)) + .5; ctx.strokeStyle = TC.acc + 'cc'; ctx.beginPath(); ctx.moveTo(sx, y0 - 14); ctx.lineTo(sx, y0 + ch + 14); ctx.stroke(); }
+    if (Prefs.symY) { const sy = Math.round(V.ry(p.symY / 2 + .5)) + .5; ctx.strokeStyle = TC.sec + 'cc'; ctx.beginPath(); ctx.moveTo(x0 - 14, sy); ctx.lineTo(x0 + cw + 14, sy); ctx.stroke(); }
     if (Prefs.symRadial > 1) {
       const cx = V.rx(p.symX / 2 + .5), cy = V.ry(p.symY / 2 + .5), R = Math.max(cw, ch) * 0.75; ctx.strokeStyle = '#d77bba99';
       ctx.beginPath(); for (let i = 0; i < Prefs.symRadial; i++) { const a = -Math.PI / 2 + i * 2 * Math.PI / Prefs.symRadial; ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); } ctx.stroke();
@@ -1026,7 +1140,7 @@ function render() {
   }
   // guides
   if (Prefs.guides) for (const g of p.guides) {
-    ctx.strokeStyle = g === App.hoverGuide ? '#ffffff' : '#4fb3a1'; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.strokeStyle = g === App.hoverGuide ? '#ffffff' : TC.sec; ctx.lineWidth = 1; ctx.beginPath();
     if (g.axis === 'x') { const sx = Math.round(V.rx(g.pos)) + .5; ctx.moveTo(sx, 0); ctx.lineTo(sx, H); } else { const sy = Math.round(V.ry(g.pos)) + .5; ctx.moveTo(0, sy); ctx.lineTo(W, sy); }
     ctx.stroke();
   }
@@ -1043,7 +1157,7 @@ function render() {
   if (full) Bus.emit('thumbs');
   Bus.emit('rendered');
 }
-function drawLabel(ctx, sx, sy, text, color = '#f2a541') {
+function drawLabel(ctx, sx, sy, text, color = TC.acc) {
   ctx.save(); ctx.setTransform(VP.dpr, 0, 0, VP.dpr, 0, 0); if (Prefs.mirrorView) sx = VP.W - sx;
   ctx.font = '600 11px ' + getComputedStyle(document.body).fontFamily; const w = ctx.measureText(text).width + 8;
   ctx.fillStyle = '#000c'; ctx.fillRect(sx, sy, w, 16); ctx.fillStyle = color; ctx.fillText(text, sx + 4, sy + 12); ctx.restore();
@@ -1058,7 +1172,7 @@ function drawBrushCursor(ctx) {
   const ox = c.x - mask.cx, oy = c.y - mask.cy;
   ctx.beginPath();
   for (let i = 0; i < segs.length; i += 4) { ctx.moveTo(Math.round(V.rx(segs[i] + ox)) + .5, Math.round(V.ry(segs[i + 1] + oy)) + .5); ctx.lineTo(Math.round(V.rx(segs[i + 2] + ox)) + .5, Math.round(V.ry(segs[i + 3] + oy)) + .5); }
-  ctx.strokeStyle = '#000a'; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = slot === 'left' ? '#f2a541' : '#4fb3a1'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.strokeStyle = '#000a'; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = slot === 'left' ? TC.acc : TC.sec; ctx.lineWidth = 1; ctx.stroke();
 }
 /* rulers */
 function drawRulers() {
@@ -1654,13 +1768,13 @@ const Smart = {
   drawOverlay(ctx) {
     const P = this.pending; if (!P) return;
     if (P.mode === 'select' && P.shape.type !== 'freehand') {
-      const o = this.outline(P.shape); ctx.fillStyle = '#f2a54155'; for (const [x, y] of (o.fill || o.path)) ctx.fillRect(V.rx(x), V.ry(y), V.z, V.z);
+      const o = this.outline(P.shape); ctx.fillStyle = TC.acc + '55'; for (const [x, y] of (o.fill || o.path)) ctx.fillRect(V.rx(x), V.ry(y), V.z, V.z);
     }
     const hs = this.handles(); ctx.lineWidth = 1;
-    if (P.shape.type === 'ellipse' && P.shape.th || P.shape.type === 'ngon' || P.shape.type === 'circle') { const c = hs[0]; ctx.strokeStyle = '#f2a54188'; ctx.setLineDash([3, 3]); ctx.beginPath(); for (let i = 1; i < hs.length; i++) { ctx.moveTo(V.rx(c[0] + .5), V.ry(c[1] + .5)); ctx.lineTo(V.rx(hs[i][0] + .5), V.ry(hs[i][1] + .5)); } ctx.stroke(); ctx.setLineDash([]); }
-    if (P.shape.type === 'curve') { ctx.strokeStyle = '#4fb3a1aa'; ctx.beginPath(); const p = P.shape.p; ctx.moveTo(V.rx(p[0][0] + .5), V.ry(p[0][1] + .5)); ctx.lineTo(V.rx(p[1][0] + .5), V.ry(p[1][1] + .5)); ctx.moveTo(V.rx(p[3][0] + .5), V.ry(p[3][1] + .5)); ctx.lineTo(V.rx(p[2][0] + .5), V.ry(p[2][1] + .5)); ctx.stroke(); }
+    if (P.shape.type === 'ellipse' && P.shape.th || P.shape.type === 'ngon' || P.shape.type === 'circle') { const c = hs[0]; ctx.strokeStyle = TC.acc + '88'; ctx.setLineDash([3, 3]); ctx.beginPath(); for (let i = 1; i < hs.length; i++) { ctx.moveTo(V.rx(c[0] + .5), V.ry(c[1] + .5)); ctx.lineTo(V.rx(hs[i][0] + .5), V.ry(hs[i][1] + .5)); } ctx.stroke(); ctx.setLineDash([]); }
+    if (P.shape.type === 'curve') { ctx.strokeStyle = TC.sec + 'aa'; ctx.beginPath(); const p = P.shape.p; ctx.moveTo(V.rx(p[0][0] + .5), V.ry(p[0][1] + .5)); ctx.lineTo(V.rx(p[1][0] + .5), V.ry(p[1][1] + .5)); ctx.moveTo(V.rx(p[3][0] + .5), V.ry(p[3][1] + .5)); ctx.lineTo(V.rx(p[2][0] + .5), V.ry(p[2][1] + .5)); ctx.stroke(); }
     const bb = this.shapeBox(); if (bb) { ctx.strokeStyle = '#ffffff55'; ctx.setLineDash([2, 3]); ctx.strokeRect(V.rx(bb.x0) - 2.5, V.ry(bb.y0) - 2.5, (bb.w + 1) * V.z + 5, (bb.h + 1) * V.z + 5); ctx.setLineDash([]); }
-    for (const [x, y] of hs) { const sx = V.rx(x + .5), sy = V.ry(y + .5); ctx.fillStyle = '#1b1408'; ctx.fillRect(sx - 5, sy - 5, 10, 10); ctx.fillStyle = '#f2a541'; ctx.fillRect(sx - 4, sy - 4, 8, 8); ctx.fillStyle = '#fff'; ctx.fillRect(sx - 2, sy - 2, 4, 4); }
+    for (const [x, y] of hs) { const sx = V.rx(x + .5), sy = V.ry(y + .5); ctx.fillStyle = '#1b1408'; ctx.fillRect(sx - 5, sy - 5, 10, 10); ctx.fillStyle = TC.acc; ctx.fillRect(sx - 4, sy - 4, 8, 8); ctx.fillStyle = '#fff'; ctx.fillRect(sx - 2, sy - 2, 4, 4); }
   }
 };
 function moveShape(s, dx, dy) {
@@ -1782,7 +1896,7 @@ const Snap = {
   clear() { if (this.last) { this.last = null; requestRender(); } },
   drawIndicator(ctx) {
     const L = this.last; if (!L) return; const p = App.p;
-    ctx.save(); ctx.strokeStyle = '#f2a541'; ctx.lineWidth = 1; ctx.setLineDash([5, 3]); ctx.beginPath();
+    ctx.save(); ctx.strokeStyle = TC.acc; ctx.lineWidth = 1; ctx.setLineDash([5, 3]); ctx.beginPath();
     for (const l of L.lines) { if (l.axis === 'x') { const sx = Math.round(V.rx(l.pos)) + .5; ctx.moveTo(sx, V.ry(0) - 20); ctx.lineTo(sx, V.ry(p.h) + 20); } else { const sy = Math.round(V.ry(l.pos)) + .5; ctx.moveTo(V.rx(0) - 20, sy); ctx.lineTo(V.rx(p.w) + 20, sy); } }
     if (L.ray) { ctx.moveTo(V.rx(L.ray[0][0] + .5), V.ry(L.ray[0][1] + .5)); ctx.lineTo(V.rx(L.ray[1][0] + .5), V.ry(L.ray[1][1] + .5)); }
     ctx.stroke(); ctx.setLineDash([]);
@@ -2033,7 +2147,7 @@ defTool('curve', {
   cancel() { this.st = null; Ov.clear(); },
   commitPending() { if (this.st) { const s = this.st; this.st = null; this.go(s, true); } },
   go(s = this.st, commit) { shapePreviewOrCommit(this, s, pathPixels(bezierPts(...s.p, 90), false), null, commit); },
-  overlay(ctx) { const s = this.st; if (!s || s.phase === 0 && s.drag) return; ctx.strokeStyle = '#4fb3a1'; ctx.setLineDash([3, 3]); ctx.beginPath(); const q = s.p, X = i => V.rx(q[i][0] + .5), Y = i => V.ry(q[i][1] + .5); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(1), Y(1)); ctx.moveTo(X(3), Y(3)); ctx.lineTo(X(2), Y(2)); ctx.stroke(); ctx.setLineDash([]); }
+  overlay(ctx) { const s = this.st; if (!s || s.phase === 0 && s.drag) return; ctx.strokeStyle = TC.sec; ctx.setLineDash([3, 3]); ctx.beginPath(); const q = s.p, X = i => V.rx(q[i][0] + .5), Y = i => V.ry(q[i][1] + .5); ctx.moveTo(X(0), Y(0)); ctx.lineTo(X(1), Y(1)); ctx.moveTo(X(3), Y(3)); ctx.lineTo(X(2), Y(2)); ctx.stroke(); ctx.setLineDash([]); }
 });
 defTool('rect', {
   name: 'Rectangle', key: 'R', icon: 'rect', brush: true, tip: 'Shift: square. Alt: from center', opts: [SHAPE_FILL, ...BRUSH_OPTS, DITHER_OPT],
@@ -2092,7 +2206,7 @@ function selRectTool(id, name, key, icon, ellipse) {
       const s = this.st; if (!s || s.moveSel || !s.moved) return; const [x0, y0, x1, y1] = s.r;
       const X = V.rx(Math.min(x0, x1)), Y = V.ry(Math.min(y0, y1)), W = (Math.abs(x1 - x0) + 1) * V.z, H = (Math.abs(y1 - y0) + 1) * V.z;
       ctx.save(); ctx.beginPath(); if (ellipse) ctx.ellipse(X + W / 2, Y + H / 2, W / 2, H / 2, 0, 0, Math.PI * 2); else ctx.rect(Math.round(X) + .5, Math.round(Y) + .5, Math.round(W), Math.round(H));
-      ctx.fillStyle = s.mode === 'sub' ? '#e5574a22' : '#f2a54122'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.stroke(); ctx.setLineDash([4, 4]); ctx.lineDashOffset = -VP.antsOff; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.restore();
+      ctx.fillStyle = s.mode === 'sub' ? '#e5574a22' : TC.acc + '22'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.stroke(); ctx.setLineDash([4, 4]); ctx.lineDashOffset = -VP.antsOff; ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.restore();
     }
   });
 }
@@ -2122,7 +2236,7 @@ defTool('polysel', {
   close() { const s = this.st; this.st = null; Snap.clear(); if (s && s.pts.length > 2) Sel.combine(Sel.polyMask(s.pts), s.mode, 'Polygon select'); requestRender(); },
   onKey(e) { const s = this.st; if (!s) return false; if (e.key === 'Enter') { this.close(); return true; } if (e.key === 'Escape') { this.cancel(); return true; } if (e.key === 'Backspace') { s.pts.pop(); if (!s.pts.length) this.st = null; requestRender(); return true; } return false; },
   cancel() { this.st = null; requestRender(); }, commitPending() { if (this.st) this.close(); },
-  overlay(ctx) { const s = this.st; if (!s) return; ctx.beginPath(); [...s.pts, s.hover].forEach((q, i) => ctx[i ? 'lineTo' : 'moveTo'](V.rx(q[0] + .5), V.ry(q[1] + .5))); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]); for (const q of s.pts) { ctx.fillStyle = '#f2a541'; ctx.fillRect(V.rx(q[0] + .5) - 3, V.ry(q[1] + .5) - 3, 6, 6); } }
+  overlay(ctx) { const s = this.st; if (!s) return; ctx.beginPath(); [...s.pts, s.hover].forEach((q, i) => ctx[i ? 'lineTo' : 'moveTo'](V.rx(q[0] + .5), V.ry(q[1] + .5))); ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]); for (const q of s.pts) { ctx.fillStyle = TC.acc; ctx.fillRect(V.rx(q[0] + .5) - 3, V.ry(q[1] + .5) - 3, 6, 6); } }
 });
 function wandTool(id, name, key, icon, contig) {
   defTool(id, {
@@ -2169,7 +2283,7 @@ const Float = {
   handles() { const f = this.f, x0 = f.x, y0 = f.y, x1 = f.x + f.sw, y1 = f.y + f.sh, mx = (x0 + x1) / 2, my = (y0 + y1) / 2; return [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [mx, y0], [x1, my], [mx, y1], [x0, my]]; },
   hit(sx, sy) { if (!this.f) return -1; const hs = this.handles(); for (let i = 0; i < hs.length; i++) { const s = V.toScreen(hs[i][0], hs[i][1]); if (Math.abs(s.x - sx) <= 7 && Math.abs(s.y - sy) <= 7) return i; } return -1; },
   drawHandles(ctx) {
-    const f = this.f; ctx.strokeStyle = '#f2a541'; ctx.setLineDash([2, 2]); ctx.strokeRect(Math.round(V.rx(f.x)) + .5, Math.round(V.ry(f.y)) + .5, Math.round(f.sw * V.z), Math.round(f.sh * V.z)); ctx.setLineDash([]);
+    const f = this.f; ctx.strokeStyle = TC.acc; ctx.setLineDash([2, 2]); ctx.strokeRect(Math.round(V.rx(f.x)) + .5, Math.round(V.ry(f.y)) + .5, Math.round(f.sw * V.z), Math.round(f.sh * V.z)); ctx.setLineDash([]);
     for (const [x, y] of this.handles()) { const sx = Math.round(V.rx(x)), sy = Math.round(V.ry(y)); ctx.fillStyle = '#000'; ctx.fillRect(sx - 5, sy - 5, 10, 10); ctx.fillStyle = '#fff'; ctx.fillRect(sx - 4, sy - 4, 8, 8); }
   },
   setRect(x, y, w, hh) { const f = this.f; f.x = x; f.y = y; f.sw = Math.max(1, w); f.sh = Math.max(1, hh); this.syncSel(); requestRender(); },
@@ -2256,9 +2370,9 @@ defTool('crop', {
   overlay(ctx) {
     const s = this.st; if (!s) return; const [x0, y0, x1, y1] = s.r, X = V.rx(x0), Y = V.ry(y0), W = (x1 - x0 + 1) * V.z, H = (y1 - y0 + 1) * V.z;
     ctx.save(); ctx.fillStyle = '#000a'; ctx.beginPath(); ctx.rect(-1e4, -1e4, 3e4, 3e4); ctx.rect(X, Y, W, H); ctx.fill('evenodd');
-    ctx.strokeStyle = '#f2a541'; ctx.lineWidth = 1; ctx.strokeRect(Math.round(X) + .5, Math.round(Y) + .5, Math.round(W), Math.round(H));
-    ctx.strokeStyle = '#f2a54155'; ctx.beginPath(); for (const t of [1 / 3, 2 / 3]) { ctx.moveTo(X + W * t, Y); ctx.lineTo(X + W * t, Y + H); ctx.moveTo(X, Y + H * t); ctx.lineTo(X + W, Y + H * t); } ctx.stroke();
-    for (const [hx, hy] of [[X, Y], [X + W, Y], [X + W, Y + H], [X, Y + H]]) { ctx.fillStyle = '#000'; ctx.fillRect(hx - 5, hy - 5, 10, 10); ctx.fillStyle = '#f2a541'; ctx.fillRect(hx - 4, hy - 4, 8, 8); }
+    ctx.strokeStyle = TC.acc; ctx.lineWidth = 1; ctx.strokeRect(Math.round(X) + .5, Math.round(Y) + .5, Math.round(W), Math.round(H));
+    ctx.strokeStyle = TC.acc + '55'; ctx.beginPath(); for (const t of [1 / 3, 2 / 3]) { ctx.moveTo(X + W * t, Y); ctx.lineTo(X + W * t, Y + H); ctx.moveTo(X, Y + H * t); ctx.lineTo(X + W, Y + H * t); } ctx.stroke();
+    for (const [hx, hy] of [[X, Y], [X + W, Y], [X + W, Y + H], [X, Y + H]]) { ctx.fillStyle = '#000'; ctx.fillRect(hx - 5, hy - 5, 10, 10); ctx.fillStyle = TC.acc; ctx.fillRect(hx - 4, hy - 4, 8, 8); }
     ctx.restore(); drawLabel(ctx, X, Y + H + 6, (x1 - x0 + 1) + ' x ' + (y1 - y0 + 1));
   }
 });
@@ -2456,6 +2570,7 @@ function onKeyDown(e) {
   if (window.IntroCtl && IntroCtl.active) { IntroCtl.skip(); e.preventDefault(); e.stopPropagation(); return; }
   if (App.demoLock && e.isTrusted) { if (typeof Demo !== 'undefined') Demo.userKey(e); e.preventDefault(); e.stopPropagation(); return; }
   if (e.key === 'Shift') Input.shiftAlone = !e.repeat; else Input.shiftAlone = false;
+  if (ThemePick.key(e)) return;
   if ($('.dlg-bg') && !e.ctrlKey) { if (e.key === 'Escape') { closeTopDialog(); e.preventDefault(); } return; }
   if (isTyping(e.target)) { if (e.key === 'Escape') e.target.blur(); return; }
   if (e.key === ' ') { if (!Input.space) { Input.space = true; VP.el.className = cursorClass(); } e.preventDefault(); return; }
@@ -2480,7 +2595,7 @@ function buildTools() {
   for (const id of TOOL_ORDER) {
     if (id === '|') { host.append(h('div', { class: 'tsep' })); continue; }
     const t = Tools[id];
-    const b = h('button', { class: 'tbtn', 'data-tool': id, title: t.name + '  [' + t.key + ']   right slot: [Alt+' + t.key + ']\n' + (t.tip || '') + '\nLeft click assigns to the left mouse button, right click to the right button.' }, iconImg(t.icon, 24, themeTx(), '#f2a541'), h('span', { class: 'm ml' }), h('span', { class: 'm mr' }));
+    const b = h('button', { class: 'tbtn', 'data-tool': id, title: t.name + '  [' + t.key + ']   right slot: [Alt+' + t.key + ']\n' + (t.tip || '') + '\nLeft click assigns to the left mouse button, right click to the right button.' }, iconImg(t.icon, 24, themeTx(), TC.acc), h('span', { class: 'm ml' }), h('span', { class: 'm mr' }));
     b.addEventListener('mousedown', e => { if (e.button === 0) setTool('left', id); else if (e.button === 2) setTool('right', id); });
     b.addEventListener('contextmenu', e => e.preventDefault());
     host.append(b);
@@ -2541,12 +2656,12 @@ function buildGlobalToolbar() {
   for (const g of GT) {
     if (g === '|') { host.append(h('span', { class: 'gsep' })); continue; }
     const [k, icon, tip] = g;
-    const b = h('button', { class: 'gt', 'data-g': k, title: tip, onclick: () => toggleGlobal(k) }, iconImg(icon, 16, themeTx(), '#f2a541'));
+    const b = h('button', { class: 'gt', 'data-g': k, title: tip, onclick: () => toggleGlobal(k) }, iconImg(icon, 16, themeTx(), TC.acc));
     if (k === 'snapOn') b.oncontextmenu = e => { e.preventDefault(); snapPopover(b); };
     if (k === 'symX' || k === 'symY') b.oncontextmenu = e => { e.preventDefault(); const p = App.p; if (k === 'symX') p.symX = p.w - 1; else p.symY = p.h - 1; toast('Axis recentered'); requestRender(); };
     host.append(b);
   }
-  host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', id: 'kidx-btn', title: 'Shortcut index' + kt('keyIndex'), onclick: () => KIdx.toggle() }, 'Keys'), h('button', { class: 'gt', title: 'Quick tour of the basics', onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt', title: 'Watch an animation get made, step by step', onclick: () => Demo.start() }, 'Guided demo'));
+  host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', id: 'kidx-btn', title: 'Shortcut index' + kt('keyIndex'), onclick: () => KIdx.toggle() }, 'Keys'), h('button', { class: 'gt', id: 'thm-btn', title: 'Theme picker' + kt('themePicker') + ', cycle with ' + (A.themeNext.keys || 'the View menu'), onclick: e => ThemePick.toggle(e.currentTarget) }, h('span', { class: 'thm-dot' }, ...['--bg2', '--acc', '--sec'].map(v => h('i', { style: { background: 'var(' + v + ')' } }))), 'Theme'), h('button', { class: 'gt', title: 'Quick tour of the basics', onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt', title: 'Watch an animation get made, step by step', onclick: () => Demo.start() }, 'Guided demo'));
   updateGlobalToolbar();
 }
 function updateGlobalToolbar() {
@@ -2690,7 +2805,7 @@ function drawPreview() {
   c.fillStyle = checkerPattern(c); c.fillRect(g.x, g.y, p.w * g.z, p.h * g.z);
   const fi = Prev.tab === 'nav' ? p.frame : Math.min(Prev.fi, p.frames.length - 1);
   c.drawImage(compose(p, fi), g.x, g.y, p.w * g.z, p.h * g.z);
-  if (Prev.tab === 'nav') { const a = V.toImg(0, 0), b = V.toImg(VP.W, VP.H); c.strokeStyle = '#f2a541'; c.lineWidth = 2; c.strokeRect(g.x + Math.min(a.x, b.x) * g.z, g.y + a.y * g.z, Math.abs(b.x - a.x) * g.z, (b.y - a.y) * g.z); }
+  if (Prev.tab === 'nav') { const a = V.toImg(0, 0), b = V.toImg(VP.W, VP.H); c.strokeStyle = TC.acc; c.lineWidth = 2; c.strokeRect(g.x + Math.min(a.x, b.x) * g.z, g.y + a.y * g.z, Math.abs(b.x - a.x) * g.z, (b.y - a.y) * g.z); }
   $('#pv-info').textContent = Prev.tab === 'nav' ? Math.round(p.view.zoom * 100) + '%' : (fi + 1) + '/' + p.frames.length + ' @' + p.fps + 'fps';
 }
 function navJump(e) { const g = prevGeom(), r = $('#prevbox').getBoundingClientRect(), ix = (e.clientX - r.left - g.x) / g.z, iy = (e.clientY - r.top - g.y) / g.z, v = App.p.view; v.x = Math.round(VP.W / 2 - ix * v.zoom); v.y = Math.round(VP.H / 2 - iy * v.zoom); if (Prefs.mirrorView) v.x = Math.round(VP.W / 2 - ix * v.zoom); requestRender(); }
@@ -2757,7 +2872,7 @@ function buildTimelineBar() {
       tbtn('⇠', 'Move frame left' + kt('moveFrameL'), () => Frames.move(-1)), tbtn('⇢', 'Move frame right' + kt('moveFrameR'), () => Frames.move(1)),
       tbtn('#', 'Add a tag to the selected frames', () => Frames.tagDialog(), 'fr-tag'), tbtn('⚭', 'Link selected cels (they share pixels)' + kt('link'), () => Frames.link(), 'fr-link')),
     h('div', { class: 'grp' },
-      h('button', { class: 'ibtn', id: 'onionbtn', title: 'Onion skin (K). Right click for settings', onclick: () => toggleGlobal('onion'), oncontextmenu: e => { e.preventDefault(); onionPopover(e.currentTarget); } }, iconImg('onion', 16, themeTx(), '#f2a541')),
+      h('button', { class: 'ibtn', id: 'onionbtn', title: 'Onion skin (K). Right click for settings', onclick: () => toggleGlobal('onion'), oncontextmenu: e => { e.preventDefault(); onionPopover(e.currentTarget); } }, iconImg('onion', 16, themeTx(), TC.acc)),
       h('button', { class: 'ibtn', title: 'Onion skin settings', onclick: e => onionPopover(e.currentTarget) }, '⚙')),
     h('div', { class: 'grp' }, h('label', null, 'Cels'), h('input', { type: 'range', min: 24, max: 72, value: Prefs.celSize, style: { width: '70px' }, title: 'Timeline cel size', oninput: e => { Prefs.celSize = +e.target.value; savePrefs(); buildTimeline(); } })),
     h('div', { class: 'grp', id: 'tl-info', style: { color: 'var(--mute)', fontFamily: 'var(--mono)' } }));
@@ -2872,8 +2987,8 @@ function buildTimeline() {
   rows.forEach(({ node: n, depth }, ri) => {
     const row = h('div', { class: 'lrow' + (n.id === p.layerId ? ' on' : '') + (p.visibleEff(n) ? '' : ' hiddenL') + (n.clip ? ' clip' : ''), 'data-id': n.id, style: { paddingLeft: (4 + depth * 14) + 'px' } },
       n.type === 'group' ? h('span', { class: 'tw', onclick: ev => { ev.stopPropagation(); n.open = !n.open; buildTimeline(); } }, n.open ? '▾' : '▸') : h('span', { class: 'tw' }),
-      h('button', { class: 'ibtn', title: 'Toggle visibility', onclick: ev => { ev.stopPropagation(); Layers.toggle(n.id, 'visible'); } }, iconImg(n.visible ? 'eye' : 'eyeoff', 14, n.visible ? themeTx() : '#8a8274')),
-      h('button', { class: 'ibtn', title: 'Toggle lock', onclick: ev => { ev.stopPropagation(); Layers.toggle(n.id, 'locked'); } }, iconImg(n.locked ? 'lock' : 'unlock', 14, n.locked ? '#f2a541' : '#8a8274')),
+      h('button', { class: 'ibtn', title: 'Toggle visibility', onclick: ev => { ev.stopPropagation(); Layers.toggle(n.id, 'visible'); } }, iconImg(n.visible ? 'eye' : 'eyeoff', 14, n.visible ? themeTx() : TC.mute)),
+      h('button', { class: 'ibtn', title: 'Toggle lock', onclick: ev => { ev.stopPropagation(); Layers.toggle(n.id, 'locked'); } }, iconImg(n.locked ? 'lock' : 'unlock', 14, n.locked ? TC.acc : TC.mute)),
       n.type === 'group' ? iconImg('folder', 14, '#c9b458') : null,
       h('span', { class: 'nm' }, n.name),
       n.blend !== 'normal' && n.blend !== 'pass' ? h('span', { class: 'tag' }, n.blend.slice(0, 4)) : null,
@@ -3081,7 +3196,8 @@ SNAP_MODES.forEach(([k, l]) => act('snap_' + k, l, null, () => { Prefs.snap[k] =
 act('smart', 'Smart shapes (Shift while drawing)', null, () => toggleGlobal('smartShapes'), { ck: () => Prefs.smartShapes });
 act('smartHold', 'Detect when holding still', null, () => { Prefs.smartHold = !Prefs.smartHold; savePrefs(); }, { ck: () => Prefs.smartHold });
 act('snapPanel', 'Snap settings…', null, () => snapPopover($('#gtools [data-g=snapOn]')));
-['graphite', 'paper', 'mono'].forEach(t => act('theme_' + t, { graphite: 'Graphite (dark)', paper: 'Paper (light)', mono: 'Mono (high contrast)' }[t], null, () => setTheme(t), { ck: () => Prefs.theme === t }));
+THEMES.forEach(t => act('theme_' + t.id, t.name + (t.kind === 'light' ? ' (light)' : ''), null, () => setTheme(t.id), { ck: () => Prefs.theme === t.id }));
+act('themePicker', 'Theme picker…', 'F4', () => ThemePick.toggle()); act('themeNext', 'Next theme', 'Shift+F4', () => cycleTheme(1)); act('themePrev', 'Previous theme', null, () => cycleTheme(-1));
 act('swap', 'Swap colors', 'X', () => swapColors()); act('defColors', 'Default colors', 'D', () => { App.colors.left = [0, 0, 0, 255]; App.colors.right = [255, 255, 255, 255]; Bus.emit('color'); });
 act('brushUp', 'Bigger brush', ']', () => brushSize('left', 1)); act('brushDown', 'Smaller brush', '[', () => brushSize('left', -1));
 act('brushUpR', 'Bigger right brush', '}', () => brushSize('right', 1)); act('brushDownR', 'Smaller right brush', '{', () => brushSize('right', -1));
@@ -3089,7 +3205,53 @@ act('tour', 'Quick tour (basics)', 'F1', () => Tour.start()); act('demo', 'Guide
 act('keys', 'Keyboard shortcuts…', '?', () => shortcutsDialog(), { alt: ['Shift+/'] }); act('keyIndex', 'Shortcut index panel', 'F2', () => KIdx.toggle(), { ck: () => !!KIdx.el }); act('resetKeys', 'Reset custom shortcuts', null, async () => { if (await confirmDialog('Reset shortcuts', 'Restore every keyboard shortcut to its default?', 'Reset', true)) { Prefs.keys = {}; savePrefs(); applyKeyPrefs(true); toast('Shortcuts restored to defaults'); } }); act('about', 'About', null, () => aboutDialog()); act('splash', 'Start screen', null, () => splash()); act('introReplay', 'Replay intro animation', null, () => IntroCtl.replay());
 function brushSize(slot, d) { const o = toolOpts(slot, App.slots[slot].tool); if (!('size' in o)) return; o.size = clamp(o.size + d, 1, 64); Bus.emit('toolopts'); status(slot + ' brush: ' + o.size + 'px'); requestRender(); }
 function moveLayerSel(d) { const rows = rowsOf(App.p), i = rows.findIndex(r => r.node.id === App.p.layerId); const n = rows[clamp(i + d, 0, rows.length - 1)]; if (n) setLayer(n.node.id); }
-function setTheme(t) { Prefs.theme = t; document.documentElement.dataset.theme = t; savePrefs(); for (const k in _iconCache) delete _iconCache[k]; buildTools(); buildGlobalToolbar(); buildTimelineBar(); buildTimeline(); drawLogo(); requestRender(true); }
+function applyTheme(t) { document.documentElement.dataset.theme = t; refreshTC(); for (const k in _iconCache) delete _iconCache[k]; buildTools(); buildGlobalToolbar(); buildTimelineBar(); buildTimeline(); drawLogo(); requestRender(true); }
+function setTheme(t) { if (!THEMES.some(x => x.id === t)) t = 'graphite'; Prefs.theme = t; savePrefs(); applyTheme(t); ThemePick.mark(); }
+function cycleTheme(d) { const i = THEMES.findIndex(x => x.id === Prefs.theme), t = THEMES[(i + d + THEMES.length) % THEMES.length]; setTheme(t.id); toast('Theme: ' + t.name, 1200); }
+const ThemePick = {
+  el: null, pt: 0,
+  show(id) { clearTimeout(this.pt); this.pt = setTimeout(() => { if (document.documentElement.dataset.theme !== id) applyTheme(id); }, 45); },
+  revert() { this.show(Prefs.theme); },
+  toggle(anchor) { if (this.el) this.close(); else this.open(anchor); },
+  close() { if (!this.el) return; this.el.remove(); this.el = null; clearTimeout(this.pt); document.removeEventListener('pointerdown', this._out, true); if (document.documentElement.dataset.theme !== Prefs.theme) applyTheme(Prefs.theme); },
+  mark() { if (!this.el) return; this.el.querySelectorAll('.thm-item').forEach(b => { const on = b.dataset.id === Prefs.theme; b.classList.toggle('cur', on); b.querySelector('em').textContent = on ? '✓' : ''; }); },
+  card(t) {
+    const m = (cls, n, tag = 'i') => h('span', { class: cls }, ...Array.from({ length: n }, () => h(tag)));
+    return h('button', { class: 'thm-item', 'data-id': t.id, title: t.desc, onpointerenter: () => this.show(t.id), onfocus: () => this.show(t.id), onclick: () => { clearTimeout(this.pt); setTheme(t.id); } },
+      h('span', { class: 'thm-card', 'data-theme': t.id },
+        h('span', { class: 'thm-mock' }, m('mb', 3, 'b'), m('rail', 3), h('span', { class: 'cv' }, h('span', { class: 'art' })), m('side', 3)),
+        h('span', { class: 'thm-name' }, t.name, h('em'))));
+  },
+  open(anchor) {
+    closePopovers(); this.close();
+    const grp = kind => [h('div', { class: 'thm-grp' }, kind === 'dark' ? 'Dark' : 'Light'), h('div', { class: 'thm-grid' }, THEMES.filter(t => t.kind === kind).map(t => this.card(t)))];
+    const nx = A.themeNext.keys;
+    const pop = this.el = h('div', { class: 'pop thm-pop', onpointerleave: () => this.revert() },
+      h('div', { class: 'thm-head' }, h('h5', null, 'Theme'), h('span', null, 'Hover to preview, click to apply')),
+      ...grp('dark'), ...grp('light'),
+      h('div', { class: 'thm-foot' }, h('span', null, ...(nx ? [h('kbd', null, nx), ' cycles themes anywhere'] : ['Arrow keys move, Enter applies'])), h('button', { onclick: () => cycleTheme(1) }, 'Next theme')));
+    document.body.append(pop); this.mark();
+    const r = (anchor || $('#thm-btn') || $('#gtools')).getBoundingClientRect();
+    pop.style.left = clamp(r.right - pop.offsetWidth, 6, innerWidth - pop.offsetWidth - 6) + 'px'; pop.style.top = (r.bottom + 6) + 'px';
+    this._out = e => { if (!pop.contains(e.target) && !e.target.closest('#thm-btn')) this.close(); };
+    setTimeout(() => this.el === pop && document.addEventListener('pointerdown', this._out, true), 0);
+    const cur = pop.querySelector('.thm-item.cur'); if (cur) cur.focus({ preventScroll: true });
+  },
+  key(e) {
+    if (!this.el) return false;
+    const items = [...this.el.querySelectorAll('.thm-item')], at = items.indexOf(document.activeElement);
+    if (e.key === 'Escape') { this.close(); }
+    else if (e.key === 'Enter' || e.key === ' ') { if (at >= 0) items[at].click(); }
+    else if (/^Arrow/.test(e.key)) {
+      const from = (items[at] || items.find(b => b.classList.contains('cur')) || items[0]).getBoundingClientRect(), dx = { ArrowLeft: -1, ArrowRight: 1 }[e.key] || 0, dy = { ArrowUp: -1, ArrowDown: 1 }[e.key] || 0;
+      let best = null, bd = 1e9;
+      for (const b of items) { const q = b.getBoundingClientRect(), vx = q.left - from.left, vy = q.top - from.top; if ((dx && Math.sign(vx) !== dx) || (dy && Math.sign(vy) !== dy) || (dx && Math.abs(vy) > 4)) continue; const d = Math.abs(vx) + Math.abs(vy) * 3; if (d < bd) { bd = d; best = b; } }
+      if (!best && dx) best = items[clamp(at + dx, 0, items.length - 1)];
+      if (best) best.focus({ preventScroll: true });
+    } else return false;
+    e.preventDefault(); e.stopPropagation(); return true;
+  }
+};
 async function pasteFromMenu(inPlace) {
   if (Clip.data && !((App.blurTime || 0) > Clip.time)) { Clip.paste(inPlace); return; }
   try { const items = await navigator.clipboard.read(); for (const it of items) { const t = it.types.find(x => x.startsWith('image/')); if (t) { const img = await loadImageFile(await it.getType(t)); Clip.paste(inPlace, imgToData(img)); return; } } } catch (e) {}
@@ -3112,7 +3274,7 @@ const MENUS = [
   ['Effects', ['fx_outline', 'fx_shadow', '-', 'fx_hsv', 'fx_bc', 'fx_invert', 'fx_desat', 'fx_replace', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
   ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'layerSelUp', 'layerSelDown', 'mergeDown', 'flatten', '-', 'hideLayer', 'lockLayer', 'clip', 'layerProps']],
   ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
-  ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['theme_graphite', 'theme_paper', 'theme_mono']], 'zen', 'fullscreen']],
+  ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['themePicker', '-', ...THEMES.map(t => 'theme_' + t.id), '-', 'themeNext', 'themePrev']], 'zen', 'fullscreen']],
   ['Snap', ['snap', '-', ...SNAP_MODES.map(m => 'snap_' + m[0]), '-', ['Angle set', ['ang_pixel', 'ang_15', 'ang_22.5', 'ang_30', 'ang_45']], 'snapPanel', '-', 'smart', 'smartHold']],
   ['Help', ['tour', 'demo', '-', 'keyIndex', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
 ];
@@ -3369,7 +3531,7 @@ function prefsDialog() {
   const chk = k => h('input', { type: 'checkbox', checked: Prefs[k], onchange: e => { Prefs[k] = e.target.checked; savePrefs(); Bus.emit('prefs'); requestRender(true); } });
   const num = (k, min, max, step = 1) => h('input', { type: 'number', min, max, step, value: Prefs[k], onchange: e => { Prefs[k] = clamp(+e.target.value, min, max); savePrefs(); requestRender(true); } });
   const col = k => h('input', { type: 'text', value: Prefs[k], style: { fontFamily: 'var(--mono)' }, onchange: e => { if (hexToRgba(e.target.value)) { Prefs[k] = e.target.value; savePrefs(); requestRender(true); } } });
-  const theme = h('select', { onchange: e => setTheme(e.target.value) }, [['graphite', 'Graphite (dark)'], ['paper', 'Paper (light)'], ['mono', 'Mono']].map(([v, l]) => h('option', { value: v, selected: Prefs.theme === v }, l)));
+  const theme = h('select', { onchange: e => setTheme(e.target.value) }, ['dark', 'light'].map(k => h('optgroup', { label: k === 'dark' ? 'Dark' : 'Light' }, THEMES.filter(t => t.kind === k).map(t => h('option', { value: t.id, selected: Prefs.theme === t.id }, t.name)))));
   openDialog({ title: 'Preferences', width: 560, body: h('div', { class: 'frm' },
     h('div', { class: 'full mlabel' }, 'Interface'), ...row('Theme', theme), ...row('Intro animation on load', chk('intro')), ...row('Invert wheel zoom', chk('invertWheel')), ...row('Zoom step', num('zoomStep', 1.05, 3, 0.05)),
     h('div', { class: 'full mlabel' }, 'Canvas'), ...row('Checker size (px)', num('checkerSize', 2, 64)), ...row('Pixel grid from zoom', num('pixelGridZoom', 2, 64)), ...row('Pixel grid color', col('pixelGridColor')), ...row('Grid color', col('gridColor')), ...row('Grid offset X / Y', h('div', { class: 'prow' }, num('gridOX', -512, 512), num('gridOY', -512, 512))), ...row('Tile mode dim', num('tileDim', 0, 1, 0.05)),
@@ -4093,7 +4255,7 @@ async function DemoScript(D) {
 function drawLogo() {
   const cv = $('#logo'), c = cv.getContext('2d'); c.clearRect(0, 0, 9, 9);
   const rows = ['..aaaaa..', '.aabbbaa.', 'aab...baa', 'aab...baa', 'aabbbbaa.', 'aab......', 'aab..ccc.', 'aab..cdc.', '.....ccc.'];
-  const col = { a: '#f2a541', b: '#b9781f', c: '#4fb3a1', d: '#ebe5d8' };
+  const col = { a: TC.acc, b: TC.accD, c: TC.sec, d: TC.tx };
   rows.forEach((r, y) => [...r].forEach((ch, x) => { if (col[ch]) { c.fillStyle = col[ch]; c.fillRect(x, y, 1, 1); } }));
 }
 function wireBus() {
@@ -4140,7 +4302,8 @@ function splash() {
   IDB.get('autosave').then(s => { if (s && s.projects && s.projects.length) restoreSlot.append(big('↺', 'Restore last session', s.projects.length + ' project(s), ' + new Date(s.time).toLocaleString(), () => { const blank = App.p; restoreAutosave(true).then(ok => { if (ok && !blank.dirty && !blank.hist.list.length) { App.projects.splice(App.projects.indexOf(blank), 1); Bus.emit('project'); } }); })); }).catch(() => {});
 }
 function boot() {
-  document.documentElement.dataset.theme = Prefs.theme;
+  if (!THEMES.some(t => t.id === Prefs.theme)) Prefs.theme = 'graphite';
+  document.documentElement.dataset.theme = Prefs.theme; refreshTC();
   try { const s = JSON.parse(localStorage.getItem('pxw-slots') || 'null'); if (s && s.slots && Tools[s.slots.left.tool] && Tools[s.slots.right.tool]) { App.slots = s.slots; App.colors = s.colors || App.colors; } } catch (e) {}
   applyKeyPrefs(); initViewport(); buildMenus(); buildTools(); buildGlobalToolbar(); buildTimelineBar(); initColorPanel(); initPalettePanel(); buildPalette();
   initRightTabs(); initRefPanel(); initSplitters(); initInput(); initDropAndAutosave(); wireBus(); drawLogo();
