@@ -415,6 +415,24 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .thm-foot kbd{font-family:var(--mono);font-size:10px;padding:0 4px;border:1px solid var(--line2);border-radius:3px;color:var(--tx2)}
 .thm-foot button{background:var(--raise);border:1px solid var(--line2);border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--tx2)}
 .thm-foot button:hover{color:var(--tx);border-color:var(--acc-d)}
+/* layer effects */
+.fxb{font:italic 700 10px/14px var(--mono);padding:0 4px;border-radius:3px;background:var(--acc);color:var(--acc-tx);cursor:pointer;flex:none}
+.fxb.off{background:var(--raise);color:var(--mute)}
+.fxed{position:fixed;z-index:115;width:310px;max-height:min(72vh,640px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:8px;box-shadow:var(--shadow)}
+.fxed-h{display:flex;align-items:center;gap:7px;height:30px;flex:none;padding:0 6px 0 10px;background:var(--panel2);border-bottom:1px solid var(--line);border-radius:8px 8px 0 0;cursor:move;font-size:12px;user-select:none}
+.fxed-h .sp{flex:1}.fxed-h b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fxed-l{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px}
+.fxed-f{display:flex;gap:6px;padding:8px;flex:none;border-top:1px solid var(--line);background:var(--panel2);border-radius:0 0 8px 8px}
+.fxc{border:1px solid var(--line2);border-radius:6px;background:var(--bg2)}
+.fxc.off .nm{opacity:.45}
+.fxc-h{display:flex;align-items:center;gap:4px;height:28px;padding:0 4px 0 8px}
+.fxc-h .nm{flex:1;cursor:pointer;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px}.fxc-h .nm i{font-style:normal;color:var(--mute);display:inline-block;width:13px}
+.fxc-b{padding:6px 10px 10px;display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line)}
+.fx-side{display:flex;flex-direction:column;gap:8px;max-height:62vh;overflow-y:auto;padding-right:4px}
+.fxl{color:var(--tx2);margin-bottom:3px;font-size:11px}
+.fxv{font-family:var(--mono);min-width:30px;text-align:right}
+.kbx:disabled{opacity:.25;pointer-events:none}
+.lightw{width:104px;height:104px;image-rendering:pixelated;cursor:crosshair;flex:none;touch-action:none}
 /* command palette */
 .cmdk{display:flex;align-items:center;gap:7px;height:22px;margin:auto 0 auto 14px;padding:0 5px 0 7px;min-width:0;flex:0 1 250px;border:1px solid var(--line2);border-radius:5px;background:var(--panel);color:var(--mute);cursor:pointer;font-size:11.5px}
 .cmdk:hover{border-color:var(--acc-d);color:var(--tx2)}
@@ -796,7 +814,7 @@ class History {
   jump(i) { commitPending(); while (this.idx > i) { this.list[this.idx--].undo(); } while (this.idx < i) { this.list[++this.idx].redo(); } this.after(); }
   after() { this.p.dirty = this.idx !== this.saveIdx; Bus.emit('history'); Bus.emit('structure'); requestRender(true); }
 }
-function commitPending() { if (typeof Smart !== 'undefined' && Smart.pending) Smart.commit(); if (typeof Tools !== 'undefined') for (const k in Tools) if (Tools[k].commitPending) Tools[k].commitPending(); if (typeof Float !== 'undefined') Float.commit(); }
+function commitPending() { if (typeof FXEd !== 'undefined') FXEd.commit(); if (typeof Smart !== 'undefined' && Smart.pending) Smart.commit(); if (typeof Tools !== 'undefined') for (const k in Tools) if (Tools[k].commitPending) Tools[k].commitPending(); if (typeof Float !== 'undefined') Float.commit(); }
 /* cel edits: capture full copies, store only the changed rectangle */
 function celEditBegin(imgs) { return imgs.filter(Boolean).map(img => ({ img, before: img.data.slice() })); }
 function celEditCommit(tok, name, extra) {
@@ -977,7 +995,7 @@ const blendOp = b => BLEND_OP[b] || b;
 const _tmp = {};
 function tmpCanvas(key, w, h) {
   let t = _tmp[key];
-  if (!t) { const cv = document.createElement('canvas'); t = _tmp[key] = { cv, ctx: cv.getContext('2d') }; }
+  if (!t) { const cv = document.createElement('canvas'); t = _tmp[key] = { cv, ctx: cv.getContext('2d', { willReadFrequently: true }) }; }
   if (t.cv.width !== w || t.cv.height !== h) { t.cv.width = w; t.cv.height = h; } else t.ctx.clearRect(0, 0, w, h);
   t.ctx.globalAlpha = 1; t.ctx.globalCompositeOperation = 'source-over'; t.ctx.imageSmoothingEnabled = false;
   return t;
@@ -1008,7 +1026,8 @@ function drawStack(ctx, nodes, frame, p, depth = 0, opts) {
         if (vis.length) {
           const t = tmpCanvas('cb' + depth, p.w, p.h); t.ctx.drawImage(base, 0, 0);
           for (const c of vis) {
-            const cc = nodeCanvas(c, frame, p, depth + 10, opts); if (!cc) continue;
+            let cc = nodeCanvas(c, frame, p, depth + 10, opts); if (!cc) continue;
+            if (fxActive(c)) cc = fxCanvas(c, cc, frame, p, 'fxc' + depth, opts, true);
             const t2 = tmpCanvas('cc' + depth, p.w, p.h);
             t2.ctx.globalAlpha = c.opacity; t2.ctx.drawImage(cc, 0, 0); t2.ctx.globalAlpha = 1;
             t2.ctx.globalCompositeOperation = 'destination-in'; t2.ctx.drawImage(base, 0, 0);
@@ -1016,6 +1035,7 @@ function drawStack(ctx, nodes, frame, p, depth = 0, opts) {
           }
           src = t.cv;
         }
+        if (fxActive(n)) src = fxCanvas(n, src, frame, p, 'fx' + depth, opts, !vis.length); // after clipping: an outline wraps the whole clipped group
         ctx.globalAlpha = n.opacity; ctx.globalCompositeOperation = blendOp(n.blend);
         ctx.drawImage(src, 0, 0);
         ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
@@ -1026,9 +1046,28 @@ function drawStack(ctx, nodes, frame, p, depth = 0, opts) {
 }
 function compKey(p, fi) {
   const f = p.frames[fi]; let k = p.w + 'x' + p.h + ':';
-  for (const e of p.flat()) { const n = e.node; k += n.id + (n.visible ? 1 : 0) + n.opacity + n.blend + (n.clip ? 'c' : '') + (e.parentNode ? e.parentNode.id : '') + ';'; const c = f.cels[n.id]; if (c) k += c.id + '.' + c.ver + ','; }
+  for (const e of p.flat()) { const n = e.node; k += n.id + (n.visible ? 1 : 0) + n.opacity + n.blend + (n.clip ? 'c' : '') + (e.parentNode ? e.parentNode.id : '') + fxKeyOf(n) + ';'; const c = f.cels[n.id]; if (c) k += c.id + '.' + c.ver + ','; }
   return k;
 }
+/* ---------- non-destructive layer effects (registry LFX lives with the effects) ---------- */
+const fxKeyOf = n => n.fx && n.fx.length ? JSON.stringify(n.fx) : '';
+const fxActive = n => !!(n.fx && n.fx.some(f => f.on && LFX[f.type]));
+function applyLayerFx(n, data, w, hh) { let d = data; for (const f of n.fx) if (f.on && LFX[f.type]) d = LFX[f.type].fn(d, w, hh, f.p) || d; return d; }
+const _fxCache = new WeakMap(); // Img -> { k, v, cv, ms, at }: a plain pixel layer only recomputes when its cel or its effects change
+let _fxStale = false;
+function fxCanvas(n, cv, frame, p, key, opts, solo) {
+  const img = solo && n.type === 'pixel' && !(opts && opts.inject && opts.inject.layerId === n.id) ? frame.cels[n.id] : null, fk = fxKeyOf(n);
+  if (img) { const c = _fxCache.get(img); if (c && c.k === fk && c.cv.width === p.w && c.cv.height === p.h) {
+    if (c.v === img.ver) return c.cv;
+    if (App.dragging && c.ms > 12 && performance.now() - c.at < 90) { _fxStale = true; return c.cv; } } } // heavy effects refresh at ~10 fps mid-stroke
+  const t0 = performance.now(), out = applyLayerFx(n, img ? img.data : cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, p.w, p.h).data, p.w, p.h);
+  let dst;
+  if (img) { dst = (_fxCache.get(img) || {}).cv || document.createElement('canvas'); dst.width = p.w; dst.height = p.h; _fxCache.set(img, { k: fk, v: img.ver, cv: dst, ms: performance.now() - t0, at: performance.now() }); }
+  else dst = tmpCanvas(key, p.w, p.h).cv;
+  dst.getContext('2d').putImageData(new ImageData(out, p.w, p.h), 0, 0); return dst;
+}
+/* a cel as it looks with its layer's effects (merge down bakes these) */
+function celLook(n, img) { if (!fxActive(n)) return img.canvas(); const p = App.p; return fxCanvas(n, img.canvas(), { cels: { [n.id]: img } }, p, 'fxl', null, true); }
 /* composite of a frame; cached per project/frame */
 function compose(p, fi, opts) {
   p._comp ||= {};
@@ -1039,7 +1078,8 @@ function compose(p, fi, opts) {
   else cv = opts.fresh ? document.createElement('canvas') : (compose._scratch ||= document.createElement('canvas')); // scratch: callers draw it right away
   cv.width = p.w; cv.height = p.h;
   const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.imageSmoothingEnabled = false;
-  drawStack(ctx, p.layers, p.frames[fi], p, 0, opts);
+  _fxStale = false; drawStack(ctx, p.layers, p.frames[fi], p, 0, opts);
+  if (_fxStale && !opts) p._comp[fi].key = ''; // built from a throttled effect: never serve it from the cache
   return cv;
 }
 function composeImg(p, fi, opts) { const cv = compose(p, fi, opts); return new Img(p.w, p.h, new Uint8ClampedArray(cv.getContext('2d').getImageData(0, 0, p.w, p.h).data)); }
@@ -2996,7 +3036,7 @@ const Layers = {
   move(d) { structural('Move layer', p => { const e = p.find(p.layerId); if (!e) return false; const j = e.idx + d; if (j < 0 || j >= e.arr.length) { if (e.parentNode && d) { const pe = p.find(e.parentNode.id); e.arr.splice(e.idx, 1); pe.arr.splice(pe.idx + (d > 0 ? 1 : 0), 0, e.node); return; } return false; } const tgt = e.arr[j]; if (tgt.type === 'group' && tgt.open) { e.arr.splice(e.idx, 1); if (d > 0) tgt.children.unshift(e.node); else tgt.children.push(e.node); return; } [e.arr[e.idx], e.arr[j]] = [e.arr[j], e.arr[e.idx]]; }); },
   mergeDown() {
     const p = App.p, e = p.find(p.layerId); if (!e || e.node.type !== 'pixel' || e.idx === 0 || e.arr[e.idx - 1].type !== 'pixel') { toast('Merge down needs a pixel layer directly below'); return; }
-    structural('Merge down', p => { const top = e.node, bot = e.arr[e.idx - 1]; p.frames.forEach((f, fi) => { const b = f.cels[bot.id], t = f.cels[top.id]; if (!b || !t) return; const nb = b.clone(); const cx = nb.canvas().getContext('2d'); cx.globalAlpha = top.opacity; cx.globalCompositeOperation = blendOp(top.blend); cx.drawImage(t.canvas(), 0, 0); nb.data = new Uint8ClampedArray(cx.getImageData(0, 0, p.w, p.h).data); nb.touch(); f.cels[bot.id] = nb; delete f.cels[top.id]; }); e.arr.splice(e.idx, 1); p.layerId = bot.id; });
+    structural('Merge down', p => { const top = e.node, bot = e.arr[e.idx - 1]; p.frames.forEach((f, fi) => { const b = f.cels[bot.id], t = f.cels[top.id]; if (!b || !t) return; const nb = b.clone(); const cx = nb.canvas().getContext('2d'); cx.globalAlpha = top.opacity; cx.globalCompositeOperation = blendOp(top.blend); cx.drawImage(celLook(top, t), 0, 0); nb.data = new Uint8ClampedArray(cx.getImageData(0, 0, p.w, p.h).data); nb.touch(); f.cels[bot.id] = nb; delete f.cels[top.id]; }); e.arr.splice(e.idx, 1); p.layerId = bot.id; });
   },
   flatten() { structural('Flatten image', p => { const l = newLayer('Flattened'); p.frames.forEach((f, fi) => { const im = composeImg(p, fi); f.cels = { [l.id]: im }; }); p.layers = [l]; p.layerId = l.id; }); },
   props(id = App.p.layerId) {
@@ -3032,11 +3072,12 @@ function buildTimeline() {
       h('button', { class: 'ibtn', title: 'Toggle lock', onclick: ev => { ev.stopPropagation(); Layers.toggle(n.id, 'locked'); } }, iconImg(n.locked ? 'lock' : 'unlock', 14, n.locked ? TC.acc : TC.mute)),
       n.type === 'group' ? iconImg('folder', 14, '#c9b458') : null,
       h('span', { class: 'nm' }, n.name),
+      n.fx && n.fx.length ? h('span', { class: 'fxb' + (fxActive(n) ? '' : ' off'), title: 'Layer effects: ' + n.fx.map(f => (LFX[f.type] ? LFX[f.type].name : f.type) + (f.on ? '' : ' (off)')).join(', ') + '\nClick to edit', onclick: ev => { ev.stopPropagation(); setLayer(n.id); FXEd.toggle(n.id); } }, 'fx') : null,
       n.blend !== 'normal' && n.blend !== 'pass' ? h('span', { class: 'tag' }, n.blend.slice(0, 4)) : null,
       n.opacity < 1 ? h('span', { class: 'tag' }, Math.round(n.opacity * 100) + '%') : null);
     row.onclick = () => setLayer(n.id);
     row.ondblclick = ev => { if (ev.target.closest('.nm')) renameLayer(row, n); else Layers.props(n.id); };
-    row.oncontextmenu = ev => { ev.preventDefault(); setLayer(n.id); ctxMenu(ev.clientX, ev.clientY, [['Properties…', () => Layers.props(n.id)], ['Rename', () => renameLayer(row, n)], ['Duplicate', () => Layers.dup()], ['Delete', () => Layers.del()], '-', [n.clip ? 'Release clipping mask' : 'Clip to layer below', () => structural('Clipping mask', p => { p.find(n.id).node.clip = !n.clip; })], ['Merge down', () => Layers.mergeDown()], ['New group from layer', () => Layers.add('group')], '-', ['Select layer content', () => Sel.fromAlpha()]]); };
+    row.oncontextmenu = ev => { ev.preventDefault(); setLayer(n.id); ctxMenu(ev.clientX, ev.clientY, [['Properties…', () => Layers.props(n.id)], ['Layer effects…', () => FXEd.open(n.id)], ['Rename', () => renameLayer(row, n)], ['Duplicate', () => Layers.dup()], ['Delete', () => Layers.del()], '-', [n.clip ? 'Release clipping mask' : 'Clip to layer below', () => structural('Clipping mask', p => { p.find(n.id).node.clip = !n.clip; })], ['Merge down', () => Layers.mergeDown()], ['New group from layer', () => Layers.add('group')], '-', ['Select layer content', () => Sel.fromAlpha()]]); };
     layerDrag(row, n);
     li.append(row);
   });
@@ -3156,7 +3197,7 @@ function initSplitters() {
 const dialogs = [];
 function openDialog({ title, body, buttons = [{ label: 'OK', pri: true }], onCancel, width, onOpen }) {
   const bg = h('div', { class: 'dlg-bg' }); const close = () => { bg.remove(); const i = dialogs.indexOf(d); if (i >= 0) dialogs.splice(i, 1); };
-  const foot = h('div', { class: 'dlg-f' }, buttons.map(b => h('button', { class: 'btn' + (b.pri ? ' pri' : '') + (b.cls ? ' ' + b.cls : ''), onclick: async () => { const r = b.fn ? await b.fn() : undefined; if (r !== false) close(); } }, b.label)));
+  const foot = h('div', { class: 'dlg-f' }, buttons.map(b => h('button', { class: 'btn' + (b.pri ? ' pri' : '') + (b.cls ? ' ' + b.cls : ''), title: b.title, onclick: async () => { const r = b.fn ? await b.fn() : undefined; if (r !== false) close(); } }, b.label)));
   const box = h('div', { class: 'dlg', style: width ? { width: width + 'px' } : null }, h('div', { class: 'dlg-h' }, h('span', null, title), h('button', { class: 'ibtn x', title: 'Close (Esc)', onclick: () => { onCancel && onCancel(); close(); } }, '×')), h('div', { class: 'dlg-b' }, body), buttons.length ? foot : null);
   bg.append(box); bg.addEventListener('pointerdown', e => { if (e.target === bg) { onCancel && onCancel(); close(); } });
   box.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') { const pri = foot.querySelector('.pri'); if (pri) { e.preventDefault(); pri.click(); } } });
@@ -3312,8 +3353,8 @@ const MENUS = [
   ['Edit', ['undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteIn', 'delete', 'fillL', 'fillR', '-', 'brush', 'clearBrushes', '-', 'prefs']],
   ['Select', ['selAll', 'deselect', 'invertSel', '-', 'grow', 'shrink', '-', 'selContent', 'selColor']],
   ['Image', ['resizeCanvas', 'scaleImage', 'cropSel', 'cropContent', 'center', '-', 'flipH', 'flipV', 'rotCW', 'rotCCW', 'rot180', 'rotate', 'offset']],
-  ['Effects', ['fx_outline', 'fx_shadow', '-', 'fx_hsv', 'fx_bc', 'fx_invert', 'fx_desat', 'fx_replace', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
-  ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'layerSelUp', 'layerSelDown', 'mergeDown', 'flatten', '-', 'hideLayer', 'lockLayer', 'clip', 'layerProps']],
+  ['Effects', ['layerFx', 'bakeFx', '-', 'fx_autoshade', 'fx_outline', 'fx_shadow', 'fx_glow', '-', 'fx_hsv', 'fx_bc', 'fx_overlay', 'fx_invert', 'fx_desat', 'fx_replace', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
+  ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'layerSelUp', 'layerSelDown', 'mergeDown', 'flatten', '-', 'hideLayer', 'lockLayer', 'clip', 'layerFx', 'layerProps']],
   ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
   ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['themePicker', '-', ...THEMES.map(t => 'theme_' + t.id), '-', 'themeNext', 'themePrev']], 'zen', 'fullscreen']],
   ['Snap', ['snap', '-', ...SNAP_MODES.map(m => 'snap_' + m[0]), '-', ['Angle set', ['ang_pixel', 'ang_15', 'ang_22.5', 'ang_30', 'ang_45']], 'snapPanel', '-', 'smart', 'smartHold']],
@@ -3501,21 +3542,31 @@ fx('noise', 'Noise / grain', [{ k: 'amt', l: 'Amount', t: 'range', min: 1, max: 
 });
 function effectDialog(id, preset) {
   commitPending(); const F = FX.defs[id], p = App.p; if (!p.img() && !p.selCels.size) { toast('Select a pixel layer first'); return; }
-  const P = {}; for (const q of F.params) P[q.k] = preset && q.k in preset ? preset[q.k] : (typeof q.d === 'function' ? q.d() : q.d);
-  const cv = h('canvas', { width: p.w, height: p.h }), side = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } });
+  const P = {}; for (const q of F.params) P[q.k] = structuredClone(preset && q.k in preset ? preset[q.k] : (typeof q.d === 'function' ? q.d() : q.d));
+  const cv = h('canvas', { width: p.w, height: p.h }), side = h('div', { class: 'fx-side' });
   const scope = h('select', null, [['cel', p.selCels.size > 1 ? 'Selected cels' : 'Current cel'], ['frame', 'Current frame (all layers)'], ['layer', 'All frames of this layer'], ['all', 'Whole project']].map(([v, l]) => h('option', { value: v }, l)));
   const draw = () => { const src = (p.img() || new Img(p.w, p.h)); const out = applyMasked(src.data, F.fn(src.data, p.w, p.h, P), p.sel); cv.getContext('2d').putImageData(new ImageData(out, p.w, p.h), 0, 0); const z = Math.max(1, Math.floor(Math.min(420 / p.w, 340 / p.h))); cv.style.width = p.w * z + 'px'; cv.style.height = p.h * z + 'px'; };
-  for (const q of F.params) {
-    let el;
-    if (q.t === 'range') { const v = h('span', { style: { fontFamily: 'var(--mono)', minWidth: '32px', textAlign: 'right' } }, P[q.k]); el = h('div', { class: 'prow' }, h('input', { type: 'range', min: q.min, max: q.max, value: P[q.k], style: { flex: 1 }, oninput: e => { P[q.k] = +e.target.value; v.textContent = P[q.k]; draw(); } }), v); }
-    else if (q.t === 'check') el = h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: P[q.k], onchange: e => { P[q.k] = e.target.checked; draw(); } }), q.l);
-    else if (q.t === 'select') el = h('select', { onchange: e => { P[q.k] = e.target.value; draw(); } }, q.o.map(([v, l]) => h('option', { value: v, selected: v === P[q.k] }, l)));
-    else if (q.t === 'color') { const al = h('input', { type: 'range', min: 0, max: 255, value: P[q.k][3], style: { width: '80px' }, title: 'Alpha' }); const ci = h('input', { type: 'color', value: rgbaToHex(P[q.k], false) }); const upd = () => { const c = hexToRgba(ci.value); c[3] = +al.value; P[q.k] = c; draw(); }; ci.oninput = upd; al.oninput = upd; el = h('div', { class: 'prow' }, ci, al); }
-    side.append(q.t === 'check' ? el : h('div', null, h('div', { style: { color: 'var(--tx2)', marginBottom: '3px' } }, q.l), el));
+  for (const q of F.params) side.append(fxParam(q, P, draw));
+  side.append(h('div', null, h('div', { class: 'fxl' }, 'Apply to'), scope)); if (p.sel) side.append(h('div', { class: 'ohint' }, 'Only pixels inside the selection change.'));
+  const L = Object.values(LFX).find(x => x.from === id), n = p.layer();
+  const left = [...(F.extra || []).map(b => ({ label: b.label, title: b.title, fn: () => b.fn(P) })), L && n && n.type === 'pixel' ? { label: 'Keep editable', title: 'Add it as a layer effect instead: the pixels stay untouched and you can tweak it any time', fn: () => { addLayerFx(L.type, P); } } : null].filter(Boolean);
+  if (left.length) left[left.length - 1].cls = 'l';
+  openDialog({ title: F.name, width: 780, body: h('div', { class: 'fx-wrap' }, h('div', { class: 'fx-prev' }, cv), side), onOpen: draw,
+    buttons: [...left, { label: 'Cancel' }, { label: 'Apply', pri: true, fn: () => { FX.last = { id, params: structuredClone(P) }; Img_ops.mapCels(F.name, scope.value, img => img.data.set(applyMasked(img.data, F.fn(img.data, img.w, img.h, P), p.sel))); } }] });
+}
+/* one widget per effect parameter; shared by the effect dialogs and the layer effects editor */
+function fxParam(q, P, onInput, onCommit = () => {}) {
+  let el;
+  if (q.t === 'range') { const v = h('span', { class: 'fxv' }, P[q.k]); el = h('div', { class: 'prow' }, h('input', { type: 'range', min: q.min, max: q.max, step: q.step || 1, value: P[q.k], style: { flex: 1 }, oninput: e => { P[q.k] = +e.target.value; v.textContent = P[q.k]; onInput(); }, onchange: () => onCommit() }), v); }
+  else if (q.t === 'check') return h('label', { class: 'chk', title: q.tip || '' }, h('input', { type: 'checkbox', checked: P[q.k], onchange: e => { P[q.k] = e.target.checked; onInput(); onCommit(); } }), q.l);
+  else if (q.t === 'select') el = h('select', { onchange: e => { P[q.k] = e.target.value; onInput(); onCommit(); } }, q.o.map(([v, l]) => h('option', { value: v, selected: v === P[q.k] }, l)));
+  else if (q.t === 'color') {
+    const al = h('input', { type: 'range', min: 0, max: 255, value: P[q.k][3], style: { flex: 1, minWidth: '50px' }, title: 'Alpha' }), ci = h('input', { type: 'color', value: rgbaToHex(P[q.k], false) });
+    const upd = () => { const c = hexToRgba(ci.value); c[3] = +al.value; P[q.k] = c; onInput(); }; ci.oninput = upd; al.oninput = upd; ci.onchange = () => onCommit(); al.onchange = () => onCommit();
+    el = h('div', { class: 'prow' }, ci, al, h('button', { class: 'btn sm', title: 'Use the left color', onclick: () => { const c = App.colors.left.slice(); P[q.k] = c; ci.value = rgbaToHex(c, false); al.value = c[3]; onInput(); onCommit(); } }, 'L'), h('button', { class: 'btn sm', title: 'Use the right color', onclick: () => { const c = App.colors.right.slice(); P[q.k] = c; ci.value = rgbaToHex(c, false); al.value = c[3]; onInput(); onCommit(); } }, 'R'));
   }
-  side.append(h('div', null, h('div', { style: { color: 'var(--tx2)', marginBottom: '3px' } }, 'Apply to'), scope)); if (p.sel) side.append(h('div', { class: 'ohint' }, 'Only pixels inside the selection change.'));
-  openDialog({ title: F.name, width: 760, body: h('div', { class: 'fx-wrap' }, h('div', { class: 'fx-prev' }, cv), side), onOpen: draw,
-    buttons: [{ label: 'Cancel' }, { label: 'Apply', pri: true, fn: () => { FX.last = { id, params: { ...P } }; Img_ops.mapCels(F.name, scope.value, img => img.data.set(applyMasked(img.data, F.fn(img.data, img.w, img.h, P), p.sel))); } }] });
+  else if (q.t === 'light') el = lightWidget(P[q.k], onInput, onCommit);
+  return h('div', { title: q.tip || '' }, h('div', { class: 'fxl' }, q.l), el);
 }
 function applyMasked(src, out, sel) { if (!sel) return new Uint8ClampedArray(out); const r = new Uint8ClampedArray(src); for (let i = 0; i < sel.length; i++) if (sel[i]) r.set(out.subarray(i * 4, i * 4 + 4), i * 4); return r; }
 /* ---------- dialogs ---------- */
@@ -3687,6 +3738,252 @@ function paletteMenu(anchor) {
 }
 function uniqueColors(d, max) { const m = new Map(); for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const k = (d[i] << 24 | d[i + 1] << 16 | d[i + 2] << 8 | d[i + 3]) >>> 0; if (!m.has(k)) { m.set(k, [d[i], d[i + 1], d[i + 2], d[i + 3]]); if (m.size >= max) break; } } return [...m.values()]; }
 function dedupe(cs) { const s = new Set(); return cs.filter(c => { const k = c.join(); if (s.has(k)) return false; s.add(k); return true; }); }
+</script>
+<script>
+/* ================= AUTO-SHADE, GLOW, LAYER EFFECTS ================= */
+/* distance from each pixel center to the nearest pixel center outside its region (reg -1 = outside); chamfer 1 / √2, two sweeps each way */
+function regionDist(reg, w, hh, edgeOut = true) {
+  const N = w * hh, d = new Float32Array(N), R2 = Math.SQRT2;
+  for (let y = 0, i = 0; y < hh; y++) for (let x = 0; x < w; x++, i++) {
+    const r = reg[i]; if (r < 0) continue; let m = 1e9;
+    for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { if (!j && !k) continue; const X = x + k, Y = y + j, out = X < 0 || Y < 0 || X >= w || Y >= hh ? edgeOut : reg[Y * w + X] !== r; if (out) m = Math.min(m, j && k ? R2 : 1); }
+    d[i] = m;
+  }
+  for (let pass = 0; pass < 2; pass++) {
+    for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) { const i = y * w + x, r = reg[i]; if (r < 0) continue; let v = d[i];
+      if (x > 0 && reg[i - 1] === r) v = Math.min(v, d[i - 1] + 1);
+      if (y > 0) { const u = i - w; if (reg[u] === r) v = Math.min(v, d[u] + 1); if (x > 0 && reg[u - 1] === r) v = Math.min(v, d[u - 1] + R2); if (x < w - 1 && reg[u + 1] === r) v = Math.min(v, d[u + 1] + R2); }
+      d[i] = v; }
+    for (let y = hh - 1; y >= 0; y--) for (let x = w - 1; x >= 0; x--) { const i = y * w + x, r = reg[i]; if (r < 0) continue; let v = d[i];
+      if (x < w - 1 && reg[i + 1] === r) v = Math.min(v, d[i + 1] + 1);
+      if (y < hh - 1) { const u = i + w; if (reg[u] === r) v = Math.min(v, d[u] + 1); if (x < w - 1 && reg[u + 1] === r) v = Math.min(v, d[u + 1] + R2); if (x > 0 && reg[u - 1] === r) v = Math.min(v, d[u - 1] + R2); }
+      d[i] = v; }
+  }
+  return d;
+}
+/* connected components: ok(i) says who belongs, same(i, q) joins neighbours */
+function labelRegions(w, hh, ok, same, diag) {
+  const N = w * hh, reg = new Int32Array(N).fill(-1), area = [], st = []; let n = 0;
+  for (let s0 = 0; s0 < N; s0++) {
+    if (reg[s0] >= 0 || !ok(s0)) continue; reg[s0] = n; st.push(s0); let a = 0;
+    while (st.length) { const i = st.pop(), x = i % w, y = (i / w) | 0; a++;
+      for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { if ((!j && !k) || (!diag && j && k)) continue; const X = x + k, Y = y + j; if (X < 0 || Y < 0 || X >= w || Y >= hh) continue; const q = Y * w + X; if (reg[q] < 0 && ok(q) && same(i, q)) { reg[q] = n; st.push(q); } } }
+    area.push(a); n++;
+  }
+  return { reg, area, n };
+}
+const lightVec = L => { const az = L.az * DEG, el = clamp(L.el, 1, 90) * DEG; return [Math.sin(az) * Math.cos(el), -Math.cos(az) * Math.cos(el), Math.sin(el)]; };
+const compass = az => ['top', 'top-right', 'right', 'bottom-right', 'bottom', 'bottom-left', 'left', 'top-left'][Math.round((((az % 360) + 360) % 360) / 45) % 8];
+/* the same move the Shading tool makes: value up or down, hue drifts warm (60°) going up and cool (240°) going down */
+function shadeStep(r, g, b, steps, amt, hueShift) {
+  let [hh, s, v] = rgbToHsv(r, g, b); const dir = Math.sign(steps), target = dir > 0 ? 60 : 240;
+  for (let k = Math.abs(steps); k > 0; k--) {
+    v = clamp(v + dir * amt, 0, 1);
+    if (hueShift) { if (s < .04) hh = target; const dh = ((target - hh + 540) % 360) - 180; hh += Math.sign(dh) * Math.min(Math.abs(dh), hueShift * amt * 3); s = clamp(s + (dir > 0 ? -.5 : .5) * amt, 0, 1); }
+  }
+  return hsvToRgb(hh, s, v);
+}
+/* height field + normals for a sprite: a dome per silhouette and/or per flat color region.
+   Line art (dark strokes up to 3px thick) keeps its color; strokes that reach the silhouette edge also split the dome into parts,
+   isolated ink (pupils) stays inside it. Tiny color regions (glints, buttons) fold into their surroundings */
+function shadeField(s, w, hh, P) {
+  const N = w * hh, op = i => s[i * 4 + 3] > 0, dark = i => lum(s[i * 4], s[i * 4 + 1], s[i * 4 + 2]) < 72, ink = new Uint8Array(N), outl = new Uint8Array(N);
+  if (P.keepDark !== false) {
+    const D = labelRegions(w, hh, i => op(i) && dark(i), () => true, true), dd = regionDist(D.reg, w, hh), mx = new Float32Array(D.n), touch = new Uint8Array(D.n);
+    for (let i = 0; i < N; i++) { const r = D.reg[i]; if (r < 0) continue; mx[r] = Math.max(mx[r], dd[i]); if (touch[r]) continue; const x = i % w, y = (i / w) | 0;
+      for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { const X = x + k, Y = y + j; if (X < 0 || Y < 0 || X >= w || Y >= hh || !op(Y * w + X)) touch[r] = 1; } }
+    for (let i = 0; i < N; i++) { const r = D.reg[i]; if (r >= 0 && mx[r] <= 2) { ink[i] = 1; outl[i] = touch[r]; } }
+  }
+  const body = i => op(i) && !outl[i], col = i => s[i * 4] << 16 | s[i * 4 + 1] << 8 | s[i * 4 + 2];
+  const S = labelRegions(w, hh, body, () => true, true), Pt = labelRegions(w, hh, body, (i, q) => col(i) === col(q), false);
+  let bodyN = 0; for (const a of S.area) bodyN += a;
+  const thr = Math.max(3, Math.min(12, Math.round(bodyN * .01))), map = Pt.area.map((_, r) => r), small = Pt.area.map(a => a < thr);
+  const votes = new Map();
+  for (let i = 0; i < N; i++) { const r = Pt.reg[i]; if (r < 0 || !small[r]) continue; const x = i % w, y = (i / w) | 0;
+    for (const [k, j] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + k, Y = y + j; if (X < 0 || Y < 0 || X >= w || Y >= hh) continue; const q = Pt.reg[Y * w + X]; if (q < 0 || q === r) continue; let m = votes.get(r); if (!m) votes.set(r, m = new Map()); m.set(q, (m.get(q) || 0) + (small[q] ? 1 : 4)); } }
+  for (const [r, m] of votes) { let best = -1, bv = 0; for (const [q, v] of m) if (v > bv) { bv = v; best = q; } if (best >= 0) map[r] = best; }
+  const root = r => { for (let k = 0; k < 8 && map[r] !== r; k++) r = map[r]; return r; };
+  const regP = new Int32Array(N).fill(-1), detail = new Uint8Array(N);
+  for (let i = 0; i < N; i++) { const r = Pt.reg[i]; if (r < 0) continue; regP[i] = root(r); if (small[r] && regP[i] !== r) detail[i] = 1; }
+  const dome = (reg, n) => {
+    const d = regionDist(reg, w, hh), mx = new Float32Array(n), out = new Float32Array(N);
+    for (let i = 0; i < N; i++) if (reg[i] >= 0) mx[reg[i]] = Math.max(mx[reg[i]], d[i] - .5);
+    for (let i = 0; i < N; i++) if (reg[i] >= 0) { const R = Math.max(.75, (P.round ?? 80) / 100 * mx[reg[i]]), t = Math.min(d[i] - .5, R) / R; out[i] = R * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t))); }
+    return { d, h: out };
+  };
+  const dS = dome(S.reg, S.n), mode = P.mode || 'mix', dP = mode === 'shape' ? null : dome(regP, Pt.n), H = new Float32Array(N);
+  for (let i = 0; i < N; i++) H[i] = mode === 'shape' ? dS.h[i] : mode === 'parts' ? dP.h[i] : dS.h[i] * .55 + dP.h[i] * .45;
+  const nx = new Float32Array(N), ny = new Float32Array(N), nz = new Float32Array(N), at = (x, y) => x < 0 || y < 0 || x >= w || y >= hh ? 0 : H[y * w + x];
+  for (let y = 0, i = 0; y < hh; y++) for (let x = 0; x < w; x++, i++) {
+    if (!op(i)) continue;
+    if (outl[i]) { let ox = 0, oy = 0; for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { const X = x + k, Y = y + j; if ((j || k) && (X < 0 || Y < 0 || X >= w || Y >= hh || !op(Y * w + X))) { ox += k; oy += j; } } const l = Math.hypot(ox, oy, .6) || 1; nx[i] = ox / l; ny[i] = oy / l; nz[i] = .6 / l; continue; }
+    const gx = (at(x + 1, y) - at(x - 1, y)) / 2, gy = (at(x, y + 1) - at(x, y - 1)) / 2, l = Math.hypot(gx, gy, 1); nx[i] = -gx / l; ny[i] = -gy / l; nz[i] = 1 / l;
+  }
+  return { N, op, outl, ink, nx, ny, nz, edge: dS.d };
+}
+function autoShade(s, w, hh, P) {
+  const F = shadeField(s, w, hh, P), d = s.slice(), L = lightVec(P.light || { az: 315, el: 40 }), I0 = L[2], amt = (P.amt ?? 16) / 100, hs = P.hue ?? 24;
+  const tones = P.tones ?? 3, lo = tones >= 4 ? -2 : -1, hi = tones === 2 ? 0 : tones === 4 ? 1 : tones === 5 ? 2 : 1, l2 = Math.hypot(L[0], L[1]) || 1;
+  const pal = P.snap ? Palettes.cur.colors.filter(c => c && c[3]) : null;
+  const near = (r, g, b) => { let best = null, bd = 1e9; for (const c of pal) { const dr = r - c[0], dg = g - c[1], db = b - c[2], dd = 2 * dr * dr + 4 * dg * dg + 3 * db * db; if (dd < bd) { bd = dd; best = c; } } return best; };
+  for (let i = 0; i < F.N; i++) {
+    if (!F.op(i)) continue; const k = i * 4, x = i % w, y = (i / w) | 0;
+    if (F.outl[i]) { // selective outline: the lit side borrows a deep shade of the fill next to it
+      if (!P.selout) continue; const face = (F.nx[i] * L[0] + F.ny[i] * L[1]) / l2; if (face < .35) continue;
+      let q = -1; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) { const X = x + a, Y = y + b; if (X >= 0 && Y >= 0 && X < w && Y < hh) { const j = Y * w + X; if (F.op(j) && !F.outl[j]) { q = j; break; } } }
+      if (q < 0) continue; const c = shadeStep(s[q * 4], s[q * 4 + 1], s[q * 4 + 2], -2, Math.max(amt, .14), hs); d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; continue;
+    }
+    if (F.ink[i]) continue; // line art and pupils keep their ink
+    const I = F.nx[i] * L[0] + F.ny[i] * L[1] + F.nz[i] * L[2], sd = I - I0;
+    let tf;
+    if (sd >= 0) { const u = sd / (1 - I0 + 1e-6); tf = u < .42 ? .5 * u / .42 : u < .8 ? .5 + (u - .42) / .38 : 1.5 + (u - .8) / .4; }
+    else { const v = -sd / (1 + I0); tf = -(v < .2 ? .5 * v / .2 : v < .55 ? .5 + (v - .2) / .35 : 1.5 + (v - .55) / .9); }
+    let tone = P.dither ? Math.floor(tf + .5 + ((BAYER4[(y & 3) * 4 + (x & 3)] + .5) / 16 - .5) * .7) : Math.round(tf);
+    tone = clamp(tone, lo, hi);
+    if (P.bounce !== false && tone < 0 && F.edge[i] <= 1.5 && (F.nx[i] * L[0] + F.ny[i] * L[1]) / l2 < -.3) tone = Math.min(0, tone + 1); // reflected light on the far rim
+    if (!tone) continue;
+    let c = shadeStep(s[k], s[k + 1], s[k + 2], tone, amt, hs); if (pal && pal.length) c = near(...c);
+    d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2];
+  }
+  return d;
+}
+/* tangent-space normal map from the same height field: OpenGL convention (green = up) unless flipY */
+function normalMap(s, w, hh, P, flipY) {
+  const F = shadeField(s, w, hh, P), o = new Uint8ClampedArray(F.N * 4);
+  for (let i = 0; i < F.N; i++) { const k = i * 4; if (!F.op(i)) { o[k] = o[k + 1] = 128; o[k + 2] = 255; continue; } o[k] = (F.nx[i] * .5 + .5) * 255; o[k + 1] = ((flipY ? F.ny[i] : -F.ny[i]) * .5 + .5) * 255; o[k + 2] = (F.nz[i] * .5 + .5) * 255; o[k + 3] = s[k + 3]; }
+  return o;
+}
+async function exportNormals(P) {
+  const p = App.p, n = p.layer(); if (!n || n.type !== 'pixel') { toast('Pick a pixel layer first'); return false; }
+  const imgs = p.frames.map(f => f.cels[n.id] || new Img(p.w, p.h)), W = p.w * imgs.length, out = new Uint8ClampedArray(W * p.h * 4);
+  imgs.forEach((img, f) => { const m = normalMap(img.data, p.w, p.h, P); for (let y = 0; y < p.h; y++) out.set(m.subarray(y * p.w * 4, (y + 1) * p.w * 4), (y * W + f * p.w) * 4); });
+  download(await encodePNG(out, W, p.h), (p.name + '_' + n.name).replace(/[^\w\- ]+/g, '_') + '_normal.png');
+  toast(imgs.length > 1 ? 'Normal map strip: ' + imgs.length + ' frames in a row, OpenGL convention (green up)' : 'Normal map saved, OpenGL convention (green up)', 3600); return false;
+}
+function glowFx(s, w, hh, P) {
+  const N = w * hh, reg = new Int32Array(N); for (let i = 0; i < N; i++) reg[i] = s[i * 4 + 3] ? -1 : 0;
+  const dd = regionDist(reg, w, hh, false), d = s.slice(), c = P.color, R = P.size, st = P.strength / 100;
+  for (let i = 0; i < N; i++) {
+    if (reg[i] < 0 || dd[i] > R + .5) continue; const a = clamp(1 - (dd[i] - 1) / (R + .5), 0, 1) * st, k = i * 4, x = i % w, y = (i / w) | 0;
+    if (P.dither) { if ((BAYER4[(y & 3) * 4 + (x & 3)] + .5) / 16 >= a) continue; d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = c[3]; }
+    else { d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = Math.round(c[3] * a); }
+  }
+  return d;
+}
+function overlayFx(s, w, hh, P) {
+  const d = s.slice(), c = P.color, t = P.amt / 100 * c[3] / 255;
+  eachPx(d, i => { for (let k = 0; k < 3; k++) { const b = d[i + k], o = P.mode === 'multiply' ? b * c[k] / 255 : P.mode === 'screen' ? 255 - (255 - b) * (255 - c[k]) / 255 : c[k]; d[i + k] = b + (o - b) * t; } });
+  return d;
+}
+const SHADE_PARAMS = [
+  { k: 'light', l: 'Light direction', t: 'light', d: () => ({ az: 315, el: 40 }) },
+  { k: 'mode', l: 'Shape from', t: 'select', d: 'mix', o: [['mix', 'Silhouette + color regions'], ['shape', 'Whole silhouette'], ['parts', 'Each color region']] },
+  { k: 'round', l: 'Roundness', t: 'range', min: 10, max: 100, d: 80, tip: 'How far in from the edge the surface keeps curving' },
+  { k: 'tones', l: 'Tones', t: 'range', min: 2, max: 5, d: 3, tip: '2: shadow only. 3: shadow and light. 4: adds a deep shadow. 5: adds a highlight' },
+  { k: 'amt', l: 'Step between tones (%)', t: 'range', min: 4, max: 40, d: 16 },
+  { k: 'hue', l: 'Hue shift (cool shadows, warm light)', t: 'range', min: 0, max: 60, d: 24 },
+  { k: 'dither', l: 'Dither the transitions', t: 'check', d: false },
+  { k: 'bounce', l: 'Reflected light on the shadow rim', t: 'check', d: true },
+  { k: 'keepDark', l: 'Keep dark outlines and pupils', t: 'check', d: true },
+  { k: 'selout', l: 'Selective outline on the lit side', t: 'check', d: false, tip: 'Outline pixels facing the light take a dark tone of the fill instead of the outline color' },
+  { k: 'snap', l: 'Snap new colors to the palette', t: 'check', d: false }
+];
+const GLOW_PARAMS = [{ k: 'color', l: 'Color', t: 'color', d: () => [255, 214, 110, 255] }, { k: 'size', l: 'Radius', t: 'range', min: 1, max: 12, d: 3 }, { k: 'strength', l: 'Strength (%)', t: 'range', min: 10, max: 100, d: 75 }, { k: 'dither', l: 'Dithered (no partial alpha)', t: 'check', d: true }];
+const OVERLAY_PARAMS = [{ k: 'color', l: 'Color', t: 'color', d: () => [255, 255, 255, 255] }, { k: 'amt', l: 'Amount (%)', t: 'range', min: 0, max: 100, d: 100 }, { k: 'mode', l: 'Mode', t: 'select', d: 'normal', o: [['normal', 'Replace (hit flash)'], ['multiply', 'Multiply (tint darker)'], ['screen', 'Screen (tint lighter)']] }];
+fx('autoshade', 'Auto-shade', SHADE_PARAMS, autoShade); FX.defs.autoshade.extra = [{ label: 'Export normal map', title: 'Save a normal map of this layer (every frame in one row) for lit sprites in game engines', fn: P => exportNormals(P) }];
+fx('glow', 'Outer glow', GLOW_PARAMS, glowFx);
+fx('overlay', 'Color overlay', OVERLAY_PARAMS, overlayFx);
+/* ---------- layer effect registry: applied live at composite time, stored on the layer as fx: [{ id, type, on, p }] ---------- */
+const LFX = {};
+const lfx = (type, name, params, fn, from) => LFX[type] = { type, name, params, fn, from };
+lfx('shade', 'Auto-shade', SHADE_PARAMS.filter(q => q.k !== 'snap'), autoShade, 'autoshade');
+['outline', 'shadow', 'glow', 'overlay', 'hsv', 'bc'].forEach(id => lfx(id, FX.defs[id].name, FX.defs[id].params, FX.defs[id].fn, id));
+lfx('gradmap', 'Gradient map', [{ k: 'c0', l: 'Dark end', t: 'color', d: lc }, { k: 'c1', l: 'Light end', t: 'color', d: rc }, { k: 'dither', l: 'Dither between the two', t: 'check', d: false }], (s, w, hh, P) => {
+  const d = s.slice(); eachPx(d, i => { const t = lum(d[i], d[i + 1], d[i + 2]) / 255, p = i >> 2, x = p % w, y = (p / w) | 0; const c = P.dither ? ((BAYER4[(y & 3) * 4 + (x & 3)] + .5) / 16 < t ? P.c1 : P.c0) : mix(P.c0, P.c1, t); d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; }); return d;
+});
+['posterize', 'desat', 'invert', 'pixelize', 'noise'].forEach(id => lfx(id, FX.defs[id].name, FX.defs[id].params, FX.defs[id].fn, id));
+function addLayerFx(type, params, id = App.p.layerId) {
+  const L = LFX[type], e = App.p.find(id); if (!L || !e) return;
+  const p = {}; for (const q of L.params) p[q.k] = structuredClone(params && q.k in params ? params[q.k] : (typeof q.d === 'function' ? q.d() : q.d));
+  const f = { id: uid(), type, on: true, p }; FXEd.expanded.clear(); FXEd.expanded.add(f.id);
+  fxEdit('Add ' + L.name, id, n => (n.fx ||= []).push(f));
+  if (!FXEd.el || FXEd.id !== id) FXEd.open(id);
+}
+function fxEdit(name, id, fn) {
+  const p = App.p, e = p.find(id); if (!e) return; FXEd.commit();
+  const before = structuredClone(e.node.fx || []); fn(e.node); const after = structuredClone(e.node.fx || []);
+  if (JSON.stringify(before) === JSON.stringify(after)) return;
+  fxHist(name, id, before, after);
+}
+function fxHist(name, id, before, after) {
+  const p = App.p, set = v => { const e = p.find(id); if (e) e.node.fx = structuredClone(v); };
+  p.hist.push({ name, undo() { set(before); }, redo() { set(after); } }); Bus.emit('structure'); requestRender(true);
+}
+function bakeLayerFx(id = App.p.layerId) {
+  const e = App.p.find(id); if (!e || !fxActive(e.node)) { toast('This layer has no active effects'); return; }
+  if (e.node.type !== 'pixel') { toast('Effects on a group stay live; they are baked when you flatten the image'); return; }
+  FXEd.commit();
+  structural('Apply layer effects', p => { const n = p.find(id).node, done = new Map(); p.frames.forEach(f => { const c = f.cels[n.id]; if (!c) return; if (!done.has(c)) done.set(c, new Img(p.w, p.h, new Uint8ClampedArray(applyLayerFx(n, c.data, p.w, p.h)))); f.cels[n.id] = done.get(c); }); n.fx = n.fx.filter(f => !f.on); });
+  toast('Effects applied to the pixels of every frame');
+}
+/* the floating editor: live preview while dragging, one undo step per change */
+const FXEd = {
+  el: null, id: null, pend: null, base: null, expanded: new Set(),
+  node() { const e = App.p && this.id && App.p.find(this.id); return e ? e.node : null; },
+  toggle(id = App.p.layerId) { if (this.el && this.id === id) this.close(); else this.open(id); },
+  open(id = App.p.layerId) {
+    const e = App.p.find(id); if (!e) return; if (this.el) this.close();
+    this.id = id; const el = this.el = h('div', { class: 'fxed' }); document.body.append(el);
+    const r = VP.el.getBoundingClientRect(); // dock at the right edge of the canvas, above the timeline
+    el.style.left = clamp(r.right - 322, 6, innerWidth - 320) + 'px'; el.style.bottom = clamp(innerHeight - r.bottom + 12, 6, innerHeight - 160) + 'px';
+    this.draw();
+  },
+  close() { if (!this.el) return; this.commit(); this.el.remove(); this.el = null; this.id = null; },
+  refresh() { if (!this.el || this.pend) return; if (this.node()) this.draw(); else this.close(); },
+  live() { if (!this.pend) this.pend = { id: this.id, before: this.base }; App.p.dirty = true; requestRender(); },
+  commit() { const P = this.pend; if (!P) return; this.pend = null; const e = App.p.find(P.id); if (!e) return; const after = structuredClone(e.node.fx || []); this.base = after; if (JSON.stringify(after) !== JSON.stringify(P.before)) fxHist('Edit layer effect', P.id, P.before, after); },
+  draw() {
+    const n = this.node(), el = this.el; if (!n || !el) return; this.base = structuredClone(n.fx || []); el.innerHTML = '';
+    const fx = n.fx || [], ed = (name, fn) => fxEdit(name, n.id, fn);
+    const head = h('div', { class: 'fxed-h', title: 'Drag to move' }, h('span', { class: 'fxb' }, 'fx'), h('b', null, n.name), h('span', { class: 'sp' }), h('button', { class: 'kbx', title: 'Close' + kt('layerFx'), onclick: () => this.close() }, '×'));
+    head.onpointerdown = e => { if (e.target.closest('button')) return; e.preventDefault(); const r = el.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
+      const mv = ev => { el.style.left = clamp(ev.clientX - ox, 0, innerWidth - 80) + 'px'; el.style.bottom = clamp(innerHeight - (ev.clientY - oy) - el.offsetHeight, 0, innerHeight - 40) + 'px'; };
+      const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); }; addEventListener('pointermove', mv); addEventListener('pointerup', up); };
+    const list = h('div', { class: 'fxed-l' });
+    if (!fx.length) list.append(h('div', { class: 'ohint', style: { margin: '2px' } }, 'No effects yet. Layer effects are live: the pixels underneath never change, so you can keep drawing and tweak them any time. Apply bakes them in.'));
+    fx.forEach((f, i) => {
+      const L = LFX[f.type]; if (!L) return; const open = this.expanded.has(f.id);
+      const card = h('div', { class: 'fxc' + (f.on ? '' : ' off') }, h('div', { class: 'fxc-h' },
+        h('input', { type: 'checkbox', checked: f.on, title: f.on ? 'Turn off' : 'Turn on', onchange: e => ed((e.target.checked ? 'Enable ' : 'Disable ') + L.name, n => n.fx[i].on = e.target.checked) }),
+        h('span', { class: 'nm', title: 'Show or hide the settings', onclick: () => { open ? this.expanded.delete(f.id) : this.expanded.add(f.id); this.draw(); } }, h('i', null, open ? '▾' : '▸'), L.name),
+        h('button', { class: 'kbx', title: 'Apply earlier', disabled: i === 0, onclick: () => ed('Reorder layer effects', n => { const [x] = n.fx.splice(i, 1); n.fx.splice(i - 1, 0, x); }) }, '↑'),
+        h('button', { class: 'kbx', title: 'Apply later', disabled: i === fx.length - 1, onclick: () => ed('Reorder layer effects', n => { const [x] = n.fx.splice(i, 1); n.fx.splice(i + 1, 0, x); }) }, '↓'),
+        h('button', { class: 'kbx', title: 'Remove', onclick: () => ed('Remove ' + L.name, n => n.fx.splice(i, 1)) }, '×')));
+      if (open) { const b = h('div', { class: 'fxc-b' }); L.params.forEach(q => b.append(fxParam(q, f.p, () => this.live(), () => this.commit()))); card.append(b); }
+      list.append(card);
+    });
+    const add = h('select', { class: 'grow', title: 'Add an effect to this layer', onchange: e => { const t = e.target.value; e.target.value = ''; if (t) addLayerFx(t, null, n.id); } }, h('option', { value: '' }, '+ Add effect…'), Object.values(LFX).map(L => h('option', { value: L.type }, L.name)));
+    el.append(head, list, h('div', { class: 'fxed-f' }, add, h('button', { class: 'btn sm', disabled: !fxActive(n) || n.type !== 'pixel', title: 'Bake the active effects into the pixels of every frame', onclick: () => bakeLayerFx(n.id) }, 'Apply')));
+  }
+};
+/* drag the light around a little lit sphere: center = overhead, rim = grazing; Shift snaps to 45° */
+function lightWidget(L, onInput, onCommit) {
+  const S = 52, R = S / 2 - 2, c0 = S / 2, cv = h('canvas', { width: S, height: S, class: 'lightw', title: 'Drag to move the light. Center = straight above, edge = grazing. Shift snaps to 45°' }), lab = h('div', { class: 'ohint', style: { margin: 0 } });
+  const RAMP = ['#1d1a17', '#3a342d', '#675d51', '#a2937d', '#e8dabd'].map(hexToRgba);
+  const draw = () => {
+    const c = cv.getContext('2d'), im = c.createImageData(S, S), v = lightVec(L);
+    for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const dx = (x + .5 - c0) / R, dy = (y + .5 - c0) / R, r2 = dx * dx + dy * dy; if (r2 > 1) continue; const I = dx * v[0] + dy * v[1] + Math.sqrt(1 - r2) * v[2], col = RAMP[I < .08 ? 0 : I < .38 ? 1 : I < .68 ? 2 : I < .92 ? 3 : 4]; im.data.set(col, (y * S + x) * 4); }
+    c.putImageData(im, 0, 0);
+    const rr = R * (1 - L.el / 90), mx = Math.round(c0 + Math.sin(L.az * DEG) * rr), my = Math.round(c0 - Math.cos(L.az * DEG) * rr);
+    c.fillStyle = '#000'; c.fillRect(mx - 2, my - 2, 5, 5); c.fillStyle = TC.acc; c.fillRect(mx - 1, my - 1, 3, 3);
+    lab.textContent = 'From the ' + compass(L.az) + ', ' + Math.round(L.el) + '° high';
+  };
+  const set = e => { const r = cv.getBoundingClientRect(), dx = (e.clientX - r.left) / r.width * S - c0, dy = (e.clientY - r.top) / r.height * S - c0; let az = (Math.atan2(dx, -dy) / DEG + 360) % 360; if (e.shiftKey) az = Math.round(az / 45) * 45 % 360; L.az = Math.round(az); L.el = Math.round(clamp(90 * (1 - Math.hypot(dx, dy) / R), 3, 90)); draw(); onInput(); };
+  cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); set(e); cv.onpointermove = set; cv.onpointerup = () => { cv.onpointermove = null; onCommit(); }; });
+  draw(); return h('div', { class: 'prow', style: { gap: '12px' } }, cv, lab);
+}
+act('layerFx', 'Layer effects…', 'Ctrl+Shift+F', () => FXEd.toggle());
+act('bakeFx', 'Apply layer effects to pixels', null, () => bakeLayerFx(), { en: () => { const l = App.p.layer(); return !!(l && fxActive(l)); } });
 </script>
 <script>
 /* ================= FILE I/O: project files, PNG/GIF/APNG/ZIP, import, autosave ================= */
@@ -4425,11 +4722,11 @@ function drawLogo() {
 function wireBus() {
   Bus.on('tool', () => { updateTools(); buildOptions('left'); buildOptions('right'); VP.el.className = cursorClass(); requestRender(); });
   Bus.on('toolopts', () => { buildOptions('left'); buildOptions('right'); });
-  Bus.on('structure', () => { buildTimeline(); buildTabs(); updateStatus(); });
+  Bus.on('structure', () => { buildTimeline(); buildTabs(); updateStatus(); FXEd.refresh(); });
   Bus.on('frame', () => { updateTimelineSel(); updateStatus(); requestRender(); });
   Bus.on('cels', () => updateThumbs()); Bus.on('thumbs', () => updateThumbs());
   Bus.on('history', () => { buildTabs(); updateThumbs(); });
-  Bus.on('project', () => { buildTabs(); buildTimeline(); buildAssists(); updateStatus(); drawHistory(); });
+  Bus.on('project', () => { FXEd.close(); buildTabs(); buildTimeline(); buildAssists(); updateStatus(); drawHistory(); });
   Bus.on('selection', () => { updateStatus(); requestRender(); });
   Bus.on('view', () => updateStatus());
   Bus.on('prefs', () => { updateGlobalToolbar(); buildAssists(); $('#viewwrap').classList.toggle('norulers', !Prefs.rulers); updateTimelineBar(); requestRender(true); });
