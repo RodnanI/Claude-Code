@@ -248,6 +248,15 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:3px;bac
 .kbtable div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px dashed var(--line);break-inside:avoid}
 .kbtable .kbctl{display:flex;gap:4px;align-items:center}.kbtable .custom>span:first-child{color:var(--acc)}
 .kbbtn{font:11px var(--mono);background:var(--raise);color:var(--tx);border:1px solid var(--line2);border-radius:3px;padding:1px 6px;cursor:pointer;min-width:44px}.kbbtn:hover{border-color:var(--acc)}.kbbtn.unset{opacity:.45}.kbbtn.rec{border-color:var(--acc);color:var(--acc)}
+.kidx{position:fixed;z-index:110;display:flex;flex-direction:column;min-width:240px;min-height:180px;max-width:90vw;max-height:92vh;resize:both;overflow:hidden;background:var(--panel);border:1px solid var(--line2);border-radius:6px;box-shadow:var(--shadow);font-size:11.5px}
+.kidx-h{display:flex;align-items:center;gap:4px;height:28px;padding:0 6px 0 10px;background:var(--panel2);border-bottom:1px solid var(--line);font-weight:600;color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.7px;cursor:move;user-select:none}.kidx-h .sp{flex:1}
+.kidx-h .kbx{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;border-radius:3px}.kidx-h .kbx.on{color:var(--acc);background:var(--raise)}
+.kidx-q{padding:6px 8px;border-bottom:1px solid var(--line)}.kidx-q input{width:100%}
+.kidx-b{flex:1;overflow-y:auto;padding:2px 8px 8px}
+.kidx-b h5{margin:10px 0 3px;color:var(--acc);font-size:10.5px;text-transform:uppercase;letter-spacing:.8px}
+.kidx-r{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:3px 4px;border-bottom:1px dashed var(--line);cursor:pointer;border-radius:3px}.kidx-r:hover{background:var(--raise)}.kidx-r.static{cursor:default}.kidx-r.static:hover{background:none}
+.kidx-r kbd{white-space:nowrap}.kidx-r kbd.unset{opacity:.4}
+.kidx-f{padding:4px 8px;border-top:1px solid var(--line);color:var(--mute);font-size:10.5px}.kidx-none{padding:14px 4px;color:var(--mute)}
 .kbx{background:none;border:0;color:var(--mute);cursor:pointer;padding:0 3px;font-size:13px}.kbx:hover{color:var(--acc)}
 .kbtable h4{margin:10px 0 4px;color:var(--acc);font-size:11px;text-transform:uppercase;letter-spacing:.8px;break-after:avoid}
 kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border:1px solid var(--line2);border-bottom-width:2px;border-radius:3px;padding:0 4px;color:var(--tx)}
@@ -464,7 +473,7 @@ const PREF_DEFAULTS = {
   smartShapes: true, smartHold: true, smartHoldMs: 550, circleTol: 0.86, smartAxisSnap: 12,
   onion: false, onionPast: 1, onionFuture: 1, onionAlpha: 0.35, onionTint: true, onionPastColor: '#e5574a', onionFutureColor: '#4fb3a1',
   autosave: true, maxUndo: 120, zoomStep: 1.25, defaultW: 64, defaultH: 64, recentColors: [], uiPanels: {},
-  firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}
+  firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}, kidx: { open: false, x: -1, y: 70, w: 320, h: 460 }
 };
 const Prefs = (() => {
   let p = {};
@@ -2537,7 +2546,7 @@ function buildGlobalToolbar() {
     if (k === 'symX' || k === 'symY') b.oncontextmenu = e => { e.preventDefault(); const p = App.p; if (k === 'symX') p.symX = p.w - 1; else p.symY = p.h - 1; toast('Axis recentered'); requestRender(); };
     host.append(b);
   }
-  host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', title: 'Quick tour of the basics', onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt', title: 'Watch an animation get made, step by step', onclick: () => Demo.start() }, 'Guided demo'));
+  host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', id: 'kidx-btn', title: 'Shortcut index' + kt('keyIndex'), onclick: () => KIdx.toggle() }, 'Keys'), h('button', { class: 'gt', title: 'Quick tour of the basics', onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt', title: 'Watch an animation get made, step by step', onclick: () => Demo.start() }, 'Guided demo'));
   updateGlobalToolbar();
 }
 function updateGlobalToolbar() {
@@ -3077,7 +3086,7 @@ act('swap', 'Swap colors', 'X', () => swapColors()); act('defColors', 'Default c
 act('brushUp', 'Bigger brush', ']', () => brushSize('left', 1)); act('brushDown', 'Smaller brush', '[', () => brushSize('left', -1));
 act('brushUpR', 'Bigger right brush', '}', () => brushSize('right', 1)); act('brushDownR', 'Smaller right brush', '{', () => brushSize('right', -1));
 act('tour', 'Quick tour (basics)', 'F1', () => Tour.start()); act('demo', 'Guided animation tutorial', 'Shift+F1', () => Demo.start());
-act('keys', 'Keyboard shortcuts…', '?', () => shortcutsDialog(), { alt: ['Shift+/'] }); act('resetKeys', 'Reset custom shortcuts', null, async () => { if (await confirmDialog('Reset shortcuts', 'Restore every keyboard shortcut to its default?', 'Reset', true)) { Prefs.keys = {}; savePrefs(); applyKeyPrefs(true); toast('Shortcuts restored to defaults'); } }); act('about', 'About', null, () => aboutDialog()); act('splash', 'Start screen', null, () => splash()); act('introReplay', 'Replay intro animation', null, () => IntroCtl.replay());
+act('keys', 'Keyboard shortcuts…', '?', () => shortcutsDialog(), { alt: ['Shift+/'] }); act('keyIndex', 'Shortcut index panel', 'F2', () => KIdx.toggle(), { ck: () => !!KIdx.el }); act('resetKeys', 'Reset custom shortcuts', null, async () => { if (await confirmDialog('Reset shortcuts', 'Restore every keyboard shortcut to its default?', 'Reset', true)) { Prefs.keys = {}; savePrefs(); applyKeyPrefs(true); toast('Shortcuts restored to defaults'); } }); act('about', 'About', null, () => aboutDialog()); act('splash', 'Start screen', null, () => splash()); act('introReplay', 'Replay intro animation', null, () => IntroCtl.replay());
 function brushSize(slot, d) { const o = toolOpts(slot, App.slots[slot].tool); if (!('size' in o)) return; o.size = clamp(o.size + d, 1, 64); Bus.emit('toolopts'); status(slot + ' brush: ' + o.size + 'px'); requestRender(); }
 function moveLayerSel(d) { const rows = rowsOf(App.p), i = rows.findIndex(r => r.node.id === App.p.layerId); const n = rows[clamp(i + d, 0, rows.length - 1)]; if (n) setLayer(n.node.id); }
 function setTheme(t) { Prefs.theme = t; document.documentElement.dataset.theme = t; savePrefs(); for (const k in _iconCache) delete _iconCache[k]; buildTools(); buildGlobalToolbar(); buildTimelineBar(); buildTimeline(); drawLogo(); requestRender(true); }
@@ -3105,7 +3114,7 @@ const MENUS = [
   ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
   ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['theme_graphite', 'theme_paper', 'theme_mono']], 'zen', 'fullscreen']],
   ['Snap', ['snap', '-', ...SNAP_MODES.map(m => 'snap_' + m[0]), '-', ['Angle set', ['ang_pixel', 'ang_15', 'ang_22.5', 'ang_30', 'ang_45']], 'snapPanel', '-', 'smart', 'smartHold']],
-  ['Help', ['tour', 'demo', '-', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
+  ['Help', ['tour', 'demo', '-', 'keyIndex', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
 ];
 function buildMenus() {
   const nav = $('#menus'); nav.innerHTML = ''; let open = null;
@@ -3133,6 +3142,7 @@ function applyKeyPrefs(rebuild) {
   KEYMAP = null; if (!rebuild) return;
   $$('.mi[data-a]').forEach(el => { const k = A[el.dataset.a].keys; let kb = el.querySelector('.kb'); if (!k) { if (kb) kb.remove(); return; } if (!kb) el.append(kb = h('span', { class: 'kb' })); kb.textContent = k; });
   if (App.p) buildTimelineBar();
+  KIdx.draw();
 }
 function bindKey(id, combo) {
   const a = A[id], moved = [];
@@ -3368,9 +3378,13 @@ function prefsDialog() {
     h('div', { class: 'full' }, h('button', { class: 'btn sm danger', onclick: async () => { if (await confirmDialog('Reset preferences', 'Restore all preferences to their defaults?', 'Reset', true)) { localStorage.removeItem('pxw-prefs'); location.reload(); } } }, 'Reset all preferences'))),
     buttons: [{ label: 'Done', pri: true }] });
 }
+function staticKeySections() {
+  return [['Mouse', [['Draw with left / right tool', 'LMB / RMB'], ['Pan', 'Space+drag, MMB'], ['Zoom at cursor', 'Wheel'], ['Brush size', 'Alt+Wheel'], ['Pick color', 'Alt+click'], ['Bypass snapping', 'Hold Ctrl'], ['Guides', 'Drag from rulers'], ['Linked duplicate', 'Shift+click ⧉']]],
+    ['Smart shapes', [['Detect while drawing', 'Shift'], ['Detect last stroke', 'Tap Shift'], ['Cycle alternatives', 'Tab'], ['Pick alternative', '1-9'], ['Toggle fill', 'F'], ['Polygon sides', '[ ]'], ['Apply / keep freehand', 'Enter / Esc']]],
+    ['Tools (left / right)', TOOL_ORDER.filter(t => t !== '|').map(t => [Tools[t].name, Tools[t].key + '  /  Alt+' + Tools[t].key])]];
+}
 function shortcutsDialog() {
   const sec = (t, rows) => [h('h4', null, t), ...rows.map(([a, b]) => h('div', null, h('span', null, a), h('kbd', null, b)))];
-  const toolRows = TOOL_ORDER.filter(t => t !== '|').map(t => [Tools[t].name, Tools[t].key + '  /  Alt+' + Tools[t].key]);
   const q = h('input', { type: 'text', placeholder: 'Filter by name or key', style: { width: '100%', marginBottom: '10px' } });
   const box = h('div', { class: 'kbtable' }), stop = () => { KeyCapture = null; document.removeEventListener('pointerdown', stop, true); };
   const capture = (id, btn) => {
@@ -3395,9 +3409,7 @@ function shortcutsDialog() {
     const f = q.value.trim().toLowerCase(), hit = (...t) => !f || t.some(x => x && String(x).toLowerCase().includes(f));
     const fixed = (t, rows) => { rows = rows.filter(r => hit(...r)); return rows.length ? sec(t, rows) : []; };
     box.innerHTML = '';
-    box.append(...fixed('Mouse', [['Draw with left / right tool', 'LMB / RMB'], ['Pan', 'Space+drag, MMB'], ['Zoom at cursor', 'Wheel'], ['Brush size', 'Alt+Wheel'], ['Pick color', 'Alt+click'], ['Bypass snapping', 'Hold Ctrl'], ['Guides', 'Drag from rulers'], ['Linked duplicate', 'Shift+click ⧉']]),
-      ...fixed('Smart shapes', [['Detect while drawing', 'Shift'], ['Detect last stroke', 'Tap Shift'], ['Cycle alternatives', 'Tab'], ['Pick alternative', '1-9'], ['Toggle fill', 'F'], ['Polygon sides', '[ ]'], ['Apply / keep freehand', 'Enter / Esc']]),
-      ...fixed('Tools (left / right)', toolRows));
+    box.append(...staticKeySections().flatMap(([t, r]) => fixed(t, r)));
     const seen = new Set();
     const group = (t, ids) => { ids = ids.filter(i => A[i] && !seen.has(i) && hit(A[i].label, A[i].keys, ...(A[i].alt || []))); ids.forEach(i => seen.add(i)); if (ids.length) box.append(h('h4', null, t), ...ids.map(row)); };
     MENUS.forEach(([t, items]) => group(t, items.flat(2).filter(i => typeof i === 'string')));
@@ -3407,6 +3419,46 @@ function shortcutsDialog() {
   openDialog({ title: 'Keyboard & mouse', width: 900, onCancel: stop, onOpen: () => q.focus(), body: h('div', null, h('div', { class: 'ohint', style: { marginBottom: '6px' } }, 'Click any shortcut to rebind it. Changes are saved in this browser. Help > Reset custom shortcuts restores the defaults.'), q, box),
     buttons: [{ label: 'Close', pri: true, fn: stop }] });
 }
+/* ---------- shortcut index: non-modal, searchable panel that stays open while you draw ---------- */
+const KIdx = {
+  el: null, only: false,
+  toggle(force) { const open = force ?? !this.el; if (open && !this.el) this.open(); else if (!open && this.el) this.close(); },
+  open() {
+    const st = Prefs.kidx;
+    const q = h('input', { type: 'text', placeholder: 'Search actions or keys', oninput: () => this.draw() });
+    const body = h('div', { class: 'kidx-b' });
+    const head = h('div', { class: 'kidx-h' }, h('span', null, 'Shortcut index'), h('span', { class: 'sp' }),
+      h('button', { class: 'kbx', title: 'Show only actions that have a shortcut', onclick: e => { this.only = !this.only; e.currentTarget.classList.toggle('on', this.only); this.draw(); } }, 'bound'),
+      h('button', { class: 'kbx', title: 'Rebind shortcuts', onclick: () => shortcutsDialog() }, 'edit'),
+      h('button', { class: 'kbx', title: 'Close' + kt('keyIndex'), onclick: () => this.close() }, '×'));
+    if (st.x < 0) st.x = Math.max(0, innerWidth - st.w - (Prefs.rcW || 288) - 16);
+    const el = this.el = h('div', { class: 'kidx', style: { left: st.x + 'px', top: st.y + 'px', width: st.w + 'px', height: st.h + 'px' } }, head, h('div', { class: 'kidx-q' }, q), body, h('div', { class: 'kidx-f' }, 'Click a row to run it. Drag the title to move, the corner to resize.'));
+    this.q = q; this.body = body; document.body.append(el); this.clampPos();
+    head.onpointerdown = e => {
+      if (e.target.closest('button')) return; e.preventDefault(); const r = el.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
+      const mv = ev => { el.style.left = (ev.clientX - ox) + 'px'; el.style.top = (ev.clientY - oy) + 'px'; this.clampPos(); };
+      const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); this.save(); };
+      addEventListener('pointermove', mv); addEventListener('pointerup', up);
+    };
+    el.addEventListener('pointerup', () => this.save());
+    body.onclick = e => { const r = e.target.closest('[data-a]'); if (!r) return; const a = A[r.dataset.a]; if (a.en && !a.en()) { toast(a.label.replace('…', '') + ' is not available right now'); return; } a.run(); };
+    this.draw(); Prefs.kidx.open = true; savePrefs(); setTimeout(() => q.focus(), 0);
+  },
+  close() { if (!this.el) return; this.save(); this.el.remove(); this.el = null; Prefs.kidx.open = false; savePrefs(); },
+  clampPos() { const el = this.el, r = el.getBoundingClientRect(); el.style.left = clamp(r.left, 0, Math.max(0, innerWidth - 80)) + 'px'; el.style.top = clamp(r.top, 0, Math.max(0, innerHeight - 40)) + 'px'; },
+  save() { if (!this.el) return; const r = this.el.getBoundingClientRect(); Object.assign(Prefs.kidx, { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) }); savePrefs(); },
+  draw() {
+    if (!this.el) return; const f = this.q.value.trim().toLowerCase(), hit = (...t) => !f || t.some(x => x && String(x).toLowerCase().includes(f));
+    const out = [], seen = new Set();
+    const group = (t, rows) => { if (rows.length) out.push(h('h5', null, t), ...rows); };
+    const actRows = ids => ids.filter(i => A[i] && !seen.has(i) && (seen.add(i), true)).map(i => A[i]).filter(a => (!this.only || a.keys) && hit(a.label, a.keys, ...(a.alt || [])))
+      .map(a => h('div', { class: 'kidx-r', 'data-a': a.id, title: 'Run: ' + a.label.replace('…', '') }, h('span', null, a.label.replace('…', '')), a.keys ? h('kbd', null, [a.keys, ...(a.alt || [])].join(' / ')) : h('kbd', { class: 'unset' }, 'unset')));
+    MENUS.forEach(([t, items]) => group(t, actRows(items.flat(2).filter(i => typeof i === 'string'))));
+    group('Other', actRows(Object.keys(A)));
+    staticKeySections().forEach(([t, rows]) => group(t, rows.filter(r => hit(...r)).map(([a, b]) => h('div', { class: 'kidx-r static' }, h('span', null, a), h('kbd', null, b)))));
+    this.body.innerHTML = ''; this.body.append(...(out.length ? out : [h('div', { class: 'kidx-none' }, 'Nothing matches "' + this.q.value + '"')]));
+  }
+};
 function aboutDialog() {
   openDialog({ title: 'About Pixelorama Web', body: h('div', { style: { maxWidth: '460px', lineHeight: 1.6 } }, h('p', null, 'A single-file, desktop-first pixel art and animation editor inspired by Pixelorama, the free and open source editor by Orama Interactive. Everything runs locally in your browser; nothing is uploaded.'), h('p', { style: { color: 'var(--tx2)' } }, 'Extras beyond the original: smart shape detection (Shift while drawing), multi-scheme snapping, a quick tour and a guided animation demo, hue-shifted color ramps, RotSprite-style rotation, palette-step shading and GIF/APNG/spritesheet export.')), buttons: [{ label: 'Nice', pri: true }] });
 }
@@ -4093,6 +4145,7 @@ function boot() {
   applyKeyPrefs(); initViewport(); buildMenus(); buildTools(); buildGlobalToolbar(); buildTimelineBar(); initColorPanel(); initPalettePanel(); buildPalette();
   initRightTabs(); initRefPanel(); initSplitters(); initInput(); initDropAndAutosave(); wireBus(); drawLogo();
   createProject(Prefs.defaultW, Prefs.defaultH, 'Untitled');
+  if (Prefs.kidx.open) KIdx.open();
   Bus.emit('tool'); Bus.emit('color'); Bus.emit('prefs');
   requestAnimationFrame(() => { fitView(); requestRender(true); });
   const hash = location.hash.slice(1);
