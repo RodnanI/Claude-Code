@@ -433,6 +433,19 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .fxv{font-family:var(--mono);min-width:30px;text-align:right}
 .kbx:disabled{opacity:.25;pointer-events:none}
 .lightw{width:104px;height:104px;image-rendering:pixelated;cursor:crosshair;flex:none;touch-action:none}
+/* ramp studio, recolor */
+.rs-prev{display:flex;flex-direction:column;gap:10px;background:var(--canvas-bg);border:1px solid var(--line);border-radius:6px;padding:12px;min-height:260px;max-height:62vh;overflow-y:auto}
+.rs-row{display:flex;align-items:center;gap:12px}
+.rs-sph{width:72px;height:72px;image-rendering:pixelated;flex:none}
+.rs-sw{display:flex;flex:1;height:40px;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px #0006}.rs-sw i{flex:1;cursor:pointer}.rs-sw i:hover{box-shadow:inset 0 0 0 2px #fff8}
+.rs-chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.rs-chip{width:26px;height:22px;border-radius:4px;border:1px solid var(--line2);cursor:pointer;padding:0}.rs-chip.off{opacity:.3}
+.rc-list{display:flex;flex-direction:column;gap:2px;max-height:250px;overflow-y:auto;padding-right:4px}
+.rc-row{display:flex;align-items:center;gap:7px;padding:1px 2px;border-radius:4px}.rc-row.set{background:var(--sel)}
+.rc-sw{width:30px;height:18px;border-radius:3px;border:1px solid var(--line2);flex:none;padding:0;display:block}.rc-to{cursor:pointer}.rc-to:hover{border-color:var(--acc)}
+.rc-ar{color:var(--mute)}.rc-n{flex:1;text-align:right;color:var(--mute);font:10.5px var(--mono)}
+.rc-pal{display:grid;grid-template-columns:repeat(8,20px);gap:3px}.rc-pal i{width:20px;height:20px;border-radius:3px;cursor:pointer;box-shadow:0 0 0 1px #0006}.rc-pal i:hover{transform:scale(1.15)}
+.pop.over{z-index:260}
 /* timelapse */
 .lapse-stage{min-height:200px}
 .lapse-info{font:11px var(--mono);color:var(--tx2);min-height:16px}
@@ -3446,10 +3459,10 @@ function brushFromSelection() {
 /* ---------- menubar ---------- */
 const MENUS = [
   ['File', ['new', 'open', '-', 'save', 'saveAs', '-', 'import', 'export', 'exportPNG', 'timelapse', '-', 'restore', 'close']],
-  ['Edit', ['undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteIn', 'delete', 'fillL', 'fillR', '-', 'brush', 'clearBrushes', '-', 'prefs']],
+  ['Edit', ['undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteIn', 'delete', 'fillL', 'fillR', '-', 'brush', 'clearBrushes', '-', 'rampStudio', '-', 'prefs']],
   ['Select', ['selAll', 'deselect', 'invertSel', '-', 'grow', 'shrink', '-', 'selContent', 'selColor']],
   ['Image', ['resizeCanvas', 'scaleImage', 'cropSel', 'cropContent', 'center', '-', 'flipH', 'flipV', 'rotCW', 'rotCCW', 'rot180', 'rotate', 'offset']],
-  ['Effects', ['layerFx', 'bakeFx', '-', 'fx_autoshade', 'fx_outline', 'fx_shadow', 'fx_glow', '-', 'fx_hsv', 'fx_bc', 'fx_overlay', 'fx_invert', 'fx_desat', 'fx_replace', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
+  ['Effects', ['layerFx', 'bakeFx', '-', 'fx_autoshade', 'fx_outline', 'fx_shadow', 'fx_glow', '-', 'fx_hsv', 'fx_bc', 'fx_overlay', 'fx_invert', 'fx_desat', 'fx_replace', 'recolor', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
   ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'layerSelUp', 'layerSelDown', 'mergeDown', 'flatten', '-', 'hideLayer', 'lockLayer', 'clip', 'layerFx', 'layerProps']],
   ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
   ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', 'critique', '-', ['Theme', ['themePicker', '-', ...THEMES.map(t => 'theme_' + t.id), '-', 'themeNext', 'themePrev']], 'zen', 'fullscreen']],
@@ -3818,6 +3831,7 @@ function paletteMenu(anchor) {
   const addPal = (name, colors) => { let n = name, i = 2; while (P.all[n]) n = name + ' ' + i++; P.all[n] = { name: n, preset: false, colors }; P.save(); P.set(n); };
   const sortBy = f => { const p = P.editable(); p.colors = p.colors.filter(Boolean).sort((a, b) => f(a) - f(b)); P.save(); buildPalette(); };
   ctxMenu(r.left - 150, r.bottom + 4, [
+    ['Ramp studio…', () => rampStudio()], '-',
     ['New empty palette…', async () => { const n = await named('New palette', 'My palette'); if (n) addPal(n, Array(16).fill(null)); }],
     ['Duplicate palette', () => addPal(P.cur.name + ' copy', P.cur.colors.map(c => c && c.slice()))],
     ['Rename…', async () => { if (P.cur.preset) { toast('Presets cannot be renamed; duplicate it first'); return; } const n = await named('Rename palette', P.cur.name); if (n && !P.all[n]) { const p = P.cur; delete P.all[p.name]; p.name = n; P.all[n] = p; P.save(); P.set(n); } }],
@@ -4756,6 +4770,17 @@ function oklabToRgb(L, a, b) {
   return [g(4.0767416621 * l - 3.3077115913 * m + .2309699292 * s), g(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * s), g(-.0041960863 * l - .7034186147 * m + 1.707614701 * s)];
 }
 const labDist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+/* OKLCH helpers: L 0-1, C chroma, h degrees. Out-of-gamut colors lose chroma (not hue) until they fit sRGB */
+const toLch = c => { const [L, a, b] = oklab(c[0], c[1], c[2]); return [L, Math.hypot(a, b), (Math.atan2(b, a) / DEG + 360) % 360]; };
+function lchRgb(L, C, hh) {
+  const lin = (L, C) => { const a = C * Math.cos(hh * DEG), b = C * Math.sin(hh * DEG), l = (L + .3963377774 * a + .2158037573 * b) ** 3, m = (L - .1055613458 * a - .0638541728 * b) ** 3, s = (L - .0894841775 * a - 1.291485548 * b) ** 3;
+    return [4.0767416621 * l - 3.3077115913 * m + .2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - .3413193965 * s, -.0041960863 * l - .7034186147 * m + 1.707614701 * s]; };
+  const ok = v => v.every(x => x >= -1e-4 && x <= 1 + 1e-4);
+  L = clamp(L, 0, 1); let lo = 0, hi = C;
+  if (!ok(lin(L, C))) { for (let k = 0; k < 18; k++) { const mid = (lo + hi) / 2; if (ok(lin(L, mid))) lo = mid; else hi = mid; } C = lo; }
+  const [r, g, b] = lin(L, C), enc = x => { x = clamp(x, 0, 1); return Math.round((x <= .0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - .055) * 255); };
+  return [enc(r), enc(g), enc(b), 255];
+}
 const CRIT = {
   stray: { name: 'Stray pixels', color: '#ff5d5d', fix: 'Delete', tip: 'Single opaque pixels with nothing around them, usually leftovers from erasing.' },
   orphan: { name: 'Noise pixels', color: '#ffa53d', fix: 'Merge', tip: 'Lone pixels in a shade only slightly off from what surrounds them. They read as noise, not detail. High-contrast glints and pupils are left alone.' },
@@ -4915,6 +4940,108 @@ const Crit = {
 };
 ['cels', 'history', 'frame', 'structure', 'project'].forEach(ev => Bus.on(ev, () => Crit.schedule()));
 act('critique', 'Pixel critique', 'Shift+C', () => Crit.toggle(), { ck: () => !!Crit.el });
+</script>
+<script>
+/* ================= RAMP STUDIO & RECOLOR ================= */
+/* a ramp around one base color in OKLCH: even steps of perceived lightness, the base itself in the middle,
+   chroma easing off toward the ends and hue sliding toward cool shadows and warm light (or the reverse) */
+function makeRampLch(base, P) {
+  const [L0, C0, h0] = toLch(base), n = P.steps, lo = Math.min(P.lmin / 100, L0 - .04), hi = Math.max(P.lmax / 100, L0 + .04);
+  const m = clamp(Math.round((L0 - lo) / Math.max(.01, hi - lo) * (n - 1)), 1, n - 2), out = [];
+  const warm = P.dir === 'cool' ? 265 : 95, cool = P.dir === 'cool' ? 95 : 285; // OKLCH: ~95 is yellow, ~265-285 blue-violet
+  const toward = (hh, target, amt) => { const d = ((target - hh + 540) % 360) - 180; return hh + Math.sign(d) * Math.min(Math.abs(d), amt); };
+  for (let i = 0; i < n; i++) {
+    const t = i < m ? -(m - i) / m : (i - m) / (n - 1 - m), L = t < 0 ? L0 + (L0 - lo) * t : L0 + (hi - L0) * t;
+    const hue = P.dir === 'none' || C0 < .01 ? h0 : toward(h0, t < 0 ? cool : warm, P.shift / 2 * Math.abs(t));
+    const f = P.peak === 'dark' ? (t < 0 ? 1 + .15 * -t : 1 - .6 * t * t) : P.peak === 'light' ? (t > 0 ? 1 + .12 * t : 1 - .5 * t * t) : 1 - .45 * t * t;
+    out.push(i === m && P.sat === 100 ? [base[0], base[1], base[2], 255] : lchRgb(L, Math.max(0, C0 * f * P.sat / 100), hue));
+  }
+  return out;
+}
+const HARMONY = { analog: [-32, 0, 32], comp: [0, 180], split: [0, 150, 210], triad: [0, 120, 240], tetrad: [0, 90, 180, 270], mono: [0] };
+function harmonyBases(base, kind) { const [L, C, hh] = toLch(base); return HARMONY[kind].map(o => o ? lchRgb(L, Math.max(C, .07), (hh + o + 360) % 360) : base.slice()); }
+/* a little dithered sphere lit from the top-left, painted with nothing but the ramp: shows how it reads as shading */
+function rampSphere(ramp, S = 24) {
+  const cv = h('canvas', { width: S, height: S, class: 'rs-sph' }), c = cv.getContext('2d'), im = c.createImageData(S, S), R = S / 2 - 1.5, L = lightVec({ az: 315, el: 35 });
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const dx = (x + .5 - S / 2) / R, dy = (y + .5 - S / 2) / R, r2 = dx * dx + dy * dy; if (r2 > 1) continue;
+    const I = clamp(dx * L[0] + dy * L[1] + Math.sqrt(1 - r2) * L[2], 0, 1), k = clamp(Math.floor(I * (ramp.length - .01) + ((BAYER4[(y & 3) * 4 + (x & 3)] + .5) / 16 - .5) * .8), 0, ramp.length - 1);
+    im.data.set(r2 > .86 && I < .5 ? ramp[0] : ramp[k], (y * S + x) * 4);
+  }
+  c.putImageData(im, 0, 0); return cv;
+}
+function rampStudio() {
+  const P = { steps: 7, shift: 40, dir: 'warm', lmin: 16, lmax: 94, sat: 100, peak: 'mid', harmony: 'custom', gray: false };
+  const bases = [App.colors.left.slice()]; if (toLch(App.colors.right)[1] > .03 && !sameColor(App.colors.right, App.colors.left)) bases.push(App.colors.right.slice());
+  const chips = h('div', { class: 'rs-chips' }), prev = h('div', { class: 'rs-prev' });
+  const ramps = () => { const bs = P.harmony === 'custom' ? bases : harmonyBases(bases[0], P.harmony), r = bs.map(b => makeRampLch(b, P)); if (P.gray) r.push(makeRampLch(lchRgb(.62, .014, toLch(bs[0])[2]), P)); return r; };
+  const draw = () => {
+    chips.innerHTML = '';
+    bases.forEach((b, i) => chips.append(h('button', { class: 'rs-chip' + (P.harmony !== 'custom' && i ? ' off' : ''), style: { background: cssColor(b) }, title: rgbaToHex(b) + (bases.length > 1 ? '\nClick to remove' : ''), onclick: () => { if (bases.length > 1) { bases.splice(i, 1); draw(); } } })));
+    chips.append(h('button', { class: 'btn sm', title: 'Add the current left color as another base', onclick: () => { bases.push(App.colors.left.slice()); draw(); } }, '+ Left color'));
+    if (P.harmony !== 'custom') chips.append(h('div', { class: 'ohint', style: { width: '100%', margin: '4px 0 0' } }, 'Harmonies grow from the first base color.'));
+    prev.innerHTML = ''; const rs = ramps();
+    for (const r of rs) prev.append(h('div', { class: 'rs-row' }, rampSphere(r), h('div', { class: 'rs-sw' }, r.map(c => h('i', { style: { background: cssColor(c) }, title: rgbaToHex(c) + '\nClick: left color, right click: right color', onmousedown: e => App.setColor(e.button === 2 ? 'right' : 'left', c), oncontextmenu: e => e.preventDefault() })))));
+    prev.append(h('div', { class: 'ohint' }, rs.length + ' ramps, ' + rs.reduce((t, r) => t + r.length, 0) + ' colors. Steps are even in perceived lightness (OKLCH); out-of-gamut colors lose saturation, never hue.'));
+  };
+  const side = h('div', { class: 'fx-side' }, h('div', null, h('div', { class: 'fxl' }, 'Base colors'), chips), ...[
+    { k: 'harmony', l: 'Harmony', t: 'select', o: [['custom', 'Just my base colors'], ['analog', 'Analogous'], ['comp', 'Complementary'], ['split', 'Split complementary'], ['triad', 'Triadic'], ['tetrad', 'Tetradic'], ['mono', 'Monochrome']] },
+    { k: 'steps', l: 'Steps per ramp', t: 'range', min: 3, max: 12 }, { k: 'shift', l: 'Hue shift from end to end (°)', t: 'range', min: 0, max: 120 },
+    { k: 'dir', l: 'Light', t: 'select', o: [['warm', 'Warm light, cool shadows'], ['cool', 'Cool light, warm shadows'], ['none', 'No hue shift']] },
+    { k: 'lmin', l: 'Darkest step (lightness %)', t: 'range', min: 2, max: 50 }, { k: 'lmax', l: 'Lightest step (lightness %)', t: 'range', min: 55, max: 100 },
+    { k: 'sat', l: 'Saturation (%)', t: 'range', min: 0, max: 160 }, { k: 'peak', l: 'Most colorful in the', t: 'select', o: [['mid', 'midtones'], ['dark', 'shadows'], ['light', 'highlights']] },
+    { k: 'gray', l: 'Add a matching neutral ramp', t: 'check' }].map(q => fxParam(q, P, draw)));
+  openDialog({ title: 'Ramp studio', width: 860, body: h('div', { class: 'fx-wrap rs' }, prev, side), onOpen: draw, buttons: [
+    { label: 'Add to current palette', cls: 'l', fn: () => { const q = Palettes.editable(), add = ramps().flat(); q.colors.push(...add); Palettes.save(); buildPalette(); toast('Added ' + add.length + ' colors to ' + q.name); } },
+    { label: 'Cancel' }, { label: 'Create palette', pri: true, fn: () => { let n = 'Ramps', i = 2; while (Palettes.all[n]) n = 'Ramps ' + i++; Palettes.all[n] = { name: n, preset: false, colors: ramps().flat() }; Palettes.save(); Palettes.set(n); toast('Palette "' + n + '" created'); } }] });
+}
+/* palette swap: every color in use gets a row; remap by hand, rotate all hues at once, or snap everything to the palette */
+function recolorDialog() {
+  commitPending(); const p = App.p; if (!p.layer() || p.layer().type !== 'pixel') { toast('Select a pixel layer first'); return; }
+  const scope = h('select', null, [['layer', 'All frames of this layer'], ['cel', 'Current cel'], ['frame', 'Current frame, all layers'], ['all', 'Whole project']].map(([v, l]) => h('option', { value: v }, l)));
+  const P = { hue: 0, light: 0, sat: 100 }, M = new Map(), list = h('div', { class: 'rc-list' }), cv = h('canvas', { width: p.w, height: p.h }), note = h('div', { class: 'ohint' });
+  const keyOf = (d, i) => ((d[i] << 16 | d[i + 1] << 8 | d[i + 2]) >>> 0) * 256 + d[i + 3];
+  const resolve = k => { const m = M.get(k); if (!m) return null; if (m.to) return m.to; if (!P.hue && !P.light && P.sat === 100) return null; const [L, C, hh] = toLch(m.from), c = lchRgb(L + P.light / 100, C * P.sat / 100, (hh + P.hue + 360) % 360); c[3] = m.from[3]; return c; };
+  const recount = () => {
+    const old = new Map(M); M.clear(); const cnt = new Map();
+    for (const img of Img_ops.targets(scope.value)) { const d = img.data; for (let i = 0; i < d.length; i += 4) if (d[i + 3]) { const k = keyOf(d, i); cnt.set(k, (cnt.get(k) || 0) + 1); } }
+    [...cnt.entries()].sort((a, b) => b[1] - a[1]).forEach(([k, n]) => M.set(k, { from: keyRGBA(k), to: old.get(k) ? old.get(k).to : null, n }));
+  };
+  const paint = () => {
+    const src = scope.value === 'frame' || scope.value === 'all' ? frameData(p, p.frame) : (p.img() || new Img(p.w, p.h)).data, d = new Uint8ClampedArray(src), memo = new Map();
+    for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const k = keyOf(d, i); let c = memo.get(k); if (c === undefined) memo.set(k, c = resolve(k)); if (c) d.set(c, i); }
+    cv.getContext('2d').putImageData(new ImageData(d, p.w, p.h), 0, 0); const z = Math.max(1, Math.floor(Math.min(380 / p.w, 300 / p.h))); cv.style.width = p.w * z + 'px'; cv.style.height = p.h * z + 'px';
+  };
+  const pick = (k, anchor) => {
+    closePopovers(); const m = M.get(k), set = c => { m.to = c ? c.slice() : null; pop.remove(); rows(); paint(); };
+    const pal = h('div', { class: 'rc-pal' }, Palettes.cur.colors.filter(Boolean).map(c => h('i', { style: { background: cssColor(c) }, title: rgbaToHex(c), onclick: () => set(c) })));
+    const hex = h('input', { type: 'text', value: rgbaToHex(m.to || m.from), style: { width: '100px', fontFamily: 'var(--mono)' }, onchange: e => { const c = hexToRgba(e.target.value); if (c) set(c); } });
+    const pop = h('div', { class: 'pop over' }, h('h5', null, rgbaToHex(m.from) + ' becomes…'), pal, h('div', { class: 'prow', style: { marginTop: '8px' } }, hex, h('button', { class: 'btn sm', onclick: () => set(App.colors.left) }, 'Left'), h('button', { class: 'btn sm', onclick: () => set(App.colors.right) }, 'Right'), h('button', { class: 'btn sm', onclick: () => set(null) }, 'Reset')));
+    document.body.append(pop); placePop(pop, anchor); setTimeout(() => hex.focus(), 0);
+  };
+  const rows = () => {
+    list.innerHTML = ''; let i = 0;
+    for (const [k, m] of M) {
+      if (i++ >= 96) { list.append(h('div', { class: 'ohint' }, (M.size - 96) + ' more colors not shown. Palettize first for big recolors.')); break; }
+      const to = resolve(k);
+      list.append(h('div', { class: 'rc-row' + (m.to ? ' set' : '') }, h('i', { class: 'rc-sw', style: { background: cssColor(m.from) }, title: rgbaToHex(m.from) }), h('span', { class: 'rc-ar' }, '→'),
+        h('button', { class: 'rc-sw rc-to', style: { background: cssColor(to || m.from) }, title: 'Click to pick the new color' + (m.to ? ' (set by hand)' : ''), onclick: e => pick(k, e.currentTarget) }),
+        h('span', { class: 'rc-n' }, m.n + ' px'), m.to ? h('button', { class: 'kbx', title: 'Back to automatic', onclick: () => { m.to = null; rows(); paint(); } }, '×') : null));
+    }
+    note.textContent = M.size + ' colors in use. Hand-picked colors win over the sliders below.';
+  };
+  const snap = () => { const pal = Palettes.cur.colors.filter(c => c && c[3]).map(c => [c, oklab(c[0], c[1], c[2])]); if (!pal.length) return; for (const m of M.values()) { const l = oklab(m.from[0], m.from[1], m.from[2]); let best = pal[0], bd = 1e9; for (const q of pal) { const dd = labDist(l, q[1]); if (dd < bd) { bd = dd; best = q; } } m.to = best[0].slice(0, 3).concat(m.from[3]); } rows(); paint(); };
+  scope.onchange = () => { recount(); rows(); paint(); };
+  const sl = h('div', { class: 'fx-side', style: { maxHeight: 'none', overflow: 'visible' } }), sliders = () => { sl.innerHTML = ''; sl.append(...[{ k: 'hue', l: 'Rotate all hues (°)', t: 'range', min: -180, max: 180 }, { k: 'light', l: 'Lightness', t: 'range', min: -40, max: 40 }, { k: 'sat', l: 'Saturation (%)', t: 'range', min: 0, max: 200 }].map(q => fxParam(q, P, () => { rows(); paint(); }))); };
+  sliders();
+  const side = h('div', { class: 'fx-side' }, h('div', null, h('div', { class: 'fxl' }, 'Apply to'), scope), list, note, sl,
+    h('div', { class: 'prow', style: { gap: '6px', flexWrap: 'wrap' } }, h('button', { class: 'btn sm', title: 'Map every color to the closest one in the current palette', onclick: snap }, 'Snap all to palette'), h('button', { class: 'btn sm', onclick: () => { for (const m of M.values()) m.to = null; Object.assign(P, { hue: 0, light: 0, sat: 100 }); sliders(); rows(); paint(); } }, 'Reset all')));
+  recount(); rows();
+  openDialog({ title: 'Recolor (palette swap)', width: 820, body: h('div', { class: 'fx-wrap rc' }, h('div', { class: 'fx-prev' }, cv), side), onOpen: paint,
+    buttons: [{ label: 'Cancel' }, { label: 'Recolor', pri: true, fn: () => { const memo = new Map(); Img_ops.mapCels('Recolor', scope.value, img => { const d = img.data; for (let i = 0; i < d.length; i += 4) { if (!d[i + 3]) continue; const k = keyOf(d, i); let c = memo.get(k); if (c === undefined) memo.set(k, c = resolve(k)); if (c) d.set(c, i); } }); } }] });
+}
+act('rampStudio', 'Ramp studio…', null, () => rampStudio());
+act('recolor', 'Recolor / palette swap…', null, () => recolorDialog());
 </script>
 <script>
 /* ================= COMMAND PALETTE (Ctrl+K): one box for every action, tool, layer, palette and typed value ================= */
