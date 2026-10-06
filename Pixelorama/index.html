@@ -122,7 +122,7 @@ input,select,textarea,button{font:inherit;color:inherit}
 .msep{height:1px;background:var(--line);margin:4px 2px}
 .mlabel{padding:5px 9px 2px;color:var(--mute);font-size:10px;text-transform:uppercase;letter-spacing:.8px}
 .mb-right{margin-left:auto;display:flex;align-items:center;gap:2px;padding-right:6px}
-.gt{height:24px;min-width:26px;padding:0 6px;border:1px solid transparent;background:none;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;gap:4px;color:var(--tx2);cursor:pointer}
+.gt{white-space:nowrap;height:24px;min-width:26px;padding:0 6px;border:1px solid transparent;background:none;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;gap:4px;color:var(--tx2);cursor:pointer}
 .gt:hover{background:var(--raise);color:var(--tx)}
 .gt.on{background:var(--sel);border-color:var(--acc-d);color:var(--tx)}
 .gt img,.ibtn img,.tbtn img{image-rendering:pixelated;pointer-events:none}
@@ -433,12 +433,27 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .fxv{font-family:var(--mono);min-width:30px;text-align:right}
 .kbx:disabled{opacity:.25;pointer-events:none}
 .lightw{width:104px;height:104px;image-rendering:pixelated;cursor:crosshair;flex:none;touch-action:none}
+/* pixel critique */
+.crit{position:fixed;z-index:114;width:308px;max-height:min(74vh,660px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:8px;box-shadow:var(--shadow)}
+.crit .seg button{padding:1px 6px;font-size:10.5px}
+.crit-sum{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:6px 8px 8px;font-weight:600;color:var(--warn)}.crit-sum.clean{color:var(--ok)}
+.crit-sum span{color:var(--mute);font:400 10.5px var(--mono)}
+.crit-k{display:flex;align-items:center;gap:7px;height:28px;padding:0 4px 0 6px;border-radius:5px}.crit-k:hover{background:var(--hover)}
+.crit-k>i{width:9px;height:9px;border-radius:2px;flex:none;box-shadow:0 0 0 1px #0006}
+.crit-k .nm{flex:1;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crit-k>b{font:600 11px var(--mono);min-width:20px;text-align:right;color:var(--tx)}
+.crit-k.none{opacity:.5}.crit-k.none .nm{cursor:default}
+.crit-l{margin:0 0 4px 30px;border-left:1px dashed var(--line2);padding-left:6px}
+.crit-i{display:flex;align-items:center;gap:8px;padding:2px 4px;border-radius:3px;cursor:pointer;font:11px var(--mono);color:var(--tx2)}.crit-i:hover,.crit-i.on{background:var(--sel);color:var(--tx)}
+.crit-i em{flex:1;font-style:normal;color:var(--mute);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crit-f{padding:6px 10px;border-top:1px solid var(--line);color:var(--mute);font-size:10.5px;flex:none}
 /* command palette */
-.cmdk{display:flex;align-items:center;gap:7px;height:22px;margin:auto 0 auto 14px;padding:0 5px 0 7px;min-width:0;flex:0 1 250px;border:1px solid var(--line2);border-radius:5px;background:var(--panel);color:var(--mute);cursor:pointer;font-size:11.5px}
+.cmdk{display:flex;align-items:center;gap:7px;height:22px;margin:auto 0 auto 14px;padding:0 5px 0 7px;min-width:0;flex:0 1 210px;border:1px solid var(--line2);border-radius:5px;background:var(--panel);color:var(--mute);cursor:pointer;font-size:11.5px}
 .cmdk:hover{border-color:var(--acc-d);color:var(--tx2)}
 .cmdk>span{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmdk img{opacity:.7;image-rendering:pixelated}
-@media (max-width:1380px){.cmdk{flex-basis:30px}.cmdk>span,.cmdk kbd{display:none}}
+@media (max-width:1360px){#gtools .gt.opt{display:none}}
+@media (max-width:1440px){.cmdk{flex-basis:30px}.cmdk>span,.cmdk kbd{display:none}}
 .cmd-bg{position:fixed;inset:0;z-index:250;background:#0007;animation:fade .1s}
 .cmd{position:fixed;left:50%;top:10vh;transform:translateX(-50%);z-index:251;width:min(660px,94vw);max-height:74vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:10px;box-shadow:0 24px 70px #000b;overflow:hidden;animation:cmdIn .14s cubic-bezier(.2,.9,.3,1)}
 @keyframes cmdIn{from{opacity:0;transform:translate(-50%,-10px)}}
@@ -1220,6 +1235,7 @@ function render() {
   }
   // selection
   if (p.sel) strokeAnts(ctx, selSegments(p));
+  if (typeof Crit !== 'undefined' && Crit.res) Crit.overlay(ctx);
   if (fl) Float.drawHandles(ctx);
   // tool overlays
   const seen = new Set();
@@ -2815,13 +2831,14 @@ function buildGlobalToolbar() {
     if (k === 'symX' || k === 'symY') b.oncontextmenu = e => { e.preventDefault(); const p = App.p; if (k === 'symX') p.symX = p.w - 1; else p.symY = p.h - 1; toast('Axis recentered'); requestRender(); };
     host.append(b);
   }
-  host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', id: 'kidx-btn', title: 'Shortcut index' + kt('keyIndex'), onclick: () => KIdx.toggle() }, 'Keys'), h('button', { class: 'gt', id: 'thm-btn', title: 'Theme picker' + kt('themePicker') + ', cycle with ' + (A.themeNext.keys || 'the View menu'), onclick: e => ThemePick.toggle(e.currentTarget) }, h('span', { class: 'thm-dot' }, ...['--bg2', '--acc', '--sec'].map(v => h('i', { style: { background: 'var(' + v + ')' } }))), 'Theme'), h('button', { class: 'gt', title: 'Quick tour of the basics', onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt', title: 'Watch an animation get made, step by step', onclick: () => Demo.start() }, 'Guided demo'));
+  host.append(h('span', { class: 'gsep' }), h('button', { class: 'gt', id: 'crit-btn', title: 'Pixel critique: flags stray pixels, jaggies, doubled corners, pillow shading and more' + kt('critique'), onclick: () => Crit.toggle() }, 'Critique'), h('button', { class: 'gt', id: 'kidx-btn', title: 'Shortcut index' + kt('keyIndex'), onclick: () => KIdx.toggle() }, 'Keys'), h('button', { class: 'gt', id: 'thm-btn', title: 'Theme picker' + kt('themePicker') + ', cycle with ' + (A.themeNext.keys || 'the View menu'), onclick: e => ThemePick.toggle(e.currentTarget) }, h('span', { class: 'thm-dot' }, ...['--bg2', '--acc', '--sec'].map(v => h('i', { style: { background: 'var(' + v + ')' } }))), 'Theme'), h('button', { class: 'gt opt', title: 'Quick tour of the basics' + kt('tour'), onclick: () => Tour.start() }, 'Tour'), h('button', { class: 'gt opt', title: 'Guided demo: watch an animation get made, step by step' + kt('demo'), onclick: () => Demo.start() }, 'Demo'));
   updateGlobalToolbar(); updateCmdBtn();
 }
 function updateCmdBtn() { const b = $('#cmdk-btn'), k = A.cmdPalette && A.cmdPalette.keys; b.innerHTML = ''; b.append(iconImg('zoom', 12, themeTx()), h('span', null, 'Search commands…'), k ? h('kbd', null, k) : ''); b.onclick = () => Cmd.open(); }
 function updateGlobalToolbar() {
   $$('#gtools .gt[data-g]').forEach(b => { const k = b.dataset.g; const on = k === 'radial' ? Prefs.symRadial > 1 : k === 'tile' ? Prefs.tile !== 'off' : k === 'zen' ? $('#app').classList.contains('zen') : !!Prefs[k]; b.classList.toggle('on', on); });
   $('#st-snap').textContent = Snap.summary();
+  const cb = $('#crit-btn'); if (cb) cb.classList.toggle('on', typeof Crit !== 'undefined' && !!Crit.el);
 }
 function snapPopover(anchor) {
   closePopovers();
@@ -3430,7 +3447,7 @@ const MENUS = [
   ['Effects', ['layerFx', 'bakeFx', '-', 'fx_autoshade', 'fx_outline', 'fx_shadow', 'fx_glow', '-', 'fx_hsv', 'fx_bc', 'fx_overlay', 'fx_invert', 'fx_desat', 'fx_replace', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
   ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'layerSelUp', 'layerSelDown', 'mergeDown', 'flatten', '-', 'hideLayer', 'lockLayer', 'clip', 'layerFx', 'layerProps']],
   ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
-  ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['themePicker', '-', ...THEMES.map(t => 'theme_' + t.id), '-', 'themeNext', 'themePrev']], 'zen', 'fullscreen']],
+  ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', 'critique', '-', ['Theme', ['themePicker', '-', ...THEMES.map(t => 'theme_' + t.id), '-', 'themeNext', 'themePrev']], 'zen', 'fullscreen']],
   ['Snap', ['snap', '-', ...SNAP_MODES.map(m => 'snap_' + m[0]), '-', ['Angle set', ['ang_pixel', 'ang_15', 'ang_22.5', 'ang_30', 'ang_45']], 'snapPanel', '-', 'smart', 'smartHold']],
   ['Help', ['cmdPalette', '-', 'tour', 'demo', '-', 'keyIndex', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
 ];
@@ -3868,8 +3885,8 @@ function shadeField(s, w, hh, P) {
       for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) { const X = x + k, Y = y + j; if (X < 0 || Y < 0 || X >= w || Y >= hh || !op(Y * w + X)) touch[r] = 1; } }
     for (let i = 0; i < N; i++) { const r = D.reg[i]; if (r >= 0 && mx[r] <= 2) { ink[i] = 1; outl[i] = touch[r]; } }
   }
-  const body = i => op(i) && !outl[i], col = i => s[i * 4] << 16 | s[i * 4 + 1] << 8 | s[i * 4 + 2];
-  const S = labelRegions(w, hh, body, () => true, true), Pt = labelRegions(w, hh, body, (i, q) => col(i) === col(q), false);
+  const body = i => op(i) && !outl[i], col = i => s[i * 4] << 16 | s[i * 4 + 1] << 8 | s[i * 4 + 2], mode = P.mode || 'mix';
+  const S = labelRegions(w, hh, body, () => true, true), Pt = mode === 'shape' ? { reg: new Int32Array(N).fill(-1), area: [], n: 0 } : labelRegions(w, hh, body, (i, q) => col(i) === col(q), false);
   let bodyN = 0; for (const a of S.area) bodyN += a;
   const thr = Math.max(3, Math.min(12, Math.round(bodyN * .01))), map = Pt.area.map((_, r) => r), small = Pt.area.map(a => a < thr);
   const votes = new Map();
@@ -3885,7 +3902,7 @@ function shadeField(s, w, hh, P) {
     for (let i = 0; i < N; i++) if (reg[i] >= 0) { const R = Math.max(.75, (P.round ?? 80) / 100 * mx[reg[i]]), t = Math.min(d[i] - .5, R) / R; out[i] = R * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t))); }
     return { d, h: out };
   };
-  const dS = dome(S.reg, S.n), mode = P.mode || 'mix', dP = mode === 'shape' ? null : dome(regP, Pt.n), H = new Float32Array(N);
+  const dS = dome(S.reg, S.n), dP = mode === 'shape' ? null : dome(regP, Pt.n), H = new Float32Array(N);
   for (let i = 0; i < N; i++) H[i] = mode === 'shape' ? dS.h[i] : mode === 'parts' ? dP.h[i] : dS.h[i] * .55 + dP.h[i] * .45;
   const nx = new Float32Array(N), ny = new Float32Array(N), nz = new Float32Array(N), at = (x, y) => x < 0 || y < 0 || x >= w || y >= hh ? 0 : H[y * w + x];
   for (let y = 0, i = 0; y < hh; y++) for (let x = 0; x < w; x++, i++) {
@@ -4661,6 +4678,180 @@ async function DemoScript(D) {
     await D.click('#pl-fwd');
   } finally { restore(); }
 }
+</script>
+<script>
+/* ================= PIXEL CRITIQUE: lints the art for the classic pixel-art mistakes ================= */
+/* perceptual color space: distances here match what the eye sees much better than RGB */
+function oklab(r, g, b) {
+  const f = c => { c /= 255; return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }, R = f(r), G = f(g), B = f(b);
+  const l = Math.cbrt(.4122214708 * R + .5363325363 * G + .0514459929 * B), m = Math.cbrt(.2119034982 * R + .6806995451 * G + .1073969566 * B), s = Math.cbrt(.0883024619 * R + .2817188376 * G + .6299787005 * B);
+  return [.2104542553 * l + .793617785 * m - .0040720468 * s, 1.9779984951 * l - 2.428592205 * m + .4505937099 * s, .0259040371 * l + .7827717662 * m - .808675766 * s];
+}
+function oklabToRgb(L, a, b) {
+  const l = (L + .3963377774 * a + .2158037573 * b) ** 3, m = (L - .1055613458 * a - .0638541728 * b) ** 3, s = (L - .0894841775 * a - 1.291485548 * b) ** 3;
+  const g = c => { c = c <= .0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - .055; return clamp(Math.round(c * 255), 0, 255); };
+  return [g(4.0767416621 * l - 3.3077115913 * m + .2309699292 * s), g(-1.2684380046 * l + 2.6097574011 * m - .3413193965 * s), g(-.0041960863 * l - .7034186147 * m + 1.707614701 * s)];
+}
+const labDist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const CRIT = {
+  stray: { name: 'Stray pixels', color: '#ff5d5d', fix: 'Delete', tip: 'Single opaque pixels with nothing around them, usually leftovers from erasing.' },
+  orphan: { name: 'Noise pixels', color: '#ffa53d', fix: 'Merge', tip: 'Lone pixels in a shade only slightly off from what surrounds them. They read as noise, not detail. High-contrast glints and pupils are left alone.' },
+  corner: { name: 'Doubled corners', color: '#ffd23f', fix: 'Clean', tip: 'L-shaped steps in 1px lines that make the line look thicker at the bend (not pixel perfect).' },
+  jaggy: { name: 'Jaggies', color: '#e35dff', tip: 'A step in a 1px line that breaks the rhythm of its neighbours, like 3-1-3. Lines read smoother when step lengths change gradually.' },
+  dupe: { name: 'Near-duplicate colors', color: '#3fd2ff', fix: 'Merge', tip: 'Colors so close that nobody can tell them apart. They bloat the palette without adding anything.' },
+  alpha: { name: 'Semi-transparent pixels', color: '#f4f4f4', fix: 'Snap', tip: 'Partly transparent pixels look muddy over backgrounds. They usually sneak in from imports or soft brushes.' },
+  pillow: { name: 'Pillow shading', color: '#9cff6b', tip: 'Shading that darkens toward every edge at once. Pick a light direction instead: one side lighter, the opposite side darker.' }
+};
+const keyRGBA = k => [Math.floor(k / 256) >> 16 & 255, Math.floor(k / 256) >> 8 & 255, Math.floor(k / 256) & 255, k % 256];
+function critique(s, w, hh) {
+  const N = w * hh, A = i => s[i * 4 + 3], KK = new Float64Array(N), K = i => KK[i];
+  for (let i = 0; i < N; i++) KK[i] = s[i * 4 + 3] ? ((s[i * 4] << 16 | s[i * 4 + 1] << 8 | s[i * 4 + 2]) >>> 0) * 256 + s[i * 4 + 3] : -1;
+  const at = (x, y) => x < 0 || y < 0 || x >= w || y >= hh ? -1 : y * w + x, out = {}; for (const k in CRIT) out[k] = [];
+  const census = new Map(); let opaque = 0;
+  for (let i = 0; i < N; i++) if (A(i)) { opaque++; const k = K(i); census.set(k, (census.get(k) || 0) + 1); }
+  const lab = new Map(), labOf = k => { let v = lab.get(k); if (!v) { const c = keyRGBA(k); lab.set(k, v = oklab(c[0], c[1], c[2])); } return v; };
+  const NB = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+  const majority = (x, y, not) => { const m = new Map(); for (const [k, j] of NB) { const q = at(x + k, y + j), kk = q < 0 ? -1 : K(q); if (kk === not) continue; m.set(kk, (m.get(kk) || 0) + 1); } let best = -1, bc = -1; for (const [kk, c] of m) if (c > bc) { bc = c; best = kk; } return { k: best, n: bc }; };
+  /* stray and noise pixels */
+  for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x; if (!A(i)) continue; const c = K(i); let opN = 0, same = 0;
+    for (const [k, j] of NB) { const q = at(x + k, y + j); if (q < 0 || !A(q)) continue; opN++; if (K(q) === c) same++; }
+    if (!opN) { out.stray.push({ pts: [[x, y]], fix: [[i, -1]] }); continue; }
+    if (!same && opN >= 6) { const m = majority(x, y, c); if (m.k >= 0 && m.n >= 4 && labDist(labOf(c), labOf(m.k)) < .1) out.orphan.push({ pts: [[x, y]], fix: [[i, m.k]] }); }
+  }
+  /* doubled corners: an L step in a 1px line, i.e. this pixel and a partner both bend the line */
+  const used = new Uint8Array(N);
+  for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) {
+    const i = y * w + x; if (!A(i) || used[i]) continue; const c = K(i), is = q => q >= 0 && K(q) === c;
+    const hL = is(at(x - 1, y)), hR = is(at(x + 1, y)), vU = is(at(x, y - 1)), vD = is(at(x, y + 1));
+    if (hL + hR !== 1 || vU + vD !== 1) continue;
+    const dx = hL ? -1 : 1, dy = vU ? -1 : 1;
+    if (is(at(x + dx, y + dy)) || is(at(x - dx, y - dy))) continue; // a filled block, or a thicker stroke
+    const e1 = is(at(x - dx, y + dy)), e2 = is(at(x + dx, y - dy)); if (e1 === e2) continue; // a real 90° corner has neither
+    const partner = e1 ? at(x, y + dy) : at(x + dx, y), px = partner % w, py = (partner / w) | 0;
+    used[i] = used[partner] = 1;
+    const mi = majority(x, y, c), mp = majority(px, py, c), pick = mp.k === -1 && mi.k !== -1 ? [partner, mp.k] : [i, mi.k];
+    out.corner.push({ pts: [[x, y], [px, py]], fix: [pick] });
+  }
+  /* jaggies: chain the runs of 1px lines (rows for shallow lines, columns for steep ones), flag runs that spike or dip against both neighbours */
+  for (const horiz of [true, false]) {
+    const lines = horiz ? hh : w, len = horiz ? w : hh, idx = (a, b) => horiz ? a * w + b : b * w + a, runs = [], own = []; // own[line][pos] = run covering it
+    for (let a = 0; a < lines; a++) { const o = own[a] = new Array(len); let b = 0; while (b < len) { const i = idx(a, b); if (!A(i)) { b++; continue; } const c = K(i); let e = b; while (e + 1 < len && K(idx(a, e + 1)) === c) e++; const r = { c, a, s: b, e }; runs.push(r); for (let t = b; t <= e; t++) o[t] = r; b = e + 1; } }
+    for (const r of runs) {
+      const o = own[r.a + 1]; if (!o) continue; let over = false;
+      for (let t = r.s; t <= r.e && !over; t++) over = !!o[t] && o[t].c === r.c;
+      if (over) continue; // overlapping rows: an area, not a line
+      const R1 = o[r.e + 1], L1 = o[r.s - 1], cand = [R1 && R1.c === r.c && R1.s === r.e + 1 ? R1 : null, L1 && L1.c === r.c && L1.e === r.s - 1 ? L1 : null].filter(Boolean); if (cand.length !== 1) continue;
+      const q = cand[0]; if (q.multi) continue;
+      if (q.prev) { q.prev.next = null; q.prev.dir = 0; q.prev = null; q.multi = true; continue; } // a fork: not a clean line
+      r.next = q; r.dir = q.s === r.e + 1 ? 1 : -1; q.prev = r;
+    }
+    for (const r of runs) {
+      if (!r.next || (r.prev && r.prev.dir === r.dir)) continue; // a chain starts at a free end or where the line turns
+      const ch = [r]; let q = r; while (q.next && q.dir === r.dir) { ch.push(q.next); q = q.next; }
+      if (ch.length < 3) continue; const L = ch.map(q => q.e - q.s + 1);
+      for (let k = 1; k < ch.length - 1; k++) {
+        const a = L[k - 1], b = L[k], c = L[k + 1];
+        if (!((b - a >= 2 && b - c >= 2) || (a - b >= 2 && c - b >= 2))) continue;
+        const pts = []; for (let t = ch[k].s; t <= ch[k].e; t++) pts.push(horiz ? [t, ch[k].a] : [ch[k].a, t]);
+        out.jaggy.push({ pts, info: L.slice(Math.max(0, k - 2), k + 3).join('-') });
+      }
+    }
+  }
+  /* near-duplicate colors: perceptually almost identical, both in use */
+  const cols = [...census.entries()], pairs = [];
+  if (cols.length <= 600) for (let a = 0; a < cols.length; a++) for (let b = a + 1; b < cols.length; b++) {
+    const [ka, na] = cols[a], [kb, nb] = cols[b]; if (ka % 256 !== kb % 256 || labDist(labOf(ka), labOf(kb)) >= .028) continue;
+    pairs.push(na <= nb ? [ka, kb] : [kb, ka]);
+  }
+  if (pairs.length) { const want = new Map(pairs.map(([r]) => [r, []])); for (let i = 0; i < N; i++) { const l = want.get(KK[i]); if (l && l.length < 400) l.push([i % w, (i / w) | 0]); }
+    for (const [rare, common] of pairs) out.dupe.push({ pts: want.get(rare), info: rgbaToHex(keyRGBA(rare)) + ' ≈ ' + rgbaToHex(keyRGBA(common)), fix: { from: rare, to: common } }); }
+  /* semi-transparent pixels, one issue per clump */
+  { const S = labelRegions(w, hh, i => A(i) > 0 && A(i) < 255, () => true, true), groups = new Map();
+    for (let i = 0; i < N; i++) { const r = S.reg[i]; if (r < 0) continue; let g = groups.get(r); if (!g) groups.set(r, g = { pts: [], fix: [] }); g.pts.push([i % w, (i / w) | 0]); g.fix.push([i, A(i) >= 128 ? 'opaque' : -1]); }
+    for (const g of groups.values()) out.alpha.push(Object.assign(g, { info: g.pts.length + ' px' })); }
+  /* pillow shading: brightness follows distance-to-edge on every side but has no direction */
+  { const F = shadeField(s, w, hh, { keepDark: true, mode: 'shape' }), S = labelRegions(w, hh, i => A(i) > 0 && !F.outl[i], () => true, true), d = regionDist(S.reg, w, hh), acc = new Map();
+    for (let i = 0; i < N; i++) { const r = S.reg[i]; if (r < 0 || F.ink[i] || S.area[r] < 40) continue; let g = acc.get(r); if (!g) acc.set(r, g = []); g.push([i % w, (i / w) | 0, lum(s[i * 4], s[i * 4 + 1], s[i * 4 + 2]), d[i]]); }
+    for (const g of acc.values()) {
+      const levels = new Set(g.map(v => Math.round(v[2] / 6))); if (levels.size < 3) continue;
+      const n = g.length, mean = k => g.reduce((t, v) => t + v[k], 0) / n, mx = mean(0), my = mean(1), ml = mean(2), md = mean(3);
+      let sxx = 0, syy = 0, sxy = 0, sxl = 0, syl = 0, sll = 0, sdd = 0, sdl = 0;
+      for (const [x, y, l, dd] of g) { const X = x - mx, Y = y - my, Lc = l - ml, D = dd - md; sxx += X * X; syy += Y * Y; sxy += X * Y; sxl += X * Lc; syl += Y * Lc; sll += Lc * Lc; sdd += D * D; sdl += D * Lc; }
+      if (!sll || !sdd) continue; const det = sxx * syy - sxy * sxy, b1 = det ? (sxl * syy - syl * sxy) / det : 0, b2 = det ? (syl * sxx - sxl * sxy) / det : 0;
+      const r2dir = (b1 * sxl + b2 * syl) / sll, corr = sdl / Math.sqrt(sdd * sll);
+      if (corr > .55 && r2dir < .18) { const c = g.reduce((best, v) => v[3] > best[3] ? v : best, g[0]); out.pillow.push({ pts: [[c[0], c[1]]], ring: true, info: 'edge correlation ' + corr.toFixed(2) + ', direction ' + r2dir.toFixed(2) }); }
+    }
+  }
+  return { out, opaque, colors: census.size };
+}
+const Crit = {
+  el: null, res: null, focus: null, target: 'layer', hide: new Set(), expanded: new Set(), t: 0,
+  toggle() { if (this.el) this.close(); else this.open(); },
+  open() {
+    if (this.el) return; const el = this.el = h('div', { class: 'crit' }); document.body.append(el);
+    const r = VP.el.getBoundingClientRect(); el.style.left = (r.right - 318) + 'px'; el.style.top = (r.top + 10) + 'px';
+    this.run(); Bus.emit('prefs');
+  },
+  close() { if (!this.el) return; this.el.remove(); this.el = null; this.res = null; this.focus = null; clearTimeout(this.t); requestRender(); Bus.emit('prefs'); },
+  schedule() { if (!this.el) return; clearTimeout(this.t); this.t = setTimeout(() => this.run(), 220); },
+  data() { const p = App.p; if (this.target === 'visible') return frameData(p, p.frame); const img = p.img(); return img ? img.data : null; },
+  run() { if (!this.el) return; const p = App.p, d = this.data(); this.res = d ? critique(d, p.w, p.h) : null; if (this.focus && !Object.values(this.res ? this.res.out : {}).some(l => l.some(x => x.pts[0][0] === this.focus.pts[0][0] && x.pts[0][1] === this.focus.pts[0][1]))) this.focus = null; this.draw(); requestRender(); },
+  draw() {
+    const el = this.el, R = this.res; el.innerHTML = '';
+    const head = h('div', { class: 'fxed-h', title: 'Drag to move' }, h('span', { class: 'fxb', style: { background: 'var(--sec)' } }, '✓'), h('b', null, 'Pixel critique'), h('span', { class: 'sp' }),
+      h('div', { class: 'seg', title: 'What to check' }, [['layer', 'Layer'], ['visible', 'Visible']].map(([v, l]) => h('button', { class: this.target === v ? 'on' : '', onclick: () => { this.target = v; this.run(); } }, l))),
+      h('button', { class: 'kbx', title: 'Close' + kt('critique'), onclick: () => this.close() }, '×'));
+    head.onpointerdown = e => { if (e.target.closest('button')) return; e.preventDefault(); const r = el.getBoundingClientRect(), ox = e.clientX - r.left, oy = e.clientY - r.top;
+      const mv = ev => { el.style.left = clamp(ev.clientX - ox, 0, innerWidth - 80) + 'px'; el.style.top = clamp(ev.clientY - oy, 0, innerHeight - 40) + 'px'; };
+      const up = () => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); }; addEventListener('pointermove', mv); addEventListener('pointerup', up); };
+    const list = h('div', { class: 'fxed-l' });
+    if (!R) list.append(h('div', { class: 'ohint' }, 'Select a pixel layer to check it.'));
+    else {
+      const total = Object.values(R.out).reduce((t, l) => t + l.length, 0);
+      list.append(h('div', { class: 'crit-sum' + (total ? '' : ' clean') }, total ? total + (total === 1 ? ' thing' : ' things') + ' worth a look' : 'Clean: nothing to flag', h('span', null, R.colors + ' colors · ' + R.opaque + ' px')));
+      for (const k in CRIT) {
+        const C = CRIT[k], L = R.out[k], open = this.expanded.has(k) && L.length, canFix = C.fix && L.length && this.target === 'layer' && (k !== 'jaggy');
+        const row = h('div', { class: 'crit-k' + (L.length ? '' : ' none'), title: C.tip },
+          h('input', { type: 'checkbox', checked: !this.hide.has(k), title: 'Show on the canvas', onchange: e => { e.target.checked ? this.hide.delete(k) : this.hide.add(k); requestRender(); } }),
+          h('i', { style: { background: C.color } }),
+          h('span', { class: 'nm', onclick: () => { if (!L.length) return; open ? this.expanded.delete(k) : this.expanded.add(k); this.draw(); } }, (L.length ? (open ? '▾ ' : '▸ ') : '') + C.name),
+          h('b', null, L.length || '–'),
+          canFix ? h('button', { class: 'btn sm', title: C.fix + ' all ' + L.length + ' (one undo step)', onclick: () => this.fix(k, L) }, C.fix + ' all') : null);
+        list.append(row);
+        if (open) { const sub = h('div', { class: 'crit-l' }); L.slice(0, 60).forEach((it, n) => sub.append(h('div', { class: 'crit-i' + (this.focus === it ? ' on' : ''), onclick: () => this.goto(it) }, h('span', null, '#' + (n + 1) + '  ' + it.pts[0][0] + ', ' + it.pts[0][1]), h('em', null, it.info || (it.pts.length > 1 ? it.pts.length + ' px' : '')), canFix && it.fix ? h('button', { class: 'kbx', title: C.fix + ' this one', onclick: ev => { ev.stopPropagation(); this.fix(k, [it]); } }, '✓') : null))); if (L.length > 60) sub.append(h('div', { class: 'ohint' }, '…and ' + (L.length - 60) + ' more')); list.append(sub); }
+      }
+    }
+    el.append(head, list, h('div', { class: 'crit-f' }, 'Re-checks as you draw. Hover a row for what it means.'));
+  },
+  goto(it) { const p = App.p, [x, y] = it.pts[0]; if (p.view.zoom < 8) zoomAt(Math.min(24, Math.max(8, p.view.zoom))); const v = p.view; v.x = Math.round(VP.W / 2 - (x + .5) * v.zoom); v.y = Math.round(VP.H / 2 - (y + .5) * v.zoom); if (Prefs.mirrorView) v.x = Math.round(VP.W / 2 - (x + .5) * v.zoom); this.focus = it; this.draw(); requestRender(); Bus.emit('view'); },
+  fix(k, items) {
+    const img = drawTarget(); if (!img) return; const tok = celEditBegin([img]), d = img.data;
+    const put = (i, key) => { const q = i * 4; if (key === -1) { d[q] = d[q + 1] = d[q + 2] = d[q + 3] = 0; } else if (key === 'opaque') d[q + 3] = 255; else d.set(keyRGBA(key), q); };
+    for (const it of items) {
+      if (k === 'dupe') { const { from, to } = it.fix, rgba = keyRGBA(to); for (let i = 0; i < d.length; i += 4) if (d[i + 3] && ((d[i] << 16 | d[i + 1] << 8 | d[i + 2]) >>> 0) * 256 + d[i + 3] === from) d.set(rgba, i); }
+      else if (it.fix) for (const [i, key] of it.fix) put(i, key);
+    }
+    img.touch(); celEditCommit(tok, CRIT[k].fix + ' ' + CRIT[k].name.toLowerCase()); requestRender(true); this.run();
+  },
+  overlay(ctx) {
+    const R = this.res; if (!R) return; const z = V.z, p = App.p;
+    ctx.save(); ctx.lineWidth = z >= 6 ? 2 : 1.5;
+    for (const k in CRIT) {
+      if (this.hide.has(k)) continue; ctx.strokeStyle = CRIT[k].color;
+      for (const it of R.out[k]) {
+        if (it.ring) { const [x, y] = it.pts[0]; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(V.rx(x + .5), V.ry(y + .5), Math.max(10, Math.min(p.w, p.h) * z * .18), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); continue; }
+        ctx.beginPath();
+        for (const [x, y] of it.pts) { if (z >= 4) ctx.rect(Math.round(V.rx(x)) + 1, Math.round(V.ry(y)) + 1, Math.round(z) - 2, Math.round(z) - 2); else { ctx.moveTo(V.rx(x + .5) + 4, V.ry(y + .5)); ctx.arc(V.rx(x + .5), V.ry(y + .5), 4, 0, Math.PI * 2); } }
+        ctx.stroke();
+      }
+    }
+    const f = this.focus; if (f) { const [x, y] = f.pts[0], cx = V.rx(x + .5), cy = V.ry(y + .5); ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(cx, cy, Math.max(12, z * 1.6), 0, Math.PI * 2); ctx.stroke(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.restore();
+  }
+};
+['cels', 'history', 'frame', 'structure', 'project'].forEach(ev => Bus.on(ev, () => Crit.schedule()));
+act('critique', 'Pixel critique', 'Shift+C', () => Crit.toggle(), { ck: () => !!Crit.el });
 </script>
 <script>
 /* ================= COMMAND PALETTE (Ctrl+K): one box for every action, tool, layer, palette and typed value ================= */
