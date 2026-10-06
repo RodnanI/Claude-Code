@@ -246,6 +246,9 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:3px;bac
 .presets b{display:block;font-family:var(--mono)}.presets span{color:var(--mute);font-size:10.5px}
 .kbtable{columns:2;column-gap:26px;font-size:12px}
 .kbtable div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px dashed var(--line);break-inside:avoid}
+.kbtable .kbctl{display:flex;gap:4px;align-items:center}.kbtable .custom>span:first-child{color:var(--acc)}
+.kbbtn{font:11px var(--mono);background:var(--raise);color:var(--tx);border:1px solid var(--line2);border-radius:3px;padding:1px 6px;cursor:pointer;min-width:44px}.kbbtn:hover{border-color:var(--acc)}.kbbtn.unset{opacity:.45}.kbbtn.rec{border-color:var(--acc);color:var(--acc)}
+.kbx{background:none;border:0;color:var(--mute);cursor:pointer;padding:0 3px;font-size:13px}.kbx:hover{color:var(--acc)}
 .kbtable h4{margin:10px 0 4px;color:var(--acc);font-size:11px;text-transform:uppercase;letter-spacing:.8px;break-after:avoid}
 kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border:1px solid var(--line2);border-bottom-width:2px;border-radius:3px;padding:0 4px;color:var(--tx)}
 .ctx{position:fixed;z-index:300;background:var(--panel2);border:1px solid var(--line2);border-radius:6px;box-shadow:var(--shadow);padding:4px;min-width:190px}
@@ -461,7 +464,7 @@ const PREF_DEFAULTS = {
   smartShapes: true, smartHold: true, smartHoldMs: 550, circleTol: 0.86, smartAxisSnap: 12,
   onion: false, onionPast: 1, onionFuture: 1, onionAlpha: 0.35, onionTint: true, onionPastColor: '#e5574a', onionFutureColor: '#4fb3a1',
   autosave: true, maxUndo: 120, zoomStep: 1.25, defaultW: 64, defaultH: 64, recentColors: [], uiPanels: {},
-  firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false
+  firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}
 };
 const Prefs = (() => {
   let p = {};
@@ -2302,6 +2305,11 @@ const Clip = {
     try { const cv = document.createElement('canvas'); cv.width = b.w; cv.height = b.h; cv.getContext('2d').putImageData(new ImageData(d.slice(), b.w, b.h), 0, 0); cv.toBlob(bl => { try { navigator.clipboard.write([new ClipboardItem({ 'image/png': bl })]).catch(() => {}); } catch (e) {} }); } catch (e) {}
     if (cut) this.erase('Cut'); else toast('Copied ' + b.w + ' x ' + b.h);
   },
+  fill(c) {
+    commitPending(); const p = App.p, img = drawTarget(); if (!img) return; const tok = celEditBegin([img]);
+    for (let i = 0; i < p.w * p.h; i++) if (!p.sel || p.sel[i]) img.data.set(c, i * 4);
+    img.touch(); celEditCommit(tok, 'Fill ' + (p.sel ? 'selection' : 'cel')); requestRender();
+  },
   erase(name = 'Delete') {
     commitPending(); const p = App.p, img = drawTarget(); if (!img) return; const tok = celEditBegin([img]);
     for (let i = 0; i < p.w * p.h; i++) if (!p.sel || p.sel[i]) img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = img.data[i * 4 + 3] = 0;
@@ -2423,13 +2431,19 @@ function initInput() {
   });
 }
 function isTyping(t) { return t && (t.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'button'].includes(t.type) || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable); }
+const CODE_KEYS = { Comma: ',', Period: '.', BracketLeft: '[', BracketRight: ']', Slash: '/', Minus: '-', Equal: '=', Semicolon: ';', Quote: "'", Backquote: '`', Backslash: '\\' };
 function comboOf(e) {
-  let k = e.key.replace(/^Arrow/, ''); if (k === ' ') k = 'Space'; if (k.length === 1) k = k.toUpperCase();
+  let k = e.key.replace(/^Arrow/, ''); if (k === ' ') k = 'Space';
+  // macOS Option (and AltGr layouts) turn Alt+D into '∂' or a dead key: recover the physical key so Alt shortcuts still fire
+  if (e.altKey && e.code && (k === 'Dead' || (k.length === 1 && !/[\x20-\x7e]/.test(k)))) k = /^Key[A-Z]$/.test(e.code) ? e.code.slice(3) : CODE_KEYS[e.code] || k;
+  if (k.length === 1) k = k.toUpperCase();
   if (e.code && /^Digit\d$/.test(e.code)) k = e.code.slice(5);
   const mods = (e.ctrlKey || e.metaKey ? 'Ctrl+' : '') + (e.altKey ? 'Alt+' : '') + (e.shiftKey && (k.length > 1 || /[A-Z0-9]/.test(k)) ? 'Shift+' : '');
   return mods + k;
 }
+let KeyCapture = null;
 function onKeyDown(e) {
+  if (KeyCapture) { e.preventDefault(); e.stopPropagation(); KeyCapture(e); return; }
   if (window.IntroCtl && IntroCtl.active) { IntroCtl.skip(); e.preventDefault(); e.stopPropagation(); return; }
   if (App.demoLock && e.isTrusted) { if (typeof Demo !== 'undefined') Demo.userKey(e); e.preventDefault(); e.stopPropagation(); return; }
   if (e.key === 'Shift') Input.shiftAlone = !e.repeat; else Input.shiftAlone = false;
@@ -2719,19 +2733,20 @@ function playTick(ts) {
 }
 /* ---------- bar ---------- */
 function tbtn(label, title, fn, id) { return h('button', { class: 'ibtn', title, onclick: fn, id }, label); }
+function kt(id) { const a = A[id]; return a && a.keys ? ' (' + a.keys + ')' : ''; }
 function buildTimelineBar() {
   const bar = $('#tlbar'); bar.innerHTML = ''; const p = () => App.p;
   bar.append(
     h('div', { class: 'grp' },
-      tbtn('⏮', 'First frame (Home)', () => setFrame(0)), tbtn('◂', 'Previous frame (, or Left)', () => setFrame(p().frame - 1)),
-      tbtn('◀', 'Play backwards', () => startPlayback(-1), 'pl-back'), tbtn('▶', 'Play / pause (Enter)', () => startPlayback(1), 'pl-fwd'),
-      tbtn('▸', 'Next frame (. or Right)', () => setFrame(p().frame + 1)), tbtn('⏭', 'Last frame (End)', () => setFrame(p().frames.length - 1)),
+      tbtn('⏮', 'First frame' + kt('firstFrame'), () => setFrame(0)), tbtn('◂', 'Previous frame' + kt('prevFrame'), () => setFrame(p().frame - 1)),
+      tbtn('◀', 'Play backwards' + kt('playBack'), () => startPlayback(-1), 'pl-back'), tbtn('▶', 'Play / pause' + kt('play'), () => startPlayback(1), 'pl-fwd'),
+      tbtn('▸', 'Next frame' + kt('nextFrame'), () => setFrame(p().frame + 1)), tbtn('⏭', 'Last frame' + kt('lastFrame'), () => setFrame(p().frames.length - 1)),
       h('button', { class: 'btn sm', id: 'loopbtn', title: 'Loop mode', onclick: () => { Prefs.loop = { cycle: 'pingpong', pingpong: 'once', once: 'cycle' }[Prefs.loop]; savePrefs(); updateTimelineBar(); } }),
       h('label', null, 'FPS'), h('input', { type: 'number', id: 'fps', min: 1, max: 60, title: 'Frames per second', onchange: e => { p().fps = clamp(+e.target.value || 8, 1, 60); p().dirty = true; } })),
     h('div', { class: 'grp' },
-      tbtn('+', 'Add frame (N)', () => Frames.add(), 'fr-add'), tbtn('⧉', 'Duplicate frame', () => Frames.dup(), 'fr-dup'), tbtn('−', 'Delete frame', () => Frames.del(), 'fr-del'),
-      tbtn('⇠', 'Move frame left', () => Frames.move(-1)), tbtn('⇢', 'Move frame right', () => Frames.move(1)),
-      tbtn('#', 'Add a tag to the selected frames', () => Frames.tagDialog(), 'fr-tag'), tbtn('⚭', 'Link selected cels (they share pixels)', () => Frames.link(), 'fr-link')),
+      tbtn('+', 'Add empty frame' + kt('newFrame'), () => Frames.add(), 'fr-add'), tbtn('⧉', 'Duplicate frame' + kt('dupFrame') + '. Shift+click: linked copy', e => Frames.dup(e.shiftKey), 'fr-dup'), tbtn('−', 'Delete frame' + kt('delFrame'), () => Frames.del(), 'fr-del'),
+      tbtn('⇠', 'Move frame left' + kt('moveFrameL'), () => Frames.move(-1)), tbtn('⇢', 'Move frame right' + kt('moveFrameR'), () => Frames.move(1)),
+      tbtn('#', 'Add a tag to the selected frames', () => Frames.tagDialog(), 'fr-tag'), tbtn('⚭', 'Link selected cels (they share pixels)' + kt('link'), () => Frames.link(), 'fr-link')),
     h('div', { class: 'grp' },
       h('button', { class: 'ibtn', id: 'onionbtn', title: 'Onion skin (K). Right click for settings', onclick: () => toggleGlobal('onion'), oncontextmenu: e => { e.preventDefault(); onionPopover(e.currentTarget); } }, iconImg('onion', 16, themeTx(), '#f2a541')),
       h('button', { class: 'ibtn', title: 'Onion skin settings', onclick: e => onionPopover(e.currentTarget) }, '⚙')),
@@ -2759,7 +2774,17 @@ function onionPopover(anchor) {
 const Frames = {
   sel() { const p = App.p, s = new Set([...p.selCels].map(k => +k.split('|')[0])); if (!s.size) s.add(p.frame); return [...s].sort((a, b) => a - b); },
   add(at) { structural('Add frame', p => { const i = at ?? p.frame + 1; const f = { id: uid(), dur: 1, cels: {} }; p.pixelLayers().forEach(l => f.cels[l.id] = new Img(p.w, p.h)); p.frames.splice(i, 0, f); shiftTags(p, i, 1); p.frame = i; p.selCels.clear(); }); },
-  dup() { structural('Duplicate frame', p => { const ids = this.sel(); let ins = ids[ids.length - 1] + 1; for (const i of ids) { const src = p.frames[i]; const f = { id: uid(), dur: src.dur, cels: {} }; for (const k in src.cels) f.cels[k] = src.cels[k].clone(); p.frames.splice(ins, 0, f); shiftTags(p, ins, 1); ins++; } p.frame = ids[ids.length - 1] + 1; p.selCels.clear(); }); },
+  dup(linked) { structural(linked ? 'Duplicate frame (linked)' : 'Duplicate frame', p => { const ids = this.sel(); let ins = ids[ids.length - 1] + 1; for (const i of ids) { const src = p.frames[i]; const f = { id: uid(), dur: src.dur, cels: {} }; for (const k in src.cels) f.cels[k] = linked ? src.cels[k] : src.cels[k].clone(); p.frames.splice(ins, 0, f); shiftTags(p, ins, 1); ins++; } p.frame = ids[ids.length - 1] + 1; p.selCels.clear(); }); },
+  gotoDialog() {
+    const p = App.p, inp = h('input', { type: 'number', min: 1, max: p.frames.length, value: p.frame + 1 });
+    openDialog({ title: 'Go to frame', body: h('div', { class: 'frm' }, h('label', null, 'Frame (1-' + p.frames.length + ')'), inp), onOpen: () => inp.select(), buttons: [{ label: 'Cancel' }, { label: 'Go', pri: true, fn: () => setFrame((+inp.value || 1) - 1) }] });
+  },
+  jumpTag(d) {
+    const p = App.p; if (!p.tags.length) { toast('No frame tags yet'); return; }
+    const starts = [...new Set(p.tags.map(t => t.from))].sort((a, b) => a - b);
+    const n = d > 0 ? starts.find(s => s > p.frame) ?? starts[0] : [...starts].reverse().find(s => s < p.frame) ?? starts[starts.length - 1];
+    setFrame(n); const t = p.tagAt(n); if (t) status('Tag: ' + t.name);
+  },
   del() { const p = App.p, ids = this.sel(); if (ids.length >= p.frames.length) { toast('A project needs at least one frame'); return; } structural('Delete frame', p => { for (const i of ids.reverse()) { p.frames.splice(i, 1); shiftTags(p, i, -1); } p.frame = clamp(p.frame, 0, p.frames.length - 1); p.selCels.clear(); }); },
   move(d) { const p = App.p, i = p.frame, j = i + d; if (j < 0 || j >= p.frames.length) return; structural('Move frame', p => { [p.frames[i], p.frames[j]] = [p.frames[j], p.frames[i]]; p.frame = j; }); },
   moveTo(i, j) { if (i === j) return; structural('Reorder frame', p => { const [f] = p.frames.splice(i, 1); p.frames.splice(j > i ? j - 1 : j, 0, f); p.frame = j > i ? j - 1 : j; }); },
@@ -2821,6 +2846,7 @@ const Layers = {
       onCancel: () => { Object.assign(n, orig); requestRender(); },
       buttons: [{ label: 'Cancel', fn: () => { Object.assign(n, orig); requestRender(); } }, { label: 'Apply', pri: true, fn: () => { const nv = { name: nm.value || n.name, opacity: op.value / 100, blend: bl.value, clip: clip.checked }; Object.assign(n, orig); structural('Layer properties', p => Object.assign(p.find(id).node, nv)); } }] });
   },
+  toggleCur(k) { this.toggle(App.p.layerId, k); const n = App.p.layer(); if (n) status(n.name + (k === 'visible' ? (n.visible ? ' shown' : ' hidden') : (n.locked ? ' locked' : ' unlocked'))); },
   toggle(id, k) { const p = App.p, e = p.find(id); if (!e) return; e.node[k] = !e.node[k]; p.dirty = true; Bus.emit('structure'); requestRender(); }
 };
 /* ---------- timeline build ---------- */
@@ -2853,7 +2879,7 @@ function buildTimeline() {
   p.frames.forEach((f, i) => {
     const col = h('div', { class: 'fcol' + (i === p.frame ? ' on' : ''), style: { left: i * TL.cw + 'px', width: TL.cw + 'px' }, title: 'Frame ' + (i + 1) + (f.dur !== 1 ? ' (x' + f.dur + ')' : '') + '\nClick: go to, double-click: duration, drag: reorder' }, String(i + 1), f.dur !== 1 ? h('span', { class: 'du' }, 'x' + f.dur) : null);
     col.onclick = () => setFrame(i); col.ondblclick = () => Frames.durDialog(i);
-    col.oncontextmenu = ev => { ev.preventDefault(); setFrame(i); ctxMenu(ev.clientX, ev.clientY, [['Insert frame before', () => Frames.add(i)], ['Insert frame after', () => Frames.add(i + 1)], ['Duplicate', () => Frames.dup()], ['Delete', () => Frames.del()], '-', ['Duration…', () => Frames.durDialog(i)], ['Add tag…', () => Frames.tagDialog()], ['Reverse selected frames', () => Frames.reverse()]]); };
+    col.oncontextmenu = ev => { ev.preventDefault(); setFrame(i); ctxMenu(ev.clientX, ev.clientY, [['Insert frame before', () => Frames.add(i)], ['Insert frame after', () => Frames.add(i + 1)], ['Duplicate', () => Frames.dup()], ['Duplicate (linked cels)', () => Frames.dup(true)], ['Delete', () => Frames.del()], '-', ['Duration…', () => Frames.durDialog(i)], ['Add tag…', () => Frames.tagDialog()], ['Reverse selected frames', () => Frames.reverse()]]); };
     frameDrag(col, i);
     fi.append(col);
   });
@@ -2984,7 +3010,7 @@ function ctxMenu(x, y, items) {
 function pickFile(accept, fn, multiple) { const inp = $('#file-in'); inp.accept = accept; inp.multiple = !!multiple; inp.value = ''; inp.onchange = () => { if (inp.files.length) multiple ? fn([...inp.files]) : fn(inp.files[0]); }; inp.click(); }
 /* ---------- actions ---------- */
 const A = {};
-function act(id, label, keys, run, extra) { A[id] = Object.assign({ id, label, keys, run }, extra); }
+function act(id, label, keys, run, extra) { const a = A[id] = Object.assign({ id, label, keys, run, def: keys }, extra); a.defAlt = (a.alt || []).slice(); }
 const P_ = () => App.p;
 act('new', 'New project…', 'Alt+N', () => newProjectDialog());
 act('open', 'Open…', 'Ctrl+O', () => openFileDialog());
@@ -3000,6 +3026,7 @@ act('redo', 'Redo', 'Ctrl+Y', () => P_().hist.redo(), { alt: ['Ctrl+Shift+Z'], e
 act('cut', 'Cut', 'Ctrl+X', () => Clip.copy(true)); act('copy', 'Copy', 'Ctrl+C', () => Clip.copy(false));
 act('paste', 'Paste', 'Ctrl+V', () => pasteFromMenu(false), { nokey: true }); act('pasteIn', 'Paste in place', 'Ctrl+Shift+V', () => pasteFromMenu(true));
 act('delete', 'Delete selection contents', 'Delete', () => Clip.erase(), { alt: ['Backspace'] });
+act('fillL', 'Fill selection with left color', 'Alt+Backspace', () => Clip.fill(App.colors.left)); act('fillR', 'Fill selection with right color', 'Ctrl+Backspace', () => Clip.fill(App.colors.right));
 act('brush', 'Brush from selection', 'Ctrl+B', () => brushFromSelection());
 act('clearBrushes', 'Clear custom brushes', null, () => { App.brushes = []; Bus.emit('tool'); toast('Custom brushes cleared'); });
 act('prefs', 'Preferences…', 'Ctrl+,', () => prefsDialog());
@@ -3007,17 +3034,23 @@ act('selAll', 'Select all', 'Ctrl+A', () => Sel.all()); act('deselect', 'Deselec
 act('grow', 'Grow selection by 1', 'Ctrl+Alt+Up', () => Sel.morph(1)); act('shrink', 'Shrink selection by 1', 'Ctrl+Alt+Down', () => Sel.morph(-1));
 act('selContent', 'Select layer content', 'Ctrl+Shift+A', () => Sel.fromAlpha()); act('selColor', 'Select left color', null, () => Sel.byColor(App.colors.left));
 act('resizeCanvas', 'Resize canvas…', 'Ctrl+Alt+C', () => resizeCanvasDialog()); act('scaleImage', 'Scale image…', 'Ctrl+Alt+I', () => scaleDialog());
-act('cropSel', 'Crop to selection', null, () => Img_ops.cropSelection()); act('cropContent', 'Crop to content', null, () => Img_ops.cropContent());
+act('center', 'Center layer content', null, () => Img_ops.center()); act('cropSel', 'Crop to selection', null, () => Img_ops.cropSelection()); act('cropContent', 'Crop to content', null, () => Img_ops.cropContent());
 act('flipH', 'Flip horizontal', 'Shift+H', () => Float.active() ? Float.flip('x') : Img_ops.flip('x')); act('flipV', 'Flip vertical', 'Shift+V', () => Float.active() ? Float.flip('y') : Img_ops.flip('y'));
 act('rotCW', 'Rotate 90° clockwise', null, () => Float.active() ? Float.rotate90(true) : Img_ops.rot90(true)); act('rotCCW', 'Rotate 90° counter-clockwise', null, () => Float.active() ? Float.rotate90(false) : Img_ops.rot90(false));
 act('rot180', 'Rotate 180°', null, () => { Img_ops.rot90(true); Img_ops.rot90(true); }); act('rotate', 'Rotate…', null, () => rotateDialog()); act('offset', 'Offset / wrap…', null, () => offsetDialog());
 act('flipCanvasH', 'Flip whole canvas horizontally', null, () => Img_ops.flip('x', 'all'));
 act('repeatFx', 'Repeat last effect', 'Ctrl+F', () => { if (FX.last) effectDialog(FX.last.id, FX.last.params); else toast('No effect used yet'); });
-act('newLayer', 'New layer', 'Shift+N', () => Layers.add()); act('newGroup', 'New group', null, () => Layers.add('group')); act('dupLayer', 'Duplicate layer', null, () => Layers.dup());
+act('newLayer', 'New layer', 'Shift+N', () => Layers.add()); act('newGroup', 'New group', null, () => Layers.add('group')); act('dupLayer', 'Duplicate layer', 'Ctrl+J', () => Layers.dup());
+act('hideLayer', 'Toggle layer visibility', 'Ctrl+Shift+H', () => Layers.toggleCur('visible')); act('lockLayer', 'Toggle layer lock', 'Ctrl+Shift+L', () => Layers.toggleCur('locked'));
 act('delLayer', 'Delete layer', null, () => Layers.del()); act('mergeDown', 'Merge down', 'Ctrl+Shift+M', () => Layers.mergeDown()); act('flatten', 'Flatten image', null, () => Layers.flatten());
 act('layerProps', 'Layer properties…', null, () => Layers.props()); act('layerUp', 'Move layer up', 'Ctrl+]', () => Layers.move(1)); act('layerDown', 'Move layer down', 'Ctrl+[', () => Layers.move(-1));
 act('clip', 'Toggle clipping mask', null, () => { const l = P_().layer(); if (l) structural('Clipping mask', p => { p.find(l.id).node.clip = !l.clip; }); });
-act('newFrame', 'Add frame', 'N', () => Frames.add()); act('dupFrame', 'Duplicate frame', 'Alt+D', () => Frames.dup()); act('delFrame', 'Delete frame', 'Alt+Delete', () => Frames.del());
+act('newFrame', 'Add empty frame', 'N', () => Frames.add()); act('insFrame', 'Insert empty frame before', 'Alt+Shift+N', () => Frames.add(P_().frame));
+act('dupFrame', 'Duplicate frame', 'Shift+D', () => Frames.dup(), { alt: ['Alt+D'] }); act('dupFrameLinked', 'Duplicate frame (linked cels)', 'Alt+Shift+D', () => Frames.dup(true));
+act('delFrame', 'Delete frame', 'Alt+Delete', () => Frames.del()); act('clearCel', 'Clear cel', 'Shift+Delete', () => Frames.clearCel());
+act('moveFrameL', 'Move frame left', 'Alt+,', () => Frames.move(-1)); act('moveFrameR', 'Move frame right', 'Alt+.', () => Frames.move(1));
+act('gotoFrame', 'Go to frame…', 'Alt+J', () => Frames.gotoDialog()); act('frameProps', 'Frame duration…', null, () => Frames.durDialog(P_().frame));
+act('prevTag', 'Jump to previous tag', 'PageUp', () => Frames.jumpTag(-1)); act('nextTag', 'Jump to next tag', 'PageDown', () => Frames.jumpTag(1));
 act('prevFrame', 'Previous frame', ',', () => setFrame(P_().frame - 1), { alt: ['Left'] }); act('nextFrame', 'Next frame', '.', () => setFrame(P_().frame + 1), { alt: ['Right'] });
 act('firstFrame', 'First frame', 'Home', () => setFrame(0)); act('lastFrame', 'Last frame', 'End', () => setFrame(P_().frames.length - 1));
 act('play', 'Play / pause', 'Enter', () => startPlayback(1)); act('playBack', 'Play backwards', 'Shift+Enter', () => startPlayback(-1));
@@ -3044,7 +3077,7 @@ act('swap', 'Swap colors', 'X', () => swapColors()); act('defColors', 'Default c
 act('brushUp', 'Bigger brush', ']', () => brushSize('left', 1)); act('brushDown', 'Smaller brush', '[', () => brushSize('left', -1));
 act('brushUpR', 'Bigger right brush', '}', () => brushSize('right', 1)); act('brushDownR', 'Smaller right brush', '{', () => brushSize('right', -1));
 act('tour', 'Quick tour (basics)', 'F1', () => Tour.start()); act('demo', 'Guided animation tutorial', 'Shift+F1', () => Demo.start());
-act('keys', 'Keyboard shortcuts', '?', () => shortcutsDialog(), { alt: ['Shift+/'] }); act('about', 'About', null, () => aboutDialog()); act('splash', 'Start screen', null, () => splash()); act('introReplay', 'Replay intro animation', null, () => IntroCtl.replay());
+act('keys', 'Keyboard shortcuts…', '?', () => shortcutsDialog(), { alt: ['Shift+/'] }); act('resetKeys', 'Reset custom shortcuts', null, async () => { if (await confirmDialog('Reset shortcuts', 'Restore every keyboard shortcut to its default?', 'Reset', true)) { Prefs.keys = {}; savePrefs(); applyKeyPrefs(true); toast('Shortcuts restored to defaults'); } }); act('about', 'About', null, () => aboutDialog()); act('splash', 'Start screen', null, () => splash()); act('introReplay', 'Replay intro animation', null, () => IntroCtl.replay());
 function brushSize(slot, d) { const o = toolOpts(slot, App.slots[slot].tool); if (!('size' in o)) return; o.size = clamp(o.size + d, 1, 64); Bus.emit('toolopts'); status(slot + ' brush: ' + o.size + 'px'); requestRender(); }
 function moveLayerSel(d) { const rows = rowsOf(App.p), i = rows.findIndex(r => r.node.id === App.p.layerId); const n = rows[clamp(i + d, 0, rows.length - 1)]; if (n) setLayer(n.node.id); }
 function setTheme(t) { Prefs.theme = t; document.documentElement.dataset.theme = t; savePrefs(); for (const k in _iconCache) delete _iconCache[k]; buildTools(); buildGlobalToolbar(); buildTimelineBar(); buildTimeline(); drawLogo(); requestRender(true); }
@@ -3064,15 +3097,15 @@ function brushFromSelection() {
 /* ---------- menubar ---------- */
 const MENUS = [
   ['File', ['new', 'open', '-', 'save', 'saveAs', '-', 'import', 'export', 'exportPNG', '-', 'restore', 'close']],
-  ['Edit', ['undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteIn', 'delete', '-', 'brush', 'clearBrushes', '-', 'prefs']],
+  ['Edit', ['undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteIn', 'delete', 'fillL', 'fillR', '-', 'brush', 'clearBrushes', '-', 'prefs']],
   ['Select', ['selAll', 'deselect', 'invertSel', '-', 'grow', 'shrink', '-', 'selContent', 'selColor']],
-  ['Image', ['resizeCanvas', 'scaleImage', 'cropSel', 'cropContent', '-', 'flipH', 'flipV', 'rotCW', 'rotCCW', 'rot180', 'rotate', 'offset']],
+  ['Image', ['resizeCanvas', 'scaleImage', 'cropSel', 'cropContent', 'center', '-', 'flipH', 'flipV', 'rotCW', 'rotCCW', 'rot180', 'rotate', 'offset']],
   ['Effects', ['fx_outline', 'fx_shadow', '-', 'fx_hsv', 'fx_bc', 'fx_invert', 'fx_desat', 'fx_replace', '-', 'fx_posterize', 'fx_gradmap', 'fx_palettize', 'fx_pixelize', 'fx_noise', '-', 'repeatFx']],
-  ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'mergeDown', 'flatten', '-', 'clip', 'layerProps']],
-  ['Animation', ['play', 'playBack', '-', 'newFrame', 'dupFrame', 'delFrame', 'reverse', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', '-', 'onion', 'addTag', 'link', 'unlink']],
+  ['Layer', ['newLayer', 'newGroup', 'dupLayer', 'delLayer', '-', 'layerUp', 'layerDown', 'layerSelUp', 'layerSelDown', 'mergeDown', 'flatten', '-', 'hideLayer', 'lockLayer', 'clip', 'layerProps']],
+  ['Animation', ['play', 'playBack', '-', 'newFrame', 'insFrame', 'dupFrame', 'dupFrameLinked', 'delFrame', 'clearCel', '-', 'moveFrameL', 'moveFrameR', 'reverse', 'frameProps', '-', 'prevFrame', 'nextFrame', 'firstFrame', 'lastFrame', 'gotoFrame', 'prevTag', 'nextTag', '-', 'onion', 'addTag', 'link', 'unlink']],
   ['View', ['zoomIn', 'zoomOut', 'fit', 'z100', '-', 't_grid', 't_pixelGrid', 't_rulers', 't_guides', 'centerGuides', 'clearGuides', '-', 't_symX', 't_symY', 't_showAxes', 't_mirrorView', 'tileCycle', '-', ['Theme', ['theme_graphite', 'theme_paper', 'theme_mono']], 'zen', 'fullscreen']],
   ['Snap', ['snap', '-', ...SNAP_MODES.map(m => 'snap_' + m[0]), '-', ['Angle set', ['ang_pixel', 'ang_15', 'ang_22.5', 'ang_30', 'ang_45']], 'snapPanel', '-', 'smart', 'smartHold']],
-  ['Help', ['tour', 'demo', '-', 'keys', 'splash', 'introReplay', 'about']]
+  ['Help', ['tour', 'demo', '-', 'keys', 'resetKeys', 'splash', 'introReplay', 'about']]
 ];
 function buildMenus() {
   const nav = $('#menus'); nav.innerHTML = ''; let open = null;
@@ -3095,6 +3128,21 @@ function buildMenus() {
 function refreshMenu(m) { $$('.mi[data-a]', m).forEach(el => { const a = A[el.dataset.a]; el.classList.toggle('dis', !!(a.en && !a.en())); el.querySelector('.ck').textContent = a.ck ? (a.ck() ? '✓' : '') : ''; }); }
 /* ---------- keymap ---------- */
 let KEYMAP = null;
+function applyKeyPrefs(rebuild) {
+  for (const id in A) { const a = A[id], o = Prefs.keys[id]; if (o !== undefined && !a.nokey) { a.keys = o || null; a.alt = []; } else { a.keys = a.def; a.alt = a.defAlt.slice(); } }
+  KEYMAP = null; if (!rebuild) return;
+  $$('.mi[data-a]').forEach(el => { const k = A[el.dataset.a].keys; let kb = el.querySelector('.kb'); if (!k) { if (kb) kb.remove(); return; } if (!kb) el.append(kb = h('span', { class: 'kb' })); kb.textContent = k; });
+  if (App.p) buildTimelineBar();
+}
+function bindKey(id, combo) {
+  const a = A[id], moved = [];
+  for (const o in A) { if (o === id || A[o].nokey) continue; const b = A[o]; if (b.keys === combo) { Prefs.keys[o] = ''; moved.push(b.label); } else if (b.alt && b.alt.includes(combo)) { Prefs.keys[o] = b.keys || ''; moved.push(b.label); } }
+  if (combo && combo === a.def) delete Prefs.keys[id]; else Prefs.keys[id] = combo;
+  savePrefs(); applyKeyPrefs(true);
+  const tool = Object.values(Tools).find(t => t.key === combo || 'Alt+' + t.key === combo);
+  const msg = [moved.length ? 'Removed from: ' + moved.map(l => l.replace('…', '')).join(', ') : '', tool ? 'Overrides the ' + tool.name + ' tool key' : ''].filter(Boolean).join('. ');
+  toast((combo ? a.label.replace('…', '') + ' = ' + combo : a.label.replace('…', '') + ' unbound') + (msg ? '. ' + msg : ''), msg ? 3600 : 2200);
+}
 function runShortcut(combo, e) {
   if (!KEYMAP) { KEYMAP = {}; for (const id in A) { const a = A[id]; if (a.nokey) continue; for (const k of [a.keys, ...(a.alt || [])]) if (k) KEYMAP[k] = id; } }
   let id = KEYMAP[combo];
@@ -3143,6 +3191,13 @@ const Img_ops = {
       p.w = w; p.h = hh; p.sel = null; p.symX = w - 1; p.symY = hh - 1; p.guides.forEach(g => g.pos += g.axis === 'x' ? ox : oy);
       if (p.ref) { p.ref.x += ox; p.ref.y += oy; }
     }); fitView();
+  },
+  center() {
+    const p = App.p, imgs = this.targets('layer'); let u = null;
+    for (const c of imgs) { const b = c.bounds(); if (!b) continue; if (!u) u = { ...b }; else { const x1 = Math.max(u.x + u.w, b.x + b.w), y1 = Math.max(u.y + u.h, b.y + b.h); u.x = Math.min(u.x, b.x); u.y = Math.min(u.y, b.y); u.w = x1 - u.x; u.h = y1 - u.y; } }
+    if (!u) { if (imgs.length) toast('The layer is empty'); return; }
+    const dx = Math.floor((p.w - u.w) / 2) - u.x, dy = Math.floor((p.h - u.h) / 2) - u.y; if (!dx && !dy) { toast('Already centered'); return; }
+    this.offset(dx, dy, false, 'layer');
   },
   cropSelection() { const b = Sel.bounds(); if (!b) { toast('Make a selection first'); return; } this.resizeCanvas(b.w, b.h, -b.x, -b.y, 'Crop to selection'); },
   cropContent() { const p = App.p; let u = null; p.frames.forEach(f => Object.values(f.cels).forEach(c => { const b = c.bounds(); if (!b) return; if (!u) u = { ...b }; else { const x1 = Math.max(u.x + u.w, b.x + b.w), y1 = Math.max(u.y + u.h, b.y + b.h); u.x = Math.min(u.x, b.x); u.y = Math.min(u.y, b.y); u.w = x1 - u.x; u.h = y1 - u.y; } })); if (!u) { toast('The canvas is empty'); return; } this.resizeCanvas(u.w, u.h, -u.x, -u.y, 'Crop to content'); },
@@ -3316,11 +3371,41 @@ function prefsDialog() {
 function shortcutsDialog() {
   const sec = (t, rows) => [h('h4', null, t), ...rows.map(([a, b]) => h('div', null, h('span', null, a), h('kbd', null, b)))];
   const toolRows = TOOL_ORDER.filter(t => t !== '|').map(t => [Tools[t].name, Tools[t].key + '  /  Alt+' + Tools[t].key]);
-  const groups = MENUS.map(([title, items]) => [title, items.flat(2).filter(i => typeof i === 'string' && A[i] && A[i].keys).map(i => [A[i].label.replace('…', ''), A[i].keys])]).filter(g => g[1].length);
-  openDialog({ title: 'Keyboard & mouse', width: 860, body: h('div', { class: 'kbtable' },
-    ...sec('Mouse', [['Draw with left / right tool', 'LMB / RMB'], ['Pan', 'Space+drag, MMB'], ['Zoom at cursor', 'Wheel'], ['Brush size', 'Alt+Wheel'], ['Pick color', 'Alt+click'], ['Bypass snapping', 'Hold Ctrl'], ['Guides', 'Drag from rulers']]),
-    ...sec('Smart shapes', [['Detect while drawing', 'Shift'], ['Detect last stroke', 'Tap Shift'], ['Cycle alternatives', 'Tab'], ['Pick alternative', '1-9'], ['Toggle fill', 'F'], ['Polygon sides', '[ ]'], ['Apply / keep freehand', 'Enter / Esc']]),
-    ...sec('Tools (left / right)', toolRows), ...groups.flatMap(([t, r]) => sec(t, r))), buttons: [{ label: 'Close', pri: true }] });
+  const q = h('input', { type: 'text', placeholder: 'Filter by name or key', style: { width: '100%', marginBottom: '10px' } });
+  const box = h('div', { class: 'kbtable' }), stop = () => { KeyCapture = null; document.removeEventListener('pointerdown', stop, true); };
+  const capture = (id, btn) => {
+    stop(); btn.textContent = 'Press keys…'; btn.classList.add('rec');
+    KeyCapture = e => {
+      if (['Shift', 'Control', 'Alt', 'Meta', 'AltGraph', 'CapsLock'].includes(e.key)) return;
+      stop(); if (e.key === 'Escape') { draw(); return; }
+      bindKey(id, comboOf(e)); draw();
+    };
+    setTimeout(() => document.addEventListener('pointerdown', stop, true), 0);
+  };
+  const row = id => {
+    const a = A[id], custom = id in Prefs.keys, label = a.label.replace('…', '');
+    if (a.nokey) return h('div', null, h('span', null, label), h('kbd', { title: 'Handled by the browser, not rebindable' }, a.keys));
+    const btn = h('button', { class: 'kbbtn' + (a.keys ? '' : ' unset'), title: 'Click, then press the new shortcut. Esc cancels' }, [a.keys, ...a.alt].filter(Boolean).join(' / ') || 'unset');
+    btn.onclick = () => capture(id, btn);
+    return h('div', { class: custom ? 'custom' : '' }, h('span', null, label), h('span', { class: 'kbctl' }, btn,
+      a.keys ? h('button', { class: 'kbx', title: 'Remove shortcut', onclick: () => { bindKey(id, ''); draw(); } }, '×') : null,
+      custom ? h('button', { class: 'kbx', title: 'Back to default' + (a.def ? ' (' + a.def + ')' : ''), onclick: () => { delete Prefs.keys[id]; savePrefs(); applyKeyPrefs(true); draw(); } }, '↺') : null));
+  };
+  const draw = () => {
+    const f = q.value.trim().toLowerCase(), hit = (...t) => !f || t.some(x => x && String(x).toLowerCase().includes(f));
+    const fixed = (t, rows) => { rows = rows.filter(r => hit(...r)); return rows.length ? sec(t, rows) : []; };
+    box.innerHTML = '';
+    box.append(...fixed('Mouse', [['Draw with left / right tool', 'LMB / RMB'], ['Pan', 'Space+drag, MMB'], ['Zoom at cursor', 'Wheel'], ['Brush size', 'Alt+Wheel'], ['Pick color', 'Alt+click'], ['Bypass snapping', 'Hold Ctrl'], ['Guides', 'Drag from rulers'], ['Linked duplicate', 'Shift+click ⧉']]),
+      ...fixed('Smart shapes', [['Detect while drawing', 'Shift'], ['Detect last stroke', 'Tap Shift'], ['Cycle alternatives', 'Tab'], ['Pick alternative', '1-9'], ['Toggle fill', 'F'], ['Polygon sides', '[ ]'], ['Apply / keep freehand', 'Enter / Esc']]),
+      ...fixed('Tools (left / right)', toolRows));
+    const seen = new Set();
+    const group = (t, ids) => { ids = ids.filter(i => A[i] && !seen.has(i) && hit(A[i].label, A[i].keys, ...(A[i].alt || []))); ids.forEach(i => seen.add(i)); if (ids.length) box.append(h('h4', null, t), ...ids.map(row)); };
+    MENUS.forEach(([t, items]) => group(t, items.flat(2).filter(i => typeof i === 'string')));
+    group('Other', Object.keys(A));
+  };
+  q.oninput = draw; draw();
+  openDialog({ title: 'Keyboard & mouse', width: 900, onCancel: stop, onOpen: () => q.focus(), body: h('div', null, h('div', { class: 'ohint', style: { marginBottom: '6px' } }, 'Click any shortcut to rebind it. Changes are saved in this browser. Help > Reset custom shortcuts restores the defaults.'), q, box),
+    buttons: [{ label: 'Close', pri: true, fn: stop }] });
 }
 function aboutDialog() {
   openDialog({ title: 'About Pixelorama Web', body: h('div', { style: { maxWidth: '460px', lineHeight: 1.6 } }, h('p', null, 'A single-file, desktop-first pixel art and animation editor inspired by Pixelorama, the free and open source editor by Orama Interactive. Everything runs locally in your browser; nothing is uploaded.'), h('p', { style: { color: 'var(--tx2)' } }, 'Extras beyond the original: smart shape detection (Shift while drawing), multi-scheme snapping, a quick tour and a guided animation demo, hue-shifted color ramps, RotSprite-style rotation, palette-step shading and GIF/APNG/spritesheet export.')), buttons: [{ label: 'Nice', pri: true }] });
@@ -4005,7 +4090,7 @@ function splash() {
 function boot() {
   document.documentElement.dataset.theme = Prefs.theme;
   try { const s = JSON.parse(localStorage.getItem('pxw-slots') || 'null'); if (s && s.slots && Tools[s.slots.left.tool] && Tools[s.slots.right.tool]) { App.slots = s.slots; App.colors = s.colors || App.colors; } } catch (e) {}
-  initViewport(); buildMenus(); buildTools(); buildGlobalToolbar(); buildTimelineBar(); initColorPanel(); initPalettePanel(); buildPalette();
+  applyKeyPrefs(); initViewport(); buildMenus(); buildTools(); buildGlobalToolbar(); buildTimelineBar(); initColorPanel(); initPalettePanel(); buildPalette();
   initRightTabs(); initRefPanel(); initSplitters(); initInput(); initDropAndAutosave(); wireBus(); drawLogo();
   createProject(Prefs.defaultW, Prefs.defaultH, 'Untitled');
   Bus.emit('tool'); Bus.emit('color'); Bus.emit('prefs');
