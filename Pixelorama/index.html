@@ -433,6 +433,11 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .fxv{font-family:var(--mono);min-width:30px;text-align:right}
 .kbx:disabled{opacity:.25;pointer-events:none}
 .lightw{width:104px;height:104px;image-rendering:pixelated;cursor:crosshair;flex:none;touch-action:none}
+/* timelapse */
+.lapse-stage{min-height:200px}
+.lapse-info{font:11px var(--mono);color:var(--tx2);min-height:16px}
+.lapse-x{gap:6px;margin:12px 0 6px;flex-wrap:wrap;color:var(--tx2)}
+.lapse .prow select{flex:none}
 /* pixel critique */
 .crit{position:fixed;z-index:114;width:308px;max-height:min(74vh,660px);display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-radius:8px;box-shadow:var(--shadow)}
 .crit .seg button{padding:1px 6px;font-size:10.5px}
@@ -655,7 +660,7 @@ const PREF_DEFAULTS = {
   onion: false, onionPast: 1, onionFuture: 1, onionAlpha: 0.35, onionTint: true, onionPastColor: '#e5574a', onionFutureColor: '#4fb3a1',
   autosave: true, maxUndo: 120, zoomStep: 1.25, defaultW: 64, defaultH: 64, recentColors: [], uiPanels: {},
   firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}, kidx: { open: false, x: -1, y: 70, w: 320, h: 460 },
-  cmdRecent: [], rotAlgo: 'rotsprite'
+  cmdRecent: [], rotAlgo: 'rotsprite', lapse: true
 };
 const Prefs = (() => {
   let p = {};
@@ -3440,7 +3445,7 @@ function brushFromSelection() {
 }
 /* ---------- menubar ---------- */
 const MENUS = [
-  ['File', ['new', 'open', '-', 'save', 'saveAs', '-', 'import', 'export', 'exportPNG', '-', 'restore', 'close']],
+  ['File', ['new', 'open', '-', 'save', 'saveAs', '-', 'import', 'export', 'exportPNG', 'timelapse', '-', 'restore', 'close']],
   ['Edit', ['undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteIn', 'delete', 'fillL', 'fillR', '-', 'brush', 'clearBrushes', '-', 'prefs']],
   ['Select', ['selAll', 'deselect', 'invertSel', '-', 'grow', 'shrink', '-', 'selContent', 'selColor']],
   ['Image', ['resizeCanvas', 'scaleImage', 'cropSel', 'cropContent', 'center', '-', 'flipH', 'flipV', 'rotCW', 'rotCCW', 'rot180', 'rotate', 'offset']],
@@ -3719,7 +3724,7 @@ function prefsDialog() {
     h('div', { class: 'full mlabel' }, 'Interface'), ...row('Theme', theme), ...row('Intro animation on load', chk('intro')), ...row('Invert wheel zoom', chk('invertWheel')), ...row('Zoom step', num('zoomStep', 1.05, 3, 0.05)),
     h('div', { class: 'full mlabel' }, 'Canvas'), ...row('Checker size (px)', num('checkerSize', 2, 64)), ...row('Pixel grid from zoom', num('pixelGridZoom', 2, 64)), ...row('Pixel grid color', col('pixelGridColor')), ...row('Grid color', col('gridColor')), ...row('Grid offset X / Y', h('div', { class: 'prow' }, num('gridOX', -512, 512), num('gridOY', -512, 512))), ...row('Tile mode dim', num('tileDim', 0, 1, 0.05)),
     h('div', { class: 'full mlabel' }, 'Smart shapes & snapping'), ...row('Smart shapes', chk('smartShapes')), ...row('Hold still to detect', chk('smartHold')), ...row('Hold time (ms)', num('smartHoldMs', 200, 2000, 50)), ...row('Circle bias (0.7-0.98)', num('circleTol', 0.7, 0.98, 0.01)), ...row('Axis snap (degrees)', num('smartAxisSnap', 0, 30)), ...row('Snap distance (px)', num('snapDist', 2, 30)),
-    h('div', { class: 'full mlabel' }, 'Files & history'), ...row('Autosave', chk('autosave')), ...row('Undo steps', num('maxUndo', 10, 1000)),
+    h('div', { class: 'full mlabel' }, 'Files & history'), ...row('Autosave', chk('autosave')), ...row('Record timelapse', chk('lapse')), ...row('Undo steps', num('maxUndo', 10, 1000)),
     h('div', { class: 'full' }, h('button', { class: 'btn sm danger', onclick: async () => { if (await confirmDialog('Reset preferences', 'Restore all preferences to their defaults?', 'Reset', true)) { localStorage.removeItem('pxw-prefs'); location.reload(); } } }, 'Reset all preferences'))),
     buttons: [{ label: 'Done', pri: true }] });
 }
@@ -4678,6 +4683,64 @@ async function DemoScript(D) {
     await D.click('#pl-fwd');
   } finally { restore(); }
 }
+</script>
+<script>
+/* ================= TIMELAPSE: every step of a project, replayable and exportable ================= */
+const Lapse = {
+  max: 1600, t: 0,
+  of(p) { return p.lapse ||= { shots: [], last: '' }; },
+  schedule() { if (!Prefs.lapse || App.demoLock) return; clearTimeout(this.t); const p = App.p; this.t = setTimeout(() => this.capture(p), 160); },
+  async capture(p) {
+    if (!p || !App.projects.includes(p)) return; const L = this.of(p), d = frameData(p, p.frame);
+    let x = 2166136261; for (let i = 0; i < d.length; i += 3) x = Math.imul(x ^ d[i], 16777619); // FNV-1a over most bytes: identical frames are skipped
+    const sig = p.w + 'x' + p.h + ':' + (x >>> 0); if (sig === L.last) return; L.last = sig;
+    const Hs = p.hist, e = Hs.list[Hs.idx], undone = L.hidx != null && Hs.idx < L.hidx && Hs.list[Hs.idx + 1], name = undone ? 'Undo ' + undone.name : e ? e.name : 'Start'; L.hidx = Hs.idx;
+    const z = await deflate(d); L.shots.push({ w: p.w, h: p.h, z, raw: z ? null : new Uint8ClampedArray(d), name, t: Date.now() });
+    if (L.shots.length > this.max) L.shots = L.shots.filter((s, i, a) => i % 2 === 0 || i === a.length - 1); // thin out evenly, keep the end
+  },
+  async pixels(s) { if (s.raw) return s.raw; const b = await inflate(s.z); return new Uint8ClampedArray(b.buffer, b.byteOffset, s.w * s.h * 4); },
+  async frames(L, cap, scale, bg, fpsV) {
+    let idx = L.shots.map((_, k) => k); if (cap && idx.length > cap) { const st = (idx.length - 1) / (cap - 1); idx = Array.from({ length: cap }, (_, k) => Math.round(k * st)); }
+    const W = Math.max(...L.shots.map(s => s.w)), H = Math.max(...L.shots.map(s => s.h)), out = [], bgc = { white: [255, 255, 255, 255], black: [0, 0, 0, 255], canvas: hexToRgba(getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim()) || [18, 17, 16, 255] }[bg];
+    for (const k of idx) {
+      const s = L.shots[k], px = await this.pixels(s), d = new Uint8ClampedArray(W * H * 4), ox = (W - s.w) >> 1, oy = (H - s.h) >> 1;
+      if (bgc) for (let i = 0; i < d.length; i += 4) d.set(bgc, i);
+      for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) { const q = (y * s.w + x) * 4, a = px[q + 3] / 255; if (!a) continue; const o = ((y + oy) * W + x + ox) * 4; if (!bgc || a === 1) d.set(px.subarray(q, q + 4), o); else for (let c = 0; c < 3; c++) d[o + c] = px[q + c] * a + d[o + c] * (1 - a); }
+      out.push({ data: upscale(d, W, H, scale), ms: 1000 / fpsV });
+    }
+    out[out.length - 1].ms = 2500; // linger on the finished piece
+    return { frames: out, W: W * scale, H: H * scale };
+  },
+  dialog() {
+    const p = App.p, L = this.of(p);
+    if (L.shots.length < 2) { toast(Prefs.lapse ? 'Nothing recorded yet. Every step you take in this project is recorded while it is open' : 'Timelapse recording is off (Preferences)', 3200); return; }
+    const n = L.shots.length, W = Math.max(...L.shots.map(s => s.w)), H = Math.max(...L.shots.map(s => s.h)), z = Math.max(1, Math.floor(Math.min(560 / W, 360 / H)));
+    const cv = h('canvas', { width: W, height: H, style: { width: W * z + 'px', height: H * z + 'px' } }), info = h('div', { class: 'lapse-info' });
+    const rng = h('input', { type: 'range', class: 'grow', min: 0, max: n - 1, value: n - 1 }), fps = h('select', null, [5, 10, 15, 24, 30, 60].map(v => h('option', { value: v, selected: v === 15 }, v + ' steps/s')));
+    let i = n - 1, playing = false, timer = 0, alive = true, busy = false;
+    const show = async k => { i = k; const s = L.shots[k], px = await this.pixels(s); if (!alive) return; const c = cv.getContext('2d'); c.clearRect(0, 0, W, H); c.putImageData(new ImageData(new Uint8ClampedArray(px), s.w, s.h), (W - s.w) >> 1, (H - s.h) >> 1); rng.value = k; info.textContent = 'Step ' + (k + 1) + ' of ' + n + '  ·  ' + s.name + '  ·  ' + new Date(s.t).toLocaleTimeString(); };
+    const tick = async () => { if (!playing || !alive) return; await show(i >= n - 1 ? 0 : i + 1); timer = setTimeout(tick, i >= n - 1 ? 1400 : 1000 / +fps.value); };
+    const stop = () => { playing = false; play.textContent = '▶ Play'; clearTimeout(timer); };
+    const play = h('button', { class: 'btn sm', style: { minWidth: '72px' }, onclick: () => { if (playing) stop(); else { playing = true; play.textContent = '❚❚ Pause'; if (i >= n - 1) i = -1; tick(); } } }, '▶ Play');
+    rng.oninput = () => { stop(); show(+rng.value); };
+    const fmt = h('select', null, [['gif', 'GIF'], ['apng', 'Animated PNG']].map(([v, l]) => h('option', { value: v }, l)));
+    const scale = h('select', null, [1, 2, 3, 4, 6, 8].map(v => h('option', { value: v, selected: v === clamp(Math.round(256 / Math.max(W, H)), 1, 8) }, v + 'x')));
+    const cap = h('select', null, [[120, 'max 120 frames'], [300, 'max 300 frames'], [600, 'max 600 frames'], [0, 'every step']].map(([v, l]) => h('option', { value: v, selected: v === 300 }, l)));
+    const bg = h('select', null, [['none', 'transparent'], ['canvas', 'editor background'], ['white', 'white'], ['black', 'black']].map(([v, l]) => h('option', { value: v, selected: v === 'canvas' }, l)));
+    const close = () => { alive = false; clearTimeout(timer); };
+    openDialog({ title: 'Timelapse: ' + p.name, width: 660, onCancel: close, onOpen: () => show(n - 1),
+      body: h('div', { class: 'lapse' }, h('div', { class: 'fx-prev lapse-stage' }, cv), h('div', { class: 'prow', style: { gap: '8px', margin: '10px 0 4px' } }, play, rng, fps), info,
+        h('div', { class: 'prow lapse-x' }, h('span', null, 'Export as'), fmt, scale, cap, h('span', null, 'on'), bg),
+        h('div', { class: 'ohint' }, 'Every change to this project is recorded while it is open, undo steps included. Preferences can turn recording off.')),
+      buttons: [{ label: 'Clear recording', cls: 'danger l', fn: async () => { if (!await confirmDialog('Clear the timelapse?', 'Forget all ' + n + ' recorded steps of "' + p.name + '"? The drawing itself is not touched.', 'Clear', true)) return false; L.shots = L.shots.slice(-1); close(); toast('Timelapse cleared'); } },
+        { label: 'Close', fn: close },
+        { label: 'Export', pri: true, fn: async () => { if (busy) return false; busy = true; toast('Encoding the timelapse…', 1500); try { const r = await this.frames(L, +cap.value, +scale.value, bg.value, +fps.value), nm = (p.name || 'timelapse').replace(/[^\w\- ]+/g, '_') + '_timelapse';
+          download(fmt.value === 'gif' ? encodeGIF(r.frames, r.W, r.H, 0) : await encodeAPNG(r.frames, r.W, r.H, 0), nm + (fmt.value === 'gif' ? '.gif' : '.png')); toast('Timelapse: ' + r.frames.length + ' frames, ' + r.W + ' x ' + r.H); } catch (e) { console.error(e); toast('Export failed: ' + e.message, 4000); } busy = false; return false; } }] });
+  }
+};
+Bus.on('history', () => Lapse.schedule());
+Bus.on('project', () => { if (App.p && !Lapse.of(App.p).shots.length) Lapse.schedule(); });
+act('timelapse', 'Timelapse…', null, () => Lapse.dialog());
 </script>
 <script>
 /* ================= PIXEL CRITIQUE: lints the art for the classic pixel-art mistakes ================= */
