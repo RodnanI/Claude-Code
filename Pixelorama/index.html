@@ -199,7 +199,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:3px;bac
 .ruler canvas{position:absolute;inset:0;width:100%;height:100%}
 #viewport{position:relative;overflow:hidden;min-width:0;min-height:0;outline:none;touch-action:none}
 #view{position:absolute;inset:0;width:100%;height:100%;display:block}
-#viewport.c-none{cursor:none}#viewport.c-cross{cursor:crosshair}#viewport.c-move{cursor:move}#viewport.c-grab{cursor:grab}#viewport.c-grabbing{cursor:grabbing}#viewport.c-zoom{cursor:zoom-in}#viewport.c-text{cursor:text}#viewport.c-pick{cursor:copy}#viewport.c-ns{cursor:ns-resize}#viewport.c-ew{cursor:ew-resize}#viewport.c-nwse{cursor:nwse-resize}#viewport.c-nesw{cursor:nesw-resize}#viewport.c-ptr{cursor:pointer}
+#viewport.c-none{cursor:none}#viewport.c-cross{cursor:crosshair}#viewport.c-move{cursor:move}#viewport.c-grab{cursor:grab}#viewport.c-grabbing{cursor:grabbing}#viewport.c-zoom{cursor:zoom-in}#viewport.c-text{cursor:text}#viewport.c-pick{cursor:copy}#viewport.c-ns{cursor:ns-resize}#viewport.c-ew{cursor:ew-resize}#viewport.c-nwse{cursor:nwse-resize}#viewport.c-nesw{cursor:nesw-resize}#viewport.c-ptr{cursor:pointer}#viewport.c-rot{cursor:var(--cur-rot,alias)}
 .vp-hud{position:absolute;right:10px;bottom:10px;display:flex;gap:4px;align-items:center;background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:6px;padding:3px;z-index:3}
 .vp-hud .z{font-family:var(--mono);min-width:52px;text-align:center;color:var(--tx2);cursor:pointer}
 
@@ -640,7 +640,7 @@ const PREF_DEFAULTS = {
   onion: false, onionPast: 1, onionFuture: 1, onionAlpha: 0.35, onionTint: true, onionPastColor: '#e5574a', onionFutureColor: '#4fb3a1',
   autosave: true, maxUndo: 120, zoomStep: 1.25, defaultW: 64, defaultH: 64, recentColors: [], uiPanels: {},
   firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}, kidx: { open: false, x: -1, y: 70, w: 320, h: 460 },
-  cmdRecent: []
+  cmdRecent: [], rotAlgo: 'rotsprite'
 };
 const Prefs = (() => {
   let p = {};
@@ -2328,7 +2328,7 @@ const Float = {
   active() { return !!this.f; },
   begin(src, x, y, name, liftedFrom) {
     const p = App.p, img = drawTarget(); if (!img) return false;
-    this.f = { layerId: p.layerId, frame: p.frame, img, before: liftedFrom || img.data.slice(), selBefore: p.sel ? p.sel.slice() : null, src, x, y, ox: x, oy: y, sw: src.w, sh: src.h, flipX: false, flipY: false, name };
+    this.f = { layerId: p.layerId, frame: p.frame, img, before: liftedFrom || img.data.slice(), selBefore: p.sel ? p.sel.slice() : null, src, x, y, ox: x, oy: y, sw: src.w, sh: src.h, flipX: false, flipY: false, angle: 0, name };
     if (liftedFrom) img.touch(); this.syncSel(); requestRender(); return true;
   },
   lift() {
@@ -2341,58 +2341,124 @@ const Float = {
     }
     return this.begin({ data, w: b.w, h: b.h, mask }, b.x, b.y, 'Move', before);
   },
-  tdata() {
+  /* scaled + flipped pixels (nearest neighbour), before any free rotation */
+  scaled() {
     const f = this.f, { src } = f, key = f.sw + 'x' + f.sh + f.flipX + f.flipY;
-    if (f._k === key) return f._t;
+    if (f._sk === key) return f._s;
     const w = f.sw, hh = f.sh, d = new Uint8ClampedArray(w * hh * 4), m = new Uint8Array(w * hh);
     for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) {
       let sx = Math.floor(x * src.w / w), sy = Math.floor(y * src.h / hh); if (f.flipX) sx = src.w - 1 - sx; if (f.flipY) sy = src.h - 1 - sy;
       const s = sy * src.w + sx, q = y * w + x; m[q] = src.mask ? src.mask[s] : 1; d.set(src.data.subarray(s * 4, s * 4 + 4), q * 4);
     }
-    const cv = document.createElement('canvas'); cv.width = w; cv.height = hh; cv.getContext('2d').putImageData(new ImageData(d, w, hh), 0, 0);
-    f._k = key; f._t = { d, m, cv }; return f._t;
+    f._sk = key; f._s = { d, m, w, h: hh }; f._up = null; return f._s;
   },
-  drawInto(ctx) { const f = this.f; if (!f) return; ctx.drawImage(this.tdata().cv, f.x, f.y); },
-  syncSel() { const f = this.f, p = App.p, t = this.tdata(), s = new Uint8Array(p.w * p.h); for (let y = 0; y < f.sh; y++) for (let x = 0; x < f.sw; x++) { const X = f.x + x, Y = f.y + y; if (X >= 0 && Y >= 0 && X < p.w && Y < p.h && t.m[y * f.sw + x]) s[Y * p.w + X] = 1; } p.sel = s.some(v => v) ? s : null; p.selVer++; },
-  handles() { const f = this.f, x0 = f.x, y0 = f.y, x1 = f.x + f.sw, y1 = f.y + f.sh, mx = (x0 + x1) / 2, my = (y0 + y1) / 2; return [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [mx, y0], [x1, my], [mx, y1], [x0, my]]; },
-  hit(sx, sy) { if (!this.f) return -1; const hs = this.handles(); for (let i = 0; i < hs.length; i++) { const s = V.toScreen(hs[i][0], hs[i][1]); if (Math.abs(s.x - sx) <= 7 && Math.abs(s.y - sy) <= 7) return i; } return -1; },
+  /* what lands on the canvas: scaled, flipped, then rotated about the box center. RotSprite: Scale2x three times, sample the 8x image, which keeps edges clean */
+  tdata() {
+    const f = this.f, S = this.scaled(), algo = Prefs.rotAlgo, key = f._sk + '@' + f.angle + algo;
+    if (f._k === key) return f._t;
+    let t;
+    if (!f.angle) t = { d: S.d, m: S.m, w: S.w, h: S.h, ox: 0, oy: 0 };
+    else {
+      const th = f.angle * DEG, c = Math.cos(th), sn = Math.sin(th), W = S.w, H = S.h, hx = (Math.abs(W * c) + Math.abs(H * sn)) / 2, hy = (Math.abs(W * sn) + Math.abs(H * c)) / 2;
+      const ox = Math.floor(W / 2 - hx + 1e-6), oy = Math.floor(H / 2 - hy + 1e-6), w = Math.ceil(W / 2 + hx - 1e-6) - ox, hh = Math.ceil(H / 2 + hy - 1e-6) - oy;
+      const k = algo === 'nearest' ? 1 : W * H <= 16384 ? 8 : W * H <= 65536 ? 4 : 1;
+      let up = { d: S.d, w: W, h: H };
+      if (k > 1) { if (!f._up || f._up.k !== k) { let u = up; for (let s = 1; s < k; s *= 2) u = scale2x(u); f._up = { k, u }; } up = f._up.u; }
+      const s32 = new Uint32Array(up.d.buffer, up.d.byteOffset, up.w * up.h), d = new Uint8ClampedArray(w * hh * 4), d32 = new Uint32Array(d.buffer), m = new Uint8Array(w * hh);
+      for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) {
+        const dx = ox + x + .5 - W / 2, dy = oy + y + .5 - H / 2, sx = dx * c + dy * sn + W / 2, sy = -dx * sn + dy * c + H / 2;
+        if (sx < 0 || sy < 0 || sx >= W || sy >= H) continue;
+        const q = y * w + x; m[q] = S.m[Math.floor(sy) * W + Math.floor(sx)]; d32[q] = s32[Math.floor(sy * k) * up.w + Math.floor(sx * k)];
+      }
+      t = { d, m, w, h: hh, ox, oy };
+    }
+    t.cv = document.createElement('canvas'); t.cv.width = t.w; t.cv.height = t.h; t.cv.getContext('2d').putImageData(new ImageData(t.d, t.w, t.h), 0, 0);
+    f._k = key; f._t = t; return t;
+  },
+  drawInto(ctx) { const f = this.f; if (!f) return; const t = this.tdata(); ctx.drawImage(t.cv, f.x + t.ox, f.y + t.oy); },
+  syncSel() { const f = this.f, p = App.p, t = this.tdata(), s = new Uint8Array(p.w * p.h); for (let y = 0; y < t.h; y++) for (let x = 0; x < t.w; x++) { const X = f.x + t.ox + x, Y = f.y + t.oy + y; if (X >= 0 && Y >= 0 && X < p.w && Y < p.h && t.m[y * t.w + x]) s[Y * p.w + X] = 1; } p.sel = s.some(v => v) ? s : null; p.selVer++; Bus.emit('float'); },
+  /* the transform box turns with the content: local box coords -> image coords */
+  frame() { const f = this.f, th = f.angle * DEG; return { cx: f.x + f.sw / 2, cy: f.y + f.sh / 2, c: Math.cos(th), s: Math.sin(th), hw: f.sw / 2, hh: f.sh / 2 }; },
+  toWorld(lx, ly) { const F = this.frame(); return [F.cx + lx * F.c - ly * F.s, F.cy + lx * F.s + ly * F.c]; },
+  handles() { const a = this.f.sw / 2, b = this.f.sh / 2; return [[-a, -b], [a, -b], [a, b], [-a, b], [0, -b], [a, 0], [0, b], [-a, 0]].map(([x, y]) => this.toWorld(x, y)); },
+  rotPt() { return this.toWorld(0, -this.f.sh / 2 - 22 / V.z); }, // the round handle, 22 screen px past the top edge
+  inside(sx, sy) { const q = V.toImg(sx, sy), F = this.frame(), dx = q.x - F.cx, dy = q.y - F.cy; return Math.abs(dx * F.c + dy * F.s) <= F.hw && Math.abs(-dx * F.s + dy * F.c) <= F.hh; },
+  hit(sx, sy) { // 0-7 scale handles, 8 rotate handle, 9 rotate zone just outside a corner
+    if (!this.f) return -1; const r = this.rotPt(), rs = V.toScreen(r[0], r[1]); if (Math.hypot(rs.x - sx, rs.y - sy) <= 8) return 8;
+    const hs = this.handles().map(([x, y]) => V.toScreen(x, y));
+    for (let i = 0; i < hs.length; i++) if (Math.abs(hs[i].x - sx) <= 7 && Math.abs(hs[i].y - sy) <= 7) return i;
+    if (!this.inside(sx, sy)) for (let i = 0; i < 4; i++) if (Math.hypot(hs[i].x - sx, hs[i].y - sy) < 26) return 9;
+    return -1;
+  },
   drawHandles(ctx) {
-    const f = this.f; ctx.strokeStyle = TC.acc; ctx.setLineDash([2, 2]); ctx.strokeRect(Math.round(V.rx(f.x)) + .5, Math.round(V.ry(f.y)) + .5, Math.round(f.sw * V.z), Math.round(f.sh * V.z)); ctx.setLineDash([]);
-    for (const [x, y] of this.handles()) { const sx = Math.round(V.rx(x)), sy = Math.round(V.ry(y)); ctx.fillStyle = '#000'; ctx.fillRect(sx - 5, sy - 5, 10, 10); ctx.fillStyle = '#fff'; ctx.fillRect(sx - 4, sy - 4, 8, 8); }
+    const hs = this.handles().map(([x, y]) => [Math.round(V.rx(x)), Math.round(V.ry(y))]), r = this.rotPt(), rx = V.rx(r[0]), ry = V.ry(r[1]);
+    ctx.strokeStyle = TC.acc; ctx.lineWidth = 1; ctx.setLineDash([2, 2]); ctx.beginPath(); for (let i = 0; i < 4; i++) ctx[i ? 'lineTo' : 'moveTo'](hs[i][0] + .5, hs[i][1] + .5); ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(hs[4][0] + .5, hs[4][1] + .5); ctx.lineTo(rx, ry); ctx.stroke();
+    ctx.beginPath(); ctx.arc(rx, ry, 5.5, 0, Math.PI * 2); ctx.fillStyle = '#000'; ctx.fill(); ctx.beginPath(); ctx.arc(rx, ry, 4, 0, Math.PI * 2); ctx.fillStyle = this.f.angle ? TC.acc : '#fff'; ctx.fill();
+    for (const [sx, sy] of hs) { ctx.fillStyle = '#000'; ctx.fillRect(sx - 5, sy - 5, 10, 10); ctx.fillStyle = '#fff'; ctx.fillRect(sx - 4, sy - 4, 8, 8); }
+    if (this.f.angle) drawLabel(ctx, rx + 10, ry - 8, this.f.angle + '°');
   },
   setRect(x, y, w, hh) { const f = this.f; f.x = x; f.y = y; f.sw = Math.max(1, w); f.sh = Math.max(1, hh); this.syncSel(); requestRender(); },
+  setAngle(a) { const f = this.f; if (!f) return; a = ((a % 360) + 540) % 360 - 180; f.angle = Math.round((a === -180 ? 180 : a) * 10) / 10; this.syncSel(); requestRender(); status('Rotation ' + f.angle + '°'); },
   flip(axis) { const f = this.f; if (axis === 'x') f.flipX = !f.flipX; else f.flipY = !f.flipY; this.syncSel(); requestRender(); },
-  rotate90(cw) { const f = this.f, t = this.tdata(), w = f.sw, hh = f.sh, d = new Uint8ClampedArray(w * hh * 4), m = new Uint8Array(w * hh);
+  rotate90(cw) { const f = this.f, t = this.scaled(), w = t.w, hh = t.h, d = new Uint8ClampedArray(w * hh * 4), m = new Uint8Array(w * hh);
     for (let y = 0; y < hh; y++) for (let x = 0; x < w; x++) { const nx = cw ? hh - 1 - y : y, ny = cw ? x : w - 1 - x, q = ny * hh + nx, s = y * w + x; m[q] = t.m[s]; d.set(t.d.subarray(s * 4, s * 4 + 4), q * 4); }
-    const cx = f.x + w / 2, cy = f.y + hh / 2; f.src = { data: d, w: hh, h: w, mask: m }; f.sw = hh; f.sh = w; f.flipX = f.flipY = false; f._k = null; f.x = Math.round(cx - hh / 2); f.y = Math.round(cy - w / 2); this.syncSel(); requestRender(); },
+    const cx = f.x + w / 2, cy = f.y + hh / 2; f.src = { data: d, w: hh, h: w, mask: m }; f.sw = hh; f.sh = w; f.flipX = f.flipY = false; f._sk = f._k = null; f.x = Math.round(cx - hh / 2); f.y = Math.round(cy - w / 2); this.syncSel(); requestRender(); },
   commit() {
-    const f = this.f; if (!f) return; this.f = null; const p = App.p, img = f.img, t = (this.f = f, this.tdata()); this.f = null;
-    for (let y = 0; y < f.sh; y++) for (let x = 0; x < f.sw; x++) {
-      const X = f.x + x, Y = f.y + y; if (X < 0 || Y < 0 || X >= p.w || Y >= p.h) continue; const q = (y * f.sw + x) * 4; const a = t.d[q + 3] / 255; if (!a) continue;
+    const f = this.f; if (!f) return; const p = App.p, img = f.img, t = this.tdata(); this.f = null;
+    for (let y = 0; y < t.h; y++) for (let x = 0; x < t.w; x++) {
+      const X = f.x + t.ox + x, Y = f.y + t.oy + y; if (X < 0 || Y < 0 || X >= p.w || Y >= p.h) continue; const q = (y * t.w + x) * 4; const a = t.d[q + 3] / 255; if (!a) continue;
       const k = (Y * p.w + X) * 4, da = img.data[k + 3] / 255, oa = a + da * (1 - a);
       for (let c = 0; c < 3; c++) img.data[k + c] = Math.round((t.d[q + c] * a + img.data[k + c] * da * (1 - a)) / oa); img.data[k + 3] = Math.round(oa * 255);
     }
     img.touch(); const after = img.data.slice(), before = f.before, sb = f.selBefore, sa = p.sel ? p.sel.slice() : null;
-    p.hist.push({ name: f.name, undo() { img.data.set(before); img.touch(); p.sel = sb && sb.slice(); p.selVer++; }, redo() { img.data.set(after); img.touch(); p.sel = sa && sa.slice(); p.selVer++; } });
-    Bus.emit('cels'); requestRender();
+    p.hist.push({ name: f.name + (f.angle ? ' + rotate ' + f.angle + '°' : ''), undo() { img.data.set(before); img.touch(); p.sel = sb && sb.slice(); p.selVer++; }, redo() { img.data.set(after); img.touch(); p.sel = sa && sa.slice(); p.selVer++; } });
+    Bus.emit('cels'); Bus.emit('float'); requestRender();
   },
-  cancel() { const f = this.f; if (!f) return; this.f = null; f.img.data.set(f.before); f.img.touch(); App.p.sel = f.selBefore; App.p.selVer++; requestRender(); }
+  cancel() { const f = this.f; if (!f) return; this.f = null; f.img.data.set(f.before); f.img.touch(); App.p.sel = f.selBefore; App.p.selVer++; Bus.emit('float'); requestRender(); }
 };
+/* Move tool options: rotation angle of the floating content and how it is resampled */
+const MoveUI = { sync: null };
+function moveAngleRow() {
+  const rng = h('input', { type: 'range', class: 'grow', min: -180, max: 180, step: 1, title: 'Rotate the floating selection' }), num = h('input', { type: 'number', min: -180, max: 180, step: 0.5 });
+  const sync = () => { const on = Float.active(), a = on ? Float.f.angle : 0; rng.disabled = num.disabled = !on; rng.value = a; if (document.activeElement !== num) num.value = a; };
+  rng.oninput = () => { if (Float.active()) Float.setAngle(+rng.value); }; num.onchange = () => { if (Float.active()) Float.setAngle(+num.value || 0); };
+  const algo = h('div', { class: 'seg' }, [['rotsprite', 'RotSprite'], ['nearest', 'Nearest']].map(([v, l]) => h('button', { class: Prefs.rotAlgo === v ? 'on' : '', title: v === 'rotsprite' ? 'Cleaner edges: Scale2x three times, rotate, sample back down' : 'Plain nearest neighbour, keeps every original color exactly', onclick: e => { Prefs.rotAlgo = v; savePrefs(); $$('button', algo).forEach(b => b.classList.toggle('on', b === e.currentTarget)); if (Float.active()) { Float.f._k = null; Float.syncSel(); requestRender(); } } }, l)));
+  MoveUI.sync = sync; sync();
+  return h('div', null, optRow('Angle', rng, num, h('span', { style: { color: 'var(--mute)' } }, '°')), optRow('Rotate with', algo));
+}
+Bus.on('float', () => MoveUI.sync && MoveUI.sync());
+document.documentElement.style.setProperty('--cur-rot', 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M16.9 17.6A7 7 0 1 1 18.6 9.5" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/><path d="M16.9 17.6A7 7 0 1 1 18.6 9.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M21.2 4.6 21.6 11.4 15.2 9.8Z" fill="#fff" stroke="#000" stroke-linejoin="round"/></svg>') + '") 12 12, alias');
 defTool('move', {
-  name: 'Move', key: 'V', icon: 'move', tip: 'Move the selection contents (or the whole layer). Drag handles to scale', opts: [
-    { type: 'hint', text: 'Arrows nudge 1px (Shift: 10px). Enter applies, Esc cancels. Shift while dragging locks the axis; Shift on a handle keeps proportions.' },
+  name: 'Move', key: 'V', icon: 'move', tip: 'Move the selection contents (or the whole layer). Drag handles to scale, the round handle to rotate', opts: [
+    { type: 'hint', text: 'Arrows nudge 1px (Shift: 10px). [ ] rotate 15° ({ } 1°). Drag the round handle or just outside a corner to rotate, Shift snaps to 15°. Enter applies, Esc cancels.' },
+    { type: 'custom', render: () => moveAngleRow() },
     { type: 'buttons', items: [['Flip H', () => Float.active() ? Float.flip('x') : Img_ops.flip('x')], ['Flip V', () => Float.active() ? Float.flip('y') : Img_ops.flip('y')], ['Rotate 90°', () => Float.active() ? Float.rotate90(true) : Img_ops.rot90(true)], ['Apply', () => Float.commit()]] }],
   down(c) {
     const p = App.p;
     if (p.ref && $('#ref-move') && $('#ref-move').checked) { this.st = { ref: true, sx: c.f.x, sy: c.f.y, ox: p.ref.x, oy: p.ref.y }; return; }
-    if (Float.active()) { const hi = Float.hit(c.s.x, c.s.y); if (hi >= 0) { const f = Float.f; this.st = { handle: hi, r: [f.x, f.y, f.x + f.sw, f.y + f.sh], aspect: f.sw / f.sh }; return; } }
-    else if (!Float.lift()) return false;
+    if (Float.active()) {
+      const hi = Float.hit(c.s.x, c.s.y), f = Float.f;
+      if (hi >= 8) { const F = Float.frame(); this.st = { rot: true, a0: Math.atan2(c.f.y - F.cy, c.f.x - F.cx), ang0: f.angle }; return; }
+      if (hi >= 0) { this.st = { handle: hi, r: [f.x, f.y, f.x + f.sw, f.y + f.sh], aspect: f.sw / f.sh, f0: { x: f.x, y: f.y, sw: f.sw, sh: f.sh } }; return; }
+    } else if (!Float.lift()) return false;
     const f = Float.f; this.st = { sx: c.f.x, sy: c.f.y, ox: f.x, oy: f.y };
   },
   move(c) {
     const s = this.st; if (!s) return; const p = App.p;
     if (s.ref) { p.ref.x = Math.round(s.ox + c.f.x - s.sx); p.ref.y = Math.round(s.oy + c.f.y - s.sy); requestRender(); return; }
     const f = Float.f; if (!f) return;
+    if (s.rot) { const F = Float.frame(); let a = s.ang0 + (Math.atan2(c.f.y - F.cy, c.f.x - F.cx) - s.a0) / DEG; a = c.e.shiftKey ? Math.round(a / 15) * 15 : Math.round(a); Float.setAngle(a); return; }
+    if (s.handle != null && f.angle) { // scale along the rotated axes: the opposite side stays put
+      const F0 = s.f0, th = f.angle * DEG, cs = Math.cos(th), sn = Math.sin(th), cx0 = F0.x + F0.sw / 2, cy0 = F0.y + F0.sh / 2, hi = s.handle;
+      const dx = c.f.x - cx0, dy = c.f.y - cy0, lx = dx * cs + dy * sn, ly = -dx * sn + dy * cs;
+      let L = -F0.sw / 2, Rr = F0.sw / 2, T = -F0.sh / 2, B = F0.sh / 2;
+      if ([0, 3, 7].includes(hi)) L = Rr - Math.max(1, Math.round(Rr - lx)); if ([1, 2, 5].includes(hi)) Rr = L + Math.max(1, Math.round(lx - L));
+      if ([0, 1, 4].includes(hi)) T = B - Math.max(1, Math.round(B - ly)); if ([2, 3, 6].includes(hi)) B = T + Math.max(1, Math.round(ly - T));
+      if (c.e.shiftKey && hi < 4) { const hh2 = Math.max(1, Math.round((Rr - L) / s.aspect)); if (hi < 2) T = B - hh2; else B = T + hh2; }
+      const mx = (L + Rr) / 2, my = (T + B) / 2, nw = Rr - L, nh = B - T;
+      Float.setRect(Math.round(cx0 + mx * cs - my * sn - nw / 2), Math.round(cy0 + mx * sn + my * cs - nh / 2), nw, nh); status('Scale ' + nw + ' x ' + nh); return;
+    }
     if (s.handle != null) {
       let [x0, y0, x1, y1] = s.r; const X = Math.round(c.f.x), Y = Math.round(c.f.y), hi = s.handle;
       if ([0, 3, 7].includes(hi)) x0 = Math.min(X, x1 - 1); if ([1, 2, 5].includes(hi)) x1 = Math.max(X, x0 + 1);
@@ -2406,10 +2472,17 @@ defTool('move', {
     f.x = s.ox + dx; f.y = s.oy + dy; Float.syncSel(); requestRender(); status('Offset ' + (f.x - f.ox) + ', ' + (f.y - f.oy));
   },
   up() { this.st = null; Snap.clear(); },
-  hover(c) { if (Float.active()) { const hi = Float.hit(c.s.x, c.s.y); VP.el.className = hi < 0 ? 'c-move' : ['c-nwse', 'c-nesw', 'c-nwse', 'c-nesw', 'c-ns', 'c-ew', 'c-ns', 'c-ew'][hi]; } },
+  hover(c) {
+    if (!Float.active()) return; const hi = Float.hit(c.s.x, c.s.y);
+    if (hi < 0 || hi >= 8) { VP.el.className = hi < 0 ? 'c-move' : 'c-rot'; return; }
+    const F = Float.frame(), h0 = Float.handles()[hi], s0 = V.toScreen(F.cx, F.cy), s1 = V.toScreen(h0[0], h0[1]), a = ((Math.atan2(s1.y - s0.y, s1.x - s0.x) / DEG) % 180 + 180) % 180;
+    VP.el.className = a < 22.5 || a >= 157.5 ? 'c-ew' : a < 67.5 ? 'c-nwse' : a < 112.5 ? 'c-ns' : 'c-nesw';
+  },
   onKey(e) {
     const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
     if (d) { if (!Float.active() && !Float.lift()) return true; const m = e.shiftKey ? 10 : 1; Float.f.x += d[0] * m; Float.f.y += d[1] * m; Float.syncSel(); requestRender(); return true; }
+    const r = { '[': -15, ']': 15, '{': -1, '}': 1 }[e.key];
+    if (r && !e.ctrlKey && !e.altKey && App.slots.left.tool === 'move') { if (!Float.active() && !Float.lift()) return true; Float.setAngle(Float.f.angle + r); return true; }
     if (e.key === 'Enter' && Float.active()) { Float.commit(); return true; }
     if (e.key === 'Escape' && Float.active()) { Float.cancel(); return true; }
     return false;
@@ -2710,6 +2783,7 @@ function buildOptions(slot) {
       const sel = h('select', { class: 'grow', onchange: e => { o[d.key] = e.target.value; changed(true); } }, d.choices.map(([v, l]) => h('option', { value: v }, l))); sel.value = o[d.key];
       body.append(optRow(d.label, sel));
     } else if (d.type === 'hint') body.append(h('div', { class: 'ohint' }, d.text));
+    else if (d.type === 'custom') body.append(d.render(o, slot));
     else if (d.type === 'buttons') body.append(h('div', { class: 'orow', style: { flexWrap: 'wrap' } }, d.items.map(([l, fn]) => h('button', { class: 'btn sm', onclick: fn }, l))));
     else if (d.type === 'brushes') {
       const row = h('div', { class: 'orow', style: { flexWrap: 'wrap', gap: '4px' } });
@@ -3590,7 +3664,7 @@ function scaleDialog() {
 function rotateDialog() {
   const deg = h('input', { type: 'number', min: -360, max: 360, value: 15 }), algo = h('select', null, [['nearest', 'Nearest neighbor'], ['rotsprite', 'RotSprite-style (cleaner edges)']].map(([v, l]) => h('option', { value: v }, l)));
   const scope = h('select', null, [['cel', 'Current / selected cels'], ['frame', 'Current frame'], ['layer', 'All frames of layer'], ['all', 'Whole project']].map(([v, l]) => h('option', { value: v }, l)));
-  openDialog({ title: 'Rotate', body: h('div', { class: 'frm' }, h('label', null, 'Angle (deg)'), deg, h('label', null, 'Algorithm'), algo, h('label', null, 'Apply to'), scope, h('div', { class: 'full ohint' }, 'Rotates around the selection center (or canvas center).')), buttons: [{ label: 'Cancel' }, { label: 'Rotate', pri: true, fn: () => Img_ops.rotate(+deg.value || 0, algo.value, scope.value) }] });
+  openDialog({ title: 'Rotate', body: h('div', { class: 'frm' }, h('label', null, 'Angle (deg)'), deg, h('label', null, 'Algorithm'), algo, h('label', null, 'Apply to'), scope, h('div', { class: 'full ohint' }, 'Rotates around the selection center (or canvas center). For a live preview, use the Move tool and drag its round handle.')), buttons: [{ label: 'Cancel' }, { label: 'Rotate', pri: true, fn: () => Img_ops.rotate(+deg.value || 0, algo.value, scope.value) }] });
 }
 function offsetDialog() {
   const dx = numIn(0, -4096), dy = numIn(0, -4096), wrap = h('input', { type: 'checkbox', checked: true }), scope = h('select', null, [['cel', 'Current / selected cels'], ['frame', 'Current frame'], ['layer', 'All frames of layer'], ['all', 'Whole project']].map(([v, l]) => h('option', { value: v }, l)));
