@@ -4508,26 +4508,26 @@ const Spot = {
   },
   hide() { if (this.els) { this.els.mask.remove(); this.els.ring.remove(); this.els = null; } }
 };
-function rectOf(t) { const el = typeof t === 'function' ? t() : typeof t === 'string' ? $(t) : t; return el && el.getBoundingClientRect ? el.getBoundingClientRect() : null; }
+function rectOf(t) { const el = typeof t === 'function' ? t() : typeof t === 'string' ? $(t) : t; return el && el.getBoundingClientRect ? el.getBoundingClientRect() : el && 'left' in el ? el : null; }
 const Tour = {
   i: 0, card: null, steps: null, timer: 0, base: null,
   build() {
     const histLen = () => App.p.hist.list.length;
     return [
       { title: 'Welcome to Pixelorama Web', text: 'A 2 minute tour of the controls you need. Some steps have a small task: do it and the tour moves on by itself, or press Next.' },
-      { t: '#viewport', title: 'The canvas', text: 'Your LEFT mouse button uses the left tool (Pencil), your RIGHT button the right tool (Eraser). Both have their own color.', task: 'Draw a stroke with the left button', check: b => App.p.hist.list.slice(b.hist).some(e => e.name === 'Pencil'), place: 'left' },
-      { t: '#viewport', title: 'Erase with the other button', text: 'Right-drag over what you drew. No tool switching needed.', task: 'Right-drag to erase', check: b => App.p.hist.list.slice(b.hist).some(e => e.name === 'Eraser'), place: 'left' },
+      { t: '#viewport', title: 'The canvas', text: 'Your LEFT mouse button uses the left tool (Pencil), your RIGHT button the right tool (Eraser). Both have their own color.', task: 'Draw a stroke with the left button', check: b => App.p.hist.list.slice(b.hist).some(e => e.name === 'Pencil'), hot: true, place: 'right' },
+      { t: '#viewport', title: 'Erase with the other button', text: 'Right-drag over what you drew. No tool switching needed.', task: 'Right-drag to erase', check: b => App.p.hist.list.slice(b.hist).some(e => e.name === 'Eraser'), hot: true, place: 'right' },
       { t: '#tools', title: 'Tools', text: 'Click a tool to give it to the left button, right-click to give it to the right button. Orange marks the left tool, teal the right. Shortcut keys are in the tooltips (Alt+key targets the right button).', task: 'Right-click any tool to assign it to the right button', check: b => App.slots.right.tool !== b.rtool, place: 'right' },
       { t: '#optcol', title: 'Tool options', text: 'Each button keeps its own settings: brush size and shape, pixel perfect, dithering, fill modes and more. Alt+wheel over the canvas changes brush size, [ and ] too.', place: 'right' },
       { t: '#p-color', title: 'Colors', text: 'Click LEFT or RIGHT to choose which color you edit. X swaps them. The strip under the picker is a hue-shifted ramp: shadows drift cool, highlights drift warm, which is how pixel artists build shading.', place: 'left' },
       { t: '#p-palette', title: 'Palette', text: 'Left-click a swatch for the left color, right-click for the right one. Double-click edits, drag reorders, the ... menu has presets, sorting, ramps and import/export.', task: 'Pick a swatch', check: b => !sameColor(App.colors.left, b.lc) || !sameColor(App.colors.right, b.rc), place: 'left' },
-      { t: '#viewport', title: 'Moving around', text: 'Mouse wheel zooms at the cursor. Hold Space and drag (or drag with the middle button) to pan. Press 0 to fit the canvas.', task: 'Zoom in or out', check: b => App.p.view.zoom !== b.zoom, place: 'left' },
+      { t: '#viewport', title: 'Moving around', text: 'Mouse wheel zooms at the cursor. Hold Space and drag (or drag with the middle button) to pan. Press 0 to fit the canvas.', task: 'Zoom in or out', check: b => App.p.view.zoom !== b.zoom, hot: true, place: 'right' },
       { t: '#rt-preview', tf: () => { $('#rtabs [data-t=history]').click(); return $('#p-preview'); }, title: 'Undo is cheap', text: 'Ctrl+Z undoes, Ctrl+Y redoes. The History tab lists every step; click one to jump there.', task: 'Press Ctrl+Z', check: b => App.p.hist.idx < b.idx, place: 'left' },
-      { t: '#viewport', title: 'Smart shapes', text: 'Draw a rough circle, rectangle, triangle or line with the pencil and press Shift before you let go (or just hold still). It becomes a clean shape you can still adjust. If it reads your circle as an oval, click Circle in the chip or press Tab.', task: 'Draw a shape and press Shift', check: b => !!Smart.pending || App.p.hist.list.slice(b.hist).some(e => e.name.startsWith('Smart')), place: 'left' },
+      { t: '#viewport', title: 'Smart shapes', text: 'Draw a rough circle, rectangle, triangle or line with the pencil and press Shift before you let go (or just hold still). It becomes a clean shape you can still adjust. If it reads your circle as an oval, click Circle in the chip or press Tab.', task: 'Draw a shape and press Shift', check: b => !!Smart.pending || App.p.hist.list.slice(b.hist).some(e => e.name.startsWith('Smart')), hot: true, place: 'right' },
       { t: () => $('#gtools [data-g=snapOn]'), title: 'Snapping', text: 'The magnet toggles snapping (S). Right-click it to pick targets: grid, isometric lattice, guides, canvas center and thirds, selection edges, existing pixels, angles and radial spokes. Hold Ctrl to ignore snapping for a moment.', place: 'below' },
       { t: '#cmdk-btn', title: 'Find anything', text: 'Ctrl+K opens the command palette. Type what you want: an action, a tool, a layer, a palette, or a value like 32x32, #ff0044, 400% or "frame 12". Alt+Enter sends tools and colors to the right button.', task: 'Press Ctrl+K', check: () => !!Cmd.el, place: 'below' },
       { t: '#layercol', title: 'Layers', text: 'Layers stack from top to bottom. The eye hides, the lock protects, double-click for opacity, blend mode and clipping masks; right-click for live layer effects like outline, glow and auto-shade. Drag rows to reorder or drop them into groups.', place: 'above' },
-      { t: '#celsarea', title: 'Frames', text: 'Each column is a frame. N adds one, Enter plays, K toggles onion skin so you can see neighboring frames while you draw.', task: 'Add a frame (press N or the + button)', check: b => App.p.frames.length > b.frames, place: 'above' },
+      { t: () => { const a = $('#celsarea').getBoundingClientRect(), b = $('#tlbar').getBoundingClientRect(); return { left: a.left, right: a.right, top: b.top, bottom: a.bottom, width: a.width, height: a.bottom - b.top }; }, title: 'Frames', text: 'Each column is a frame. N adds one, Enter plays, K toggles onion skin so you can see neighboring frames while you draw.', task: 'Add a frame (press N or the + button)', check: b => App.p.frames.length > b.frames, place: 'above' },
       { t: () => $$('#menus .menu')[0], title: 'Save and export', text: 'Ctrl+S saves a .pixo project (layers, frames, tags, palette). File > Export makes PNGs, spritesheets, GIFs, APNGs or a ZIP of frames. Everything also autosaves locally.', place: 'below' },
       { title: 'That is the basics', text: 'Shift+C runs a pixel critique of your art, and File > Timelapse replays how you made it. Want to watch a complete animation get built on screen, with every tool explained as it is used? Start the guided demo. Help menu and F1 bring this tour back.', end: true }
     ];
@@ -4551,19 +4551,28 @@ const Tour = {
         this.i > 0 ? h('button', { class: 'btn sm', onclick: () => { this.i--; this.show(); } }, 'Back') : null,
         s.end ? h('button', { class: 'btn sm', onclick: () => this.stop() }, 'Finish') : h('button', { class: 'btn sm', onclick: () => this.stop() }, 'Skip tour'),
         s.end ? h('button', { class: 'btn sm pri', onclick: () => { this.stop(); Demo.start(); } }, 'Start guided demo') : h('button', { class: 'btn sm pri', onclick: () => this.next() }, 'Next')));
-    document.body.append(this.card); this.place(rect, s.place);
+    document.body.append(this.card); this.place(rect, s.place, s.hot && this.spriteRect());
     if (s.check) this.timer = setInterval(() => { try { if (s.check(this.b)) { clearInterval(this.timer); task.classList.add('done'); done.textContent = '✓'; setTimeout(() => { if (this.steps && this.steps[this.i] === s) this.next(); }, 900); } } catch (e) {} }, 150);
-    this.onResize ||= () => { if (this.steps) { const st = this.steps[this.i]; const r = rectOf((st.tf && st.tf()) || st.t); Spot.show(r); this.place(r, st.place); } };
+    this.onResize ||= () => { if (this.steps) { const st = this.steps[this.i]; const r = rectOf((st.tf && st.tf()) || st.t); Spot.show(r); this.place(r, st.place, st.hot && this.spriteRect()); } };
     window.addEventListener('resize', this.onResize);
   },
-  place(rect, where) {
-    const c = this.card, cw = c.offsetWidth, ch = c.offsetHeight, m = 16; let x, y;
-    if (!rect) { x = (innerWidth - cw) / 2; y = (innerHeight - ch) / 2; }
-    else if (where === 'right') { x = rect.right + m; y = rect.top + 20; }
-    else if (where === 'below') { x = rect.left - cw / 2 + rect.width / 2; y = rect.bottom + m; }
-    else if (where === 'above') { x = rect.left + 40; y = rect.top - ch - m; }
-    else { x = rect.right - cw - 24; y = rect.top + 24; }
-    c.style.left = clamp(x, 10, innerWidth - cw - 10) + 'px'; c.style.top = clamp(y, 10, innerHeight - ch - 10) + 'px';
+  // Screen rect of the sprite itself, clipped to the viewport: the part a canvas task actually needs visible
+  spriteRect() { const p = App.p, v = $('#viewport').getBoundingClientRect(), a = V.clientOf(0, 0), z = V.clientOf(p.w, p.h);
+    return { left: Math.max(v.left, Math.min(a.x, z.x)), right: Math.min(v.right, Math.max(a.x, z.x)), top: Math.max(v.top, Math.min(a.y, z.y)), bottom: Math.min(v.bottom, Math.max(a.y, z.y)) }; },
+  // Try every side, preferred first; keep the card on screen and pick the spot that covers the least of the target (and far less of the sprite)
+  place(rect, where, hot) {
+    const c = this.card, cw = c.offsetWidth, ch = c.offsetHeight, m = 16, W = innerWidth, H = innerHeight;
+    if (!rect) { c.style.left = (W - cw) / 2 + 'px'; c.style.top = (H - ch) / 2 + 'px'; return; }
+    const ov = (r, x, y) => r ? Math.max(0, Math.min(r.right, x + cw) - Math.max(r.left, x)) * Math.max(0, Math.min(r.bottom, y + ch) - Math.max(r.top, y)) : 0;
+    const vy = clamp(rect.top + 20, 10, H - ch - 10), hx = clamp(rect.left + rect.width / 2 - cw / 2, 10, W - cw - 10);
+    const at = { right: [rect.right + m, vy], left: [rect.left - cw - m, vy], below: [hx, rect.bottom + m], above: [hx, rect.top - ch - m] };
+    let best = null;
+    [where, 'right', 'left', 'below', 'above'].forEach((k, n) => {
+      if (!at[k]) return; const x = clamp(at[k][0], 10, W - cw - 10), y = clamp(at[k][1], 10, H - ch - 10);
+      const cost = ov(hot, x, y) * 20 + ov(rect, x, y) + n;
+      if (!best || cost < best.cost) best = { x, y, cost };
+    });
+    c.style.left = best.x + 'px'; c.style.top = best.y + 'px';
   },
   next() { this.i++; this.show(); },
   stop() { clearInterval(this.timer); if (this.card) this.card.remove(); this.card = null; Spot.hide(); this.steps = null; if (this.onResize) window.removeEventListener('resize', this.onResize); }
