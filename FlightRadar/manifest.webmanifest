@@ -1,0 +1,17 @@
+{
+  "name": "SQUAWK Live Flight Radar",
+  "short_name": "SQUAWK",
+  "description": "Live air traffic from free ADS-B networks with 3D airspace, radar scope, sky view and alerts.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#040504",
+  "theme_color": "#0c0f0d",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
