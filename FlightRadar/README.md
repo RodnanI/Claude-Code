@@ -4,6 +4,8 @@ A Flightradar-style live air traffic map built on free, keyless ADS-B data. Plai
 
 Open `index.html` directly, or serve the folder (`python3 -m http.server` inside `FlightRadar/`, then visit `http://localhost:8000`). Serving it over http(s) also enables the installable PWA and offline app shell. If GitHub Pages is enabled for this repo, it runs as-is from `/FlightRadar/`.
 
+**Single file:** `squawk-standalone.html` is the whole app (map engine, fonts, reference data) in one 2.4 MB file that works by double-clicking it. Regenerate it after edits with `python3 build_standalone.py`. It skips the PWA install and offline app shell, which need a server.
+
 ## Data, and what happens when it fails
 
 | Source | Used for | Key needed |
