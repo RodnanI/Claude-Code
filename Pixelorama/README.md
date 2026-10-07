@@ -1,6 +1,6 @@
 # Pixelorama Web
 
-A pixel art and animation editor in one HTML file. Open `index.html` in a desktop browser (Chrome, Edge or Firefox). No install, no build step, no network: everything runs and saves locally.
+A pixel art and animation editor in one HTML file. Open `index.html` in a browser on a desktop, tablet or phone (Chrome, Edge, Firefox or Safari). No install, no build step, no network: everything runs and saves locally.
 
 ## Basics
 
@@ -12,6 +12,18 @@ A pixel art and animation editor in one HTML file. Open `index.html` in a deskto
 - Saves `.pixo` projects. Exports PNG, spritesheets (rows, grid or one row per tag), animated GIF, APNG, video and ZIPs of frames. Autosaves to the browser.
 
 `F1` runs a hands-on tour of the basics, `Shift+F1` a guided demo that builds a bouncing slime animation on screen.
+
+## Phones and tablets
+
+Screens up to about 820 px wide (phones, small tablets in portrait, narrow windows) get a phone layout. Larger tablets keep the desktop layout with the touch extras below. Edit > Touch & phone settings can force either layout.
+
+- **Layout.** A top bar (menu, project, search, undo, redo), the canvas, a frame strip, a palette strip and a dock. The desktop panels open as bottom sheets from the dock: Tools, Color, Options, Layers (the full timeline) and Preview (preview, navigator, history, reference, 3D). In landscape the dock moves to the right edge and the sheets slide in from the side. Swipe a sheet down or tap the canvas to close it.
+- **Two slots.** Left and Right in the dock stand in for the two mouse buttons: each holds a tool and a color. Tap a slot to draw with it, tap the active one again to choose its tool. In the tool sheet, long-press a tool to give it to the right slot.
+- **Gestures.** One finger draws. Pinch zooms (it settles on a crisp zoom step), two fingers pan, a two-finger tap undoes, a three-finger tap redoes. If the second finger lands a moment after the first, the stroke that started is taken back. Touch and hold still to pick a color into the active slot, with a loupe that shows what is under the finger. Once a pen is used, the pen draws and fingers only pan, zoom and pick.
+- **Side rail.** A vertical brush size bar (double-tap for 1 px) and on-screen Shift, Alt and Ctrl. Hold a key while drawing, or tap it to lock it; the small label says what it does for the current tool (square, center, add, subtract, no snap, pick). Shape turns the current or last stroke into a smart shape. Cursor switches to a precision cursor: drag anywhere to steer it, hold the round button to draw, for single pixels without a finger in the way.
+- **Context bar.** Whatever the keyboard used to finish appears above the canvas: Apply and Cancel for transforms, text, curves and crops, Close and Undo point for polygon selections, nudge arrows and rotate buttons for floating pixels, and copy, cut, paste, delete, fill, invert and crop for selections.
+- **Long-press and double-tap.** Long-press does what a right-click does (layer, frame, cel and swatch menus, snap settings) and shows the tooltip of anything else. Double-tap does what a double-click does (rename a layer, frame duration, edit a swatch). In the timeline, a swipe scrolls and hold-then-drag reorders layers, frames and cels.
+- **Everything else.** The menu sheet lists every desktop menu, the search button opens the command palette, dialogs open as bottom sheets, and on touch devices exports go to the share sheet (Photos, Files, other apps). The quick tour has its own touch version, and the guided demo drives the phone layout too.
 
 ## What is new in this build
 
