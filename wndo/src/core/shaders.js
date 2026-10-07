@@ -143,7 +143,7 @@ layout(location = 2) in vec4 aB;
 layout(location = 3) in vec4 aC;
 uniform vec3 uCamPos; uniform mat3 uCamMat; uniform vec2 uTanHalf;
 uniform vec2 uTarget;
-uniform float uK, uFocusInv, uSharp, uBlurAmt, uGain, uHalo, uReflStretch, uShutter;
+uniform float uK, uFocusInv, uSharp, uBlurAmt, uGain, uHalo, uReflStretch, uShutter, uNoDepth;
 uniform sampler2D uDepth;
 out vec2 vL; out vec3 vCol; out vec3 vHaloCol; out float vR; out float vLh; out vec2 vDir; out vec2 vScr; out float vHaloR; out float vSharpF;
 vec2 proj(vec3 p, out float z){
@@ -163,7 +163,7 @@ void main(){
   vec2 suv = ndc * 0.5 + 0.5;
   vec2 dsz = vec2(textureSize(uDepth, 0));
   float vis = 1.0;
-  if (all(greaterThan(suv, vec2(0.0))) && all(lessThan(suv, vec2(1.0)))) {
+  if (uNoDepth < 0.5 && all(greaterThan(suv, vec2(0.0))) && all(lessThan(suv, vec2(1.0)))) {
     float tol = max(0.6, ref * 0.035);
     vis = 0.0;
     for (int i = 0; i < 5; i++) {
@@ -345,7 +345,7 @@ vec3 roomLight(vec3 P, vec3 N, float gloss){
   vec3 G = vec3((uI3.x + uI3.z) * 0.5, (uI3.y + uI3.w) * 0.5 + 0.15, uZ.z + 0.6) - P;
   float g2 = dot(G, G); G *= inversesqrt(g2);
   vec3 outL = OUTAVG + uFlashCol * uFlash;
-  c += outL * (max(dot(N, G), 0.0) * 0.75 / (0.35 + g2 * 0.8) + 0.06);
+  c += outL * (max(dot(N, G), 0.0) * 0.75 / (0.35 + g2 * 0.8) + 0.42);
   c += uLamp * 0.03;
   return c;
 }
@@ -673,7 +673,8 @@ void main(){
     vec2 so = s - q * (dR + lensW) * (1.0 + 0.5 * rho * rho) * k;
     vec3 refr = texture(uDV, s2uv(so)).rgb;
     float edge = smoothstep(0.5, 1.0, rho);
-    refr *= 1.0 - 0.78 * edge * edge * (1.0 - 0.8 * blurF);
+    float small = smoothstep(0.002, 0.008, dR);
+    refr *= 1.0 - 0.78 * edge * edge * (1.0 - 0.8 * blurF) * (0.35 + 0.65 * small);
     vec2 hl = q - vec2(-0.32, 0.42);
     float spec = exp(-dot(hl, hl) * 22.0) * 0.8 + exp(-dot(q - vec2(0.2, -0.55), q - vec2(0.2, -0.55)) * 9.0) * 0.12;
     vec3 sc = OUTAVG * 1.6 + uLamp * 0.05 + uFlashCol * glassFlash * 0.5 + 0.0015;

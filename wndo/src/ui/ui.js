@@ -357,7 +357,7 @@
       app.dim = W.clamp(left / 60, 0, 1);
       if (left <= 0) {
         this.sleepAt = 0;
-        S.set('sleep', '0');
+        S.g.sleep = '0';
         app.dim = 0;
         app.paused = true;
         if (W.audio) W.audio.setMuted(true, true);

@@ -204,7 +204,7 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
   if (inWin > 0.5) {
     vec3 e = vec3(fx - (wc.x - ws.x * 0.5), fy - sill, 0.02);
     vec3 dl = vec3(dot(rd, tang), rd.y, dot(rd, inw));
-    float ctype = floor(h3 * 9.0);
+    float ctype = floor(h3 * 12.0);
     vec3 ic;
     if (lite) {
       ic = lc * on * 0.9 + tv * vec3(0.15, 0.22, 0.4);
@@ -242,8 +242,8 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
     } else if (st < 2.5) {
       alb *= 1.0 - 0.25 * step(fract(p.y / fh), 0.06) * detail;
     }
-    float stain = vnoise(vec2(u * 2.0, p.y * 0.12 + seed));
-    alb *= 0.75 + 0.35 * stain;
+    float stain = vnoise(vec2(u * 0.7, p.y * 0.08 + seed));
+    alb *= 0.85 + 0.25 * stain * detail + 0.1 * (1.0 - detail);
     alb *= 1.0 - 0.25 * uWet;
     if (inCol && upper) {
       float dw = max(max(wd.x, wd.y), 0.0);
@@ -266,8 +266,8 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
       col = vec3(0.012) + sc * 0.08 * step(0.5, open);
     } else if (p.y > 0.35 && p.y < 3.15 && pillar < 0.5) {
       if (shop > 3.5 || shop < 0.5) {
-        float corr = 0.6 + 0.4 * step(0.5, fract(p.y * 9.0));
-        col = vec3(0.05, 0.05, 0.055) * corr * (amb + sl) * 2.0 + vec3(0.03, 0.02, 0.01) * step(shop, 0.5);
+        float corr = 0.85 + 0.15 * step(0.5, fract(p.y * 9.0)) * detail;
+        col = vec3(0.035, 0.035, 0.038) * corr * (amb + sl) + vec3(0.02, 0.013, 0.007) * step(shop, 0.5);
       } else {
         vec3 e = vec3(fract(u / 6.0) * 6.0, p.y, 0.02);
         vec3 dl = vec3(dot(rd, tang), rd.y, max(dot(rd, inw), 0.05));

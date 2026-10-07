@@ -49,7 +49,7 @@
       { key: 'vLife', label: 'Life outside', hint: 'traffic, birds, insects, waves, the train', type: 'range', min: 0, max: 1.5, step: 0.01, def: 1 },
       { key: 'vRoom', label: 'Room', hint: 'fire, clock, the hum of the house', type: 'range', min: 0, max: 1.5, step: 0.01, def: 1 },
       { key: 'vThunder', label: 'Thunder', type: 'range', min: 0, max: 1.5, step: 0.01, def: 1 },
-      { key: 'open', label: 'Window cracked open', hint: 'brighter, closer sound', type: 'toggle', def: false },
+      { key: 'open', label: 'Window', hint: 'open lets more of the outside in', type: 'choice', options: [['auto', 'auto'], ['open', 'open a crack'], ['closed', 'closed']], def: 'auto' },
     ] },
     { tab: 'Image', items: [
       { key: 'exposure', label: 'Brightness', type: 'range', min: -2, max: 2, step: 0.01, def: 0 },
@@ -63,6 +63,7 @@
       { key: 'bokehOnly', label: 'Bokeh only', hint: 'skip the scenery, keep the lights. Very light on battery', type: 'toggle', def: false },
       { key: 'fps', label: 'Frame cap', type: 'choice', options: [['24', '24'], ['30', '30'], ['60', '60'], ['0', 'none']], def: '60' },
       { key: 'autoRes', label: 'Adapt resolution', hint: 'lowers detail when the device struggles', type: 'toggle', def: true },
+      { key: 'smartRes', label: 'Save work while blurred', hint: 'draws the outside at half detail when you cannot see it sharp anyway', type: 'toggle', def: true },
       { key: 'showFps', label: 'Show frame rate', type: 'toggle', def: false },
     ] },
     { tab: 'Extras', items: [
@@ -76,8 +77,8 @@
   const QUALITY = {
     battery: { scale: 0.5, scene: 0.6, out: 0.75, drops: 1, maxH: 1080 },
     balanced: { scale: 0.7, scene: 0.75, out: 1, drops: 1, maxH: 1440 },
-    high: { scale: 0.85, scene: 1, out: 1, drops: 2, maxH: 1800 },
-    ultra: { scale: 1, scene: 1, out: 1, drops: 2, maxH: 2400 },
+    high: { scale: 0.85, scene: 1, out: 1, drops: 2, maxH: 1440 },
+    ultra: { scale: 1, scene: 1, out: 1, drops: 2, maxH: 2160 },
   };
 
   class Settings {
@@ -87,6 +88,7 @@
       this.listeners = [];
       for (const tab of SCHEMA) for (const it of tab.items) if (it.scope !== 'scene') this.g[it.key] = it.def;
       Object.assign(this.g, W.store.get('settings', {}));
+      this.g.sleep = '0';
       this.focus = 0;
     }
     item(key) {

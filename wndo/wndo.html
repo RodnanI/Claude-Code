@@ -667,7 +667,7 @@ layout(location = 2) in vec4 aB;
 layout(location = 3) in vec4 aC;
 uniform vec3 uCamPos; uniform mat3 uCamMat; uniform vec2 uTanHalf;
 uniform vec2 uTarget;
-uniform float uK, uFocusInv, uSharp, uBlurAmt, uGain, uHalo, uReflStretch, uShutter;
+uniform float uK, uFocusInv, uSharp, uBlurAmt, uGain, uHalo, uReflStretch, uShutter, uNoDepth;
 uniform sampler2D uDepth;
 out vec2 vL; out vec3 vCol; out vec3 vHaloCol; out float vR; out float vLh; out vec2 vDir; out vec2 vScr; out float vHaloR; out float vSharpF;
 vec2 proj(vec3 p, out float z){
@@ -687,7 +687,7 @@ void main(){
   vec2 suv = ndc * 0.5 + 0.5;
   vec2 dsz = vec2(textureSize(uDepth, 0));
   float vis = 1.0;
-  if (all(greaterThan(suv, vec2(0.0))) && all(lessThan(suv, vec2(1.0)))) {
+  if (uNoDepth < 0.5 && all(greaterThan(suv, vec2(0.0))) && all(lessThan(suv, vec2(1.0)))) {
     float tol = max(0.6, ref * 0.035);
     vis = 0.0;
     for (int i = 0; i < 5; i++) {
@@ -869,7 +869,7 @@ vec3 roomLight(vec3 P, vec3 N, float gloss){
   vec3 G = vec3((uI3.x + uI3.z) * 0.5, (uI3.y + uI3.w) * 0.5 + 0.15, uZ.z + 0.6) - P;
   float g2 = dot(G, G); G *= inversesqrt(g2);
   vec3 outL = OUTAVG + uFlashCol * uFlash;
-  c += outL * (max(dot(N, G), 0.0) * 0.75 / (0.35 + g2 * 0.8) + 0.06);
+  c += outL * (max(dot(N, G), 0.0) * 0.75 / (0.35 + g2 * 0.8) + 0.42);
   c += uLamp * 0.03;
   return c;
 }
@@ -1197,7 +1197,8 @@ void main(){
     vec2 so = s - q * (dR + lensW) * (1.0 + 0.5 * rho * rho) * k;
     vec3 refr = texture(uDV, s2uv(so)).rgb;
     float edge = smoothstep(0.5, 1.0, rho);
-    refr *= 1.0 - 0.78 * edge * edge * (1.0 - 0.8 * blurF);
+    float small = smoothstep(0.002, 0.008, dR);
+    refr *= 1.0 - 0.78 * edge * edge * (1.0 - 0.8 * blurF) * (0.35 + 0.65 * small);
     vec2 hl = q - vec2(-0.32, 0.42);
     float spec = exp(-dot(hl, hl) * 22.0) * 0.8 + exp(-dot(q - vec2(0.2, -0.55), q - vec2(0.2, -0.55)) * 9.0) * 0.12;
     vec3 sc = OUTAVG * 1.6 + uLamp * 0.05 + uFlashCol * glassFlash * 0.5 + 0.0015;
@@ -1597,6 +1598,8 @@ void main(){
       const G = this.G, gl = this.gl, T = this.T;
       this.canvas.width = cw;
       this.canvas.height = ch;
+      this.sizes = [cw, ch, sceneScale, outScale];
+      sceneScale *= this.sceneMul || 1;
       const sw = Math.max(64, Math.round(cw * sceneScale)), sh = Math.max(64, Math.round(ch * sceneScale));
       if (!T.scene) {
         T.scene = G.target(sw, sh, { nearest: false });
@@ -1632,6 +1635,14 @@ void main(){
       }
       this.aspect = aspect;
       this.winKey = '';
+    }
+
+    // render the scene at a lower resolution while it is blurred anyway
+    setSceneMul(m) {
+      if (m === (this.sceneMul || 1) || !this.sizes) return;
+      this.sceneMul = m;
+      const [cw, ch, s, o] = this.sizes;
+      this.resize(cw, ch, s, o);
     }
 
     // scene helpers ---------------------------------------------------------
@@ -1785,7 +1796,7 @@ void main(){
         uCamPos: c.pos, uCamMat: c.mat, uTanHalf: c.tanHalf, uTarget: [target.w, target.h],
         uK: k, uFocusInv: P.focusInv, uSharp: sharp ? 1 : 0, uBlurAmt: this.blurAmt,
         uGain: P.bokehGain * (sharp ? 1 : P.bokehBoost), uHalo: P.halo, uReflStretch: P.reflStretch, uShutter: P.shutter,
-        uDepth: this.T.scene,
+        uDepth: this.T.scene, uNoDepth: this.G.hdr ? 0 : 1,
         uBlades: P.blades, uBladeRot: 0.3, uRim: P.rim, uCat: P.cat, uCA: P.ca, uSoft: P.soft,
       });
       gl.bindVertexArray(this.vao);
@@ -2441,7 +2452,7 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
   if (inWin > 0.5) {
     vec3 e = vec3(fx - (wc.x - ws.x * 0.5), fy - sill, 0.02);
     vec3 dl = vec3(dot(rd, tang), rd.y, dot(rd, inw));
-    float ctype = floor(h3 * 9.0);
+    float ctype = floor(h3 * 12.0);
     vec3 ic;
     if (lite) {
       ic = lc * on * 0.9 + tv * vec3(0.15, 0.22, 0.4);
@@ -2479,8 +2490,8 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
     } else if (st < 2.5) {
       alb *= 1.0 - 0.25 * step(fract(p.y / fh), 0.06) * detail;
     }
-    float stain = vnoise(vec2(u * 2.0, p.y * 0.12 + seed));
-    alb *= 0.75 + 0.35 * stain;
+    float stain = vnoise(vec2(u * 0.7, p.y * 0.08 + seed));
+    alb *= 0.85 + 0.25 * stain * detail + 0.1 * (1.0 - detail);
     alb *= 1.0 - 0.25 * uWet;
     if (inCol && upper) {
       float dw = max(max(wd.x, wd.y), 0.0);
@@ -2503,8 +2514,8 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
       col = vec3(0.012) + sc * 0.08 * step(0.5, open);
     } else if (p.y > 0.35 && p.y < 3.15 && pillar < 0.5) {
       if (shop > 3.5 || shop < 0.5) {
-        float corr = 0.6 + 0.4 * step(0.5, fract(p.y * 9.0));
-        col = vec3(0.05, 0.05, 0.055) * corr * (amb + sl) * 2.0 + vec3(0.03, 0.02, 0.01) * step(shop, 0.5);
+        float corr = 0.85 + 0.15 * step(0.5, fract(p.y * 9.0)) * detail;
+        col = vec3(0.035, 0.035, 0.038) * corr * (amb + sl) + vec3(0.02, 0.013, 0.007) * step(shop, 0.5);
       } else {
         vec3 e = vec3(fract(u / 6.0) * 6.0, p.y, 0.02);
         vec3 dl = vec3(dot(rd, tang), rd.y, max(dot(rd, inw), 0.05));
@@ -3271,7 +3282,7 @@ void main(){
   vec3 amb = vec3(0.3, 0.32, 0.35) * (1.0 - uRain * 0.3) + uFlash * 0.3;
   vec3 sunC = vec3(1.0, 0.86, 0.66) * uSun * 1.4;
   vec3 fogC = vec3(0.5, 0.53, 0.56) * (1.0 - uRain * 0.3);
-  float fogD = 0.006 + uFog * 0.012 + uRain * 0.006;
+  float fogD = 0.003 + uFog * 0.008 + uRain * 0.006;
   vec3 col = sky(rd);
   float dist = 9000.0;
   float tg = rd.y < 0.0 ? -ro.y / rd.y : 1e9;
@@ -3293,7 +3304,7 @@ void main(){
   if (rd.y < 0.0 && hd < D[0]) {
     vec3 p = ro + rd * tg;
     float edge = smoothstep(32.0, 48.0, p.z + vnoise(p.xz * 0.05) * 14.0);
-    vec3 g1 = vec3(0.16, 0.2, 0.07), g2 = vec3(0.26, 0.25, 0.1);
+    vec3 g1 = vec3(0.13, 0.2, 0.05), g2 = vec3(0.28, 0.27, 0.08);
     vec3 alb = mix(g1, g2, vnoise(p.xz * 0.15)) * (0.75 + 0.5 * vnoise(p.xz * 1.3));
     alb = mix(alb, vec3(0.07, 0.07, 0.04), edge);
     // the wind running through the grass as moving bands of light
@@ -3372,11 +3383,11 @@ void main(){
     audio: 'forest',
     leaves: 1,
     bokehBg: ['#8a9096', '#4c5a46', '#2a3020'],
-    defaults: { rain: 0, wind: 0.65, fog: 0.25, cond: 0.06, frost: 0, lightning: 0 },
+    defaults: { rain: 0.12, wind: 0.65, fog: 0.2, cond: 0.06, frost: 0, lightning: 0 },
     controls: ['rain', 'wind', 'fog', 'cond', 'lightning'],
     look: {
       frame: 'casement', material: 'oak', wall: '#b9ab96', lamp: 0.35, candle: false, mug: true, plant: true,
-      exposure: -0.55, sat: 0.95, contrast: 1.05, lift: [0.01, 0.012, 0.01], gain: [1.0, 1.0, 0.97],
+      exposure: -0.3, sat: 1.12, contrast: 1.08, lift: [0.01, 0.012, 0.01], gain: [1.0, 1.0, 0.97],
       bloom: 0.04, halo: 0.3, dTyp: 25, reflStretch: 2, refl: 0.4, flowAng: 0,
     },
 
@@ -3418,15 +3429,15 @@ void main(){
         this.spark.push([c[0] + r.range(-0.3, 0.3) * c[3] * 0.5, c[1] + r.range(-0.25, 0.35) * c[3], c[2] - 0.5, r() * 10, r.range(0.6, 1.4)]);
       }
       this.gaps = [];
-      for (let i = 0; i < 42; i++) {
+      for (let i = 0; i < 90; i++) {
         const c = r.pick(this.crowns);
-        this.gaps.push([c[0] + r.range(-0.4, 0.4) * c[3] * 0.6, c[1] + r.range(-0.15, 0.45) * c[3], c[2] + 0.5, r.range(0.4, 1.0), r.range(0.25, 0.9)]);
+        this.gaps.push([c[0] + r.range(-0.45, 0.45) * c[3] * 0.6, c[1] + r.range(-0.1, 0.5) * c[3], c[2] + 0.5, r.range(0.25, 0.9), Math.pow(r(), 2.2) * 1.1 + 0.08]);
       }
     },
 
     update(dt, t, env, R) {
       const L = R.lights;
-      this.sun = W.smoothstep(0.45, 0.8, this.sunN(t * 0.025)) * (1 - env.rain) * (1 - env.fog * 0.5);
+      this.sun = W.smoothstep(0.3, 0.68, this.sunN(t * 0.025)) * (1 - env.rain * 0.8) * (1 - env.fog * 0.5);
       // sun glints on fluttering leaves
       if (this.sun > 0.05) {
         for (const s of this.spark) {
@@ -3436,7 +3447,7 @@ void main(){
       }
       // bright sky through the crowns: soft discs only when blurred
       const sk = 1.1 + this.sun * 0.6;
-      for (const g of this.gaps) { const k = sk * g[4]; L.add(g[0] + Math.sin(t * 0.9 + g[3] * 5) * env.gust * 0.4, g[1], g[2], g[3], k * 0.96, k, k * 0.93, 0, 3); }
+      for (const g of this.gaps) { const k = sk * g[4] * (0.85 + 0.15 * Math.sin(t * 1.7 + g[3] * 9) * env.gust); L.add(g[0] + Math.sin(t * 0.9 + g[3] * 5) * env.gust * 0.4, g[1], g[2], g[3], k * 0.95, k, k * 0.9, 0, 3); }
     },
 
     render(R, t, dt, P) {
@@ -3448,7 +3459,7 @@ void main(){
       this.bb.draw(t, {
         gust: e.gust, wind: e.wind, flutter: 1,
         amb, sun: W.scale3([1.0, 0.86, 0.66], this.sun * 1.3),
-        fogCol: W.scale3([0.5, 0.53, 0.56], 1 - e.rain * 0.3), fogD: 0.006 + e.fog * 0.012 + e.rain * 0.006,
+        fogCol: W.scale3([0.5, 0.53, 0.56], 1 - e.rain * 0.3), fogD: 0.003 + e.fog * 0.008 + e.rain * 0.006,
       }, true);
       const gl = R.gl;
       gl.enable(gl.BLEND);
@@ -3964,7 +3975,7 @@ void main(){
     defaults: { rain: 0, wind: 0.15, fog: 0.3, cond: 0.12, frost: 0, lightning: 1, fireflies: 0.6 },
     controls: ['rain', 'wind', 'fog', 'cond', 'lightning', 'fireflies'],
     look: {
-      frame: 'picture', material: 'white', wall: '#cdbfae', lamp: 0.3, candle: true, mug: false, plant: true,
+      frame: 'picture', material: 'white', wall: '#cdbfae', lamp: 0.3, open: true, candle: true, mug: false, plant: true,
       exposure: 1.6, sat: 1.0, contrast: 1.04, lift: [0.008, 0.009, 0.014], gain: [0.98, 1.0, 1.03],
       bloom: 0.05, halo: 0.6, dTyp: 40, reflStretch: 2, refl: 1.1, flowAng: 0,
     },
@@ -4808,7 +4819,7 @@ void main(){
       { key: 'vLife', label: 'Life outside', hint: 'traffic, birds, insects, waves, the train', type: 'range', min: 0, max: 1.5, step: 0.01, def: 1 },
       { key: 'vRoom', label: 'Room', hint: 'fire, clock, the hum of the house', type: 'range', min: 0, max: 1.5, step: 0.01, def: 1 },
       { key: 'vThunder', label: 'Thunder', type: 'range', min: 0, max: 1.5, step: 0.01, def: 1 },
-      { key: 'open', label: 'Window cracked open', hint: 'brighter, closer sound', type: 'toggle', def: false },
+      { key: 'open', label: 'Window', hint: 'open lets more of the outside in', type: 'choice', options: [['auto', 'auto'], ['open', 'open a crack'], ['closed', 'closed']], def: 'auto' },
     ] },
     { tab: 'Image', items: [
       { key: 'exposure', label: 'Brightness', type: 'range', min: -2, max: 2, step: 0.01, def: 0 },
@@ -4822,6 +4833,7 @@ void main(){
       { key: 'bokehOnly', label: 'Bokeh only', hint: 'skip the scenery, keep the lights. Very light on battery', type: 'toggle', def: false },
       { key: 'fps', label: 'Frame cap', type: 'choice', options: [['24', '24'], ['30', '30'], ['60', '60'], ['0', 'none']], def: '60' },
       { key: 'autoRes', label: 'Adapt resolution', hint: 'lowers detail when the device struggles', type: 'toggle', def: true },
+      { key: 'smartRes', label: 'Save work while blurred', hint: 'draws the outside at half detail when you cannot see it sharp anyway', type: 'toggle', def: true },
       { key: 'showFps', label: 'Show frame rate', type: 'toggle', def: false },
     ] },
     { tab: 'Extras', items: [
@@ -4835,8 +4847,8 @@ void main(){
   const QUALITY = {
     battery: { scale: 0.5, scene: 0.6, out: 0.75, drops: 1, maxH: 1080 },
     balanced: { scale: 0.7, scene: 0.75, out: 1, drops: 1, maxH: 1440 },
-    high: { scale: 0.85, scene: 1, out: 1, drops: 2, maxH: 1800 },
-    ultra: { scale: 1, scene: 1, out: 1, drops: 2, maxH: 2400 },
+    high: { scale: 0.85, scene: 1, out: 1, drops: 2, maxH: 1440 },
+    ultra: { scale: 1, scene: 1, out: 1, drops: 2, maxH: 2160 },
   };
 
   class Settings {
@@ -4846,6 +4858,7 @@ void main(){
       this.listeners = [];
       for (const tab of SCHEMA) for (const it of tab.items) if (it.scope !== 'scene') this.g[it.key] = it.def;
       Object.assign(this.g, W.store.get('settings', {}));
+      this.g.sleep = '0';
       this.focus = 0;
     }
     item(key) {
@@ -5262,7 +5275,7 @@ void main(){
       app.dim = W.clamp(left / 60, 0, 1);
       if (left <= 0) {
         this.sleepAt = 0;
-        S.set('sleep', '0');
+        S.g.sleep = '0';
         app.dim = 0;
         app.paused = true;
         if (W.audio) W.audio.setMuted(true, true);
@@ -5659,9 +5672,10 @@ void main(){
     this.ramp(this.bus.life.gain, g.vLife, 0.2);
     this.ramp(this.bus.room.gain, g.vRoom, 0.2);
     this.ramp(this.bus.thunder.gain, g.vThunder, 0.2);
-    this.open = !!g.open;
-    this.ramp(this.win.frequency, this.open ? 12000 : 2600, 0.5);
-    this.ramp(this.winGain.gain, this.open ? 1.15 : 0.8, 0.5);
+    const sc = this.app && this.app.scene;
+    this.open = g.open === 'open' || (g.open !== 'closed' && !!(sc && sc.look && sc.look.open));
+    this.ramp(this.win.frequency, this.open ? 14000 : 5200, 0.5);
+    this.ramp(this.winGain.gain, this.open ? 1.1 : 0.85, 0.5);
   };
 
   A.setMuted = function (m, slow) {
@@ -5719,6 +5733,7 @@ void main(){
   A.setScene = function (sc) {
     if (!this.ctx || !sc) return;
     if (this.scape && this.scape.id === sc.id) return;
+    this.settings(this.app.S);
     if (this.scape) this.fadeScene();
     const make = SCAPES[sc.audio];
     if (!make) return;
@@ -5963,7 +5978,7 @@ void main(){
       a.chain(a.loopSrc(a.buf.brown, 0.9), a.filter('lowpass', 320), mod, roar, a.bus.room);
       const hiss = a.gain(0.004);
       a.chain(a.loopSrc(a.buf.white), a.filter('highpass', 4500), hiss, a.bus.room);
-      a.ramp(roar.gain, 0.3, 2);
+      a.ramp(roar.gain, 0.6, 2);
       let burst = 0;
       return {
         events: [
@@ -5975,7 +5990,7 @@ void main(){
               else if (rnd() < 0.08) burst = Math.floor(R(3, 9));
               const big = rnd() < 0.05;
               const g = big ? a.grains.pop : a.grains.crackle;
-              a.grain(g[Math.floor(rnd() * g.length)], t, big ? 0.16 : R(0.015, 0.09), R(-0.35, 0.05), a.bus.room, R(0.8, 1.25));
+              a.grain(g[Math.floor(rnd() * g.length)], t, big ? 0.24 : R(0.025, 0.14), R(-0.35, 0.05), a.bus.room, R(0.8, 1.25));
             },
           },
           {
@@ -6030,8 +6045,8 @@ void main(){
       };
       return {
         update(dt, t, app) {
-          a.ramp(surf.gain, 0.06 + app.env.waves * 0.08, 1);
-          a.ramp(surf2.gain, 0.12 + app.env.waves * 0.18, 1);
+          a.ramp(surf.gain, 0.08 + app.env.waves * 0.1, 1);
+          a.ramp(surf2.gain, 0.16 + app.env.waves * 0.22, 1);
         },
         events: [{ first: () => R(3, 9), gap: () => R(9, 30), fire: gull }],
         stop() { out.disconnect(); },
@@ -6042,13 +6057,13 @@ void main(){
       const nodes = [];
       for (let i = 0; i < 6; i++) {
         const b = cricketLoop(a.ctx, R(3900, 4900), R(0.32, 0.72), Math.floor(R(3, 6)), R(26, 40), R(-0.9, 0.9));
-        const g = a.gain(R(0.01, 0.028));
+        const g = a.gain(R(0.08, 0.19));
         a.chain(a.loopSrc(b), a.filter('lowpass', 7000), g, out);
         nodes.push(g);
       }
       for (let i = 0; i < 2; i++) {
         const b = trillLoop(a.ctx, R(2700, 3400), R(38, 55), R(-0.7, 0.7));
-        const g = a.gain(0.006);
+        const g = a.gain(0.04);
         a.chain(a.loopSrc(b), g, out);
         nodes.push(g);
       }
@@ -6082,7 +6097,7 @@ void main(){
         o.frequency.linearRampToValueAtTime(f * 1.15, t + 0.09);
         const g = a.gain(0);
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.007, t + 0.02);
+        g.gain.linearRampToValueAtTime(0.02, t + 0.02);
         g.gain.linearRampToValueAtTime(0, t + 0.1);
         a.chain(o, g, pan, out);
         o.start(t);
@@ -6115,14 +6130,14 @@ void main(){
         update(dt, t, app) {
           speed = app.env.speedMs || 0;
           const k = speed / 33;
-          a.ramp(rumble.gain, (0.12 + k * 0.4) * (1 + inTunnel * 1.2), 0.3);
+          a.ramp(rumble.gain, (0.08 + k * 0.26) * (1 + inTunnel * 1.2), 0.3);
           a.ramp(body.gain, (0.05 + k * 0.25) * (1 + inTunnel), 0.3);
           a.ramp(air.gain, k * 0.06 * (1 + inTunnel * 2.5), 0.3);
           a.ramp(airBP.frequency, 500 + k * 500 + inTunnel * 400, 0.5);
         },
         tunnel(inside) {
           inTunnel = inside ? 1 : 0;
-          a.ramp(a.winGain.gain, inside ? 0.25 : (a.open ? 1.15 : 0.8), 0.25);
+          a.ramp(a.winGain.gain, inside ? 0.25 : (a.open ? 1.1 : 0.85), 0.25);
         },
         events: [
           {
@@ -6146,7 +6161,7 @@ void main(){
         stop() {
           [rumble, body, air, hg].forEach((g) => a.ramp(g.gain, 0, 0.5));
           setTimeout(() => { try { hum.stop(); } catch (e) { /* stopped */ } rumble.disconnect(); body.disconnect(); hg.disconnect(); }, 3000);
-          a.ramp(a.winGain.gain, a.open ? 1.15 : 0.8, 0.3);
+          a.ramp(a.winGain.gain, a.open ? 1.1 : 0.85, 0.3);
           out.disconnect();
         },
       };
@@ -6457,6 +6472,10 @@ void main(){
       app.R.lights.clear();
       sc.update(dt, t, app.env, app.R, app);
       const P = params(dt, t);
+      if (app.S.g.smartRes) {
+        if (app.focus < 0.08 && app.focusTarget < 0.5) app.R.setSceneMul(0.5);
+        else if (app.focus > 0.1 || app.focusTarget > 0.5) app.R.setSceneMul(1);
+      } else app.R.setSceneMul(1);
       app.R.frame(t, dt, sc, P);
     } catch (e) {
       showError(e);

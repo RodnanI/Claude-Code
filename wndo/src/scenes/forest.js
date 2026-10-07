@@ -42,7 +42,7 @@ void main(){
   vec3 amb = vec3(0.3, 0.32, 0.35) * (1.0 - uRain * 0.3) + uFlash * 0.3;
   vec3 sunC = vec3(1.0, 0.86, 0.66) * uSun * 1.4;
   vec3 fogC = vec3(0.5, 0.53, 0.56) * (1.0 - uRain * 0.3);
-  float fogD = 0.006 + uFog * 0.012 + uRain * 0.006;
+  float fogD = 0.003 + uFog * 0.008 + uRain * 0.006;
   vec3 col = sky(rd);
   float dist = 9000.0;
   float tg = rd.y < 0.0 ? -ro.y / rd.y : 1e9;
@@ -64,7 +64,7 @@ void main(){
   if (rd.y < 0.0 && hd < D[0]) {
     vec3 p = ro + rd * tg;
     float edge = smoothstep(32.0, 48.0, p.z + vnoise(p.xz * 0.05) * 14.0);
-    vec3 g1 = vec3(0.16, 0.2, 0.07), g2 = vec3(0.26, 0.25, 0.1);
+    vec3 g1 = vec3(0.13, 0.2, 0.05), g2 = vec3(0.28, 0.27, 0.08);
     vec3 alb = mix(g1, g2, vnoise(p.xz * 0.15)) * (0.75 + 0.5 * vnoise(p.xz * 1.3));
     alb = mix(alb, vec3(0.07, 0.07, 0.04), edge);
     // the wind running through the grass as moving bands of light
@@ -143,11 +143,11 @@ void main(){
     audio: 'forest',
     leaves: 1,
     bokehBg: ['#8a9096', '#4c5a46', '#2a3020'],
-    defaults: { rain: 0, wind: 0.65, fog: 0.25, cond: 0.06, frost: 0, lightning: 0 },
+    defaults: { rain: 0.12, wind: 0.65, fog: 0.2, cond: 0.06, frost: 0, lightning: 0 },
     controls: ['rain', 'wind', 'fog', 'cond', 'lightning'],
     look: {
       frame: 'casement', material: 'oak', wall: '#b9ab96', lamp: 0.35, candle: false, mug: true, plant: true,
-      exposure: -0.55, sat: 0.95, contrast: 1.05, lift: [0.01, 0.012, 0.01], gain: [1.0, 1.0, 0.97],
+      exposure: -0.3, sat: 1.12, contrast: 1.08, lift: [0.01, 0.012, 0.01], gain: [1.0, 1.0, 0.97],
       bloom: 0.04, halo: 0.3, dTyp: 25, reflStretch: 2, refl: 0.4, flowAng: 0,
     },
 
@@ -189,15 +189,15 @@ void main(){
         this.spark.push([c[0] + r.range(-0.3, 0.3) * c[3] * 0.5, c[1] + r.range(-0.25, 0.35) * c[3], c[2] - 0.5, r() * 10, r.range(0.6, 1.4)]);
       }
       this.gaps = [];
-      for (let i = 0; i < 42; i++) {
+      for (let i = 0; i < 90; i++) {
         const c = r.pick(this.crowns);
-        this.gaps.push([c[0] + r.range(-0.4, 0.4) * c[3] * 0.6, c[1] + r.range(-0.15, 0.45) * c[3], c[2] + 0.5, r.range(0.4, 1.0), r.range(0.25, 0.9)]);
+        this.gaps.push([c[0] + r.range(-0.45, 0.45) * c[3] * 0.6, c[1] + r.range(-0.1, 0.5) * c[3], c[2] + 0.5, r.range(0.25, 0.9), Math.pow(r(), 2.2) * 1.1 + 0.08]);
       }
     },
 
     update(dt, t, env, R) {
       const L = R.lights;
-      this.sun = W.smoothstep(0.45, 0.8, this.sunN(t * 0.025)) * (1 - env.rain) * (1 - env.fog * 0.5);
+      this.sun = W.smoothstep(0.3, 0.68, this.sunN(t * 0.025)) * (1 - env.rain * 0.8) * (1 - env.fog * 0.5);
       // sun glints on fluttering leaves
       if (this.sun > 0.05) {
         for (const s of this.spark) {
@@ -207,7 +207,7 @@ void main(){
       }
       // bright sky through the crowns: soft discs only when blurred
       const sk = 1.1 + this.sun * 0.6;
-      for (const g of this.gaps) { const k = sk * g[4]; L.add(g[0] + Math.sin(t * 0.9 + g[3] * 5) * env.gust * 0.4, g[1], g[2], g[3], k * 0.96, k, k * 0.93, 0, 3); }
+      for (const g of this.gaps) { const k = sk * g[4] * (0.85 + 0.15 * Math.sin(t * 1.7 + g[3] * 9) * env.gust); L.add(g[0] + Math.sin(t * 0.9 + g[3] * 5) * env.gust * 0.4, g[1], g[2], g[3], k * 0.95, k, k * 0.9, 0, 3); }
     },
 
     render(R, t, dt, P) {
@@ -219,7 +219,7 @@ void main(){
       this.bb.draw(t, {
         gust: e.gust, wind: e.wind, flutter: 1,
         amb, sun: W.scale3([1.0, 0.86, 0.66], this.sun * 1.3),
-        fogCol: W.scale3([0.5, 0.53, 0.56], 1 - e.rain * 0.3), fogD: 0.006 + e.fog * 0.012 + e.rain * 0.006,
+        fogCol: W.scale3([0.5, 0.53, 0.56], 1 - e.rain * 0.3), fogD: 0.003 + e.fog * 0.008 + e.rain * 0.006,
       }, true);
       const gl = R.gl;
       gl.enable(gl.BLEND);

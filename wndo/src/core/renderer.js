@@ -188,6 +188,8 @@
       const G = this.G, gl = this.gl, T = this.T;
       this.canvas.width = cw;
       this.canvas.height = ch;
+      this.sizes = [cw, ch, sceneScale, outScale];
+      sceneScale *= this.sceneMul || 1;
       const sw = Math.max(64, Math.round(cw * sceneScale)), sh = Math.max(64, Math.round(ch * sceneScale));
       if (!T.scene) {
         T.scene = G.target(sw, sh, { nearest: false });
@@ -223,6 +225,14 @@
       }
       this.aspect = aspect;
       this.winKey = '';
+    }
+
+    // render the scene at a lower resolution while it is blurred anyway
+    setSceneMul(m) {
+      if (m === (this.sceneMul || 1) || !this.sizes) return;
+      this.sceneMul = m;
+      const [cw, ch, s, o] = this.sizes;
+      this.resize(cw, ch, s, o);
     }
 
     // scene helpers ---------------------------------------------------------
@@ -376,7 +386,7 @@
         uCamPos: c.pos, uCamMat: c.mat, uTanHalf: c.tanHalf, uTarget: [target.w, target.h],
         uK: k, uFocusInv: P.focusInv, uSharp: sharp ? 1 : 0, uBlurAmt: this.blurAmt,
         uGain: P.bokehGain * (sharp ? 1 : P.bokehBoost), uHalo: P.halo, uReflStretch: P.reflStretch, uShutter: P.shutter,
-        uDepth: this.T.scene,
+        uDepth: this.T.scene, uNoDepth: this.G.hdr ? 0 : 1,
         uBlades: P.blades, uBladeRot: 0.3, uRim: P.rim, uCat: P.cat, uCA: P.ca, uSoft: P.soft,
       });
       gl.bindVertexArray(this.vao);

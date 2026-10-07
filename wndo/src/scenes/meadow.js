@@ -130,7 +130,7 @@ void main(){
     defaults: { rain: 0, wind: 0.15, fog: 0.3, cond: 0.12, frost: 0, lightning: 1, fireflies: 0.6 },
     controls: ['rain', 'wind', 'fog', 'cond', 'lightning', 'fireflies'],
     look: {
-      frame: 'picture', material: 'white', wall: '#cdbfae', lamp: 0.3, candle: true, mug: false, plant: true,
+      frame: 'picture', material: 'white', wall: '#cdbfae', lamp: 0.3, open: true, candle: true, mug: false, plant: true,
       exposure: 1.6, sat: 1.0, contrast: 1.04, lift: [0.008, 0.009, 0.014], gain: [0.98, 1.0, 1.03],
       bloom: 0.05, halo: 0.6, dTyp: 40, reflStretch: 2, refl: 1.1, flowAng: 0,
     },

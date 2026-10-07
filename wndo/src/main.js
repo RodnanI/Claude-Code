@@ -296,6 +296,10 @@
       app.R.lights.clear();
       sc.update(dt, t, app.env, app.R, app);
       const P = params(dt, t);
+      if (app.S.g.smartRes) {
+        if (app.focus < 0.08 && app.focusTarget < 0.5) app.R.setSceneMul(0.5);
+        else if (app.focus > 0.1 || app.focusTarget > 0.5) app.R.setSceneMul(1);
+      } else app.R.setSceneMul(1);
       app.R.frame(t, dt, sc, P);
     } catch (e) {
       showError(e);

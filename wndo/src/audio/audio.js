@@ -370,9 +370,10 @@
     this.ramp(this.bus.life.gain, g.vLife, 0.2);
     this.ramp(this.bus.room.gain, g.vRoom, 0.2);
     this.ramp(this.bus.thunder.gain, g.vThunder, 0.2);
-    this.open = !!g.open;
-    this.ramp(this.win.frequency, this.open ? 12000 : 2600, 0.5);
-    this.ramp(this.winGain.gain, this.open ? 1.15 : 0.8, 0.5);
+    const sc = this.app && this.app.scene;
+    this.open = g.open === 'open' || (g.open !== 'closed' && !!(sc && sc.look && sc.look.open));
+    this.ramp(this.win.frequency, this.open ? 14000 : 5200, 0.5);
+    this.ramp(this.winGain.gain, this.open ? 1.1 : 0.85, 0.5);
   };
 
   A.setMuted = function (m, slow) {
@@ -430,6 +431,7 @@
   A.setScene = function (sc) {
     if (!this.ctx || !sc) return;
     if (this.scape && this.scape.id === sc.id) return;
+    this.settings(this.app.S);
     if (this.scape) this.fadeScene();
     const make = SCAPES[sc.audio];
     if (!make) return;
@@ -674,7 +676,7 @@
       a.chain(a.loopSrc(a.buf.brown, 0.9), a.filter('lowpass', 320), mod, roar, a.bus.room);
       const hiss = a.gain(0.004);
       a.chain(a.loopSrc(a.buf.white), a.filter('highpass', 4500), hiss, a.bus.room);
-      a.ramp(roar.gain, 0.3, 2);
+      a.ramp(roar.gain, 0.6, 2);
       let burst = 0;
       return {
         events: [
@@ -686,7 +688,7 @@
               else if (rnd() < 0.08) burst = Math.floor(R(3, 9));
               const big = rnd() < 0.05;
               const g = big ? a.grains.pop : a.grains.crackle;
-              a.grain(g[Math.floor(rnd() * g.length)], t, big ? 0.16 : R(0.015, 0.09), R(-0.35, 0.05), a.bus.room, R(0.8, 1.25));
+              a.grain(g[Math.floor(rnd() * g.length)], t, big ? 0.24 : R(0.025, 0.14), R(-0.35, 0.05), a.bus.room, R(0.8, 1.25));
             },
           },
           {
@@ -741,8 +743,8 @@
       };
       return {
         update(dt, t, app) {
-          a.ramp(surf.gain, 0.06 + app.env.waves * 0.08, 1);
-          a.ramp(surf2.gain, 0.12 + app.env.waves * 0.18, 1);
+          a.ramp(surf.gain, 0.08 + app.env.waves * 0.1, 1);
+          a.ramp(surf2.gain, 0.16 + app.env.waves * 0.22, 1);
         },
         events: [{ first: () => R(3, 9), gap: () => R(9, 30), fire: gull }],
         stop() { out.disconnect(); },
@@ -753,13 +755,13 @@
       const nodes = [];
       for (let i = 0; i < 6; i++) {
         const b = cricketLoop(a.ctx, R(3900, 4900), R(0.32, 0.72), Math.floor(R(3, 6)), R(26, 40), R(-0.9, 0.9));
-        const g = a.gain(R(0.01, 0.028));
+        const g = a.gain(R(0.08, 0.19));
         a.chain(a.loopSrc(b), a.filter('lowpass', 7000), g, out);
         nodes.push(g);
       }
       for (let i = 0; i < 2; i++) {
         const b = trillLoop(a.ctx, R(2700, 3400), R(38, 55), R(-0.7, 0.7));
-        const g = a.gain(0.006);
+        const g = a.gain(0.04);
         a.chain(a.loopSrc(b), g, out);
         nodes.push(g);
       }
@@ -793,7 +795,7 @@
         o.frequency.linearRampToValueAtTime(f * 1.15, t + 0.09);
         const g = a.gain(0);
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.007, t + 0.02);
+        g.gain.linearRampToValueAtTime(0.02, t + 0.02);
         g.gain.linearRampToValueAtTime(0, t + 0.1);
         a.chain(o, g, pan, out);
         o.start(t);
@@ -826,14 +828,14 @@
         update(dt, t, app) {
           speed = app.env.speedMs || 0;
           const k = speed / 33;
-          a.ramp(rumble.gain, (0.12 + k * 0.4) * (1 + inTunnel * 1.2), 0.3);
+          a.ramp(rumble.gain, (0.08 + k * 0.26) * (1 + inTunnel * 1.2), 0.3);
           a.ramp(body.gain, (0.05 + k * 0.25) * (1 + inTunnel), 0.3);
           a.ramp(air.gain, k * 0.06 * (1 + inTunnel * 2.5), 0.3);
           a.ramp(airBP.frequency, 500 + k * 500 + inTunnel * 400, 0.5);
         },
         tunnel(inside) {
           inTunnel = inside ? 1 : 0;
-          a.ramp(a.winGain.gain, inside ? 0.25 : (a.open ? 1.15 : 0.8), 0.25);
+          a.ramp(a.winGain.gain, inside ? 0.25 : (a.open ? 1.1 : 0.85), 0.25);
         },
         events: [
           {
@@ -857,7 +859,7 @@
         stop() {
           [rumble, body, air, hg].forEach((g) => a.ramp(g.gain, 0, 0.5));
           setTimeout(() => { try { hum.stop(); } catch (e) { /* stopped */ } rumble.disconnect(); body.disconnect(); hg.disconnect(); }, 3000);
-          a.ramp(a.winGain.gain, a.open ? 1.15 : 0.8, 0.3);
+          a.ramp(a.winGain.gain, a.open ? 1.1 : 0.85, 0.3);
           out.disconnect();
         },
       };
