@@ -192,7 +192,7 @@ void main(){
     float L = length(dpx);
     if (L > 0.01) { dir = dpx / L; lh = L * 0.5; ndc = (ndc + n2) * 0.5; }
   }
-  float spread = r / (r + lh);
+  float spread = refl ? r / (r + lh) : pow(r / (r + lh), 0.55);
   float blurOnly = kind > 2.5 ? smoothstep(0.12, 0.55, uBlurAmt) : 1.0;
   vCol = aB.rgb * uGain * vis * energy * spread * blurOnly * far;
   float haloR = (rS * 7.0 + 14.0) * aB.a * uHalo;
@@ -735,7 +735,8 @@ void main(){
     float rack = exp(-sq((q.y - 0.25) / 0.01)) * 0.35 + exp(-sq((q.y - 0.21) / 0.008)) * 0.2;
     vec2 sb = vec2(fract(q.x * 0.85 + 0.35) - 0.5, q.y + 0.18);
     float seat = 1.0 - smoothstep(-0.01, 0.02, length(max(abs(sb) - vec2(0.16, 0.13), 0.0)) - 0.07);
-    vec3 interior = vec3(1.0, 0.95, 0.86) * strip * 0.7 + vec3(0.7, 0.66, 0.6) * rack + vec3(0.11, 0.09, 0.08) * seat * (1.0 - step(0.1, q.y));
+    float lamps = 0.55 + 0.45 * smoothstep(0.3, 0.7, abs(fract(q.x * 1.6) - 0.5) * 2.0);
+    vec3 interior = vec3(1.0, 0.95, 0.86) * strip * lamps * 0.7 + vec3(0.7, 0.66, 0.6) * rack + vec3(0.05, 0.042, 0.038) * seat * (1.0 - smoothstep(0.0, 0.12, q.y));
     float soft = 1.0 / (1.0 + blurPx(3.4) * 0.05);
     col += interior * uTrain * 0.05 * soft;
   }

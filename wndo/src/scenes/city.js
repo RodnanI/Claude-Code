@@ -2,7 +2,7 @@
 (() => {
   const W = window.W;
   const DW = 128; // data texture width
-  const ROWS = 11;
+  const ROWS = 13;
 
   const GLSL = /* glsl */ `
 ${W.GLSL.common}
@@ -42,7 +42,14 @@ void traceRow(vec3 ro, vec3 rd, vec3 ird, int i0, int n, float zMin, float zMax,
     if ((dir > 0 && b.x > xb + 0.01) || (dir < 0 && b.z < xb - 0.01)) break;
     vec3 nn;
     vec2 t = boxT(ro, ird, vec3(b.x, 0.0, b.y), vec3(b.z, h, b.w), nn);
-    if (t.x < t.y && t.y > 0.0 && t.x < tB) { tB = max(t.x, 0.0); nB = nn; idB = i0 + idx; return; }
+    bool hit = false;
+    if (t.x < t.y && t.y > 0.0 && t.x < tB) { tB = max(t.x, 0.0); nB = nn; idB = i0 + idx; hit = true; }
+    vec4 rb = D(i0 + idx, 11), rp = D(i0 + idx, 12);
+    if (rp.y > 0.0) {
+      vec2 t2 = boxT(ro, ird, vec3(rb.x, h, rb.y), vec3(rb.z, h + rp.y, rb.w), nn);
+      if (t2.x < t2.y && t2.y > 0.0 && t2.x < tB) { tB = max(t2.x, 0.0); nB = nn; idB = 1000 + i0 + idx; hit = true; }
+    }
+    if (hit) return;
     idx += dir;
   }
 }
@@ -63,7 +70,7 @@ void traceCity(vec3 ro, vec3 rd, vec3 ird, inout float tB, inout vec3 nB, inout 
 
 vec3 skyCol(vec3 rd){
   float h = rd.y;
-  vec3 c = mix(vec3(0.085, 0.05, 0.032), vec3(0.007, 0.008, 0.011), smoothstep(-0.03, 0.35, h));
+  vec3 c = mix(vec3(0.06, 0.045, 0.04), vec3(0.006, 0.007, 0.01), smoothstep(-0.03, 0.35, h));
   if (h > -0.02) {
     vec2 cp = rd.xz / (max(h, 0.0) + 0.06) * 1.1 + vec2(uTime * 0.01 * (0.3 + uWind), uTime * 0.004);
     float n = fbm(cp * 0.7);
@@ -158,14 +165,32 @@ void facade(float st, out float fh, out float cs, out vec2 ws, out float sill, o
   else               { fh = 3.8;  cs = 2.3; ws = vec2(1.9, 2.5);  sill = 0.6;  wall = vec3(0.07, 0.07, 0.075); }
 }
 
+vec3 shadeRoofBox(vec3 p, vec3 rd, vec3 n, int id, bool lite){
+  vec4 rb = D(id, 11), rp = D(id, 12);
+  vec3 E = vec3(0.016, 0.012, 0.009) + (lite ? vec3(0.02) : streetLight(p + n * 0.05, n) * 0.6);
+  vec3 alb = rp.z > 0.5 ? vec3(0.16, 0.12, 0.09) : vec3(0.12, 0.12, 0.115);
+  if (rp.z > 0.5 && n.y < 0.5) alb *= 0.8 + 0.2 * step(0.5, fract(p.y * 3.0 + p.x * 0.01));
+  if (rp.z < 0.5 && n.y < 0.5) alb *= 0.85 + 0.15 * step(0.08, fract((abs(n.x) > 0.5 ? p.z : p.x) * 1.6));
+  vec3 c = alb * E + skyCol(reflect(rd, n)) * 0.05 * uWet;
+  if (n.y > 0.5) c *= 0.8;
+  return c;
+}
 vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
+  if (id >= 1000) return shadeRoofBox(p, rd, n, id - 1000, lite);
   vec4 b = D(id, 0), q = D(id, 1);
   float H = q.x, seed = q.y, st = q.z, shop = q.w;
   float fh, cs, sill; vec2 ws; vec3 wall;
   facade(st, fh, cs, ws, sill, wall);
   if (n.y > 0.5) {
-    vec3 c = vec3(0.025) * (0.7 + 0.6 * vnoise(p.xz * 0.5));
-    return c + skyCol(reflect(rd, n)) * 0.12 * uWet;
+    // tar-and-gravel roof inside a parapet, puddles catching the sky
+    float ex = min(min(p.x - b.x, b.z - p.x), min(p.z - b.y, b.w - p.z));
+    float par = 1.0 - smoothstep(0.32, 0.38, ex);
+    float ao = 0.55 + 0.45 * smoothstep(0.35, 1.6, ex);
+    vec3 E = vec3(0.034, 0.026, 0.02) + (lite ? vec3(0.02) : streetLight(p + vec3(0.0, 0.1, 0.0), n) * 0.7);
+    vec3 c = vec3(0.05, 0.048, 0.045) * (0.7 + 0.6 * vnoise(p.xz * 0.8)) * ao * E * 3.0;
+    c = mix(c, vec3(0.16, 0.15, 0.14) * E * 3.0, par);
+    float pud = smoothstep(0.55, 0.62, vnoise(p.xz * 0.35 + seed)) * (1.0 - par) * uWet;
+    return c + skyCol(reflect(rd, n)) * (0.1 + 0.6 * pud);
   }
   bool front = abs(n.z) > 0.5;
   float u = front ? p.x - b.x : (n.x < 0.0 ? b.w - p.z : p.z - b.y);
@@ -199,7 +224,7 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
   vec3 col;
   float detail = 1.0 - smoothstep(30.0, 140.0, t);
   vec3 sl = lite ? vec3(0.03, 0.02, 0.012) : streetLight(p + n * 0.05, n);
-  vec3 amb = vec3(0.016, 0.011, 0.008) + vec3(0.05, 0.03, 0.017) * (1.0 - smoothstep(0.0, 30.0, p.y));
+  vec3 amb = vec3(0.013, 0.011, 0.01) + vec3(0.035, 0.028, 0.022) * (1.0 - smoothstep(0.0, 30.0, p.y));
   amb += vec3(0.5, 0.55, 0.7) * uFlash * 0.25;
   if (inWin > 0.5) {
     vec3 e = vec3(fx - (wc.x - ws.x * 0.5), fy - sill, 0.02);
@@ -247,13 +272,29 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
     alb *= 1.0 - 0.25 * uWet;
     if (inCol && upper) {
       float dw = max(max(wd.x, wd.y), 0.0);
+      float ac = step(0.72, h2) * step(st, 2.5) * step(abs(fx - wc.x - 0.15), 0.36) * step(abs(fy - sill + 0.32), 0.24);
       col = alb * (amb + sl) + lc * on * 0.05 * exp(-dw * 5.0) * alb * 6.0;
       float sillL = step(abs(fy - sill + 0.05), 0.05) * step(abs(fx - wc.x), ws.x * 0.55);
       col *= 1.0 + sillL * 0.4;
+      if (ac > 0.5) col = vec3(0.06, 0.06, 0.058) * (amb + sl) * (1.0 + 2.0 * step(sill - 0.12, fy)) * (0.8 + 0.2 * step(0.5, fract(fx * 14.0)));
     } else {
       col = alb * (amb + sl);
     }
     if (p.y > H - 1.0) col *= 0.7 + 0.3 * step(H - 0.25, p.y);
+  }
+  // iron fire escape on some brick fronts: landings at every floor, a ladder between
+  if (front && st < 0.5 && hash12(vec2(seed, 7.0)) < 0.55 && p.y > gh - 0.5 && p.y < H - 1.5 && !lite) {
+    float fe0 = margin + cs * (1.0 + floor(hash12(vec2(seed, 8.0)) * max(ncol - 2.0, 1.0)));
+    float lx = u - fe0;
+    if (lx > -0.2 && lx < cs * 2.0 + 0.2) {
+      float fy2 = fract((p.y - gh) / fh) * fh;
+      float landing = step(fy2, 0.1) + step(abs(fy2 - 0.95), 0.025);
+      float rail = step(abs(fract(lx * 2.2) - 0.5), 0.05) * step(fy2, 0.95);
+      float lad = abs(lx - cs - (fy2 / fh) * cs * 0.8 + cs * 0.4);
+      float ladder = step(lad, 0.06) * step(0.1, fy2);
+      float iron = clamp(landing + rail * 0.6 + ladder, 0.0, 1.0);
+      col = mix(col, vec3(0.012, 0.011, 0.01) + sl * 0.01, iron * detail);
+    }
   }
   // ground floor shops, row A front faces only
   if (front && p.y < gh && id < int(uN.x)) {
@@ -625,10 +666,10 @@ void main(){
   }
   // atmosphere
   float fogD = 0.0018 + uFog * 0.006 + uRain * 0.002;
-  vec3 fogC = vec3(0.038, 0.027, 0.02) + vec3(0.4, 0.45, 0.6) * uFlash * 0.15;
+  vec3 fogC = vec3(0.03, 0.026, 0.024) + vec3(0.4, 0.45, 0.6) * uFlash * 0.15;
   float tf = min(t, 3000.0);
   float hf = exp(-max(p.y, 0.0) * 0.012);
-  col = mix(col, fogC, (1.0 - exp(-tf * fogD * mix(0.5, 1.0, hf))));
+  col = mix(col, fogC, (1.0 - exp(-max(tf - 22.0, 0.0) * fogD * 0.75 * mix(0.5, 1.0, hf))));
   vec3 halo = lampHalo(ro, rd, t);
   col += halo * (0.4 + uRain * 0.8 + uFog);
   if (uRain > 0.01) col += rainLayers(ro, rd, t, halo);
@@ -655,7 +696,15 @@ void main(){
       const set = r.chance(0.3) ? r.range(0.2, 1.4) : 0;
       const h = st === 3 ? r.range(22, 34) : r.range(10, 23);
       const shop = r.pick([1, 1, 2, 2, 2, 3, 4, 0, 4]);
-      A.push([x, 18 + set, x + w, 18 + set + r.range(14, 20), h, r() * 100, st, shop]);
+      const d = r.range(14, 20);
+      const b = [x, 18 + set, x + w, 18 + set + d, h, r() * 100, st, shop];
+      if (r.chance(0.75) && w > 6) {
+        const tank = r.chance(0.3);
+        const bw = tank ? r.range(2.2, 3) : r.range(2.5, Math.min(7, w - 2)), bd = tank ? bw : r.range(2, 5);
+        const bx = x + r.range(1, w - bw - 1), bz = 18 + set + r.range(1.5, d - bd - 1);
+        b.roof = [bx, bz, bx + bw, bz + bd, tank ? r.range(3.5, 5) : r.range(1.2, 3.2), tank ? 1 : 0];
+      }
+      A.push(b);
       x += w;
     }
     // row B behind, taller, deep blocks next to the cross streets
@@ -679,9 +728,9 @@ void main(){
     }
     // lamps: far pavement (sodium) and near pavement (LED), plus the cross street
     const lamps = [];
-    const sodium = W.kelvin(2050), led = W.kelvin(3900);
+    const sodium = W.kelvin(2050), led = W.kelvin(4100), ledWarm = W.kelvin(3300);
     for (let lx = -60; lx < 420; lx += 26) {
-      if (!inGap(lx)) lamps.push({ x: lx, y: 7.2, z: 14.9, zp: 16.9, c: sodium, i: 1.0 });
+      if (!inGap(lx)) lamps.push({ x: lx, y: 7.2, z: 14.9, zp: 16.9, c: ledWarm, i: 0.95 });
       const nx = lx + 13;
       if (!inGap(nx)) lamps.push({ x: nx, y: 7.0, z: 3.0, zp: 1.0, c: led, i: 0.85 });
     }
@@ -692,7 +741,7 @@ void main(){
     // distant lamps: sprites only
     const farLamps = [];
     for (let lx = 420; lx < 900; lx += 26) {
-      farLamps.push([lx, 7.2, 14.9, sodium]);
+      farLamps.push([lx, 7.2, 14.9, ledWarm]);
       farLamps.push([lx + 13, 7.0, 3.0, led]);
     }
     // neon signs on row A shop fronts
@@ -768,7 +817,7 @@ void main(){
     controls: ['rain', 'wind', 'fog', 'cond', 'lightning', 'traffic'],
     look: {
       frame: 'cross', material: 'steel', wall: '#cfc6b8', lamp: 2.4, candle: true, mug: true, plant: true,
-      exposure: 0.9, sat: 1.05, contrast: 1.04, lift: [0.012, 0.01, 0.012], gain: [1.0, 0.98, 0.95],
+      exposure: 0.9, sat: 1.06, contrast: 1.1, lift: [0.012, 0.01, 0.012], gain: [1.0, 0.98, 0.95],
       bloom: 0.05, halo: 1.0, dTyp: 35, reflStretch: 3.5, refl: 1, flowAng: 0,
     },
 
@@ -783,6 +832,10 @@ void main(){
       blds.forEach((b, i) => {
         put(i, 0, [b[0], b[1], b[2], b[3]]);
         put(i, 1, [b[4], b[5], b[6], b[7]]);
+        if (b.roof) {
+          put(i, 11, b.roof.slice(0, 4));
+          put(i, 12, [0, b.roof[4], b.roof[5], 0]);
+        }
       });
       c.lamps.forEach((l, i) => {
         put(i, 2, [l.x, l.y, l.z, l.zp]);
@@ -927,14 +980,14 @@ void main(){
       // neon and shop glow (bokeh only for the big soft shop windows)
       c.signs.forEach((s, i) => {
         const col = NEON[s[5]];
-        const k = s[7] === 1 ? 14 : 30;
+        const k = s[7] === 1 ? 9 : 16;
         const cx = (s[0] + s[2]) * 0.5, cy = (s[1] + s[3]) * 0.5;
         L.addRefl(cx, cy, s[4] - 0.15, Math.min(0.5, (s[2] - s[0]) * 0.2), col[0] * k, col[1] * k, col[2] * k, 0.5, 0.25 * wetRefl);
         if (s[2] - s[0] > 3) L.add(s[0] + 0.6, cy, s[4] - 0.15, 0.3, col[0] * k * 0.6, col[1] * k * 0.6, col[2] * k * 0.6, 0.3);
       });
       c.blades.forEach((b) => {
         const col = NEON[b[5]];
-        for (let y = b[2] + 0.6; y < b[3]; y += 1.8) L.add(b[0] - 0.13, y, b[1] - 0.45, 0.25, col[0] * 22, col[1] * 22, col[2] * 22, 0.4);
+        for (let y = b[2] + 0.6; y < b[3]; y += 1.8) L.add(b[0] - 0.13, y, b[1] - 0.45, 0.25, col[0] * 10, col[1] * 10, col[2] * 10, 0.3);
       });
       c.A.forEach((b) => {
         if (b[0] > 300 || b[7] === 0 || b[7] === 4) return;

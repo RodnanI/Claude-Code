@@ -716,7 +716,7 @@ void main(){
     float L = length(dpx);
     if (L > 0.01) { dir = dpx / L; lh = L * 0.5; ndc = (ndc + n2) * 0.5; }
   }
-  float spread = r / (r + lh);
+  float spread = refl ? r / (r + lh) : pow(r / (r + lh), 0.55);
   float blurOnly = kind > 2.5 ? smoothstep(0.12, 0.55, uBlurAmt) : 1.0;
   vCol = aB.rgb * uGain * vis * energy * spread * blurOnly * far;
   float haloR = (rS * 7.0 + 14.0) * aB.a * uHalo;
@@ -1259,7 +1259,8 @@ void main(){
     float rack = exp(-sq((q.y - 0.25) / 0.01)) * 0.35 + exp(-sq((q.y - 0.21) / 0.008)) * 0.2;
     vec2 sb = vec2(fract(q.x * 0.85 + 0.35) - 0.5, q.y + 0.18);
     float seat = 1.0 - smoothstep(-0.01, 0.02, length(max(abs(sb) - vec2(0.16, 0.13), 0.0)) - 0.07);
-    vec3 interior = vec3(1.0, 0.95, 0.86) * strip * 0.7 + vec3(0.7, 0.66, 0.6) * rack + vec3(0.11, 0.09, 0.08) * seat * (1.0 - step(0.1, q.y));
+    float lamps = 0.55 + 0.45 * smoothstep(0.3, 0.7, abs(fract(q.x * 1.6) - 0.5) * 2.0);
+    vec3 interior = vec3(1.0, 0.95, 0.86) * strip * lamps * 0.7 + vec3(0.7, 0.66, 0.6) * rack + vec3(0.05, 0.042, 0.038) * seat * (1.0 - smoothstep(0.0, 0.12, q.y));
     float soft = 1.0 / (1.0 + blurPx(3.4) * 0.05);
     col += interior * uTrain * 0.05 * soft;
   }
@@ -2250,7 +2251,7 @@ vec3 skyGrad(vec3 rd, vec3 sunDir, vec3 zenith, vec3 horizon, vec3 sunCol, float
 (() => {
   const W = window.W;
   const DW = 128; // data texture width
-  const ROWS = 11;
+  const ROWS = 13;
 
   const GLSL = /* glsl */ `
 ${W.GLSL.common}
@@ -2290,7 +2291,14 @@ void traceRow(vec3 ro, vec3 rd, vec3 ird, int i0, int n, float zMin, float zMax,
     if ((dir > 0 && b.x > xb + 0.01) || (dir < 0 && b.z < xb - 0.01)) break;
     vec3 nn;
     vec2 t = boxT(ro, ird, vec3(b.x, 0.0, b.y), vec3(b.z, h, b.w), nn);
-    if (t.x < t.y && t.y > 0.0 && t.x < tB) { tB = max(t.x, 0.0); nB = nn; idB = i0 + idx; return; }
+    bool hit = false;
+    if (t.x < t.y && t.y > 0.0 && t.x < tB) { tB = max(t.x, 0.0); nB = nn; idB = i0 + idx; hit = true; }
+    vec4 rb = D(i0 + idx, 11), rp = D(i0 + idx, 12);
+    if (rp.y > 0.0) {
+      vec2 t2 = boxT(ro, ird, vec3(rb.x, h, rb.y), vec3(rb.z, h + rp.y, rb.w), nn);
+      if (t2.x < t2.y && t2.y > 0.0 && t2.x < tB) { tB = max(t2.x, 0.0); nB = nn; idB = 1000 + i0 + idx; hit = true; }
+    }
+    if (hit) return;
     idx += dir;
   }
 }
@@ -2311,7 +2319,7 @@ void traceCity(vec3 ro, vec3 rd, vec3 ird, inout float tB, inout vec3 nB, inout 
 
 vec3 skyCol(vec3 rd){
   float h = rd.y;
-  vec3 c = mix(vec3(0.085, 0.05, 0.032), vec3(0.007, 0.008, 0.011), smoothstep(-0.03, 0.35, h));
+  vec3 c = mix(vec3(0.06, 0.045, 0.04), vec3(0.006, 0.007, 0.01), smoothstep(-0.03, 0.35, h));
   if (h > -0.02) {
     vec2 cp = rd.xz / (max(h, 0.0) + 0.06) * 1.1 + vec2(uTime * 0.01 * (0.3 + uWind), uTime * 0.004);
     float n = fbm(cp * 0.7);
@@ -2406,14 +2414,32 @@ void facade(float st, out float fh, out float cs, out vec2 ws, out float sill, o
   else               { fh = 3.8;  cs = 2.3; ws = vec2(1.9, 2.5);  sill = 0.6;  wall = vec3(0.07, 0.07, 0.075); }
 }
 
+vec3 shadeRoofBox(vec3 p, vec3 rd, vec3 n, int id, bool lite){
+  vec4 rb = D(id, 11), rp = D(id, 12);
+  vec3 E = vec3(0.016, 0.012, 0.009) + (lite ? vec3(0.02) : streetLight(p + n * 0.05, n) * 0.6);
+  vec3 alb = rp.z > 0.5 ? vec3(0.16, 0.12, 0.09) : vec3(0.12, 0.12, 0.115);
+  if (rp.z > 0.5 && n.y < 0.5) alb *= 0.8 + 0.2 * step(0.5, fract(p.y * 3.0 + p.x * 0.01));
+  if (rp.z < 0.5 && n.y < 0.5) alb *= 0.85 + 0.15 * step(0.08, fract((abs(n.x) > 0.5 ? p.z : p.x) * 1.6));
+  vec3 c = alb * E + skyCol(reflect(rd, n)) * 0.05 * uWet;
+  if (n.y > 0.5) c *= 0.8;
+  return c;
+}
 vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
+  if (id >= 1000) return shadeRoofBox(p, rd, n, id - 1000, lite);
   vec4 b = D(id, 0), q = D(id, 1);
   float H = q.x, seed = q.y, st = q.z, shop = q.w;
   float fh, cs, sill; vec2 ws; vec3 wall;
   facade(st, fh, cs, ws, sill, wall);
   if (n.y > 0.5) {
-    vec3 c = vec3(0.025) * (0.7 + 0.6 * vnoise(p.xz * 0.5));
-    return c + skyCol(reflect(rd, n)) * 0.12 * uWet;
+    // tar-and-gravel roof inside a parapet, puddles catching the sky
+    float ex = min(min(p.x - b.x, b.z - p.x), min(p.z - b.y, b.w - p.z));
+    float par = 1.0 - smoothstep(0.32, 0.38, ex);
+    float ao = 0.55 + 0.45 * smoothstep(0.35, 1.6, ex);
+    vec3 E = vec3(0.034, 0.026, 0.02) + (lite ? vec3(0.02) : streetLight(p + vec3(0.0, 0.1, 0.0), n) * 0.7);
+    vec3 c = vec3(0.05, 0.048, 0.045) * (0.7 + 0.6 * vnoise(p.xz * 0.8)) * ao * E * 3.0;
+    c = mix(c, vec3(0.16, 0.15, 0.14) * E * 3.0, par);
+    float pud = smoothstep(0.55, 0.62, vnoise(p.xz * 0.35 + seed)) * (1.0 - par) * uWet;
+    return c + skyCol(reflect(rd, n)) * (0.1 + 0.6 * pud);
   }
   bool front = abs(n.z) > 0.5;
   float u = front ? p.x - b.x : (n.x < 0.0 ? b.w - p.z : p.z - b.y);
@@ -2447,7 +2473,7 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
   vec3 col;
   float detail = 1.0 - smoothstep(30.0, 140.0, t);
   vec3 sl = lite ? vec3(0.03, 0.02, 0.012) : streetLight(p + n * 0.05, n);
-  vec3 amb = vec3(0.016, 0.011, 0.008) + vec3(0.05, 0.03, 0.017) * (1.0 - smoothstep(0.0, 30.0, p.y));
+  vec3 amb = vec3(0.013, 0.011, 0.01) + vec3(0.035, 0.028, 0.022) * (1.0 - smoothstep(0.0, 30.0, p.y));
   amb += vec3(0.5, 0.55, 0.7) * uFlash * 0.25;
   if (inWin > 0.5) {
     vec3 e = vec3(fx - (wc.x - ws.x * 0.5), fy - sill, 0.02);
@@ -2495,13 +2521,29 @@ vec3 shadeBuilding(vec3 p, vec3 rd, vec3 n, int id, float t, bool lite){
     alb *= 1.0 - 0.25 * uWet;
     if (inCol && upper) {
       float dw = max(max(wd.x, wd.y), 0.0);
+      float ac = step(0.72, h2) * step(st, 2.5) * step(abs(fx - wc.x - 0.15), 0.36) * step(abs(fy - sill + 0.32), 0.24);
       col = alb * (amb + sl) + lc * on * 0.05 * exp(-dw * 5.0) * alb * 6.0;
       float sillL = step(abs(fy - sill + 0.05), 0.05) * step(abs(fx - wc.x), ws.x * 0.55);
       col *= 1.0 + sillL * 0.4;
+      if (ac > 0.5) col = vec3(0.06, 0.06, 0.058) * (amb + sl) * (1.0 + 2.0 * step(sill - 0.12, fy)) * (0.8 + 0.2 * step(0.5, fract(fx * 14.0)));
     } else {
       col = alb * (amb + sl);
     }
     if (p.y > H - 1.0) col *= 0.7 + 0.3 * step(H - 0.25, p.y);
+  }
+  // iron fire escape on some brick fronts: landings at every floor, a ladder between
+  if (front && st < 0.5 && hash12(vec2(seed, 7.0)) < 0.55 && p.y > gh - 0.5 && p.y < H - 1.5 && !lite) {
+    float fe0 = margin + cs * (1.0 + floor(hash12(vec2(seed, 8.0)) * max(ncol - 2.0, 1.0)));
+    float lx = u - fe0;
+    if (lx > -0.2 && lx < cs * 2.0 + 0.2) {
+      float fy2 = fract((p.y - gh) / fh) * fh;
+      float landing = step(fy2, 0.1) + step(abs(fy2 - 0.95), 0.025);
+      float rail = step(abs(fract(lx * 2.2) - 0.5), 0.05) * step(fy2, 0.95);
+      float lad = abs(lx - cs - (fy2 / fh) * cs * 0.8 + cs * 0.4);
+      float ladder = step(lad, 0.06) * step(0.1, fy2);
+      float iron = clamp(landing + rail * 0.6 + ladder, 0.0, 1.0);
+      col = mix(col, vec3(0.012, 0.011, 0.01) + sl * 0.01, iron * detail);
+    }
   }
   // ground floor shops, row A front faces only
   if (front && p.y < gh && id < int(uN.x)) {
@@ -2873,10 +2915,10 @@ void main(){
   }
   // atmosphere
   float fogD = 0.0018 + uFog * 0.006 + uRain * 0.002;
-  vec3 fogC = vec3(0.038, 0.027, 0.02) + vec3(0.4, 0.45, 0.6) * uFlash * 0.15;
+  vec3 fogC = vec3(0.03, 0.026, 0.024) + vec3(0.4, 0.45, 0.6) * uFlash * 0.15;
   float tf = min(t, 3000.0);
   float hf = exp(-max(p.y, 0.0) * 0.012);
-  col = mix(col, fogC, (1.0 - exp(-tf * fogD * mix(0.5, 1.0, hf))));
+  col = mix(col, fogC, (1.0 - exp(-max(tf - 22.0, 0.0) * fogD * 0.75 * mix(0.5, 1.0, hf))));
   vec3 halo = lampHalo(ro, rd, t);
   col += halo * (0.4 + uRain * 0.8 + uFog);
   if (uRain > 0.01) col += rainLayers(ro, rd, t, halo);
@@ -2903,7 +2945,15 @@ void main(){
       const set = r.chance(0.3) ? r.range(0.2, 1.4) : 0;
       const h = st === 3 ? r.range(22, 34) : r.range(10, 23);
       const shop = r.pick([1, 1, 2, 2, 2, 3, 4, 0, 4]);
-      A.push([x, 18 + set, x + w, 18 + set + r.range(14, 20), h, r() * 100, st, shop]);
+      const d = r.range(14, 20);
+      const b = [x, 18 + set, x + w, 18 + set + d, h, r() * 100, st, shop];
+      if (r.chance(0.75) && w > 6) {
+        const tank = r.chance(0.3);
+        const bw = tank ? r.range(2.2, 3) : r.range(2.5, Math.min(7, w - 2)), bd = tank ? bw : r.range(2, 5);
+        const bx = x + r.range(1, w - bw - 1), bz = 18 + set + r.range(1.5, d - bd - 1);
+        b.roof = [bx, bz, bx + bw, bz + bd, tank ? r.range(3.5, 5) : r.range(1.2, 3.2), tank ? 1 : 0];
+      }
+      A.push(b);
       x += w;
     }
     // row B behind, taller, deep blocks next to the cross streets
@@ -2927,9 +2977,9 @@ void main(){
     }
     // lamps: far pavement (sodium) and near pavement (LED), plus the cross street
     const lamps = [];
-    const sodium = W.kelvin(2050), led = W.kelvin(3900);
+    const sodium = W.kelvin(2050), led = W.kelvin(4100), ledWarm = W.kelvin(3300);
     for (let lx = -60; lx < 420; lx += 26) {
-      if (!inGap(lx)) lamps.push({ x: lx, y: 7.2, z: 14.9, zp: 16.9, c: sodium, i: 1.0 });
+      if (!inGap(lx)) lamps.push({ x: lx, y: 7.2, z: 14.9, zp: 16.9, c: ledWarm, i: 0.95 });
       const nx = lx + 13;
       if (!inGap(nx)) lamps.push({ x: nx, y: 7.0, z: 3.0, zp: 1.0, c: led, i: 0.85 });
     }
@@ -2940,7 +2990,7 @@ void main(){
     // distant lamps: sprites only
     const farLamps = [];
     for (let lx = 420; lx < 900; lx += 26) {
-      farLamps.push([lx, 7.2, 14.9, sodium]);
+      farLamps.push([lx, 7.2, 14.9, ledWarm]);
       farLamps.push([lx + 13, 7.0, 3.0, led]);
     }
     // neon signs on row A shop fronts
@@ -3016,7 +3066,7 @@ void main(){
     controls: ['rain', 'wind', 'fog', 'cond', 'lightning', 'traffic'],
     look: {
       frame: 'cross', material: 'steel', wall: '#cfc6b8', lamp: 2.4, candle: true, mug: true, plant: true,
-      exposure: 0.9, sat: 1.05, contrast: 1.04, lift: [0.012, 0.01, 0.012], gain: [1.0, 0.98, 0.95],
+      exposure: 0.9, sat: 1.06, contrast: 1.1, lift: [0.012, 0.01, 0.012], gain: [1.0, 0.98, 0.95],
       bloom: 0.05, halo: 1.0, dTyp: 35, reflStretch: 3.5, refl: 1, flowAng: 0,
     },
 
@@ -3031,6 +3081,10 @@ void main(){
       blds.forEach((b, i) => {
         put(i, 0, [b[0], b[1], b[2], b[3]]);
         put(i, 1, [b[4], b[5], b[6], b[7]]);
+        if (b.roof) {
+          put(i, 11, b.roof.slice(0, 4));
+          put(i, 12, [0, b.roof[4], b.roof[5], 0]);
+        }
       });
       c.lamps.forEach((l, i) => {
         put(i, 2, [l.x, l.y, l.z, l.zp]);
@@ -3175,14 +3229,14 @@ void main(){
       // neon and shop glow (bokeh only for the big soft shop windows)
       c.signs.forEach((s, i) => {
         const col = NEON[s[5]];
-        const k = s[7] === 1 ? 14 : 30;
+        const k = s[7] === 1 ? 9 : 16;
         const cx = (s[0] + s[2]) * 0.5, cy = (s[1] + s[3]) * 0.5;
         L.addRefl(cx, cy, s[4] - 0.15, Math.min(0.5, (s[2] - s[0]) * 0.2), col[0] * k, col[1] * k, col[2] * k, 0.5, 0.25 * wetRefl);
         if (s[2] - s[0] > 3) L.add(s[0] + 0.6, cy, s[4] - 0.15, 0.3, col[0] * k * 0.6, col[1] * k * 0.6, col[2] * k * 0.6, 0.3);
       });
       c.blades.forEach((b) => {
         const col = NEON[b[5]];
-        for (let y = b[2] + 0.6; y < b[3]; y += 1.8) L.add(b[0] - 0.13, y, b[1] - 0.45, 0.25, col[0] * 22, col[1] * 22, col[2] * 22, 0.4);
+        for (let y = b[2] + 0.6; y < b[3]; y += 1.8) L.add(b[0] - 0.13, y, b[1] - 0.45, 0.25, col[0] * 10, col[1] * 10, col[2] * 10, 0.3);
       });
       c.A.forEach((b) => {
         if (b[0] > 300 || b[7] === 0 || b[7] === 4) return;
@@ -4317,7 +4371,7 @@ void main(){
       return e.snow * 0.5;
     },
     look: {
-      frame: 'cross', material: 'white', wall: '#cbbca8', lamp: 0.75, candle: true, mug: true, plant: false,
+      frame: 'cross', material: 'white', wall: '#cbbca8', lamp: 0.55, candle: true, mug: true, plant: false,
       exposure: 0.85, sat: 1.0, contrast: 1.04, lift: [0.008, 0.009, 0.014], gain: [1.0, 0.99, 1.0],
       bloom: 0.05, halo: 0.9, dTyp: 30, reflStretch: 2, refl: 1, flowAng: 0,
     },
@@ -4466,7 +4520,7 @@ void main(){
     float d = 1.6;
     float xw = camX + slope * d, yw = ro.y + rise * d;
     float tl = 0.012 + 0.006 * vnoise(vec2(xw * 0.05, yw * 2.0));
-    vec3 c = vec3(tl) * (1.0 + 2.0 * pbox(xw, hw + 0.5, 25.0, 0.6));
+    vec3 c = vec3(tl * 0.6) * (1.0 + 5.0 * pbox(xw, hw + 0.5, 25.0, 0.6) * exp(-abs(yw - 5.6) * 0.8));
     o = vec4(c * (0.6 + 0.4 * smoothstep(-0.5, 2.5, yw)), d / rd.z);
     return;
   }
@@ -4527,32 +4581,69 @@ void main(){
     float D = 2.8;
     float xw = camX + slope * D, yw = ro.y + rise * D;
     float cov = pbox(xw, hw + 0.002, 55.0, 0.24);
-    if (yw > 0.0 && yw < 7.2 && cov > 0.0) {
-      vec3 pc = vec3(0.012, 0.012, 0.013) + vec3(0.1, 0.1, 0.095) * exp(-max(yw - 2.2, 0.0) * 0.5) * (1.0 - uTunnel);
+    if (yw > 3.4 && yw < 10.6 && cov > 0.0) {
+      vec3 pc = vec3(0.012, 0.012, 0.013) + vec3(0.1, 0.1, 0.095) * exp(-max(yw - 5.6, 0.0) * 0.5) * (1.0 - uTunnel);
       col = mix(col, pc, min(cov, 1.0));
       if (cov > 0.5) dist = D / rd.z;
     }
     float u = mod(xw, 55.0) / 55.0;
-    float wy = 7.1 - 1.1 * 4.0 * u * (1.0 - u);
+    float wy = 10.5 - 1.1 * 4.0 * u * (1.0 - u);
     float px = D / rd.z * 2.0 * uTanHalf.y / uRes.y;
     float wire = 1.0 - smoothstep(0.0, 0.012 + px * 1.5, abs(yw - wy));
     col = mix(col, vec3(0.006), wire * 0.9);
   }
-  // station platform: a lit edge and a canopy rushing past
+  // station: a lit platform at rail height, a canopy overhead, pillars flicking by
   for (int i = 0; i < 8; i++) {
     if (i >= fn) break;
     vec4 f = feat(i);
     if (f.x < 1.5 || f.x > 2.5) continue;
-    float D = 2.0;
-    float xw = camX + slope * D, yw = ro.y + rise * D;
-    if (xw > f.y - hw && xw < f.z + hw) {
-      float inP = smoothstep(f.y - hw, f.y + hw, xw) * (1.0 - smoothstep(f.z - hw, f.z + hw, xw));
-      if (yw < 1.05) { col = mix(col, vec3(0.08, 0.075, 0.07) * (0.7 + 0.6 * pbox(xw, hw + 0.3, 12.0, 6.0)), inP); dist = D / rd.z; }
-      if (yw > 0.95 && yw < 1.05) col = mix(col, vec3(0.35, 0.3, 0.05), inP);
-      float D2 = 4.5;
-      float y2 = ro.y + rise * D2, x2 = camX + slope * D2;
-      if (y2 > 4.3 && y2 < 4.6) col = mix(col, vec3(0.03) + vec3(0.6, 0.55, 0.45) * pbox(x2, hw + 0.2, 12.0, 1.2), inP);
-      if (y2 > 1.0 && y2 < 4.3) col = mix(col, vec3(0.01), inP * pbox(x2, hw + 0.05, 12.0, 0.25));
+    float RAIL = 3.4;
+    if (rd.y < 0.0) {
+      float tp = (RAIL + 1.1 - ro.y) / rd.y;
+      vec3 pp = ro + rd * tp;
+      if (pp.z > 0.45 && pp.z < 6.5 && pp.x > f.y && pp.x < f.z && tp < dist) {
+        float lampLit = 0.0, tex = 0.0;
+        for (int k = 0; k < 4; k++) {
+          float xs = pp.x + (float(k) - 1.5) * hw * 0.5;
+          lampLit += 0.55 + 0.45 * cos(6.2831 * (xs - 6.0) / 12.0);
+          tex += vnoise(vec2(xs * 3.0, pp.z * 3.0));
+        }
+        lampLit *= 0.25; tex *= 0.25;
+        vec3 pc = vec3(0.045, 0.044, 0.042) * (0.75 + 0.5 * tex) * (0.25 + 0.9 * lampLit * exp(-abs(pp.z - 3.0) * 0.25));
+        float line = smoothstep(0.62, 0.66, pp.z) * (1.0 - smoothstep(0.78, 0.82, pp.z));
+        pc = mix(pc, vec3(0.5, 0.42, 0.06) * (0.5 + lampLit), line);
+        pc *= 1.0 - (1.0 - smoothstep(0.45, 0.55, pp.z)) * 0.7;
+        col = pc * (1.0 - uRain * 0.15) + vec3(0.06) * uRain * lampLit * 0.5;
+        dist = tp;
+      }
+      // the platform's face below the edge
+      float tz = (0.45 - ro.z) / rd.z;
+      vec3 pf = ro + rd * tz;
+      if (pf.y < RAIL + 1.1 && pf.y > RAIL - 0.3 && pf.x > f.y && pf.x < f.z && tz < dist) { col = vec3(0.012); dist = tz; }
+    }
+    if (rd.y > 0.0) {
+      float tc = (RAIL + 4.3 - ro.y) / rd.y;
+      vec3 pc = ro + rd * tc;
+      if (pc.z > 0.2 && pc.z < 6.0 && pc.x > f.y && pc.x < f.z && tc < dist) {
+        float lamps = pbox(pc.x - 4.0, hw + 0.05, 12.0, 2.4) * (1.0 - smoothstep(0.8, 1.1, abs(pc.z - 3.0)));
+        col = vec3(0.025, 0.024, 0.023) + vec3(1.2, 1.15, 1.0) * lamps;
+        dist = tc;
+      }
+    }
+    // the far platform across the tracks: surface, pillars, canopy, the lamps under it
+    float Df = 13.0;
+    float xf = camX + slope * Df, yf = ro.y + rise * Df;
+    if (xf > f.y && xf < f.z && Df / rd.z < dist + 4.0) {
+      if (yf > RAIL + 0.2 && yf < RAIL + 1.1) { col = vec3(0.02, 0.019, 0.018); dist = Df / rd.z; }
+      else if (yf >= RAIL + 1.1 && yf < RAIL + 4.6) {
+        float lit = 0.5 + 0.5 * cos(6.2831 * (xf - 6.0) / 12.0);
+        vec3 wall = vec3(0.022, 0.021, 0.02) * (0.3 + 1.0 * lit * lit) * (0.8 + 0.4 * vnoise(vec2(xf * 0.4, yf)));
+        float sign = step(abs(mod(xf, 36.0) - 18.0), 2.0) * step(abs(yf - RAIL - 3.0), 0.35);
+        wall = mix(wall, vec3(0.05, 0.12, 0.3), sign);
+        float pil = pbox(xf, hw + 0.01, 12.0, 0.35);
+        col = mix(wall, vec3(0.012), min(pil, 1.0));
+        dist = Df / rd.z;
+      } else if (yf >= RAIL + 4.6 && yf < RAIL + 5.2) { col = vec3(0.025); dist = Df / rd.z; }
     }
   }
   // atmosphere, wet air
@@ -4653,13 +4744,13 @@ void main(){
       if (tunnel) {
         for (let lx = Math.floor((x - 60) / 25) * 25; lx < x + 60; lx += 25) {
           const c = W.kelvin(2300);
-          L.add(lx, 3.4, 0.4, 0.15, c[0] * 120, c[1] * 120, c[2] * 120, 0.5, 2, -v, 0, 0);
+          L.add(lx, 5.6, 0.2, 0.15, c[0] * 160, c[1] * 160, c[2] * 160, 0.5, 2, -v, 0, 0);
         }
       } else {
         for (const f of vis) {
           if (f.type === 1) {
             const on = Math.sin(t * Math.PI * 2 * 1.1) > 0;
-            for (const [zz, yy, s] of [[1.6, 2.0, 1], [-5.6, 2.0, -1]]) {
+            for (const [zz, yy, s] of [[1.6, 5.3, 1]]) {
               const k = (on ? 1 : 0.05) * 160;
               L.add(f.x0 - 1.5, yy, zz, 0.12, k, k * 0.04, k * 0.01, 1, 2, -v, 0, 0);
               const k2 = (on ? 0.05 : 1) * 160;
@@ -4668,7 +4759,7 @@ void main(){
             const sod = W.kelvin(2000);
             for (let i = 0; i < f.lamps; i++) L.add(f.x0 + 5, 6.5, 14 + i * 40, 0.2, sod[0] * 200, sod[1] * 200, sod[2] * 200, 0.8, 2, -v, 0, 0);
           } else if (f.type === 2) {
-            for (let lx = f.x0 + 6; lx < f.x1; lx += 12) if (Math.abs(lx - x) < 80) L.add(lx, 4.4, 4.5, 0.25, 140, 136, 120, 0.6, 2, -v, 0, 0);
+            for (let lx = f.x0 + 4; lx < f.x1; lx += 12) if (Math.abs(lx - x) < 160) L.add(lx, 7.7, 11.3, 0.35, 150, 146, 130, 0.7, 2, -v, 0, 0);
           } else if (f.type === 4) {
             for (const tl of [[f.x0 + 40, 300, 2200], [f.x0 + 90, 520, 2700], [f.x0 + 20, 700, 2000]]) {
               const c = W.kelvin(tl[2]);
@@ -4740,7 +4831,7 @@ void main(){
         // signals by the track
         const sx = Math.floor(x / 900) * 900 + 900;
         const sc = W.hash(sx) < 0.8 ? [0.1, 1, 0.5] : [1, 0.05, 0.02];
-        if (sx - x < 200) L.add(sx, 3.2, 2.1, 0.1, sc[0] * 120, sc[1] * 120, sc[2] * 120, 0.8, 2, -v, 0, 0);
+        if (sx - x < 200) L.add(sx, 6.6, 2.1, 0.1, sc[0] * 120, sc[1] * 120, sc[2] * 120, 0.8, 2, -v, 0, 0);
       }
       this.crossPhase = Math.sin(t * Math.PI * 2 * 1.1) > 0 ? 1 : 0;
     },
@@ -6419,7 +6510,7 @@ void main(){
       flame: 1 + (fl - 0.5) * 0.35,
       flameSway: [(flickN2(t * 1.3) - 0.5) * 2, fl],
       refl: g.refl * L.refl,
-      train: sc.id === 'train' ? (sc.tunnel ? 3.2 : 1) * g.refl : 0,
+      train: sc.id === 'train' ? (sc.tunnel ? 2.0 : 1) * g.refl : 0,
       flash: e.flash,
       flashCol: [0.75, 0.82, 1.0],
       exposure: L.exposure + g.exposure,

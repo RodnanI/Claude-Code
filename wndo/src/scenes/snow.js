@@ -259,7 +259,7 @@ void main(){
       return e.snow * 0.5;
     },
     look: {
-      frame: 'cross', material: 'white', wall: '#cbbca8', lamp: 0.75, candle: true, mug: true, plant: false,
+      frame: 'cross', material: 'white', wall: '#cbbca8', lamp: 0.55, candle: true, mug: true, plant: false,
       exposure: 0.85, sat: 1.0, contrast: 1.04, lift: [0.008, 0.009, 0.014], gain: [1.0, 0.99, 1.0],
       bloom: 0.05, halo: 0.9, dTyp: 30, reflStretch: 2, refl: 1, flowAng: 0,
     },

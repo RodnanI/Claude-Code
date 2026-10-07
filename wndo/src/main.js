@@ -243,7 +243,7 @@
       flame: 1 + (fl - 0.5) * 0.35,
       flameSway: [(flickN2(t * 1.3) - 0.5) * 2, fl],
       refl: g.refl * L.refl,
-      train: sc.id === 'train' ? (sc.tunnel ? 3.2 : 1) * g.refl : 0,
+      train: sc.id === 'train' ? (sc.tunnel ? 2.0 : 1) * g.refl : 0,
       flash: e.flash,
       flashCol: [0.75, 0.82, 1.0],
       exposure: L.exposure + g.exposure,

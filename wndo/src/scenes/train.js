@@ -44,7 +44,7 @@ void main(){
     float d = 1.6;
     float xw = camX + slope * d, yw = ro.y + rise * d;
     float tl = 0.012 + 0.006 * vnoise(vec2(xw * 0.05, yw * 2.0));
-    vec3 c = vec3(tl) * (1.0 + 2.0 * pbox(xw, hw + 0.5, 25.0, 0.6));
+    vec3 c = vec3(tl * 0.6) * (1.0 + 5.0 * pbox(xw, hw + 0.5, 25.0, 0.6) * exp(-abs(yw - 5.6) * 0.8));
     o = vec4(c * (0.6 + 0.4 * smoothstep(-0.5, 2.5, yw)), d / rd.z);
     return;
   }
@@ -105,32 +105,69 @@ void main(){
     float D = 2.8;
     float xw = camX + slope * D, yw = ro.y + rise * D;
     float cov = pbox(xw, hw + 0.002, 55.0, 0.24);
-    if (yw > 0.0 && yw < 7.2 && cov > 0.0) {
-      vec3 pc = vec3(0.012, 0.012, 0.013) + vec3(0.1, 0.1, 0.095) * exp(-max(yw - 2.2, 0.0) * 0.5) * (1.0 - uTunnel);
+    if (yw > 3.4 && yw < 10.6 && cov > 0.0) {
+      vec3 pc = vec3(0.012, 0.012, 0.013) + vec3(0.1, 0.1, 0.095) * exp(-max(yw - 5.6, 0.0) * 0.5) * (1.0 - uTunnel);
       col = mix(col, pc, min(cov, 1.0));
       if (cov > 0.5) dist = D / rd.z;
     }
     float u = mod(xw, 55.0) / 55.0;
-    float wy = 7.1 - 1.1 * 4.0 * u * (1.0 - u);
+    float wy = 10.5 - 1.1 * 4.0 * u * (1.0 - u);
     float px = D / rd.z * 2.0 * uTanHalf.y / uRes.y;
     float wire = 1.0 - smoothstep(0.0, 0.012 + px * 1.5, abs(yw - wy));
     col = mix(col, vec3(0.006), wire * 0.9);
   }
-  // station platform: a lit edge and a canopy rushing past
+  // station: a lit platform at rail height, a canopy overhead, pillars flicking by
   for (int i = 0; i < 8; i++) {
     if (i >= fn) break;
     vec4 f = feat(i);
     if (f.x < 1.5 || f.x > 2.5) continue;
-    float D = 2.0;
-    float xw = camX + slope * D, yw = ro.y + rise * D;
-    if (xw > f.y - hw && xw < f.z + hw) {
-      float inP = smoothstep(f.y - hw, f.y + hw, xw) * (1.0 - smoothstep(f.z - hw, f.z + hw, xw));
-      if (yw < 1.05) { col = mix(col, vec3(0.08, 0.075, 0.07) * (0.7 + 0.6 * pbox(xw, hw + 0.3, 12.0, 6.0)), inP); dist = D / rd.z; }
-      if (yw > 0.95 && yw < 1.05) col = mix(col, vec3(0.35, 0.3, 0.05), inP);
-      float D2 = 4.5;
-      float y2 = ro.y + rise * D2, x2 = camX + slope * D2;
-      if (y2 > 4.3 && y2 < 4.6) col = mix(col, vec3(0.03) + vec3(0.6, 0.55, 0.45) * pbox(x2, hw + 0.2, 12.0, 1.2), inP);
-      if (y2 > 1.0 && y2 < 4.3) col = mix(col, vec3(0.01), inP * pbox(x2, hw + 0.05, 12.0, 0.25));
+    float RAIL = 3.4;
+    if (rd.y < 0.0) {
+      float tp = (RAIL + 1.1 - ro.y) / rd.y;
+      vec3 pp = ro + rd * tp;
+      if (pp.z > 0.45 && pp.z < 6.5 && pp.x > f.y && pp.x < f.z && tp < dist) {
+        float lampLit = 0.0, tex = 0.0;
+        for (int k = 0; k < 4; k++) {
+          float xs = pp.x + (float(k) - 1.5) * hw * 0.5;
+          lampLit += 0.55 + 0.45 * cos(6.2831 * (xs - 6.0) / 12.0);
+          tex += vnoise(vec2(xs * 3.0, pp.z * 3.0));
+        }
+        lampLit *= 0.25; tex *= 0.25;
+        vec3 pc = vec3(0.045, 0.044, 0.042) * (0.75 + 0.5 * tex) * (0.25 + 0.9 * lampLit * exp(-abs(pp.z - 3.0) * 0.25));
+        float line = smoothstep(0.62, 0.66, pp.z) * (1.0 - smoothstep(0.78, 0.82, pp.z));
+        pc = mix(pc, vec3(0.5, 0.42, 0.06) * (0.5 + lampLit), line);
+        pc *= 1.0 - (1.0 - smoothstep(0.45, 0.55, pp.z)) * 0.7;
+        col = pc * (1.0 - uRain * 0.15) + vec3(0.06) * uRain * lampLit * 0.5;
+        dist = tp;
+      }
+      // the platform's face below the edge
+      float tz = (0.45 - ro.z) / rd.z;
+      vec3 pf = ro + rd * tz;
+      if (pf.y < RAIL + 1.1 && pf.y > RAIL - 0.3 && pf.x > f.y && pf.x < f.z && tz < dist) { col = vec3(0.012); dist = tz; }
+    }
+    if (rd.y > 0.0) {
+      float tc = (RAIL + 4.3 - ro.y) / rd.y;
+      vec3 pc = ro + rd * tc;
+      if (pc.z > 0.2 && pc.z < 6.0 && pc.x > f.y && pc.x < f.z && tc < dist) {
+        float lamps = pbox(pc.x - 4.0, hw + 0.05, 12.0, 2.4) * (1.0 - smoothstep(0.8, 1.1, abs(pc.z - 3.0)));
+        col = vec3(0.025, 0.024, 0.023) + vec3(1.2, 1.15, 1.0) * lamps;
+        dist = tc;
+      }
+    }
+    // the far platform across the tracks: surface, pillars, canopy, the lamps under it
+    float Df = 13.0;
+    float xf = camX + slope * Df, yf = ro.y + rise * Df;
+    if (xf > f.y && xf < f.z && Df / rd.z < dist + 4.0) {
+      if (yf > RAIL + 0.2 && yf < RAIL + 1.1) { col = vec3(0.02, 0.019, 0.018); dist = Df / rd.z; }
+      else if (yf >= RAIL + 1.1 && yf < RAIL + 4.6) {
+        float lit = 0.5 + 0.5 * cos(6.2831 * (xf - 6.0) / 12.0);
+        vec3 wall = vec3(0.022, 0.021, 0.02) * (0.3 + 1.0 * lit * lit) * (0.8 + 0.4 * vnoise(vec2(xf * 0.4, yf)));
+        float sign = step(abs(mod(xf, 36.0) - 18.0), 2.0) * step(abs(yf - RAIL - 3.0), 0.35);
+        wall = mix(wall, vec3(0.05, 0.12, 0.3), sign);
+        float pil = pbox(xf, hw + 0.01, 12.0, 0.35);
+        col = mix(wall, vec3(0.012), min(pil, 1.0));
+        dist = Df / rd.z;
+      } else if (yf >= RAIL + 4.6 && yf < RAIL + 5.2) { col = vec3(0.025); dist = Df / rd.z; }
     }
   }
   // atmosphere, wet air
@@ -231,13 +268,13 @@ void main(){
       if (tunnel) {
         for (let lx = Math.floor((x - 60) / 25) * 25; lx < x + 60; lx += 25) {
           const c = W.kelvin(2300);
-          L.add(lx, 3.4, 0.4, 0.15, c[0] * 120, c[1] * 120, c[2] * 120, 0.5, 2, -v, 0, 0);
+          L.add(lx, 5.6, 0.2, 0.15, c[0] * 160, c[1] * 160, c[2] * 160, 0.5, 2, -v, 0, 0);
         }
       } else {
         for (const f of vis) {
           if (f.type === 1) {
             const on = Math.sin(t * Math.PI * 2 * 1.1) > 0;
-            for (const [zz, yy, s] of [[1.6, 2.0, 1], [-5.6, 2.0, -1]]) {
+            for (const [zz, yy, s] of [[1.6, 5.3, 1]]) {
               const k = (on ? 1 : 0.05) * 160;
               L.add(f.x0 - 1.5, yy, zz, 0.12, k, k * 0.04, k * 0.01, 1, 2, -v, 0, 0);
               const k2 = (on ? 0.05 : 1) * 160;
@@ -246,7 +283,7 @@ void main(){
             const sod = W.kelvin(2000);
             for (let i = 0; i < f.lamps; i++) L.add(f.x0 + 5, 6.5, 14 + i * 40, 0.2, sod[0] * 200, sod[1] * 200, sod[2] * 200, 0.8, 2, -v, 0, 0);
           } else if (f.type === 2) {
-            for (let lx = f.x0 + 6; lx < f.x1; lx += 12) if (Math.abs(lx - x) < 80) L.add(lx, 4.4, 4.5, 0.25, 140, 136, 120, 0.6, 2, -v, 0, 0);
+            for (let lx = f.x0 + 4; lx < f.x1; lx += 12) if (Math.abs(lx - x) < 160) L.add(lx, 7.7, 11.3, 0.35, 150, 146, 130, 0.7, 2, -v, 0, 0);
           } else if (f.type === 4) {
             for (const tl of [[f.x0 + 40, 300, 2200], [f.x0 + 90, 520, 2700], [f.x0 + 20, 700, 2000]]) {
               const c = W.kelvin(tl[2]);
@@ -318,7 +355,7 @@ void main(){
         // signals by the track
         const sx = Math.floor(x / 900) * 900 + 900;
         const sc = W.hash(sx) < 0.8 ? [0.1, 1, 0.5] : [1, 0.05, 0.02];
-        if (sx - x < 200) L.add(sx, 3.2, 2.1, 0.1, sc[0] * 120, sc[1] * 120, sc[2] * 120, 0.8, 2, -v, 0, 0);
+        if (sx - x < 200) L.add(sx, 6.6, 2.1, 0.1, sc[0] * 120, sc[1] * 120, sc[2] * 120, 0.8, 2, -v, 0, 0);
       }
       this.crossPhase = Math.sin(t * Math.PI * 2 * 1.1) > 0 ? 1 : 0;
     },
