@@ -476,7 +476,7 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .crit-l{margin:0 0 4px 30px;border-left:1px dashed var(--line2);padding-left:6px}
 .crit-i{display:flex;align-items:center;gap:8px;padding:2px 4px;border-radius:3px;cursor:pointer;font:11px var(--mono);color:var(--tx2)}.crit-i:hover,.crit-i.on{background:var(--sel);color:var(--tx)}
 .crit-i em{flex:1;font-style:normal;color:var(--mute);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.crit-f{padding:6px 10px;border-top:1px solid var(--line);color:var(--mute);font-size:10.5px;flex:none}
+.crit-f{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 10px;border-top:1px solid var(--line);color:var(--mute);font-size:10.5px;flex:none}.crit-f span{flex:1}
 /* command palette */
 .cmdk{display:flex;align-items:center;gap:7px;height:22px;margin:auto 0 auto 14px;padding:0 5px 0 7px;min-width:0;flex:0 1 210px;border:1px solid var(--line2);border-radius:5px;background:var(--panel);color:var(--mute);cursor:pointer;font-size:11.5px}
 .cmdk:hover{border-color:var(--acc-d);color:var(--tx2)}
@@ -1104,7 +1104,7 @@ function fxCanvas(n, cv, frame, p, key, opts, solo) {
   const img = solo && n.type === 'pixel' && !(opts && opts.inject && opts.inject.layerId === n.id) ? frame.cels[n.id] : null, fk = fxKeyOf(n);
   if (img) { const c = _fxCache.get(img); if (c && c.k === fk && c.cv.width === p.w && c.cv.height === p.h) {
     if (c.v === img.ver) return c.cv;
-    if (App.dragging && c.ms > 12 && performance.now() - c.at < 90) { _fxStale = true; return c.cv; } } } // heavy effects refresh at ~10 fps mid-stroke
+    if (App.dragging && c.ms > 12 && performance.now() - c.at < Math.max(90, c.ms * 3)) { _fxStale = true; return c.cv; } } } // heavy effects refresh at most ~10 fps (and never more than a third of the time) mid-stroke
   const t0 = performance.now(), out = applyLayerFx(n, img ? img.data : cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, p.w, p.h).data, p.w, p.h);
   let dst;
   if (img) { dst = (_fxCache.get(img) || {}).cv || document.createElement('canvas'); dst.width = p.w; dst.height = p.h; _fxCache.set(img, { k: fk, v: img.ver, cv: dst, ms: performance.now() - t0, at: performance.now() }); }
@@ -3356,7 +3356,7 @@ function frameDrag(col, i) {
 function buildTabs() {
   const host = $('#tabs'); host.innerHTML = '';
   for (const p of App.projects) {
-    const t = h('div', { class: 'tab' + (p === App.p ? ' on' : ''), title: p.name + ' (' + p.w + 'x' + p.h + ')' }, p.dirty ? h('span', { class: 'dirty' }, '●') : null, h('span', { class: 'tx' }, p.name), h('span', { class: 'x', title: 'Close (Ctrl+W)', onclick: e => { e.stopPropagation(); closeProject(p); } }, '×'));
+    const t = h('div', { class: 'tab' + (p === App.p ? ' on' : ''), title: p.name + ' (' + p.w + 'x' + p.h + ')' }, p.dirty ? h('span', { class: 'dirty' }, '●') : null, h('span', { class: 'tx' }, p.name), h('span', { class: 'x', title: 'Close' + kt('close'), onclick: e => { e.stopPropagation(); closeProject(p); } }, '×'));
     t.onmousedown = e => { if (e.button === 1) { e.preventDefault(); closeProject(p); } else if (e.button === 0) App.setProject(p); };
     host.append(t);
   }
@@ -3416,7 +3416,7 @@ act('shareLink', 'Share as link…', null, () => shareLink());
 act('import', 'Import image…', 'Ctrl+Shift+O', () => pickFile('image/*,.gif,.png,.webp', f => importImageDialog(f)));
 act('export', 'Export…', 'Ctrl+E', () => exportDialog());
 act('exportPNG', 'Quick export PNG (current frame)', 'Ctrl+Shift+E', () => quickExportPNG());
-act('close', 'Close project', 'Alt+W', () => closeProject(P_()));
+act('close', 'Close project', 'Ctrl+Alt+W', () => closeProject(P_())); // Alt+W belongs to the Magic Wand (right button)
 act('restore', 'Restore autosave…', null, () => restoreAutosave(true));
 act('undo', 'Undo', 'Ctrl+Z', () => P_().hist.undo(), { en: () => P_().hist.idx >= 0 });
 act('redo', 'Redo', 'Ctrl+Y', () => P_().hist.redo(), { alt: ['Ctrl+Shift+Z'], en: () => P_().hist.idx < P_().hist.list.length - 1 });
@@ -5020,7 +5020,7 @@ const Crit = {
     this.run(); Bus.emit('prefs');
   },
   close() { if (!this.el) return; this.el.remove(); this.el = null; this.res = null; this.focus = null; clearTimeout(this.t); requestRender(); Bus.emit('prefs'); },
-  schedule() { if (!this.el) return; clearTimeout(this.t); this.t = setTimeout(() => this.run(), 220); },
+  schedule() { if (!this.el || App.p.w * App.p.h > 320000) return; clearTimeout(this.t); this.t = setTimeout(() => this.run(), 220); }, // big canvases re-check on demand
   data() { const p = App.p; if (this.target === 'visible') return frameData(p, p.frame); const img = p.img(); return img ? img.data : null; },
   run() { if (!this.el) return; const p = App.p, d = this.data(); this.res = d ? critique(d, p.w, p.h) : null; if (this.focus && !Object.values(this.res ? this.res.out : {}).some(l => l.some(x => x.pts[0][0] === this.focus.pts[0][0] && x.pts[0][1] === this.focus.pts[0][1]))) this.focus = null; this.draw(); requestRender(); },
   draw() {
@@ -5048,7 +5048,8 @@ const Crit = {
         if (open) { const sub = h('div', { class: 'crit-l' }); L.slice(0, 60).forEach((it, n) => sub.append(h('div', { class: 'crit-i' + (this.focus === it ? ' on' : ''), onclick: () => this.goto(it) }, h('span', null, '#' + (n + 1) + '  ' + it.pts[0][0] + ', ' + it.pts[0][1]), h('em', null, it.info || (it.pts.length > 1 ? it.pts.length + ' px' : '')), canFix && it.fix ? h('button', { class: 'kbx', title: C.fix + ' this one', onclick: ev => { ev.stopPropagation(); this.fix(k, [it]); } }, '✓') : null))); if (L.length > 60) sub.append(h('div', { class: 'ohint' }, '…and ' + (L.length - 60) + ' more')); list.append(sub); }
       }
     }
-    el.append(head, list, h('div', { class: 'crit-f' }, 'Re-checks as you draw. Hover a row for what it means.'));
+    const big = App.p.w * App.p.h > 320000;
+    el.append(head, list, h('div', { class: 'crit-f' }, h('span', null, big ? 'Large canvas: checks run when you ask. ' : 'Re-checks as you draw. ', 'Hover a row for what it means.'), h('button', { class: 'btn sm', onclick: () => this.run() }, 'Check again')));
   },
   goto(it) { const p = App.p, [x, y] = it.pts[0]; if (p.view.zoom < 8) zoomAt(Math.min(24, Math.max(8, p.view.zoom))); const v = p.view; v.x = Math.round(VP.W / 2 - (x + .5) * v.zoom); v.y = Math.round(VP.H / 2 - (y + .5) * v.zoom); if (Prefs.mirrorView) v.x = Math.round(VP.W / 2 - (x + .5) * v.zoom); this.focus = it; this.draw(); requestRender(); Bus.emit('view'); },
   fix(k, items) {
