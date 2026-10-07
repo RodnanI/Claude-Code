@@ -437,6 +437,14 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .fxv{font-family:var(--mono);min-width:30px;text-align:right}
 .kbx:disabled{opacity:.25;pointer-events:none}
 .lightw{width:104px;height:104px;image-rendering:pixelated;cursor:crosshair;flex:none;touch-action:none}
+/* what's new */
+.wn{grid-column:1/-1;border-top:1px solid var(--line);padding-top:12px}
+.wn h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--acc);display:flex;align-items:baseline;gap:10px}
+.wn h4 span{color:var(--mute);text-transform:none;letter-spacing:0;font-weight:400;font-size:11px}
+.wn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wn-c{display:flex;flex-direction:column;gap:2px;text-align:left;padding:8px 10px;border:1px solid var(--line2);border-left:3px solid var(--acc);background:var(--raise);border-radius:6px;cursor:pointer}
+.wn-c:hover{border-color:var(--acc);background:var(--panel2)}
+.wn-c b{font-size:12px}.wn-c span{color:var(--mute);font-size:10.5px;line-height:1.35}
 /* ramp studio, recolor */
 .rs-prev{display:flex;flex-direction:column;gap:10px;background:var(--canvas-bg);border:1px solid var(--line);border-radius:6px;padding:12px;min-height:260px;max-height:62vh;overflow-y:auto}
 .rs-row{display:flex;align-items:center;gap:12px}
@@ -677,7 +685,7 @@ const PREF_DEFAULTS = {
   onion: false, onionPast: 1, onionFuture: 1, onionAlpha: 0.35, onionTint: true, onionPastColor: '#e5574a', onionFutureColor: '#4fb3a1',
   autosave: true, maxUndo: 120, zoomStep: 1.25, defaultW: 64, defaultH: 64, recentColors: [], uiPanels: {},
   firstRun: true, intro: true, lcW: 292, rcW: 288, tlH: 214, celSize: 36, loop: 'cycle', invertWheel: false, keys: {}, kidx: { open: false, x: -1, y: 70, w: 320, h: 460 },
-  cmdRecent: [], rotAlgo: 'rotsprite', lapse: true
+  cmdRecent: [], rotAlgo: 'rotsprite', lapse: true, seenBuild: ''
 };
 const Prefs = (() => {
   let p = {};
@@ -3817,7 +3825,7 @@ function prefsDialog() {
     buttons: [{ label: 'Done', pri: true }] });
 }
 function staticKeySections() {
-  return [['Mouse', [['Draw with left / right tool', 'LMB / RMB'], ['Pan', 'Space+drag, MMB'], ['Zoom at cursor', 'Wheel'], ['Brush size', 'Alt+Wheel'], ['Pick color', 'Alt+click'], ['Bypass snapping', 'Hold Ctrl'], ['Guides', 'Drag from rulers'], ['Linked duplicate', 'Shift+click ⧉']]],
+  return [['Mouse', [['Draw with left / right tool', 'LMB / RMB'], ['Pan', 'Space+drag, MMB'], ['Zoom at cursor', 'Wheel'], ['Brush size', 'Alt+Wheel'], ['Pick color', 'Alt+click'], ['Bypass snapping', 'Hold Ctrl'], ['Rotate floating pixels', 'Drag the round handle'], ['Swap / copy / link cels', 'Drag a cel, Ctrl, Alt'], ['Guides', 'Drag from rulers'], ['Linked duplicate', 'Shift+click ⧉']]],
     ['Smart shapes', [['Detect while drawing', 'Shift'], ['Detect last stroke', 'Tap Shift'], ['Cycle alternatives', 'Tab'], ['Pick alternative', '1-9'], ['Toggle fill', 'F'], ['Polygon sides', '[ ]'], ['Apply / keep freehand', 'Enter / Esc']]],
     ['Tools (left / right)', TOOL_ORDER.filter(t => t !== '|').map(t => [Tools[t].name, Tools[t].key + '  /  Alt+' + Tools[t].key])]];
 }
@@ -3898,7 +3906,7 @@ const KIdx = {
   }
 };
 function aboutDialog() {
-  openDialog({ title: 'About Pixelorama Web', body: h('div', { style: { maxWidth: '460px', lineHeight: 1.6 } }, h('p', null, 'A single-file, desktop-first pixel art and animation editor inspired by Pixelorama, the free and open source editor by Orama Interactive. Everything runs locally in your browser; nothing is uploaded.'), h('p', { style: { color: 'var(--tx2)' } }, 'Extras beyond the original: smart shape detection (Shift while drawing), multi-scheme snapping, a quick tour and a guided animation demo, hue-shifted color ramps, RotSprite-style rotation, palette-step shading and GIF/APNG/spritesheet export.')), buttons: [{ label: 'Nice', pri: true }] });
+  openDialog({ title: 'About Pixelorama Web', body: h('div', { style: { maxWidth: '460px', lineHeight: 1.6 } }, h('p', null, 'A single-file, desktop-first pixel art and animation editor inspired by Pixelorama, the free and open source editor by Orama Interactive. Everything runs locally in your browser; nothing is uploaded.'), h('p', { style: { color: 'var(--tx2)' } }, 'Extras beyond the original: live layer effects, auto-shading from a light direction with normal map export, a pixel critic that flags jaggies, strays and pillow shading, free RotSprite rotation, smart shape detection, multi-scheme snapping, a command palette, OKLCH ramp studio and recolor, tweens, a timelapse recorder, share links, video and GIF/APNG/spritesheet export, a quick tour and a guided animation demo.'), h('p', { style: { color: 'var(--mute)', fontSize: '11px' } }, 'Build ' + BUILD)), buttons: [{ label: 'Nice', pri: true }] });
 }
 function paletteMenu(anchor) {
   const r = anchor.getBoundingClientRect(), P = Palettes;
@@ -4513,10 +4521,11 @@ const Tour = {
       { t: '#rt-preview', tf: () => { $('#rtabs [data-t=history]').click(); return $('#p-preview'); }, title: 'Undo is cheap', text: 'Ctrl+Z undoes, Ctrl+Y redoes. The History tab lists every step; click one to jump there.', task: 'Press Ctrl+Z', check: b => App.p.hist.idx < b.idx, place: 'left' },
       { t: '#viewport', title: 'Smart shapes', text: 'Draw a rough circle, rectangle, triangle or line with the pencil and press Shift before you let go (or just hold still). It becomes a clean shape you can still adjust. If it reads your circle as an oval, click Circle in the chip or press Tab.', task: 'Draw a shape and press Shift', check: b => !!Smart.pending || App.p.hist.list.slice(b.hist).some(e => e.name.startsWith('Smart')), place: 'left' },
       { t: () => $('#gtools [data-g=snapOn]'), title: 'Snapping', text: 'The magnet toggles snapping (S). Right-click it to pick targets: grid, isometric lattice, guides, canvas center and thirds, selection edges, existing pixels, angles and radial spokes. Hold Ctrl to ignore snapping for a moment.', place: 'below' },
-      { t: '#layercol', title: 'Layers', text: 'Layers stack from top to bottom. The eye hides, the lock protects, double-click for opacity, blend mode and clipping masks. Drag rows to reorder or drop them into groups.', place: 'above' },
+      { t: '#cmdk-btn', title: 'Find anything', text: 'Ctrl+K opens the command palette. Type what you want: an action, a tool, a layer, a palette, or a value like 32x32, #ff0044, 400% or "frame 12". Alt+Enter sends tools and colors to the right button.', task: 'Press Ctrl+K', check: () => !!Cmd.el, place: 'below' },
+      { t: '#layercol', title: 'Layers', text: 'Layers stack from top to bottom. The eye hides, the lock protects, double-click for opacity, blend mode and clipping masks; right-click for live layer effects like outline, glow and auto-shade. Drag rows to reorder or drop them into groups.', place: 'above' },
       { t: '#celsarea', title: 'Frames', text: 'Each column is a frame. N adds one, Enter plays, K toggles onion skin so you can see neighboring frames while you draw.', task: 'Add a frame (press N or the + button)', check: b => App.p.frames.length > b.frames, place: 'above' },
       { t: () => $$('#menus .menu')[0], title: 'Save and export', text: 'Ctrl+S saves a .pixo project (layers, frames, tags, palette). File > Export makes PNGs, spritesheets, GIFs, APNGs or a ZIP of frames. Everything also autosaves locally.', place: 'below' },
-      { title: 'That is the basics', text: 'Want to watch a complete animation get built on screen, with every tool explained as it is used? Start the guided demo. Help menu and F1 bring this tour back.', end: true }
+      { title: 'That is the basics', text: 'Shift+C runs a pixel critique of your art, and File > Timelapse replays how you made it. Want to watch a complete animation get built on screen, with every tool explained as it is used? Start the guided demo. Help menu and F1 bring this tour back.', end: true }
     ];
   },
   start() {
@@ -4832,7 +4841,7 @@ async function DemoScript(D) {
 const Lapse = {
   max: 1600, t: 0,
   of(p) { return p.lapse ||= { shots: [], last: '' }; },
-  schedule() { if (!Prefs.lapse || App.demoLock) return; clearTimeout(this.t); const p = App.p; this.t = setTimeout(() => this.capture(p), 160); },
+  schedule() { if (!Prefs.lapse) return; clearTimeout(this.t); const p = App.p; this.t = setTimeout(() => this.capture(p), 160); },
   async capture(p) {
     if (!p || !App.projects.includes(p)) return; const L = this.of(p), d = frameData(p, p.frame);
     let x = 2166136261; for (let i = 0; i < d.length; i += 3) x = Math.imul(x ^ d[i], 16777619); // FNV-1a over most bytes: identical frames are skipped
@@ -5007,7 +5016,7 @@ const Crit = {
   toggle() { if (this.el) this.close(); else this.open(); },
   open() {
     if (this.el) return; const el = this.el = h('div', { class: 'crit' }); document.body.append(el);
-    const r = VP.el.getBoundingClientRect(); el.style.left = (r.right - 318) + 'px'; el.style.top = (r.top + 10) + 'px';
+    const r = VP.el.getBoundingClientRect(); el.style.left = (r.left + 12) + 'px'; el.style.top = (r.top + 10) + 'px'; // top-left: the effects editor docks bottom-right
     this.run(); Bus.emit('prefs');
   },
   close() { if (!this.el) return; this.el.remove(); this.el = null; this.res = null; this.focus = null; clearTimeout(this.t); requestRender(); Bus.emit('prefs'); },
@@ -5193,6 +5202,14 @@ function fuzzy(q, s) {
   }
   return { score: score - t.length * .04, hits };
 }
+/* extra words people search for that are not in the label */
+const CMD_KW = { 't:pencil': 'draw brush pen', 't:eraser': 'delete remove rubber', 't:shading': 'shade lighten darken dodge burn', 't:bucket': 'fill paint', 't:picker': 'eyedropper sample pick',
+  't:spray': 'airbrush', 't:rectsel': 'select selection marquee', 't:lasso': 'select selection freehand', 't:wand': 'select selection magic', 't:move': 'transform rotate scale drag', 't:gradient': 'dither blend',
+  'a:fx_autoshade': 'light lighting normal shading', 'a:layerFx': 'outline glow stroke shadow live non-destructive', 'a:critique': 'lint check mistakes problems jaggies orphan stray pillow review',
+  'a:timelapse': 'replay record process history', 'a:shareLink': 'url send copy share', 'a:tween': 'inbetween interpolate motion keyframe', 'a:recolor': 'palette swap replace variant hue',
+  'a:rampStudio': 'palette generator harmony gradient colors', 'a:export': 'gif png save video spritesheet mp4 webm', 'a:keys': 'shortcuts hotkeys bindings', 'a:themePicker': 'dark light appearance colors',
+  'a:prefs': 'settings options', 'a:scaleImage': 'resize upscale', 'a:resizeCanvas': 'canvas size', 'a:onion': 'ghost', 'a:t_grid': 'lines' };
+const kwHit = (q, kw) => { const toks = q.toLowerCase().split(/\s+/).filter(Boolean); return toks.length && toks.every(t => kw.includes(t)) ? 10 + toks.join('').length * 3 : 0; }; // above scattered-letter hits, below label substrings
 const Cmd = {
   el: null, rows: [], sel: 0, _cat: null,
   cats() { // action id -> menu path, computed once from MENUS
@@ -5256,7 +5273,7 @@ const Cmd = {
     const scored = [];
     for (const r of this.dynamic(q)) scored.push({ r, s: 1e3, hits: [] });
     const multi = /\s/.test(q.trim());
-    for (const r of this.all) { const f = fuzzy(q, r.label) || (multi && r.cat && fuzzy(q, r.cat + ' ' + r.label)); if (!f || f.score < 6) continue; const ri = Prefs.cmdRecent.indexOf(r.id); scored.push({ r, s: f.score + (ri >= 0 ? 8 - ri * .3 : 0) + (r.en && !r.en() ? -6 : 0), hits: fuzzy(q, r.label) ? f.hits : [] }); }
+    for (const r of this.all) { let f = fuzzy(q, r.label) || (multi && r.cat && fuzzy(q, r.cat + ' ' + r.label)); if (!f || f.score < 6) { const k = CMD_KW[r.id] && kwHit(q, CMD_KW[r.id]); if (!k) continue; f = { score: k, hits: [] }; } const ri = Prefs.cmdRecent.indexOf(r.id); scored.push({ r, s: f.score + (ri >= 0 ? 8 - ri * .3 : 0) + (r.en && !r.en() ? -6 : 0), hits: fuzzy(q, r.label) ? f.hits : [] }); }
     scored.sort((a, b) => b.s - a.s);
     return { groups: [[null, scored.slice(0, 80).map(x => Object.assign(x.r, { _hits: x.hits }))]] };
   },
@@ -5295,6 +5312,63 @@ const Cmd = {
   }
 };
 act('cmdPalette', 'Command palette…', 'Ctrl+K', () => Cmd.toggle(), { alt: ['Ctrl+Shift+P'] });
+</script>
+<script>
+/* ================= WHAT'S NEW: one-click showcases on generated sample art ================= */
+const BUILD = '2026.10-studio';
+/* flat-colored sample sprites, drawn in code so they work offline */
+function sampleArt(kind, w = 32, hh = 32) {
+  const d = new Uint8ClampedArray(w * hh * 4), put = (x, y, c) => { if (x >= 0 && y >= 0 && x < w && y < hh) d.set(c.length === 4 ? c : [...c, 255], (y * w + x) * 4); };
+  const hx = s => hexToRgba(s), INK = hx('181425'), outline = c => d.set(FX.defs.outline.fn(d, w, hh, { thick: 1, color: c, diag: false, inside: false }));
+  if (kind === 'slime' || kind === 'flawed' || kind === 'slime-flat') {
+    for (const [x, y] of ellipsePts(6, 12, 25, 27, true)) put(x, y, hx('3e8948'));
+    [[12, 18], [12, 19], [19, 18], [19, 19]].forEach(([x, y]) => put(x, y, INK)); [[14, 22], [15, 23], [16, 23], [17, 22]].forEach(([x, y]) => put(x, y, hx('265c42')));
+    if (kind !== 'slime-flat') outline(hx('193c3e'));
+    if (kind === 'flawed') {
+      put(3, 4, hx('3e8948')); put(10, 16, hx('44934e')); [[20, 24], [21, 24], [22, 24], [21, 25]].forEach(([x, y]) => put(x, y, hx('3f8a49')));
+      [[22, 5], [23, 5], [24, 5], [21, 6], [18, 7], [19, 7], [20, 7]].forEach(([x, y]) => put(x, y, INK)); // a 3-1-3 jaggy antenna
+      [[3, 28], [4, 28], [4, 29], [5, 29], [6, 29], [7, 29]].forEach(([x, y]) => put(x, y, INK));          // a doubled corner
+    }
+  } else if (kind === 'sword') {
+    for (let y = 4; y <= 19; y++) { put(14, y, hx('c0cbdc')); put(15, y, hx('ffffff')); put(16, y, hx('c0cbdc')); put(17, y, hx('8b9bb4')); }
+    put(15, 3, hx('ffffff')); put(16, 3, hx('c0cbdc')); put(15, 2, hx('ffffff'));
+    for (let x = 10; x <= 21; x++) { put(x, 20, hx('feae34')); put(x, 21, hx('d77643')); }
+    for (let y = 22; y <= 26; y++) for (const x of [15, 16]) put(x, y, (y & 1) ? hx('733e39') : hx('3e2731'));
+    for (let x = 14; x <= 17; x++) { put(x, 27, hx('feae34')); put(x, 28, hx('d77643')); }
+    outline(INK);
+  }
+  return d;
+}
+function sampleProject(name, kind, w = 32, hh = 32) { const p = createProject(w, hh, name), img = p.img(); img.data.set(sampleArt(kind, w, hh)); img.touch(); p.hist = new History(p); Bus.emit('structure'); requestRender(true); return p; }
+const SHOWCASE = [
+  ['Command palette', 'Ctrl+K finds any action, tool, layer or palette. Type 32x32 or #ff0044 too', () => Cmd.open()],
+  ['Auto-shade', 'Light a flat sprite from any angle, with hue-shifted tones', () => { sampleProject('Slime (flat)', 'slime'); effectDialog('autoshade'); }],
+  ['Layer effects', 'Shading, outline and glow that stay editable while you draw', () => { sampleProject('Slime (effects)', 'slime-flat'); addLayerFx('shade'); addLayerFx('outline', { color: hexToRgba('193c3e'), thick: 1 }); addLayerFx('glow', { color: [255, 214, 110, 255], size: 3, strength: 70, dither: true }); FXEd.expanded = new Set([App.p.layer().fx[0].id]); FXEd.draw(); }],
+  ['Pixel critique', 'Finds strays, jaggies, doubled corners and pillow shading', () => { sampleProject('Critique me', 'flawed'); Crit.open(); }],
+  ['Free rotation', 'Drag the round handle: RotSprite keeps edges clean', () => { sampleProject('Sword', 'sword'); setTool('left', 'move'); Sel.fromAlpha(); Float.lift(); Float.setAngle(-35); toast('Drag the round handle above the box to rotate, Enter to apply', 4000); }],
+  ['Timelapse', 'Replay how a piece was made, export it as a GIF', () => lapseShowcase()],
+  ['Ramp studio', 'Even, hue-shifted color ramps and harmonies in OKLCH', () => { App.colors.left = hexToRgba('3e8948'); App.colors.right = hexToRgba('e43b44'); Bus.emit('color'); rampStudio(); }],
+  ['Tween', 'In-betweens between two keyframes, with easing', () => tweenShowcase()],
+  ['Share as link', 'The whole project inside a URL, nothing uploaded', () => { if (!App.p.hist.list.length) sampleProject('Slime', 'slime'); shareLink(); }]
+];
+async function lapseShowcase() {
+  const p = createProject(32, 32, 'Slime timelapse'), img = p.img(), full = sampleArt('slime-flat'), steps = [];
+  const rows = (a, b) => i => { const y = (i / 32) | 0; return y >= a && y <= b && full[i * 4 + 1] === 137; };
+  await Lapse.capture(p);
+  steps.push(['Pencil', rows(12, 15)], ['Pencil', rows(16, 19)], ['Pencil', rows(20, 23)], ['Bucket fill', rows(24, 28)], ['Pencil', i => full[i * 4] === 0x18], ['Pencil', i => full[i * 4] === 0x26]);
+  for (const [name, pick] of steps) { const tok = celEditBegin([img]); for (let i = 0; i < 1024; i++) if (pick(i)) img.data.set(full.subarray(i * 4, i * 4 + 4), i * 4); img.touch(); celEditCommit(tok, name); await Lapse.capture(p); }
+  for (const [name, fn] of [['Auto-shade', d => autoShade(d, 32, 32, { light: { az: 315, el: 40 }, mode: 'mix', round: 80, tones: 3, amt: 16, hue: 24, bounce: true, keepDark: true })], ['Outline', d => FX.defs.outline.fn(d, 32, 32, { thick: 1, color: hexToRgba('193c3e'), diag: false, inside: false })]]) { const tok = celEditBegin([img]); img.data.set(fn(img.data)); img.touch(); celEditCommit(tok, name); await Lapse.capture(p); }
+  requestRender(true); Lapse.dialog(); setTimeout(() => { const b = $('.lapse .btn'); if (b) b.click(); }, 300);
+}
+function tweenShowcase() {
+  const p = createProject(64, 32, 'Tween'), L = p.layerId; Frames.add();
+  const blob = (fi, cx, cy) => { const im = p.frames[fi].cels[L]; for (const [x, y] of ellipsePts(cx - 5, cy - 4, cx + 5, cy + 4, true)) im.data.set([62, 137, 72, 255], (y * 64 + x) * 4); im.data.set(FX.defs.outline.fn(im.data, 64, 32, { thick: 1, color: hexToRgba('193c3e'), diag: false, inside: false })); im.touch(); };
+  blob(0, 10, 22); blob(1, 52, 10); p.hist = new History(p); setFrame(0); Prefs.onion = true; savePrefs(); Bus.emit('prefs'); Bus.emit('structure'); requestRender(true); tweenDialog();
+}
+function whatsNew() {
+  return h('div', { class: 'wn' }, h('h4', null, 'New in this build', h('span', null, 'click one to try it on sample art')),
+    h('div', { class: 'wn-grid' }, SHOWCASE.map(([t, sub, fn]) => h('button', { class: 'wn-c', onclick: () => { while (dialogs.length) closeTopDialog(); setTimeout(() => { try { fn(); } catch (e) { console.error(e); toast('Could not start: ' + e.message); } }, 30); } }, h('b', null, t), h('span', null, sub)))));
+}
 </script>
 <script>
 /* ================= BOOT ================= */
@@ -5336,7 +5410,7 @@ function splash() {
   const restoreSlot = h('div');
   const show = h('label', { class: 'chk', style: { marginTop: '8px' } }, h('input', { type: 'checkbox', checked: Prefs.firstRun !== 'never', onchange: e => { Prefs.firstRun = e.target.checked ? true : 'never'; savePrefs(); } }), 'Show this screen at startup');
   const d = openDialog({ title: 'Pixelorama Web', width: 900, onCancel: () => alive = false, buttons: [], body: h('div', { class: 'splash' },
-    h('div', { class: 'hero' }, hero, h('h2', null, 'Pixel art & animation'), h('p', null, 'Two buttons, two tools, two colors. Layers, frames, onion skin, tags, palettes, effects, smart shapes and serious snapping, all in one offline HTML file.'), h('p', { style: { color: 'var(--mute)', fontSize: '11px' } }, 'Inspired by Pixelorama by Orama Interactive. Not affiliated.')),
+    h('div', { class: 'hero' }, hero, h('h2', null, 'Pixel art & animation'), h('p', null, 'Two buttons, two tools, two colors. Layers with live effects, frames, onion skin and tweens, auto-shading, a built-in pixel critic, smart shapes and serious snapping, all in one offline HTML file.'), h('p', { style: { color: 'var(--mute)', fontSize: '11px' } }, 'Inspired by Pixelorama by Orama Interactive. Not affiliated.')),
     h('div', null,
       big('+', 'New project', 'Pick a size and start drawing', () => newProjectDialog()),
       big('⇡', 'Open…', 'A .pixo project, an image, a GIF or a palette', () => openFileDialog()),
@@ -5344,7 +5418,8 @@ function splash() {
       big('?', 'Quick tour', 'The basic controls in 2 minutes, hands on', () => Tour.start()),
       big('▶', 'Guided animation demo', 'Watch a bouncing slime get made, step by step', () => Demo.start()),
       big('×', 'Just let me draw', 'Close this and use the blank 64 x 64 canvas', () => {}),
-      show)) });
+      show), whatsNew()) });
+  Prefs.seenBuild = BUILD; savePrefs();
   IDB.get('autosave').then(s => { if (s && s.projects && s.projects.length) restoreSlot.append(big('↺', 'Restore last session', s.projects.length + ' project(s), ' + new Date(s.time).toLocaleString(), () => { const blank = App.p; restoreAutosave(true).then(ok => { if (ok && !blank.dirty && !blank.hist.list.length) { App.projects.splice(App.projects.indexOf(blank), 1); Bus.emit('project'); } }); })); }).catch(() => {});
 }
 function boot() {
@@ -5361,7 +5436,7 @@ function boot() {
   if (share) AfterIntro.run(() => openShared(share[1]));
   else if (hash.includes('tour')) AfterIntro.run(() => setTimeout(() => Tour.start(), 150));
   else if (hash.includes('demo')) AfterIntro.run(() => setTimeout(() => Demo.start(), 150));
-  else if (Prefs.firstRun !== 'never' && !hash.includes('nosplash')) splash();
+  else if ((Prefs.firstRun !== 'never' || Prefs.seenBuild !== BUILD) && !hash.includes('nosplash')) splash();
   setTimeout(() => AfterIntro.finish(), 15000);
   window.addEventListener('error', e => { console.error(e.error || e.message); status('Error: ' + e.message); });
   window.addEventListener('hashchange', () => { const m = location.hash.match(/^#share=([\w-]+)/); if (m) openShared(m[1]); });
@@ -5410,7 +5485,7 @@ function runIntro(root, replay) {
   T.impact = T.burst + Math.max(...parts.map(p => p.D)) + .02;
   Object.assign(T, { shine: T.impact + .22, web: T.impact + .18, tag: T.impact + .38, orbit: T.impact + .04, slime: T.impact + .34, sel: T.impact + .62, exit: T.impact + 2.05 });
   const SL = T.slime, HOPS = [{ t0: SL, t1: SL + .38, x0: CW + 10, y0: -18, x1: letterX[9], ap: 2 }, { t0: SL + .52, t1: SL + .82, x0: letterX[9], y0: 0, x1: letterX[7], ap: 5 }, { t0: SL + .95, t1: SL + 1.26, x0: letterX[7], y0: 0, x1: letterX[5], ap: 6.5 }];
-  const LOG = [[.22, 'mixing 9 palettes'], [.6, 'sharpening 23 tools'], [1.06, 'teaching shapes to snap'], [1.62, 'stretching the timeline'], [2.2, 'waking up the slime'], [2.9, 'all systems pixel-perfect']];
+  const LOG = [[.22, 'mixing 9 palettes'], [.6, 'sharpening 23 tools'], [1.06, 'teaching shapes to snap'], [1.62, 'calibrating the light source'], [2.2, 'waking up the pixel critic'], [2.9, 'all systems pixel-perfect']];
   /* wobbly hand-drawn circle (unit space) */
   const WOB = []; { const ph = [rnd() * 6, rnd() * 6, rnd() * 6]; for (let i = 0; i <= 70; i++) { const k = i / 70, a = -Math.PI / 2 + k * Math.PI * 2 * 1.06; WOB.push({ a, n: .11 * Math.sin(a * 3 + ph[0]) + .06 * Math.sin(a * 5 + ph[1]) + .04 * Math.sin(a * 9 + ph[2]) + .05 * k }); } }
   const CIRC = ring(10);
