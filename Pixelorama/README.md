@@ -15,7 +15,7 @@ A pixel art and animation editor in one HTML file. Open `index.html` in a deskto
 
 ## What is new in this build
 
-The start screen has a "New in this build" grid. Every card opens a live example on generated sample art.
+The start screen has a "New in this build" list. Every entry opens a live example on generated sample art.
 
 | Feature | Where | What it does |
 | --- | --- | --- |
@@ -35,6 +35,24 @@ The start screen has a "New in this build" grid. Every card opens a live example
 | Video export | Export dialog | MP4 where the browser can record it, otherwise WebM. |
 
 Smaller things: the checkerboard snaps to whole image pixels at every zoom, the status bar shows the color under the cursor, and close project moved to `Ctrl+Alt+W` because `Alt+W` gives the Magic Wand to the right button.
+
+## Polish pass
+
+- One pixel icon set across the UI. The timeline, layer bar, zoom controls and the color and palette headers use the same hand-drawn 12 px icons as the toolbox instead of font glyphs, drawn 1:1 so they stay sharp at 1x and 2x.
+- The menubar wordmark is the intro's beveled PIXELORAMA in miniature, tinted from the theme accent. The favicon follows the theme and the browser tab shows the project name, with a star while unsaved.
+- Pixel checkboxes and dropdown arrows, one corner radius scale, crisper shadows, keyboard focus rings and pressed states. The toolbox lost its per-button boxes.
+- The preview panel takes the leftover height of the right column, so it stays on screen in shorter windows. The color picker renders at its real size instead of a stretched bitmap.
+- The start screen is two columns of actions plus a short list of what is new. The menubar dropped its Tour and Demo buttons (they live in Help, `F1` and `Shift+F1`). The intro dropped its fake boot HUD: timecode, loading bar, console log and orbiting icons.
+
+Fixed in this pass:
+
+- Paste, and Rotate 90° on a selection, stamped the pixels down right away when the Move tool was not already active, blending them into whatever was underneath. They now float until you press `Enter`.
+- Rotate 180° with a selection lost pixels because it lifted the selection twice. It is now a single, exact step.
+- Merge down ignored a clipping mask on the upper layer.
+- Clicking inside a selection with the rectangle or ellipse select tool logged an empty "Move selection" step. It now deselects, the same as clicking outside.
+- Shortcuts no longer reach the editor behind an open dialog (`Ctrl+Z` under the layer properties dialog could pull the layer out from under it).
+- Tapping `Shift` after a stroke only turns it into a shape if nothing was clicked in between. `Shift`+click on a cel used to convert the stroke.
+- A dropdown kept keyboard focus after you picked an option, so the next tool key changed the dropdown instead of the tool.
 
 ## Keys worth knowing
 
