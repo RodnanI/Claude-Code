@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0a09">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>wndo</title>
+<link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<div id="intro">
+  <div class="intro-in">
+    <h1 class="mark">wndo</h1>
+    <p class="tag">somewhere else, through glass</p>
+    <button id="open" type="button">open the window</button>
+    <p class="fine">sound on, if you like. click and drag on fogged glass to draw in it.</p>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div id="place">
+    <div class="place-name"></div>
+    <div class="place-sub"></div>
+  </div>
+  <div id="dial" role="tablist" aria-label="Places"></div>
+  <div id="tools">
+    <button class="tool" id="t-focus" type="button" title="Focus: glass or outside (space)" aria-label="Toggle focus"></button>
+    <button class="tool" id="t-sound" type="button" title="Sound (m)" aria-label="Toggle sound"></button>
+    <button class="tool" id="t-set" type="button" title="Settings (s)" aria-label="Settings"></button>
+    <button class="tool" id="t-full" type="button" title="Fullscreen (f)" aria-label="Fullscreen"></button>
+  </div>
+</div>
+
+<aside id="panel" aria-hidden="true">
+  <header>
+    <span class="panel-title">settings</span>
+    <button id="p-close" type="button" aria-label="Close settings">close</button>
+  </header>
+  <nav id="tabs"></nav>
+  <div id="pane"></div>
+  <footer>
+    <button id="reset-scene" type="button">reset this place</button>
+    <button id="reset-all" type="button">reset everything</button>
+  </footer>
+</aside>
+
+<div id="clock" hidden></div>
+<div id="fps" hidden></div>
+<div id="toast"></div>
+<div id="error" hidden><div><strong>The window would not open.</strong><p></p></div></div>
+
+<script src="src/core/util.js"></script>
+<script src="src/core/gl.js"></script>
+<script src="src/core/shaders.js"></script>
+<script src="src/core/renderer.js"></script>
+<script src="src/scenes/kit.js"></script>
+<script src="src/scenes/city.js"></script>
+<script src="src/scenes/forest.js"></script>
+<script src="src/scenes/sea.js"></script>
+<script src="src/scenes/meadow.js"></script>
+<script src="src/scenes/snow.js"></script>
+<script src="src/scenes/train.js"></script>
+<script src="src/ui/settings.js"></script>
+<script src="src/ui/ui.js"></script>
+<script src="src/audio/audio.js"></script>
+<script src="src/main.js"></script>
+</body>
+</html>
