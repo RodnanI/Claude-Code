@@ -20,6 +20,8 @@
     hover: null, pendingYear: null, gen: 0,
   };
   window.PalimpsestUI = UI;
+  // fingers on glass: bigger targets, taps instead of hovers
+  const TOUCH = window.matchMedia && matchMedia('(hover: none), (pointer: coarse)').matches;
   UI.goto = (y) => { pause(); UI.t = y; setYear(y, false); };
 
   /* ---------- textures for desk and leaves ---------- */
@@ -501,19 +503,22 @@
   }
 
   /* ---------- hovering and reading ---------- */
-  function hoverAt(clientX, clientY) {
+  // a fingertip is wider than a cursor, so it reaches about 24 screen pixels
+  const pickRad = (touch) => (touch ? Math.max(18, 24 / (UI.fit.k * UI.view.s)) : undefined);
+  function hoverAt(clientX, clientY, touch) {
     const tip = $('tip');
     if (!UI.world || UI.drawing || !UI.dynOn) { tip.hidden = true; return; }
     const [px, py] = toCanvas(clientX, clientY);
-    const hit = P.Political.pick(UI.st, UI.year, px, py);
+    const hit = P.Political.pick(UI.st, UI.year, px, py, pickRad(touch));
     if (!hit) { tip.hidden = true; UI.hover = null; return; }
     const key = hit.kind + ':' + (hit.id !== undefined ? hit.id : hit.battle.year);
     if (UI.hover !== key) { UI.hover = key; tip.innerHTML = tipHTML(hit); drawTipScript(hit); }
     tip.hidden = false;
     const sr = $('sheet').getBoundingClientRect();
-    let x = clientX - sr.left + 16, y = clientY - sr.top + 14;
     const tw = tip.offsetWidth, th = tip.offsetHeight;
-    if (x + tw > sr.width - 6) x = clientX - sr.left - tw - 14;
+    let x = clientX - sr.left + 16, y = clientY - sr.top + 14;
+    if (touch) { x = clientX - sr.left - tw / 2; y = clientY - sr.top - th - 30; if (y < 4) y = clientY - sr.top + 30; }
+    if (x + tw > sr.width - 6) x = touch ? sr.width - tw - 6 : clientX - sr.left - tw - 14;
     if (y + th > sr.height - 6) y = clientY - sr.top - th - 12;
     tip.style.left = Math.max(4, x) + 'px';
     tip.style.top = Math.max(4, y) + 'px';
@@ -532,6 +537,7 @@
 
   function tipHTML(hit) {
     const W = UI.world, y = UI.year;
+    const more = (what) => (TOUCH ? '' : `<div class="t-meta"><i>click for ${what}</i></div>`);
     if (hit.kind === 'settlement') {
       const s = W.settlements[hit.id];
       const n = W.nameAt(s, y);
@@ -546,7 +552,7 @@
         const what = { capital: 'chief city of', seat: 'seat of', city: 'a city of', town: 'a town of', village: 'a village of' }[tier];
         html += `<div class="t-meta">${what} ${esc(polityLabel(s.ownerY[y], y))}<br>some ${Math.round(s.popY[y] / 50) * 50} souls, mostly ${esc(W.cultures[s.cultY[y]].plural)}</div>`;
       } else html += `<div class="t-meta">ruins, empty since the year ${s.spans.length ? s.spans[s.spans.length - 1].from : s.ruined}</div>`;
-      return html + '<div class="t-meta"><i>click for its whole history</i></div>';
+      return html + more('its whole history');
     }
     if (hit.kind === 'battle') {
       const b = hit.battle;
@@ -554,7 +560,7 @@
     }
     const p = W.polities[hit.id];
     const R = p.rulers.filter((r) => r.from <= y && (r.to === null || r.to >= y)).slice(-1)[0];
-    return `<div class="t-name">${esc(polityLabel(hit.id, y))}</div><div class="t-meta">${R ? 'ruled by ' + esc(R.name.text(y)) + (R.ordinal > 1 ? ' ' + P.Chronicle.ROMAN(R.ordinal) : '') : ''}${p.founded ? '<br>since the year ' + p.founded : ''}</div><div class="t-meta"><i>click for its rulers</i></div>`;
+    return `<div class="t-name">${esc(polityLabel(hit.id, y))}</div><div class="t-meta">${R ? 'ruled by ' + esc(R.name.text(y)) + (R.ordinal > 1 ? ' ' + P.Chronicle.ROMAN(R.ordinal) : '') : ''}${p.founded ? '<br>since the year ' + p.founded : ''}</div>${more('its rulers')}`;
   }
 
   function drawTipScript(hit) {
@@ -817,6 +823,12 @@
     entries.addEventListener('touchmove', () => setTimeout(unfollow, 30), { passive: true });
     // names in the book and on cards open their histories; years jump the ribbon
     const leafClick = (e) => {
+      if (e.target.classList.contains('nat') && e.target.title) {
+        const n = e.target.nextElementSibling;
+        if (n && n.classList.contains('tr')) n.remove();
+        else e.target.insertAdjacentHTML('afterend', `<div class="tr">${esc(e.target.title)}</div>`);
+        return;
+      }
       const t = e.target.closest('[data-s],[data-p],[data-r],[data-jump],[data-close]');
       if (!t) return;
       if (t.dataset.close) { $('card').hidden = true; UI.cardFor = null; return; }
@@ -850,25 +862,37 @@
       $('hint').style.opacity = 0;
     }, { passive: false });
     const ptrs = new Map();
-    let drag = null, pinch = null;
+    let drag = null, pinch = null, lastType = 'mouse', lastTap = null, tapTimer = null, tipTimer = null;
+    const hideTip = () => { clearTimeout(tipTimer); $('tip').hidden = true; UI.hover = null; };
     sheet.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.zoom')) return;
+      lastType = e.pointerType;
+      if (e.pointerType !== 'mouse') hideTip();
       sheet.setPointerCapture(e.pointerId);
       ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (ptrs.size === 1) drag = { x: e.clientX, y: e.clientY, tx: UI.view.tx, ty: UI.view.ty, moved: 0 };
       if (ptrs.size === 2) {
         const [a, b] = [...ptrs.values()];
-        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: UI.view.s };
+        const r = sheet.getBoundingClientRect();
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, s: UI.view.s, tx: UI.view.tx, ty: UI.view.ty, mx: (a.x + b.x) / 2 - r.left, my: (a.y + b.y) / 2 - r.top };
         drag = null;
+        clearTimeout(tapTimer); lastTap = null;
       }
     });
     sheet.addEventListener('pointermove', (e) => {
       if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pinch && ptrs.size === 2) {
+        // zoom about the point between the fingers, and follow it as they move
         const [a, b] = [...ptrs.values()];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
         const r = sheet.getBoundingClientRect();
-        zoomAt((a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, (pinch.s * d) / pinch.d / UI.view.s);
+        const v = UI.view;
+        const ns = Math.max(1, Math.min(3.5, (pinch.s * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d));
+        const k = ns / pinch.s;
+        v.s = ns;
+        v.tx = (a.x + b.x) / 2 - r.left - (pinch.mx - pinch.tx) * k;
+        v.ty = (a.y + b.y) / 2 - r.top - (pinch.my - pinch.ty) * k;
+        clampView(); applyView();
+        $('hint').style.opacity = 0;
         return;
       }
       if (drag && ptrs.size === 1) {
@@ -885,17 +909,49 @@
       if (e.pointerType === 'mouse') hoverAt(e.clientX, e.clientY);
     });
     const up = (e) => {
+      if (!ptrs.has(e.pointerId)) return;
       const wasDrag = drag && drag.moved > 4;
       ptrs.delete(e.pointerId);
-      if (ptrs.size < 2) pinch = null;
       $('map').classList.remove('dragging');
-      if (drag && !wasDrag && e.type === 'pointerup') clickAt(e.clientX, e.clientY);
+      if (pinch && ptrs.size === 1) {
+        // the finger left on the glass carries on dragging, but is not a tap
+        const [a] = [...ptrs.values()];
+        drag = { x: a.x, y: a.y, tx: UI.view.tx, ty: UI.view.ty, moved: 99 };
+        pinch = null;
+        return;
+      }
+      if (ptrs.size < 2) pinch = null;
+      if (drag && !wasDrag && e.type === 'pointerup') {
+        if (e.pointerType === 'mouse') clickAt(e.clientX, e.clientY, false);
+        else tapAt(e.clientX, e.clientY);
+      }
       drag = null;
+    };
+    // a tap waits a moment in case a second one makes it a double tap, which zooms
+    const tapAt = (x, y) => {
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 300 && Math.hypot(x - lastTap.x, y - lastTap.y) < 30) {
+        clearTimeout(tapTimer); lastTap = null;
+        if (!UI.world || UI.drawing) return;
+        const r = sheet.getBoundingClientRect();
+        if (UI.view.s >= 3.4) layoutMap(true); else zoomAt(x - r.left, y - r.top, 2);
+        $('hint').style.opacity = 0;
+        return;
+      }
+      lastTap = { t: now, x, y };
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => { lastTap = null; clickAt(x, y, true); }, UI.drawing ? 0 : 260);
     };
     sheet.addEventListener('pointerup', up);
     sheet.addEventListener('pointercancel', up);
-    sheet.addEventListener('pointerleave', () => { $('tip').hidden = true; UI.hover = null; });
-    sheet.addEventListener('dblclick', (e) => { const r = sheet.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 2); });
+    sheet.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') hideTip(); });
+    sheet.addEventListener('dblclick', (e) => { if (lastType !== 'mouse') return; const r = sheet.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, 2); });
+    sheet.addEventListener('contextmenu', (e) => { if (lastType !== 'mouse') e.preventDefault(); });
+    UI.showTouchTip = (x, y) => {
+      hoverAt(x, y, true);
+      clearTimeout(tipTimer);
+      tipTimer = setTimeout(hideTip, 3200);
+    };
     $('zoomIn').addEventListener('click', () => zoomAt(UI.fit.bw / 2, UI.fit.bh / 2, 1.5));
     $('zoomOut').addEventListener('click', () => zoomAt(UI.fit.bw / 2, UI.fit.bh / 2, 1 / 1.5));
     $('zoomFit').addEventListener('click', () => layoutMap(true));
@@ -903,11 +959,10 @@
     // the ribbon
     const tl = $('timeline');
     let scrub = false;
-    tl.addEventListener('pointerdown', (e) => { if (!UI.world || UI.drawing) return; scrub = true; tl.setPointerCapture(e.pointerId); pause(); UI.t = timelineYear(e.clientX); setYear(UI.t, false); });
-    tl.addEventListener('pointermove', (e) => {
-      if (!UI.world) return;
-      if (scrub) { UI.t = timelineYear(e.clientX); setYear(UI.t, false); }
-      // what the book says about the years under the pointer
+    let tlHide = null;
+    // what the book says about the years under the pointer
+    const tlTipAt = (e) => {
+      clearTimeout(tlHide);
       const yy = timelineYear(e.clientX);
       const near = UI.world.chronicle.entries.filter((en) => en.y >= 0 && Math.abs(en.y - yy) <= Math.max(2, UI.world.years / 220) && !['hand', 'hand-end'].includes(en.type)).sort((a, b) => b.w - a.w)[0];
       const tip = $('tlTip');
@@ -916,11 +971,41 @@
       const txt = near ? near.html.replace(/<[^>]+>/g, '') : '';
       tip.innerHTML = `<b>Year ${near ? near.y : yy}</b>${txt ? ' &middot; ' + esc(txt.length > 110 ? txt.slice(0, 108) + '...' : txt) : ''}`;
       tip.hidden = false;
+    };
+    tl.addEventListener('pointerdown', (e) => {
+      if (!UI.world || UI.drawing) return;
+      scrub = true; tl.setPointerCapture(e.pointerId); pause(); UI.t = timelineYear(e.clientX); setYear(UI.t, false);
+      if (e.pointerType !== 'mouse') tlTipAt(e);
     });
-    tl.addEventListener('pointerleave', () => { $('tlTip').hidden = true; });
+    tl.addEventListener('pointermove', (e) => {
+      if (!UI.world) return;
+      if (scrub) { UI.t = timelineYear(e.clientX); setYear(UI.t, false); }
+      tlTipAt(e);
+    });
+    tl.addEventListener('pointerleave', (e) => { clearTimeout(tlHide); tlHide = setTimeout(() => { $('tlTip').hidden = true; }, e.pointerType === 'mouse' ? 0 : 1600); });
     tl.addEventListener('pointerup', () => { scrub = false; });
+    tl.addEventListener('pointercancel', () => { scrub = false; $('tlTip').hidden = true; });
 
-    window.addEventListener('resize', () => { layoutMap(false); if (UI.world) buildTimeline(); });
+    // a year back or forward, held down to keep going
+    for (const [id, d] of [['stepBack', -1], ['stepFwd', 1]]) {
+      const b = $(id);
+      let rep = null;
+      const stop = () => { clearTimeout(rep); rep = null; };
+      const step = () => { if (!UI.world || UI.drawing) return; pause(); UI.t = UI.year + d; setYear(UI.t, false); };
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        stop(); step();
+        const again = (ms) => { rep = setTimeout(() => { step(); again(Math.max(40, ms * 0.8)); }, ms); };
+        again(420);
+      });
+      for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+      b.addEventListener('keydown', (e) => { if (e.key === 'Enter') step(); });
+    }
+
+    if (window.ResizeObserver) {
+      new ResizeObserver(() => layoutMap(false)).observe(sheet);
+      new ResizeObserver(() => { if (UI.world) buildTimeline(); }).observe($('timeline'));
+    } else window.addEventListener('resize', () => { layoutMap(false); if (UI.world) buildTimeline(); });
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT') return;
       if (e.key === 'Escape') { $('appendix').hidden = true; $('card').hidden = true; UI.cardFor = null; return; }
@@ -939,12 +1024,13 @@
     });
   }
 
-  function clickAt(clientX, clientY) {
+  function clickAt(clientX, clientY, touch) {
     if (!UI.world) return;
     if (UI.drawing) { finishDrawing(); return; }
     const [px, py] = toCanvas(clientX, clientY);
-    const hit = P.Political.pick(UI.st, UI.year, px, py);
+    const hit = P.Political.pick(UI.st, UI.year, px, py, pickRad(touch));
     if (!hit) return;
+    if (touch && hit.kind !== 'realm') UI.showTouchTip(clientX, clientY);
     if (hit.kind === 'settlement') showSettlement(hit.id);
     else if (hit.kind === 'realm') showPolity(hit.id);
     else if (hit.kind === 'battle') { pause(); UI.t = hit.battle.year; setYear(UI.t, false); }
@@ -959,11 +1045,13 @@
 
   async function boot() {
     textures();
+    if (TOUCH) $('hint').textContent = 'Pinch to look closer. Drag to move. Tap a town to read its history.';
     wire();
     await fonts();
     const h = readHash();
     if (h) generate(h.w, h.y);
-    else { $('landing').hidden = false; setTimeout(() => $('landingInput').focus(), 50); }
+    // on a tablet, focusing the field would throw the keyboard over the page
+    else { $('landing').hidden = false; if (!TOUCH) setTimeout(() => $('landingInput').focus(), 50); }
     requestAnimationFrame(loop);
   }
 

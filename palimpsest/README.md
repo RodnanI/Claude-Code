@@ -10,9 +10,11 @@ The same word always gives the same world.
 
 ## Opening it
 
-Open `index.html` in a browser. There is nothing to install and no build step, and it works offline: the fonts are bundled in `fonts/`. It was built and tested in Chromium; any current browser should run it, and a machine with a GPU makes the years run smoother.
+Open `palimpsest.html` in a browser. It is the whole atlas in one file, fonts and scripts included, so it can be copied anywhere on its own and works offline. `index.html` runs the same thing from the separate sources in `js/` and `fonts/`. It was built and tested in Chromium; any current browser should run it, and a machine with a GPU makes the years run smoother.
 
-A link can carry a world and a year: `index.html#w=saltmarsh&y=640`.
+A link can carry a world and a year: `palimpsest.html#w=saltmarsh&y=640`.
+
+After editing anything in `index.html`, `js/` or `fonts/`, rebuild the single file with `python3 build.py`. The build stops if anything would break the inlining or an em dash gets into the output.
 
 ## What you can do
 
@@ -24,6 +26,8 @@ A link can carry a world and a year: `index.html#w=saltmarsh&y=640`.
 - **Appendix**: each people's own name for itself, its alphabet or syllabary as a specimen table, its sounds, the dated sound changes its speech went through (with real examples from its place names), a lexicon, a proverb with an interlinear gloss, its gods and its music.
 - **Listen**: generative music in the mode of whichever people holds the most land at that moment. When the land changes hands, the music changes with it. Wars, plagues, crownings and falls have their own sounds.
 - **Save leaf**: downloads the map, as it stands in the current year, as a PNG.
+
+On a tablet: tap a town or realm to open its history (the town's name in its own script shows above your finger for a moment), double-tap to zoom in (again at full zoom to fit the sheet), pinch to zoom and pan together, drag with one finger to move. The `‹` and `›` buttons beside the play button step a year; hold one to keep going. Tap or drag the ribbon to scrub, and the year's main event stays readable for a moment after you lift your finger. Tap a line of native script in the chronicle to read its transliteration. Standing up, the sheet sits above the chronicle and nothing scrolls; on its side, the header fits on one row. It can be added to the home screen and opens full screen.
 
 Keys: `Space` play or pause (or finish the drawing), `Left` and `Right` step a year (`Shift` for 25), `Home` and `End`, `S` scrape, `A` the appendix, `M` the music, `Esc` to close.
 
@@ -48,6 +52,8 @@ Everything is generated from the seed with a deterministic random generator (sfc
 ## Files
 
 ```
+palimpsest.html   everything below compiled into one standalone file
+build.py          makes palimpsest.html
 index.html        the page, its layout and styles
 js/core.js        random numbers, noise, heap, contours, distance transform
 js/terrain.js     land, climate, rivers, lakes, biomes, named features
@@ -58,7 +64,7 @@ js/chronicle.js   the scribes and their book
 js/render.js      paper, ink terrain, frame, compass, cartouche, serpent
 js/political.js   territories, borders, roads, towns, labels, ghosts
 js/music.js       the music of the peoples
-js/ui.js          the desk: drawing, playback, cards, appendix, timeline
+js/ui.js          the desk: drawing, playback, cards, appendix, timeline, touch
 fonts/            IM Fell types by Igino Marini, SIL Open Font License (fonts/OFL.txt)
 ```
 

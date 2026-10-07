@@ -716,9 +716,9 @@
   }
 
   /* what is under the pointer */
-  function pick(st, y, px, py) {
+  function pick(st, y, px, py, rad) {
     const { world, g } = st;
-    let best = null, bd = 18;
+    let best = null, bd = rad || 18;
     for (const s of world.settlements) {
       if (s.founded > y) continue;
       const d = Math.hypot(g.X(s.x) - px, g.Y(s.y) - py);
@@ -730,7 +730,7 @@
       for (const b of w.battles) {
         if (b.year > y || b.year < y - 45) continue;
         const d = Math.hypot(g.X(b.x) - px, g.Y(b.y) - py);
-        if (d < 12) return { kind: 'battle', battle: b, war: w };
+        if (d < (rad ? rad * 0.7 : 12)) return { kind: 'battle', battle: b, war: w };
       }
     }
     const t = st.cache.get(y);
