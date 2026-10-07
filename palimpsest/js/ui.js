@@ -20,6 +20,7 @@
     hover: null, pendingYear: null, gen: 0,
   };
   window.PalimpsestUI = UI;
+  UI.goto = (y) => { pause(); UI.t = y; setYear(y, false); };
 
   /* ---------- textures for desk and leaves ---------- */
   function noiseTile(size, base, spread, alpha) {
@@ -58,6 +59,7 @@
     $('soundBtn').setAttribute('aria-pressed', 'false');
     $('landing').hidden = true;
     $('card').hidden = true;
+    UI.highlight = null; UI.hover = null; UI.cardFor = null; $('tip').hidden = true;
     $('loading').hidden = false;
     $('loadingTitle').textContent = seed.toUpperCase();
     const steps = $('steps');
@@ -145,6 +147,9 @@
     UI.t = y;
     setYear(y, false);
     if (UI.startYear === undefined || UI.startYear === null) setTimeout(() => { if (!UI.drawing && UI.t === 0) play(); }, 900);
+    $('hint').style.opacity = 1;
+    clearTimeout(UI.hintTimer);
+    UI.hintTimer = setTimeout(() => { $('hint').style.opacity = 0; }, 14000);
   }
 
   /* ---------- compositing the sheet ---------- */
@@ -198,7 +203,7 @@
     const t0 = performance.now();
     // at speed the borders are redrawn every few years; towns and names still every year
     const k = UI.playing ? (UI.speed >= 8 ? 5 : UI.speed >= 3 ? 2 : 1) : 1;
-    P.Political.render(UI.st, UI.year, UI.dynCtx, UI.haloCtx, { borderYear: Math.floor(UI.year / k) * k });
+    P.Political.render(UI.st, UI.year, UI.dynCtx, UI.haloCtx, { borderYear: Math.floor(UI.year / k) * k, labelScale: UI.labelScale || 1, allLayers: UI.scrape });
     UI.shownYear = UI.year;
     composite();
     UI.renderCost = UI.renderCost * 0.7 + (performance.now() - t0) * 0.3;
@@ -251,7 +256,10 @@
       if (c && P.Music.on) $('soundBtn').title = 'Now: the music of the ' + c.plural;
     }
     if (!UI.playing) scheduleHash();
-    if (!$('card').hidden && UI.cardFor) UI.cardFor();
+    if (!$('card').hidden && UI.cardFor) {
+      const now = performance.now();
+      if (!UI.playing || now - (UI.cardAt || 0) > 1500) { UI.cardAt = now; UI.cardFor(true); }
+    }
   }
 
   function eraOf(y) {
@@ -282,7 +290,6 @@
     UI.playing = true;
     $('playIcon').innerHTML = '<path d="M4 3 h4 v14 h-4 z M12 3 h4 v14 h-4 z"/>';
     $('playBtn').setAttribute('aria-label', 'Stop the years');
-    $('hint').style.opacity = 0;
   }
   function pause() {
     UI.playing = false;
@@ -468,7 +475,17 @@
     v.tx = w <= f.bw ? (f.bw - w) / 2 : Math.min(0, Math.max(f.bw - w, v.tx));
     v.ty = h <= f.bh ? (f.bh - h) / 2 : Math.min(0, Math.max(f.bh - h, v.ty));
   }
-  function applyView() { $('viewport').style.transform = `translate(${UI.view.tx}px, ${UI.view.ty}px) scale(${UI.view.s})`; }
+  let lsTimer = null;
+  function applyView() {
+    $('viewport').style.transform = `translate(${UI.view.tx}px, ${UI.view.ty}px) scale(${UI.view.s})`;
+    // a village name should never be smaller than about ten screen pixels
+    const css = UI.fit.k * UI.view.s;
+    const want = Math.round(Math.max(1, Math.min(1.75, 10.5 / (21 * css))) * 20) / 20;
+    if (want !== UI.labelScale) {
+      clearTimeout(lsTimer);
+      lsTimer = setTimeout(() => { UI.labelScale = want; UI.shownYear = -2; }, UI.labelScale ? 160 : 0);
+    }
+  }
   function zoomAt(cx, cy, f) {
     const v = UI.view;
     const ns = Math.max(1, Math.min(3.5, v.s * f));
@@ -573,15 +590,16 @@
   }
   const ipa = (n, y) => '/' + n.form(y).filter((p) => p !== '-').join('').replace(/ /g, ' ') + '/';
 
-  function openCard(html, refresh) {
+  function openCard(html, refresh, keep) {
     const card = $('card');
+    const top = card.scrollTop;
     card.innerHTML = '<button class="btn close" data-close="1">close</button>' + html;
     card.hidden = false;
-    card.scrollTop = 0;
+    card.scrollTop = keep ? top : 0;
     UI.cardFor = refresh || null;
   }
 
-  function showSettlement(id) {
+  function showSettlement(id, keep) {
     const W = UI.world, y = Math.max(UI.year, W.settlements[id].founded), s = W.settlements[id];
     const n = W.nameAt(s, y);
     const c = W.cultures[n.lang.id];
@@ -612,7 +630,7 @@
       for (const e of mentions) html += `<li class="jump" data-jump="${Math.max(0, e.y)}"><span class="y">${e.y < 0 ? '' : e.y}</span>${e.html.replace(/<[^>]+>/g, '').slice(0, 150)}${e.html.length > 150 ? '...' : ''}</li>`;
       html += '</ul>';
     }
-    openCard(html, () => showSettlement(id));
+    openCard(html, (k) => showSettlement(id, k), keep);
     const cv = $('card').querySelector('canvas.cardsc');
     const sc = c.script;
     if (cv && sc) {
@@ -625,7 +643,7 @@
     } else if (cv) cv.remove();
   }
 
-  function showPolity(pid) {
+  function showPolity(pid, keep) {
     const W = UI.world, p = W.polities[pid], y = Math.max(UI.year, p.founded);
     const c = W.cultures[p.culture];
     const nm = P.Political.polityName(p, y);
@@ -650,7 +668,7 @@
       }
       html += '</ul>';
     }
-    openCard(html, null);
+    openCard(html, (k) => showPolity(pid, k), keep);
   }
 
   /* ---------- the appendix: tongues and letters ---------- */
@@ -771,6 +789,11 @@
       }
     });
     $('appendixBtn').addEventListener('click', showAppendix);
+    $('scrapeBtn').addEventListener('click', () => {
+      UI.scrape = !UI.scrape;
+      $('scrapeBtn').setAttribute('aria-pressed', UI.scrape ? 'true' : 'false');
+      UI.shownYear = -2;
+    });
     $('appendix').addEventListener('click', (e) => { if (e.target === $('appendix') || e.target.dataset.closeAppendix) $('appendix').hidden = true; });
     $('saveBtn').addEventListener('click', () => {
       if (!UI.world || UI.drawing) return;
@@ -908,6 +931,7 @@
       else if (e.key === 'End') { pause(); UI.t = UI.world.years; setYear(UI.t, false); }
       else if (e.key === 'a' || e.key === 'A') showAppendix();
       else if (e.key === 'm' || e.key === 'M') $('soundBtn').click();
+      else if (e.key === 's' || e.key === 'S') $('scrapeBtn').click();
     });
     window.addEventListener('hashchange', () => {
       const h = readHash();

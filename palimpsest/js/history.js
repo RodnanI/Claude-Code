@@ -113,8 +113,9 @@
       const ng = cr.int(1, 3);
       const doms = cr.shuffle(GOD_DOMAINS.slice());
       for (let k = 0; k < ng; k++) {
-        const nm = new Lg.Name(lang, lang.coin(cr.fork('god' + k), arrived, cr.int(1, 2)), arrived, { kind: 'god' });
-        gods.push({ name: nm, domain: doms[k] });
+        let ph;
+        for (let t = 0; t < 12; t++) { ph = lang.coin(cr.fork('god' + k + ':' + t), arrived, cr.int(1, 2)); if (ph.length >= 3 && ph.length <= 7) break; }
+        gods.push({ name: new Lg.Name(lang, ph, arrived, { kind: 'god' }), domain: doms[k] });
       }
       const c = {
         id, lang, script, endonym, plural: ex.plural, adj: ex.adj, origin, arrived,

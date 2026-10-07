@@ -321,6 +321,17 @@
     ctx.restore();
   }
 
+  function drawBoat(ctx, x, y, sc, flip) {
+    ctx.save();
+    ctx.translate(x, y); if (flip) ctx.scale(-1, 1); ctx.scale(sc, sc);
+    ctx.strokeStyle = '#2a1d13'; ctx.lineWidth = 1.6; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.fillStyle = '#9b2c1c';
+    ctx.beginPath(); ctx.moveTo(-16, -4); ctx.quadraticCurveTo(0, 8, 18, -6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8, -22); ctx.quadraticCurveTo(0, -18, 9, -22); ctx.lineTo(9, -8); ctx.quadraticCurveTo(0, -11, -8, -8); ctx.closePath(); ctx.fill(); ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+  }
+
   function ruinSpan(s, y) {
     for (const sp of s.spans) if (sp.from <= y && (sp.to === null || sp.to > y)) return sp;
     return null;
@@ -338,7 +349,10 @@
     const land = st.terr.dryPath;
 
     /* faint lines left by earlier centuries */
-    for (const [back, alpha] of [[150, 0.5], [330, 0.32]]) {
+    const layers = [];
+    if (opts.allLayers) { for (let gy = 50; gy <= y - 25; gy += 50) layers.push([y - gy, 0.16 + 0.34 * (gy / Math.max(1, y))]); }
+    else layers.push([150, 0.5], [330, 0.32]);
+    for (const [back, alpha] of layers) {
       const gy = Math.floor((y - back) / 50) * 50;
       if (gy < 20) continue;
       const old = territory(st, gy);
@@ -393,6 +407,61 @@
     }
     ctx.restore();
 
+    /* pestilence spreads as a stain through the towns it reaches */
+    for (const pl of world.plagues || []) {
+      const age = y - pl.year;
+      if (age < 0 || age > 6) continue;
+      const a = age < 2 ? 1 : 1 - (age - 2) / 5;
+      pl.hit.forEach((id, k) => {
+        const s = S[id];
+        const reach = Math.min(1, (age + 1) / 2 - k / Math.max(6, pl.hit.length) * 0.5);
+        if (reach <= 0) return;
+        const x = g.X(s.x), yy = g.Y(s.y);
+        const r = (10 + 14 * pl.mort) * (0.6 + 0.4 * reach);
+        const gr = ctx.createRadialGradient(x, yy, 0, x, yy, r);
+        gr.addColorStop(0, `rgba(36,30,28,${0.36 * a})`);
+        gr.addColorStop(0.7, `rgba(36,30,28,${0.16 * a})`);
+        gr.addColorStop(1, 'rgba(36,30,28,0)');
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.arc(x, yy, r, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+    /* the sea people's fleet lies off the coast where they landed */
+    const inv = world.invasion;
+    if (inv && inv.culture && y >= inv.year && y - inv.year < 12) {
+      const land = world.events.find((e) => e.type === 'invasion');
+      if (land) {
+        if (!st.fleet) {
+          // walk out from the landing town toward the open sea and anchor the ships in real water
+          const s = S[land.s], Wd = world.W, Hd = world.H;
+          const side = { w: [-1, 0], e: [1, 0], n: [0, -1], s: [0, 1] }[land.side] || [-1, 0];
+          let bx = s.x, by = s.y;
+          for (let k = 0; k < 60; k++) {
+            bx += side[0]; by += side[1];
+            if (bx < 2 || by < 2 || bx >= Wd - 2 || by >= Hd - 2) break;
+            const i = by * Wd + bx;
+            if (T.water[i] && T.seaDist[i] >= 3) break;
+          }
+          const spots = [];
+          for (let t = 0; t < 200 && spots.length < 6; t++) {
+            const h = P.hash2(t, land.s, 31), h2 = P.hash2(t, land.s, 37);
+            const cx = Math.round(bx + (h - 0.5) * 16), cy = Math.round(by + (h2 - 0.5) * 16);
+            if (cx < 2 || cy < 2 || cx >= Wd - 2 || cy >= Hd - 2) continue;
+            const i = cy * Wd + cx;
+            if (!T.water[i] || T.seaDist[i] < 2) continue;
+            if (spots.some((q) => Math.hypot(q[0] - cx, q[1] - cy) < 3.2)) continue;
+            spots.push([cx, cy]);
+          }
+          st.fleet = { spots, flip: side[0] > 0 };
+        }
+        const fade = 1 - (y - inv.year) / 12;
+        ctx.save();
+        ctx.globalAlpha = 0.3 + 0.7 * fade;
+        for (const [cx, cy] of st.fleet.spots) drawBoat(ctx, g.X(cx), g.Y(cy), 0.95, st.fleet.flip);
+        ctx.restore();
+      }
+    }
+
     /* battles of living memory */
     for (const w of world.wars) {
       if (w.start > y || w.start < y - 70) continue;
@@ -404,10 +473,11 @@
 
     /* realms that have fallen leave their names on the sheet for a while, scraped thin */
     for (const p of PS) {
-      if (p.ended === null || p.ended >= y || y - p.ended > 220 || p.ended - p.founded < 40) continue;
+      const span = opts.allLayers ? 1e9 : 220;
+      if (p.ended === null || p.ended >= y || y - p.ended > span || p.ended - p.founded < 40) continue;
       const gh = ghostOf(st, p);
       if (!gh) continue;
-      const fade = 1 - (y - p.ended) / 220;
+      const fade = opts.allLayers ? 0.85 : 1 - (y - p.ended) / 220;
       ctx.font = `${Math.round(gh.fs)}px ${F.sc}`;
       const tw = spacedText(ctx, null, gh.text, gh.x, gh.y, gh.angle, gh.fs, gh.fs * 0.45, 0.06, `rgba(128,100,72,${0.34 * fade})`);
       ctx.save();
@@ -467,6 +537,9 @@
       halo.beginPath(); halo.arc(it.x, it.y, r + 2.5, 0, Math.PI * 2); halo.fill();
     }
     const F2 = FONTS();
+    // names grow when the sheet is small on screen, so fewer but legible ones fit; zooming in brings the rest back
+    const LS = opts.labelScale || 1;
+    for (const k in F2) { F2[k] = [F2[k][0].replace(/(\d+)px/, (m, n) => Math.round(n * LS) + 'px'), Math.round(F2[k][1] * LS)]; }
     for (const it of items) {
       const { s, x } = it;
       const yy = it.y;
@@ -501,7 +574,7 @@
       if (it.tier === 'ruin') {
         if (s.peak < 1500) continue;
         text = 'ruins of ' + world.nameAt(s, it.span.from).text(it.span.from);
-        font = `italic 16px ${F.roman}`; fs = 16; color = '#8c7256';
+        fs = Math.round(16 * LS); font = `italic ${fs}px ${F.roman}`; color = '#8c7256';
       } else {
         [font, fs] = F2[it.tier];
         if (it.tier === 'capital' || it.tier === 'seat') color = darken(PS[s.ownerY[y]].pigment.ink, 0.62);
@@ -532,6 +605,31 @@
       ctx.fillStyle = color;
       ctx.fillText(text, placed.cx, placed.cy);
       it.label = placed;
+      // when scraping, every name the place has carried is written under the current one
+      if (opts.allLayers && it.tier !== 'ruin') {
+        const seen = new Set([text]);
+        const olds = [];
+        for (let k = s.names.length - 1; k >= 0; k--) {
+          const e = s.names[k];
+          if (e.year > y) continue;
+          const until = k + 1 < s.names.length && s.names[k + 1].year <= y ? s.names[k + 1].year - 1 : y;
+          for (const h of e.name.history(until).reverse()) if (!seen.has(h.text)) { seen.add(h.text); olds.push(h.text); }
+        }
+        let top = placed.b.y + placed.b.h + 1;
+        const ofs = Math.round(fs * 0.66);
+        for (const o of olds.slice(0, 4)) {
+          const of = `italic ${ofs}px ${F.roman}`;
+          const ow = measure(st, ctx, of, o);
+          const ox = placed.al === 'left' ? placed.cx : placed.al === 'right' ? placed.cx - ow : placed.cx - ow / 2;
+          ctx.font = of; ctx.textAlign = 'left';
+          ctx.fillStyle = 'rgba(104,76,50,0.78)';
+          ctx.fillText(o, ox, top + ofs * 0.78);
+          ctx.strokeStyle = 'rgba(104,76,50,0.7)'; ctx.lineWidth = 1.1;
+          ctx.beginPath(); ctx.moveTo(ox - 1, top + ofs * 0.46); ctx.lineTo(ox + ow + 1, top + ofs * 0.42); ctx.stroke();
+          top += ofs * 0.92;
+        }
+        continue;
+      }
       // the old name, struck through: a palimpsest's one honest line
       if (it.tier !== 'ruin' && s.names.length > 1) {
         let cur = 0;
@@ -567,10 +665,11 @@
       if (!f.name || y < f.year) return;
       const text = f.name.text(y);
       let x = g.X(f.x), yy = g.Y(f.y), ang = 0, fs, spacing, color, curv = 0;
-      if (kind === 'sea') { fs = f.kind === 'inland' ? 28 : 34; spacing = fs * 0.32; color = '#5b4632'; curv = 0.08; }
-      else if (kind === 'range') { fs = 21; spacing = fs * 0.42; color = '#4a3828'; ang = U.clamp(f.angle, -0.6, 0.6); }
-      else if (kind === 'lake') { fs = 16; spacing = 2; color = '#4a3a2a'; }
-      else { fs = 19; spacing = fs * 0.38; color = '#7a6247'; ang = U.clamp(f.angle || 0, -0.5, 0.5); }
+      const ls = Math.sqrt(LS);
+      if (kind === 'sea') { fs = Math.round((f.kind === 'inland' ? 28 : 34) * ls); spacing = fs * 0.32; color = '#5b4632'; curv = 0.08; }
+      else if (kind === 'range') { fs = Math.round(21 * LS); spacing = fs * 0.42; color = '#4a3828'; ang = U.clamp(f.angle, -0.6, 0.6); }
+      else if (kind === 'lake') { fs = Math.round(16 * LS); spacing = 2; color = '#4a3a2a'; }
+      else { fs = Math.round(19 * LS); spacing = fs * 0.38; color = '#7a6247'; ang = U.clamp(f.angle || 0, -0.5, 0.5); }
       ctx.font = `italic ${fs}px ${F.roman}`;
       const tw = ctx.measureText(text).width + spacing * (text.length - 1);
       const b = { x: x - tw / 2 - 4, y: yy - fs * 0.7, w: tw + 8, h: fs * 1.4 };
@@ -604,13 +703,14 @@
       if (ang > Math.PI / 2) ang -= Math.PI; if (ang < -Math.PI / 2) ang += Math.PI;
       if (Math.abs(ang) > 1.1) continue;
       const text = rv.name.text(y);
-      ctx.font = `italic 17px ${F.roman}`;
+      const rfs = Math.round(17 * LS);
+      ctx.font = `italic ${rfs}px ${F.roman}`;
       const tw = ctx.measureText(text).width + 3 * (text.length - 1);
-      const mx = (ax + bx) / 2 - Math.sin(ang) * 10, my = (ay + by) / 2 + Math.cos(ang) * -10;
-      const bb = { x: mx - tw / 2, y: my - 10, w: tw, h: 20 };
+      const mx = (ax + bx) / 2 - Math.sin(ang) * rfs * 0.6, my = (ay + by) / 2 + Math.cos(ang) * -rfs * 0.6;
+      const bb = { x: mx - tw / 2, y: my - rfs * 0.6, w: tw, h: rfs * 1.2 };
       if (overl(bb)) continue;
       boxes.push(bb);
-      spacedText(ctx, halo, text, mx, my, ang, 17, 3, 0, '#3f3022', 6);
+      spacedText(ctx, halo, text, mx, my, ang, rfs, 3, 0, '#3f3022', 6);
     }
     return terr;
   }

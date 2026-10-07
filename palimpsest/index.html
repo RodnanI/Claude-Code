@@ -88,7 +88,7 @@ button { cursor: pointer; }
 #map.dragging { cursor: grabbing; }
 .zoom { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 6px; z-index: 3; }
 .zoom .btn { background: rgba(22, 16, 11, 0.72); }
-.hint { position: absolute; left: 12px; bottom: 10px; font-style: italic; font-size: 14px; color: var(--on-desk-dim); z-index: 3; pointer-events: none; transition: opacity 1s; }
+.hint { position: absolute; left: 12px; bottom: 10px; font-style: italic; font-size: 14px; color: var(--on-desk); background: rgba(22, 16, 11, 0.78); padding: 4px 10px 5px; z-index: 4; pointer-events: none; transition: opacity 1.2s; }
 
 .tip {
   position: absolute; z-index: 5; pointer-events: none;
@@ -223,6 +223,8 @@ button { cursor: pointer; }
   .brand .sub { display: none; }
   .seed { margin-left: 0; width: 100%; }
   .seed label { display: none; }
+  .tools { flex-wrap: wrap; gap: 6px; }
+  .tools .btn { padding: 4px 9px 3px; font-size: 14px; }
   .seed input { flex: 1; width: auto; min-width: 0; }
   .desk { display: block; padding: 12px 16px 6px; }
   .sheet { height: 62vw; min-height: 240px; margin-bottom: 10px; }
@@ -256,6 +258,7 @@ button { cursor: pointer; }
     <button class="btn square" type="button" id="randomBtn" title="Let the ink choose" aria-label="Let the ink choose a word">?</button>
   </form>
   <nav class="tools">
+    <button class="btn" id="scrapeBtn" aria-pressed="false" title="Show every century at once: all old borders, fallen realms and former names (S)">Scrape</button>
     <button class="btn" id="soundBtn" aria-pressed="false" title="Hear the music of whoever holds the most land (M)">Listen</button>
     <button class="btn" id="appendixBtn" title="The tongues and letters of this world (A)">Appendix</button>
     <button class="btn" id="saveBtn" title="Save this leaf as an image">Save leaf</button>
