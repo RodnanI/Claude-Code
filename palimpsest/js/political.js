@@ -50,7 +50,7 @@
     if (st.pinned && st.pinned.has(y)) return st.pinned.get(y);
     if (st.cache.has(y)) return st.cache.get(y);
     const { world, W2, H2, cost } = st;
-    const S = world.settlements, PS = world.polities;
+    const S = world.settlements;
     const N2 = W2 * H2;
     const best = new Float32Array(N2).fill(Infinity);
     const own = new Int16Array(N2).fill(-1);

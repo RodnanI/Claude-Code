@@ -616,9 +616,8 @@
       if (T.waterEdge[l]) continue;
       const size = T.waterSizes[l];
       if (size < 25) continue;
-      let best = -1, bi = -1, sx = 0, sy = 0;
+      let best = -1, bi = -1;
       for (let i = 0; i < N; i++) if (T.waterLab[i] === l) {
-        sx += i % W; sy += (i / W) | 0;
         if (T.seaDist[i] > best) { best = T.seaDist[i]; bi = i; }
       }
       const f = { kind: size >= 160 ? 'inland' : 'lake', x: bi % W, y: (bi / W) | 0, size, open: best, salt: true };

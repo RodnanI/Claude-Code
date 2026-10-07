@@ -217,7 +217,6 @@
 
     function goodSite(from, c, r, rmin, rmax) {
       let best = -1, bestScore = -1e9;
-      const live = liveSettlements();
       for (let t = 0; t < 60; t++) {
         const a = r.range(0, Math.PI * 2), d = r.range(rmin, rmax);
         const x = Math.round(from.x + Math.cos(a) * d), y = Math.round(from.y + Math.sin(a) * d);
@@ -805,7 +804,6 @@
       if (yr.chance(1 / 110)) ev('comet', { s: yr.pick(live).id });
     }
 
-    const WORKS = ['temple', 'walls', 'bridge', 'harbour', 'library', 'palace', 'tower', 'aqueduct'];
     function stepWorks(p) {
       if (p.ended !== null) return;
       const c = cultureOf(p);

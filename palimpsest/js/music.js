@@ -19,7 +19,6 @@
     { name: 'seven steps with neutral thirds', cents: [0, 200, 350, 500, 700, 850, 1050] },
     { name: 'a mode tuned by pure ratios', cents: [1, 9 / 8, 5 / 4, 45 / 32, 3 / 2, 5 / 3, 15 / 8].map((r) => 1200 * Math.log2(r)) },
   ];
-  const INSTR = ['pluck', 'reed', 'bell', 'flute'];
   const INSTR_DESC = { pluck: 'a plucked string', reed: 'a double reed', bell: 'struck bronze', flute: 'a cane flute' };
 
   function voice(c) {

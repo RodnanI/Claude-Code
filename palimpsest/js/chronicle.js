@@ -6,7 +6,6 @@
 'use strict';
 (function () {
   const P = window.P;
-  const U = P.util;
 
   const ORD = (n) => {
     const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
@@ -30,7 +29,7 @@
 
   function write(world) {
     const rng = world.rng.fork('chronicle');
-    const W = world.W, T = world.terrain;
+    const T = world.terrain;
     const S = world.settlements, PS = world.polities, C = world.cultures, RS = world.rulers;
     const Y = world.years;
     const entries = [];
@@ -89,7 +88,6 @@
     const he = (R) => (R.female ? 'she' : 'he');
     const his = (R) => (R.female ? 'her' : 'his');
     const him = (R) => (R.female ? 'her' : 'him');
-    const fname = (f, y) => f && f.name ? `<span class="fn">${esc(f.name.text(y))}</span>` : null;
     const riverN = (rid, y) => {
       const rv = T.rivers[rid];
       if (!rv) return 'the river';
@@ -605,7 +603,6 @@
     // the hands themselves
     for (const h of hands) {
       const house = S[h.house];
-      const c = C[h.culture];
       const ownerP = house.ownerY[h.from];
       const R = ownerP >= 0 ? PS[ownerP].rulers.filter((r) => r.from <= h.from && (r.to === null || r.to >= h.from)).slice(-1)[0] : null;
       const intro = h.id === 0
