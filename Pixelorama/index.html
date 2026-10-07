@@ -243,6 +243,7 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:3px;bac
 .prow select{flex:1}
 #prevbox{position:relative;background:var(--canvas-bg);border:1px solid var(--line);border-radius:4px;height:170px;overflow:hidden}
 #prevcv{position:absolute;inset:0;width:100%;height:100%}
+#stackbox{position:relative;background:var(--canvas-bg);border:1px solid var(--line);border-radius:4px;height:200px;overflow:hidden;cursor:grab;touch-action:none}#stackcv{position:absolute;inset:0;width:100%;height:100%}
 .rtabs{display:flex;gap:1px;flex-wrap:wrap;min-width:0}
 .ph:has(.rtabs){height:auto;min-height:26px;padding-block:2px}
 .rtabs button{border:0;background:none;color:var(--mute);padding:3px 4px;border-radius:3px;cursor:pointer;font-size:10px;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
@@ -441,7 +442,7 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
 .wn{grid-column:1/-1;border-top:1px solid var(--line);padding-top:12px}
 .wn h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--acc);display:flex;align-items:baseline;gap:10px}
 .wn h4 span{color:var(--mute);text-transform:none;letter-spacing:0;font-weight:400;font-size:11px}
-.wn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.wn-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .wn-c{display:flex;flex-direction:column;gap:2px;text-align:left;padding:8px 10px;border:1px solid var(--line2);border-left:3px solid var(--acc);background:var(--raise);border-radius:6px;cursor:pointer}
 .wn-c:hover{border-color:var(--acc);background:var(--panel2)}
 .wn-c b{font-size:12px}.wn-c span{color:var(--mute);font-size:10.5px;line-height:1.35}
@@ -585,12 +586,13 @@ kbd,.kbd{font-family:var(--mono);font-size:10.5px;background:var(--raise);border
         </div>
       </section>
       <section class="panel" id="p-preview">
-        <div class="ph"><div class="rtabs" id="rtabs"><button data-t="preview" class="on">Preview</button><button data-t="nav">Navigator</button><button data-t="history">History</button><button data-t="ref">Reference</button></div><span class="sp"></span></div>
+        <div class="ph"><div class="rtabs" id="rtabs"><button data-t="preview" class="on">Preview</button><button data-t="nav">Navigator</button><button data-t="history">History</button><button data-t="ref" title="Reference image">Ref</button><button data-t="stack" title="Sprite stack: frames (or layers) become the slices of a spinning 3D object">3D</button></div><span class="sp"></span></div>
         <div class="pb">
           <div id="rt-preview"><div id="prevbox"><canvas id="prevcv"></canvas></div>
             <div class="prow" style="margin-top:6px"><button class="ibtn" id="pv-play" title="Play/pause preview">&#9658;</button><select id="pv-tag" title="Which frames to preview"></select><span style="color:var(--mute);font-family:var(--mono)" id="pv-info"></span></div>
           </div>
           <div id="rt-history" class="hidden"><div id="histlist"></div></div>
+          <div id="rt-stack" class="hidden"><div id="stackbox" title="Drag to turn and tilt"><canvas id="stackcv"></canvas></div><div class="prow" id="stack-ctl" style="margin-top:6px"></div></div>
           <div id="rt-ref" class="hidden" style="display:flex;flex-direction:column;gap:6px">
             <div class="prow"><button class="btn sm" id="ref-load">Load image&hellip;</button><button class="btn sm" id="ref-clear">Remove</button><button class="btn sm" id="ref-fit">Fit</button></div>
             <div class="orow"><label>Opacity</label><input type="range" class="grow" id="ref-op" min="0" max="100" value="50"></div>
@@ -2993,7 +2995,8 @@ function initPalettePanel() {
 /* ---------- right tabs: preview / navigator / history / reference ---------- */
 const Prev = { tab: 'preview', playing: true, fi: 0, t: 0, last: 0 };
 function initRightTabs() {
-  $('#rtabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; Prev.tab = b.dataset.t; $$('#rtabs button').forEach(x => x.classList.toggle('on', x === b)); $('#rt-preview').classList.toggle('hidden', !['preview', 'nav'].includes(Prev.tab)); $('#rt-history').classList.toggle('hidden', Prev.tab !== 'history'); $('#rt-ref').classList.toggle('hidden', Prev.tab !== 'ref'); $('#pv-play').parentElement.style.display = Prev.tab === 'preview' ? '' : 'none'; drawHistory(); };
+  $('#rtabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; Prev.tab = b.dataset.t; $$('#rtabs button').forEach(x => x.classList.toggle('on', x === b)); $('#rt-preview').classList.toggle('hidden', !['preview', 'nav'].includes(Prev.tab)); $('#rt-history').classList.toggle('hidden', Prev.tab !== 'history'); $('#rt-ref').classList.toggle('hidden', Prev.tab !== 'ref'); $('#rt-stack').classList.toggle('hidden', Prev.tab !== 'stack'); $('#pv-play').parentElement.style.display = Prev.tab === 'preview' ? '' : 'none'; drawHistory(); if (Prev.tab === 'stack') Stack.draw(); };
+  Stack.init();
   $('#pv-play').onclick = () => { Prev.playing = !Prev.playing; $('#pv-play').innerHTML = Prev.playing ? '&#10074;&#10074;' : '&#9658;'; };
   $('#pv-play').innerHTML = '&#10074;&#10074;';
   const box = $('#prevbox');
@@ -3006,9 +3009,10 @@ function initRightTabs() {
       if (Prev.playing && ts - Prev.last >= ms) { Prev.last = ts; Prev.fi = Prev.fi + 1 > range[1] || Prev.fi < range[0] ? range[0] : Prev.fi + 1; drawPreview(); }
       else if (!Prev.playing && Prev.fi !== p.frame) { Prev.fi = p.frame; drawPreview(); }
     } else if (Prev.tab === 'nav' && Prev.navDirty) { Prev.navDirty = false; drawPreview(); }
+    else if (Prev.tab === 'stack') Stack.tick(ts);
   };
   requestAnimationFrame(loop);
-  Bus.on('rendered', () => { if (Prev.tab === 'nav') Prev.navDirty = true; else if (!Prev.playing) drawPreview(); });
+  Bus.on('rendered', () => { if (Prev.tab === 'nav') Prev.navDirty = true; else if (Prev.tab === 'stack') Stack.dirty = true; else if (!Prev.playing) drawPreview(); });
 }
 function previewRange(p) { const sel = $('#pv-tag').value; const t = p.tags.find(t => t.id === sel); return t ? [t.from, Math.min(t.to, p.frames.length - 1)] : [0, p.frames.length - 1]; }
 function prevGeom() { const cv = $('#prevcv'), box = $('#prevbox'), dpr = devicePixelRatio || 1, W = box.clientWidth, H = box.clientHeight; if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; } const p = App.p; let z = Math.min((W - 10) / p.w, (H - 10) / p.h); if (z >= 1) z = Math.floor(z); return { cv, W, H, dpr, z, x: Math.round((W - p.w * z) / 2), y: Math.round((H - p.h * z) / 2) }; }
@@ -5183,6 +5187,42 @@ act('rampStudio', 'Ramp studio…', null, () => rampStudio());
 act('recolor', 'Recolor / palette swap…', null, () => recolorDialog());
 </script>
 <script>
+/* ================= SPRITE STACK: frames (or layers) as the horizontal slices of a 3D object ================= */
+const Stack = {
+  src: 'frames', tilt: .55, gap: 1, spin: true, a: .6, last: 0, drag: null, dirty: false,
+  init() {
+    const box = $('#stackbox'), ctl = $('#stack-ctl');
+    const play = h('button', { class: 'ibtn', title: 'Spin', onclick: () => { this.spin = !this.spin; play.innerHTML = this.spin ? '&#10074;&#10074;' : '&#9658;'; } }); play.innerHTML = '&#10074;&#10074;';
+    const seg = h('div', { class: 'seg' }, [['frames', 'Frames'], ['layers', 'Layers']].map(([v, l]) => h('button', { class: this.src === v ? 'on' : '', title: v === 'frames' ? 'Frame 1 is the bottom slice' : 'Bottom layer is the bottom slice (current frame)', onclick: e => { this.src = v; $$('button', seg).forEach(b => b.classList.toggle('on', b === e.currentTarget)); this.draw(); } }, l)));
+    ctl.append(play, seg, h('span', { style: { color: 'var(--mute)', marginLeft: '4px' } }, 'Depth'), h('input', { type: 'range', min: 1, max: 4, value: this.gap, title: 'Slice thickness', style: { width: '56px' }, oninput: e => { this.gap = +e.target.value; this.draw(); } }));
+    box.addEventListener('pointerdown', e => { box.setPointerCapture(e.pointerId); this.drag = { x: e.clientX, y: e.clientY, a: this.a, t: this.tilt }; box.style.cursor = 'grabbing'; });
+    box.addEventListener('pointermove', e => { const d = this.drag; if (!d) return; this.a = d.a + (e.clientX - d.x) * .012; this.tilt = clamp(d.t + (e.clientY - d.y) * .006, .2, 1); this.draw(); });
+    box.addEventListener('pointerup', () => { this.drag = null; box.style.cursor = ''; });
+  },
+  slices() { const p = App.p; if (this.src === 'layers') return p.pixelLayers().filter(l => p.visibleEff(l)).map(l => p.frames[p.frame].cels[l.id] && celLook(l, p.frames[p.frame].cels[l.id])).filter(Boolean); return p.frames.map((f, i) => compose(p, i)); },
+  tick(ts) { const dt = Math.min(.1, (ts - (this.last || ts)) / 1000); this.last = ts; if (this.spin && !this.drag) { this.a += dt * .8; this.draw(); } else if (this.dirty) { this.dirty = false; this.draw(); } },
+  draw() {
+    const p = App.p, cv = $('#stackcv'), box = $('#stackbox'); if (!p || !box.clientWidth) return;
+    const dpr = devicePixelRatio || 1, W = box.clientWidth, H = box.clientHeight; if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H); c.imageSmoothingEnabled = false;
+    const sl = this.slices(), n = sl.length, diag = Math.hypot(p.w, p.h);
+    if (n < 2) { c.fillStyle = TC.mute; c.font = '11px ' + getComputedStyle(document.body).fontFamily; c.textAlign = 'center'; c.fillText('Needs several ' + this.src + ': each one is a slice,', W / 2, H / 2 - 8); c.fillText(this.src === 'frames' ? 'frame 1 at the bottom.' : 'bottom layer at the bottom.', W / 2, H / 2 + 8); return; }
+    let z = Math.min((W - 20) / diag, (H - 20) / (diag * this.tilt + n * this.gap)); if (z >= 1) z = Math.floor(z);
+    const th = Math.max(1, Math.round(this.gap * z)), cx = W / 2, cy = H / 2 + n * this.gap * z / 2;
+    for (let k = 0; k < n; k++) for (let j = 0; j < th; j++) { c.save(); c.translate(cx, Math.round(cy - k * this.gap * z - j)); c.scale(1, this.tilt); c.rotate(this.a); c.drawImage(sl[k], -p.w * z / 2, -p.h * z / 2, p.w * z, p.h * z); c.restore(); }
+  }
+};
+function stackShowcase() { // a little voxel tree: two trunk shades, then foliage rings that swell and taper
+  const p = createProject(16, 16, 'Tree stack'), L = p.layerId, slices = [];
+  for (let k = 0; k < 4; k++) slices.push([[1.2, k < 1 ? '3e2731' : '733e39', '3e2731']]);
+  [3, 5, 6, 6.5, 6.5, 6, 5, 3.5, 2].forEach((r, k) => slices.push([[r, k < 2 ? '265c42' : k < 5 ? '3e8948' : '63c74d', k < 2 ? '193c3e' : k < 5 ? '265c42' : '3e8948'], [r * .45, k < 5 ? '3e8948' : 'b4dc5a', null]]));
+  slices.push([[.6, '63c74d', null]]);
+  p.frames = slices.map(rings => { const img = new Img(16, 16); for (const [r, col, edge] of rings) { const a = Math.round(7.5 - r), b = Math.round(7.5 + r); for (const [x, y] of ellipsePts(a, a, b, b, true)) img.data.set(hexToRgba(col), (y * 16 + x) * 4); if (edge) for (const [x, y] of ellipsePts(a, a, b, b, false)) img.data.set(hexToRgba(edge), (y * 16 + x) * 4); } return { id: uid(), dur: 1, cels: { [L]: img } }; });
+  p.hist = new History(p); p.frame = 0; Bus.emit('structure'); fitView(); requestRender(true);
+  $('#rtabs [data-t=stack]').click(); Stack.spin = true; toast('Each frame is one slice of the tree. Drag the 3D view to turn and tilt it', 4200);
+}
+</script>
+<script>
 /* ================= COMMAND PALETTE (Ctrl+K): one box for every action, tool, layer, palette and typed value ================= */
 /* fuzzy match: every space separated token must hit; substring hits beat scattered letters, word starts beat the middle */
 function fuzzy(q, s) {
@@ -5342,15 +5382,16 @@ function sampleArt(kind, w = 32, hh = 32) {
 }
 function sampleProject(name, kind, w = 32, hh = 32) { const p = createProject(w, hh, name), img = p.img(); img.data.set(sampleArt(kind, w, hh)); img.touch(); p.hist = new History(p); Bus.emit('structure'); requestRender(true); return p; }
 const SHOWCASE = [
-  ['Command palette', 'Ctrl+K finds any action, tool, layer or palette. Type 32x32 or #ff0044 too', () => Cmd.open()],
-  ['Auto-shade', 'Light a flat sprite from any angle, with hue-shifted tones', () => { sampleProject('Slime (flat)', 'slime'); effectDialog('autoshade'); }],
-  ['Layer effects', 'Shading, outline and glow that stay editable while you draw', () => { sampleProject('Slime (effects)', 'slime-flat'); addLayerFx('shade'); addLayerFx('outline', { color: hexToRgba('193c3e'), thick: 1 }); addLayerFx('glow', { color: [255, 214, 110, 255], size: 3, strength: 70, dither: true }); FXEd.expanded = new Set([App.p.layer().fx[0].id]); FXEd.draw(); }],
-  ['Pixel critique', 'Finds strays, jaggies, doubled corners and pillow shading', () => { sampleProject('Critique me', 'flawed'); Crit.open(); }],
-  ['Free rotation', 'Drag the round handle: RotSprite keeps edges clean', () => { sampleProject('Sword', 'sword'); setTool('left', 'move'); Sel.fromAlpha(); Float.lift(); Float.setAngle(-35); toast('Drag the round handle above the box to rotate, Enter to apply', 4000); }],
-  ['Timelapse', 'Replay how a piece was made, export it as a GIF', () => lapseShowcase()],
-  ['Ramp studio', 'Even, hue-shifted color ramps and harmonies in OKLCH', () => { App.colors.left = hexToRgba('3e8948'); App.colors.right = hexToRgba('e43b44'); Bus.emit('color'); rampStudio(); }],
-  ['Tween', 'In-betweens between two keyframes, with easing', () => tweenShowcase()],
-  ['Share as link', 'The whole project inside a URL, nothing uploaded', () => { if (!App.p.hist.list.length) sampleProject('Slime', 'slime'); shareLink(); }]
+  ['Command palette', 'Ctrl+K: any action, tool or layer, even 32x32', () => Cmd.open()],
+  ['Auto-shade', 'Light a flat sprite from any angle', () => { sampleProject('Slime (flat)', 'slime'); effectDialog('autoshade'); }],
+  ['Layer effects', 'Shading, outline and glow that stay editable', () => { sampleProject('Slime (effects)', 'slime-flat'); addLayerFx('shade'); addLayerFx('outline', { color: hexToRgba('193c3e'), thick: 1 }); addLayerFx('glow', { color: [255, 214, 110, 255], size: 3, strength: 70, dither: true }); FXEd.expanded = new Set([App.p.layer().fx[0].id]); FXEd.draw(); }],
+  ['Pixel critique', 'Flags jaggies, strays and pillow shading', () => { sampleProject('Critique me', 'flawed'); Crit.open(); }],
+  ['Free rotation', 'RotSprite rotation on a live handle', () => { sampleProject('Sword', 'sword'); setTool('left', 'move'); Sel.fromAlpha(); Float.lift(); Float.setAngle(-35); toast('Drag the round handle above the box to rotate, Enter to apply', 4000); }],
+  ['Timelapse', 'Replay how a piece was made, as a GIF', () => lapseShowcase()],
+  ['Ramp studio', 'Hue-shifted ramps and harmonies in OKLCH', () => { App.colors.left = hexToRgba('3e8948'); App.colors.right = hexToRgba('e43b44'); Bus.emit('color'); rampStudio(); }],
+  ['Tween', 'In-betweens with easing, in one go', () => tweenShowcase()],
+  ['Share as link', 'The whole project inside a URL', () => { if (!App.p.hist.list.length) sampleProject('Slime', 'slime'); shareLink(); }],
+  ['3D sprite stack', 'Frames become slices of a spinning object', () => stackShowcase()]
 ];
 async function lapseShowcase() {
   const p = createProject(32, 32, 'Slime timelapse'), img = p.img(), full = sampleArt('slime-flat'), steps = [];
