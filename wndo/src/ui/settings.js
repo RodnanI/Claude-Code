@@ -70,6 +70,7 @@
       { key: 'clock', label: 'Clock', type: 'choice', options: [['off', 'off'], ['24', '24 h'], ['12', '12 h']], def: 'off' },
       { key: 'sleep', label: 'Sleep timer', hint: 'fades sound and picture out', type: 'choice', options: [['0', 'off'], ['15', '15 min'], ['30', '30 min'], ['60', '1 h'], ['90', '1.5 h']], def: '0' },
       { key: 'cycle', label: 'Wander', hint: 'drift to another window every so often', type: 'choice', options: [['0', 'off'], ['10', '10 min'], ['30', '30 min'], ['60', '1 h']], def: '0' },
+      { key: 'awake', label: 'Keep the screen awake', hint: 'for leaving it running on a tablet', type: 'toggle', def: true },
       { key: 'hideDelay', label: 'Hide controls after', type: 'choice', options: [['3', '3 s'], ['6', '6 s'], ['15', '15 s']], def: '3' },
     ] },
   ];
@@ -87,6 +88,7 @@
       this.s = W.store.get('scene-settings', {});
       this.listeners = [];
       for (const tab of SCHEMA) for (const it of tab.items) if (it.scope !== 'scene') this.g[it.key] = it.def;
+      if (navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 1100) this.g.quality = 'balanced';
       Object.assign(this.g, W.store.get('settings', {}));
       this.g.sleep = '0';
       this.focus = 0;

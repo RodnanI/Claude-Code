@@ -83,15 +83,19 @@ void main(){
       float x = az * D[0];
       float cell = 7.0, ci = floor(x / cell);
       top = 1.2 + vnoise(vec2(x * 0.2, 1.0)) * 1.4;
-      for (int k = -2; k <= 2; k++) {
+      float gap = smoothstep(0.25, 0.4, vnoise(vec2(x * 0.006, 7.0)));
+      for (int k = -3; k <= 3; k++) {
         float id = ci + float(k);
-        vec3 r = hash32(vec2(id, 3.0));
-        if (r.z < 0.3) continue;
-        float cx = (id + 0.5 + (r.x - 0.5) * 0.8) * cell;
-        float rad = cell * (0.55 + r.y * 0.9);
+        vec4 r = hash42(vec2(id, 3.0));
+        if (r.z < 0.25) continue;
+        float cx = (id + 0.5 + (r.x - 0.5) * 0.9) * cell;
+        float poplar = step(0.9, r.w);
+        float rad = cell * mix(0.5 + r.y * 1.3, 0.35, poplar);
         float u = (x - cx) / rad;
-        float crown = (6.0 + 10.0 * r.y) * sqrt(max(0.0, 1.0 - u * u)) + 2.0;
-        top = max(top, crown * (0.85 + 0.3 * fbm(vec2(x * 0.25, id))));
+        float hgt = mix(4.0 + 13.0 * r.y * r.y, 19.0 + 6.0 * r.x, poplar);
+        float crown = hgt * pow(max(0.0, 1.0 - u * u), mix(0.5, 0.9, poplar)) + 1.5;
+        crown *= 0.82 + 0.36 * fbm(vec2(x * 0.3, id));
+        top = max(top, crown * gap);
       }
     } else top = hills(az, float(i) * 3.0, 70.0 + float(i) * 60.0, 10.0 * float(i));
     if (y < top) {

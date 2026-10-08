@@ -88,6 +88,7 @@
       intro.classList.add('gone');
       $('#hud').classList.remove('hidden');
       if (W.audio) W.audio.start(app);
+      this.wake();
       this.poke();
     };
     $('#open').addEventListener('click', open);
@@ -243,6 +244,7 @@
     }
     if (key === 'clock' || key === '*') $('#clock').hidden = S.g.clock === 'off';
     if (key === 'showFps' || key === '*') $('#fps').hidden = !S.g.showFps;
+    if (key === 'awake') this.wake();
     if (key === 'sleep' || key === '*') {
       const m = +S.g.sleep;
       this.sleepAt = m ? performance.now() + m * 60000 : 0;
@@ -254,6 +256,20 @@
       this.cycleAt = m ? performance.now() + m * 60000 : 0;
     }
     if (W.audio && W.audio.ctx) W.audio.settings(S);
+  };
+
+  // screen wake lock: re-requested whenever the page comes back into view
+  UI.wake = function () {
+    const S = this.app.S;
+    if (!navigator.wakeLock || !S.g.awake || !this.opened) {
+      if (this.lock) { this.lock.release().catch(() => {}); this.lock = null; }
+      return;
+    }
+    if (this.lock || document.hidden) return;
+    navigator.wakeLock.request('screen').then((l) => {
+      this.lock = l;
+      l.addEventListener('release', () => (this.lock = null));
+    }).catch(() => {});
   };
 
   UI.toast = function (msg) {
@@ -293,7 +309,21 @@
       app.R.addWipe(last[0], last[1], p[0], p[1]);
       last = p;
     });
-    const end = () => (last = null);
+    let tapT = 0, tapX = 0, tapY = 0, downX = 0, downY = 0;
+    canvas.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+    const end = (e) => {
+      last = null;
+      if (!e || e.pointerType !== 'touch') return;
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) return;
+      const now = performance.now();
+      if (now - tapT < 320 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 40) {
+        app.toggleFocus();
+        this.paintTools();
+        tapT = 0;
+      } else {
+        tapT = now; tapX = e.clientX; tapY = e.clientY;
+      }
+    };
     canvas.addEventListener('pointerup', end);
     canvas.addEventListener('pointercancel', end);
     canvas.addEventListener('dblclick', () => {
@@ -320,9 +350,7 @@
       else if (/^[1-9]$/.test(k) && +k <= app.scenes.length) app.setScene(+k - 1);
       else if (k === 'enter' && !this.opened) $('#open').click();
     });
-    document.addEventListener('visibilitychange', () => {
-      if (W.audio && W.audio.ctx) W.audio.suspend(document.hidden);
-    });
+    document.addEventListener('visibilitychange', () => this.wake());
   };
 
   UI.tick = function (dt, t, ms) {

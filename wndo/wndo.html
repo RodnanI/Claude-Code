@@ -47,7 +47,7 @@ body.idle #view { cursor: none; }
 body.idle #hud > * { pointer-events: none; }
 #place { min-width: 0; }
 .place-name { font-family: var(--serif); font-size: 24px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.place-sub { margin-top: 6px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.place-sub { margin-top: 6px; font-size: 11px; line-height: 1.5; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; max-width: 34ch; }
 
 #dial { position: relative; display: flex; gap: 0; padding-top: 16px; }
 #dial::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 7px; background: repeating-linear-gradient(to right, var(--faint) 0 1px, transparent 1px 9px); opacity: 0.7; mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent); }
@@ -1679,7 +1679,8 @@ void main(){
       if (!st) {
         Object.assign(win, { I3: [-9, -9, 9, 9], O3: [-9, -9, 9, 9], bars: [], corner: 0 });
       } else {
-        const I3 = [((-hw + st.mx) * zg) / kp, ((-0.5 + st.mb) * zg) / kp, ((hw - st.mx) * zg) / kp, ((0.5 - st.mt) * zg) / kp];
+        const mx = st.mx * Math.min(1, Math.pow(this.aspect, 0.8));
+        const I3 = [((-hw + mx) * zg) / kp, ((-0.5 + st.mb) * zg) / kp, ((hw - mx) * zg) / kp, ((0.5 - st.mt) * zg) / kp];
         const O3 = [I3[0] - st.fw, I3[1] - st.fb, I3[2] + st.fw, I3[3] + st.ft];
         Object.assign(win, { I3, O3, bars: st.bars(I3), corner: st.corner });
         const wid = I3[2] - I3[0], y = O3[1];
@@ -3379,9 +3380,26 @@ void main(){
 ${W.GLSL.common}
 ${W.GLSL.camera}
 uniform float uGust, uWind, uRain, uSun, uLeaves;
+uniform sampler2D uDepth;
+uniform vec2 uSunUV;
 out vec4 o;
 void main(){
   vec3 rd = camRay(gl_FragCoord.xy);
+  vec3 shafts = vec3(0.0);
+  if (uSun > 0.02) {
+    vec2 uv = gl_FragCoord.xy / uRes;
+    vec2 stp = (uSunUV - uv) / 20.0;
+    float acc = 0.0, w = 1.0;
+    vec2 q = uv + stp * hash12(gl_FragCoord.xy + fract(uTime) * 61.0);
+    for (int i = 0; i < 20; i++) {
+      vec4 s = texture(uDepth, q);
+      acc += step(5000.0, s.a) * w;
+      w *= 0.93;
+      q += stp;
+    }
+    float fall = exp(-length((uv - uSunUV) * vec2(uRes.x / uRes.y, 1.0)) * 1.6);
+    shafts = vec3(1.0, 0.86, 0.6) * acc * 0.045 * uSun * fall * (0.6 + 0.4 * uGust);
+  }
   vec3 R = uCamMat[0], U = uCamMat[1];
   vec4 acc = vec4(0.0);
   float wsp = 1.5 + uWind * 5.0 + uGust * 6.0;
@@ -3426,7 +3444,7 @@ void main(){
       acc.a = max(acc.a, s * 0.12);
     }
   }
-  o = vec4(acc.rgb, acc.a);
+  o = vec4(acc.rgb + shafts * (1.0 - acc.a), acc.a);
 }
 `;
 
@@ -3515,10 +3533,12 @@ void main(){
         amb, sun: W.scale3([1.0, 0.86, 0.66], this.sun * 1.3),
         fogCol: W.scale3([0.5, 0.53, 0.56], 1 - e.rain * 0.3), fogD: 0.003 + e.fog * 0.008 + e.rain * 0.006,
       }, true);
+      const dc = R.depthCopy();
       const gl = R.gl;
+      const sp = R.cam.project(W.v3.add(R.cam.pos, W.v3.mul(sunDir, 1000)));
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7 });
+      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7, uDepth: dc, uSunUV: [sp[0] * 0.5 + 0.5, sp[1] * 0.5 + 0.5] });
       R.G.drawFS();
       gl.disable(gl.BLEND);
     },
@@ -3982,15 +4002,19 @@ void main(){
       float x = az * D[0];
       float cell = 7.0, ci = floor(x / cell);
       top = 1.2 + vnoise(vec2(x * 0.2, 1.0)) * 1.4;
-      for (int k = -2; k <= 2; k++) {
+      float gap = smoothstep(0.25, 0.4, vnoise(vec2(x * 0.006, 7.0)));
+      for (int k = -3; k <= 3; k++) {
         float id = ci + float(k);
-        vec3 r = hash32(vec2(id, 3.0));
-        if (r.z < 0.3) continue;
-        float cx = (id + 0.5 + (r.x - 0.5) * 0.8) * cell;
-        float rad = cell * (0.55 + r.y * 0.9);
+        vec4 r = hash42(vec2(id, 3.0));
+        if (r.z < 0.25) continue;
+        float cx = (id + 0.5 + (r.x - 0.5) * 0.9) * cell;
+        float poplar = step(0.9, r.w);
+        float rad = cell * mix(0.5 + r.y * 1.3, 0.35, poplar);
         float u = (x - cx) / rad;
-        float crown = (6.0 + 10.0 * r.y) * sqrt(max(0.0, 1.0 - u * u)) + 2.0;
-        top = max(top, crown * (0.85 + 0.3 * fbm(vec2(x * 0.25, id))));
+        float hgt = mix(4.0 + 13.0 * r.y * r.y, 19.0 + 6.0 * r.x, poplar);
+        float crown = hgt * pow(max(0.0, 1.0 - u * u), mix(0.5, 0.9, poplar)) + 1.5;
+        crown *= 0.82 + 0.36 * fbm(vec2(x * 0.3, id));
+        top = max(top, crown * gap);
       }
     } else top = hills(az, float(i) * 3.0, 70.0 + float(i) * 60.0, 10.0 * float(i));
     if (y < top) {
@@ -4931,6 +4955,7 @@ void main(){
       { key: 'clock', label: 'Clock', type: 'choice', options: [['off', 'off'], ['24', '24 h'], ['12', '12 h']], def: 'off' },
       { key: 'sleep', label: 'Sleep timer', hint: 'fades sound and picture out', type: 'choice', options: [['0', 'off'], ['15', '15 min'], ['30', '30 min'], ['60', '1 h'], ['90', '1.5 h']], def: '0' },
       { key: 'cycle', label: 'Wander', hint: 'drift to another window every so often', type: 'choice', options: [['0', 'off'], ['10', '10 min'], ['30', '30 min'], ['60', '1 h']], def: '0' },
+      { key: 'awake', label: 'Keep the screen awake', hint: 'for leaving it running on a tablet', type: 'toggle', def: true },
       { key: 'hideDelay', label: 'Hide controls after', type: 'choice', options: [['3', '3 s'], ['6', '6 s'], ['15', '15 s']], def: '3' },
     ] },
   ];
@@ -4948,6 +4973,7 @@ void main(){
       this.s = W.store.get('scene-settings', {});
       this.listeners = [];
       for (const tab of SCHEMA) for (const it of tab.items) if (it.scope !== 'scene') this.g[it.key] = it.def;
+      if (navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 1100) this.g.quality = 'balanced';
       Object.assign(this.g, W.store.get('settings', {}));
       this.g.sleep = '0';
       this.focus = 0;
@@ -5097,6 +5123,7 @@ void main(){
       intro.classList.add('gone');
       $('#hud').classList.remove('hidden');
       if (W.audio) W.audio.start(app);
+      this.wake();
       this.poke();
     };
     $('#open').addEventListener('click', open);
@@ -5252,6 +5279,7 @@ void main(){
     }
     if (key === 'clock' || key === '*') $('#clock').hidden = S.g.clock === 'off';
     if (key === 'showFps' || key === '*') $('#fps').hidden = !S.g.showFps;
+    if (key === 'awake') this.wake();
     if (key === 'sleep' || key === '*') {
       const m = +S.g.sleep;
       this.sleepAt = m ? performance.now() + m * 60000 : 0;
@@ -5263,6 +5291,20 @@ void main(){
       this.cycleAt = m ? performance.now() + m * 60000 : 0;
     }
     if (W.audio && W.audio.ctx) W.audio.settings(S);
+  };
+
+  // screen wake lock: re-requested whenever the page comes back into view
+  UI.wake = function () {
+    const S = this.app.S;
+    if (!navigator.wakeLock || !S.g.awake || !this.opened) {
+      if (this.lock) { this.lock.release().catch(() => {}); this.lock = null; }
+      return;
+    }
+    if (this.lock || document.hidden) return;
+    navigator.wakeLock.request('screen').then((l) => {
+      this.lock = l;
+      l.addEventListener('release', () => (this.lock = null));
+    }).catch(() => {});
   };
 
   UI.toast = function (msg) {
@@ -5302,7 +5344,21 @@ void main(){
       app.R.addWipe(last[0], last[1], p[0], p[1]);
       last = p;
     });
-    const end = () => (last = null);
+    let tapT = 0, tapX = 0, tapY = 0, downX = 0, downY = 0;
+    canvas.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+    const end = (e) => {
+      last = null;
+      if (!e || e.pointerType !== 'touch') return;
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 12) return;
+      const now = performance.now();
+      if (now - tapT < 320 && Math.hypot(e.clientX - tapX, e.clientY - tapY) < 40) {
+        app.toggleFocus();
+        this.paintTools();
+        tapT = 0;
+      } else {
+        tapT = now; tapX = e.clientX; tapY = e.clientY;
+      }
+    };
     canvas.addEventListener('pointerup', end);
     canvas.addEventListener('pointercancel', end);
     canvas.addEventListener('dblclick', () => {
@@ -5329,9 +5385,7 @@ void main(){
       else if (/^[1-9]$/.test(k) && +k <= app.scenes.length) app.setScene(+k - 1);
       else if (k === 'enter' && !this.opened) $('#open').click();
     });
-    document.addEventListener('visibilitychange', () => {
-      if (W.audio && W.audio.ctx) W.audio.suspend(document.hidden);
-    });
+    document.addEventListener('visibilitychange', () => this.wake());
   };
 
   UI.tick = function (dt, t, ms) {
@@ -5650,6 +5704,8 @@ void main(){
     }
     this.bus.room = ctx.createGain();
     this.bus.room.connect(out);
+    this.bus.glass = ctx.createGain();
+    this.bus.glass.connect(out);
     const sr = ctx.sampleRate;
     this.buf = {
       white: noiseBuf(ctx, 6, 'white'),
@@ -5733,9 +5789,9 @@ void main(){
     L.rainLow = this.gain();
     this.chain(this.loopSrc(b.brown), this.filter('lowpass', 520), L.rainLow, this.bus.rain);
     L.taps1 = this.gain();
-    this.chain(this.loopSrc(b.taps1), this.filter('highpass', 900), L.taps1, this.bus.rain);
+    this.chain(this.loopSrc(b.taps1), this.filter('highpass', 900), L.taps1, this.bus.glass);
     L.taps2 = this.gain();
-    this.chain(this.loopSrc(b.taps2), this.filter('highpass', 700), L.taps2, this.bus.rain);
+    this.chain(this.loopSrc(b.taps2), this.filter('highpass', 700), L.taps2, this.bus.glass);
     L.windBP = this.filter('bandpass', 400, 0.55);
     L.wind = this.gain();
     this.chain(this.loopSrc(b.pink, 0.9), L.windBP, L.wind, this.bus.wind);
@@ -5759,6 +5815,7 @@ void main(){
     const g = S.g;
     this.ramp(this.out.gain, g.volume * 0.9, 0.2);
     this.ramp(this.bus.rain.gain, g.vRain, 0.2);
+    this.ramp(this.bus.glass.gain, g.vRain * 0.8, 0.2);
     this.ramp(this.bus.wind.gain, g.vWind, 0.2);
     this.ramp(this.bus.life.gain, g.vLife, 0.2);
     this.ramp(this.bus.room.gain, g.vRoom, 0.2);
@@ -6351,7 +6408,10 @@ void main(){
   function setScene(i, instant) {
     const n = app.scenes.length;
     i = ((i % n) + n) % n;
+    app.target = i;
     const go = () => {
+      i = app.target;
+      app.target = null;
       const sc = app.scenes[i];
       if (!sc.ready) {
         try {
@@ -6375,11 +6435,19 @@ void main(){
       app.fogT = 0;
       return;
     }
-    app.transition = { t: 0, go, done: false };
+    if (app.transition && !app.transition.done) {
+      W.bus.emit('leaving', app.scenes[i]);
+      return;
+    }
+    if (i === app.sceneIdx) {
+      app.target = null;
+      return;
+    }
+    app.transition = { t: app.transition ? app.fogT * 0.9 : 0, go, done: false };
     W.bus.emit('leaving', app.scenes[i]);
   }
   app.setScene = setScene;
-  app.next = (d) => setScene(app.sceneIdx + d);
+  app.next = (d) => setScene((app.target != null ? app.target : app.sceneIdx) + d);
 
   app.toggleFocus = () => {
     app.focusTarget = app.focusTarget > 0.5 ? 0 : 1;

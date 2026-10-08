@@ -268,7 +268,8 @@
       if (!st) {
         Object.assign(win, { I3: [-9, -9, 9, 9], O3: [-9, -9, 9, 9], bars: [], corner: 0 });
       } else {
-        const I3 = [((-hw + st.mx) * zg) / kp, ((-0.5 + st.mb) * zg) / kp, ((hw - st.mx) * zg) / kp, ((0.5 - st.mt) * zg) / kp];
+        const mx = st.mx * Math.min(1, Math.pow(this.aspect, 0.8));
+        const I3 = [((-hw + mx) * zg) / kp, ((-0.5 + st.mb) * zg) / kp, ((hw - mx) * zg) / kp, ((0.5 - st.mt) * zg) / kp];
         const O3 = [I3[0] - st.fw, I3[1] - st.fb, I3[2] + st.fw, I3[3] + st.ft];
         Object.assign(win, { I3, O3, bars: st.bars(I3), corner: st.corner });
         const wid = I3[2] - I3[0], y = O3[1];

@@ -84,7 +84,10 @@
   function setScene(i, instant) {
     const n = app.scenes.length;
     i = ((i % n) + n) % n;
+    app.target = i;
     const go = () => {
+      i = app.target;
+      app.target = null;
       const sc = app.scenes[i];
       if (!sc.ready) {
         try {
@@ -108,11 +111,19 @@
       app.fogT = 0;
       return;
     }
-    app.transition = { t: 0, go, done: false };
+    if (app.transition && !app.transition.done) {
+      W.bus.emit('leaving', app.scenes[i]);
+      return;
+    }
+    if (i === app.sceneIdx) {
+      app.target = null;
+      return;
+    }
+    app.transition = { t: app.transition ? app.fogT * 0.9 : 0, go, done: false };
     W.bus.emit('leaving', app.scenes[i]);
   }
   app.setScene = setScene;
-  app.next = (d) => setScene(app.sceneIdx + d);
+  app.next = (d) => setScene((app.target != null ? app.target : app.sceneIdx) + d);
 
   app.toggleFocus = () => {
     app.focusTarget = app.focusTarget > 0.5 ? 0 : 1;

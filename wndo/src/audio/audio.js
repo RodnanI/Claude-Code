@@ -257,6 +257,8 @@
     }
     this.bus.room = ctx.createGain();
     this.bus.room.connect(out);
+    this.bus.glass = ctx.createGain();
+    this.bus.glass.connect(out);
     const sr = ctx.sampleRate;
     this.buf = {
       white: noiseBuf(ctx, 6, 'white'),
@@ -340,9 +342,9 @@
     L.rainLow = this.gain();
     this.chain(this.loopSrc(b.brown), this.filter('lowpass', 520), L.rainLow, this.bus.rain);
     L.taps1 = this.gain();
-    this.chain(this.loopSrc(b.taps1), this.filter('highpass', 900), L.taps1, this.bus.rain);
+    this.chain(this.loopSrc(b.taps1), this.filter('highpass', 900), L.taps1, this.bus.glass);
     L.taps2 = this.gain();
-    this.chain(this.loopSrc(b.taps2), this.filter('highpass', 700), L.taps2, this.bus.rain);
+    this.chain(this.loopSrc(b.taps2), this.filter('highpass', 700), L.taps2, this.bus.glass);
     L.windBP = this.filter('bandpass', 400, 0.55);
     L.wind = this.gain();
     this.chain(this.loopSrc(b.pink, 0.9), L.windBP, L.wind, this.bus.wind);
@@ -366,6 +368,7 @@
     const g = S.g;
     this.ramp(this.out.gain, g.volume * 0.9, 0.2);
     this.ramp(this.bus.rain.gain, g.vRain, 0.2);
+    this.ramp(this.bus.glass.gain, g.vRain * 0.8, 0.2);
     this.ramp(this.bus.wind.gain, g.vWind, 0.2);
     this.ramp(this.bus.life.gain, g.vLife, 0.2);
     this.ramp(this.bus.room.gain, g.vRoom, 0.2);

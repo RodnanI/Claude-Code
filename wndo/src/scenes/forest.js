@@ -85,9 +85,26 @@ void main(){
 ${W.GLSL.common}
 ${W.GLSL.camera}
 uniform float uGust, uWind, uRain, uSun, uLeaves;
+uniform sampler2D uDepth;
+uniform vec2 uSunUV;
 out vec4 o;
 void main(){
   vec3 rd = camRay(gl_FragCoord.xy);
+  vec3 shafts = vec3(0.0);
+  if (uSun > 0.02) {
+    vec2 uv = gl_FragCoord.xy / uRes;
+    vec2 stp = (uSunUV - uv) / 20.0;
+    float acc = 0.0, w = 1.0;
+    vec2 q = uv + stp * hash12(gl_FragCoord.xy + fract(uTime) * 61.0);
+    for (int i = 0; i < 20; i++) {
+      vec4 s = texture(uDepth, q);
+      acc += step(5000.0, s.a) * w;
+      w *= 0.93;
+      q += stp;
+    }
+    float fall = exp(-length((uv - uSunUV) * vec2(uRes.x / uRes.y, 1.0)) * 1.6);
+    shafts = vec3(1.0, 0.86, 0.6) * acc * 0.045 * uSun * fall * (0.6 + 0.4 * uGust);
+  }
   vec3 R = uCamMat[0], U = uCamMat[1];
   vec4 acc = vec4(0.0);
   float wsp = 1.5 + uWind * 5.0 + uGust * 6.0;
@@ -132,7 +149,7 @@ void main(){
       acc.a = max(acc.a, s * 0.12);
     }
   }
-  o = vec4(acc.rgb, acc.a);
+  o = vec4(acc.rgb + shafts * (1.0 - acc.a), acc.a);
 }
 `;
 
@@ -221,10 +238,12 @@ void main(){
         amb, sun: W.scale3([1.0, 0.86, 0.66], this.sun * 1.3),
         fogCol: W.scale3([0.5, 0.53, 0.56], 1 - e.rain * 0.3), fogD: 0.003 + e.fog * 0.008 + e.rain * 0.006,
       }, true);
+      const dc = R.depthCopy();
       const gl = R.gl;
+      const sp = R.cam.project(W.v3.add(R.cam.pos, W.v3.mul(sunDir, 1000)));
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7 });
+      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7, uDepth: dc, uSunUV: [sp[0] * 0.5 + 0.5, sp[1] * 0.5 + 0.5] });
       R.G.drawFS();
       gl.disable(gl.BLEND);
     },
