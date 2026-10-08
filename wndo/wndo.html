@@ -1946,7 +1946,25 @@ void main(){
         g.quadraticCurveTo((x + x2) / 2 + r.range(-6, 6), (y + y2) / 2 + r.range(-4, 8), x2, y2);
         g.stroke();
         if (d > 3 || len < 10) {
-          for (let k = 0; k < 20; k++) leaves.push([x2 + r.range(-26, 26) * (h / 1000), y2 + r.range(-18, 30) * (h / 1000)]);
+          // weeping twigs hanging from the tip, leaves strung along them
+          const sc = h / 1000, nt = 3 + Math.floor(r.range(0, 3));
+          for (let k = 0; k < nt; k++) {
+            const dx = r.range(-34, 34) * sc, dy = r.range(28, 80) * sc;
+            const cx1 = x2 + dx * 0.7, cy1 = y2 - r.range(2, 12) * sc;
+            const ex = x2 + dx, ey = y2 + dy;
+            g.strokeStyle = 'rgba(52,42,34,0.55)';
+            g.lineWidth = 0.8 * sc * 1.6;
+            g.beginPath();
+            g.moveTo(x2, y2);
+            g.quadraticCurveTo(cx1, cy1, ex, ey);
+            g.stroke();
+            for (let u = 0.14; u <= 1.0; u += r.range(0.08, 0.14)) {
+              const iu = 1 - u;
+              const px = iu * iu * x2 + 2 * iu * u * cx1 + u * u * ex, py = iu * iu * y2 + 2 * iu * u * cy1 + u * u * ey;
+              const side = (Math.floor(u * 40) % 2 ? 1 : -1) * r.range(2, 5) * sc;
+              leaves.push([px + side, py + r.range(-1, 2) * sc, Math.atan2(ey - cy1, ex - cx1) + side * 0.3]);
+            }
+          }
           return;
         }
         const n = 2 + Math.floor(r.range(0, 2));
@@ -1956,7 +1974,7 @@ void main(){
           if (nx < w * 0.08 || nx > w * 0.92) na = -Math.PI / 2 + (na + Math.PI / 2) * 0.3;
           branch(x2, y2, na, len * r.range(0.55, 0.75), wd * 0.62, d + 1);
         }
-        if (d > 1) for (let k = 0; k < 10; k++) leaves.push([x + (x2 - x) * r() + r.range(-14, 14), y + (y2 - y) * r() + r.range(-6, 20)]);
+        if (d > 1) for (let k = 0; k < 6; k++) leaves.push([x + (x2 - x) * r() + r.range(-12, 12), y + (y2 - y) * r() + r.range(-4, 16)]);
       };
       for (let i = 0; i < 9; i++) {
         const t = r.range(0.35, 0.95), y = h - t * h * 0.82, x = cx + lean * t * t;
@@ -1966,12 +1984,13 @@ void main(){
       branch(cx + lean, h * 0.18, -Math.PI / 2 + r.range(-0.2, 0.2), h * 0.12, tw * 0.4, 1);
       // leaves: lit from upper left, darker inside
       const lx = cx - w * 0.2, ly = h * 0.1;
-      for (const [x, y] of leaves) {
+      for (const [x, y, ang] of leaves) {
         const d = Math.hypot(x - lx, y - ly) / h;
-        const l = 22 + 30 * (1 - Math.min(d, 1)) + r.range(-6, 8);
-        g.fillStyle = hsl(hue + r.range(-10, 14), r.range(35, 60), l, r.range(0.75, 1));
+        const l = 24 + 30 * (1 - Math.min(d, 1)) + r.range(-8, 10);
+        g.fillStyle = hsl(hue + r.range(-10, 16), r.range(35, 62), l, r.range(0.8, 1));
         g.beginPath();
-        g.ellipse(x, y, r.range(2.2, 4.2) * (h / 1000) * 1.6, r.range(1.4, 2.6) * (h / 1000) * 1.6, r.range(0, Math.PI), 0, Math.PI * 2);
+        const a2 = ang != null ? ang + Math.PI / 2 + r.range(-0.5, 0.5) : r.range(0, Math.PI);
+        g.ellipse(x, y, r.range(2.0, 3.6) * (h / 1000) * 1.6, r.range(1.3, 2.2) * (h / 1000) * 1.6, a2, 0, Math.PI * 2);
         g.fill();
       }
     },
@@ -2190,6 +2209,13 @@ void main(){
       }
       gl.bindVertexArray(null);
       this.items = [];
+    }
+    dispose() {
+      const gl = this.R.gl;
+      gl.deleteTexture(this.tex);
+      gl.deleteBuffer(this.buf);
+      gl.deleteVertexArray(this.vao);
+      gl.deleteProgram(this.prog.p);
     }
     // x,y,z base, rect from atlas, height in metres, sway, brightness
     add(x, y, z, rect, height, sway = 1, bright = 1) {
@@ -3362,6 +3388,9 @@ void main(){
     vec3 g1 = vec3(0.13, 0.2, 0.05), g2 = vec3(0.28, 0.27, 0.08);
     vec3 alb = mix(g1, g2, vnoise(p.xz * 0.15)) * (0.75 + 0.5 * vnoise(p.xz * 1.3));
     alb = mix(alb, vec3(0.07, 0.07, 0.04), edge);
+    // fine blades: streaks across the screen that tighten with distance
+    float bl = vnoise(vec2(gl_FragCoord.x * 0.55 + p.z * 3.0, p.z * 7.0)) * 0.6 + vnoise(vec2(gl_FragCoord.x * 1.3, p.z * 16.0)) * 0.4;
+    alb *= mix(1.0, 0.62 + 0.75 * bl, (1.0 - edge) * (1.0 - smoothstep(10.0, 60.0, tg)));
     // the wind running through the grass as moving bands of light
     float wave = sin(p.x * 0.22 + p.z * 0.35 - uTime * (1.6 + uWind * 2.6) + vnoise(p.xz * 0.08) * 4.0);
     float wv = smoothstep(0.3, 1.0, wave) * (0.15 + uGust * 0.6) * (1.0 - edge);
@@ -3487,9 +3516,9 @@ void main(){
         bb.add(x, 0, z, this.rects['birch' + r.int(0, 3)], h, 1.6, r.range(0.9, 1.1));
         this.crowns.push([x, h * 0.66, z, h]);
       }
-      for (let i = 0; i < 240; i++) {
-        const z = 2.6 + Math.pow(r(), 1.8) * 30, x = r.range(-1, 1) * (2 + z * 0.9);
-        bb.add(x, -0.02, z, this.rects['grass' + r.int(0, 3)], r.range(0.45, 0.95), 2.2, r.range(0.85, 1.15));
+      for (let i = 0; i < 520; i++) {
+        const z = 2.6 + Math.pow(r(), 1.6) * 34, x = r.range(-1, 1) * (2 + z * 0.9);
+        bb.add(x, -0.02, z, this.rects['grass' + r.int(0, 3)], r.range(0.35, 0.8) * (0.8 + z * 0.012), 2.2, r.range(0.85, 1.15));
       }
       bb.add(-2.3, 1.75, 3.4, this.rects.bough, 1.85, 0.9, 0.9);
       this.cam = { base: [0, 2.3, -0.5], yaw: 0.04, pitch: 0.035, fovY: 60 };
@@ -3520,6 +3549,12 @@ void main(){
       // bright sky through the crowns: soft discs only when blurred
       const sk = 1.1 + this.sun * 0.6;
       for (const g of this.gaps) { const k = sk * g[4] * (0.85 + 0.15 * Math.sin(t * 1.7 + g[3] * 9) * env.gust); L.add(g[0] + Math.sin(t * 0.9 + g[3] * 5) * env.gust * 0.4, g[1], g[2], g[3], k * 0.95, k, k * 0.9, 0, 3); }
+    },
+
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.bg.p);
+      R.gl.deleteProgram(this.fg.p);
     },
 
     render(R, t, dt, P) {
@@ -3613,15 +3648,15 @@ vec3 seaNormal(vec2 p, float t){
   g += k2.xy * cos(dot(p, k2.xy) + uTime * k2.z) * k2.w * (1.0 - smoothstep(0.4, 1.5, length(k2.xy) * fp * 3.0));
   g += k3.xy * cos(dot(p, k3.xy) + uTime * k3.z) * k3.w * (1.0 - smoothstep(0.4, 1.5, length(k3.xy) * fp * 3.0));
   g += k4.xy * cos(dot(p, k4.xy) + uTime * k4.z) * k4.w * (1.0 - smoothstep(0.4, 1.5, length(k4.xy) * fp * 3.0));
-  g *= amp;
+  g *= amp * 0.55;
   float fade = 1.0 - smoothstep(0.3, 1.4, fp * 4.0);
   vec2 q = p * 0.9 + vec2(uTime * 0.4, uTime * 0.7);
   float e = 0.15;
   float n0 = fbm3o(q), nx = fbm3o(q + vec2(e, 0.0)), nz = fbm3o(q + vec2(0.0, e));
-  g += vec2(nx - n0, nz - n0) / e * (0.25 + uWind * 0.35) * fade;
+  g += vec2(nx - n0, nz - n0) / e * (0.12 + uWind * 0.2) * fade;
   vec2 q2 = p * 3.1 + vec2(-uTime * 0.9, uTime * 1.3);
   float m0 = vnoise(q2), mx = vnoise(q2 + vec2(0.1, 0.0)), mz = vnoise(q2 + vec2(0.0, 0.1));
-  g += vec2(mx - m0, mz - m0) * 10.0 * (0.12 + uWind * 0.12) * (1.0 - smoothstep(0.1, 0.5, fp * 4.0));
+  g += vec2(mx - m0, mz - m0) * 10.0 * (0.07 + uWind * 0.08) * (1.0 - smoothstep(0.1, 0.5, fp * 4.0));
   return normalize(vec3(-g.x, 1.0, -g.y));
 }
 float foamTex(vec2 p){
@@ -3648,7 +3683,7 @@ void main(){
     float x = az * D;
     float hl = (90.0 + 60.0 * vnoise(vec2(x * 0.004, 2.0)) + 14.0 * vnoise(vec2(x * 0.03, 5.0))) * (1.0 - smoothstep(-1100.0, -300.0, x));
     if (y < hl && y > 0.0) {
-      col = mix(vec3(0.05, 0.035, 0.04), skyBase(vec3(rd.x, 0.02, rd.z)) * 0.75, 0.55 + 0.2 * vnoise(vec2(x * 0.02, y * 0.1)));
+      col = mix(vec3(0.03, 0.022, 0.026), skyBase(vec3(rd.x, 0.02, rd.z)) * 0.7, 0.3 + 0.12 * vnoise(vec2(x * 0.02, y * 0.1)));
       dist = D / rxz;
     }
     vec2 lh = vec2(-1020.0, 0.0);
@@ -3673,7 +3708,7 @@ void main(){
       vec3 r = reflect(rd, n);
       r.y = abs(r.y);
       float F = 0.02 + 0.98 * pow(1.0 - max(dot(n, V), 0.0), 5.0);
-      vec3 refl = sky(r, false);
+      vec3 refl = mix(skyBase(r), sky(r, false), 0.35);
       vec3 deep = mix(vec3(0.002, 0.01, 0.018), vec3(0.02, 0.06, 0.06), near);
       float crest = smoothstep(0.0, 0.6, waveH(p.xz) / (0.28 + uWaves * 0.5));
       vec3 sss = vec3(0.05, 0.16, 0.12) * crest * sunCol * 0.6;
@@ -3755,7 +3790,7 @@ void main(){
     col = mix(col, vec3(0.05, 0.04, 0.045) * (1.0 + sunCol * 0.4), cov);
   }
   // haze over distance, and the lighthouse beam in the air
-  float hz = (1.0 - exp(-min(dist, 4000.0) * (0.00025 + uFog * 0.0012 + uRain * 0.0008))) * (dist >= FAR ? 0.25 * uFog : 1.0);
+  float hz = (1.0 - exp(-min(dist, 4000.0) * (0.00012 + uFog * 0.0009 + uRain * 0.0008))) * (dist >= FAR ? 0.25 * uFog : 1.0);
   col = mix(col, skyBase(vec3(rd.x, 0.03, rd.z)) * 0.9, hz);
   vec3 lhp = vec3(-989.6, 172.0, 2186.6);
   vec3 bd = vec3(sin(uBeam), 0.0, cos(uBeam));
@@ -3870,7 +3905,7 @@ void main(){
           }
           if (!g.p) continue;
           const tw = Math.sin((g.t / g.life) * Math.PI) * g.k * sunK;
-          L.add(g.p[0], g.p[1], g.p[2], 0.08, 15000 * tw, 8600 * tw, 3000 * tw, 0.12);
+          L.add(g.p[0], g.p[1], g.p[2], 0.08, 15000 * tw, 8600 * tw, 3000 * tw, 0);
         }
       }
       // lighthouse, ship, a village down the coast
@@ -3889,6 +3924,11 @@ void main(){
         const c = W.kelvin(v[3]), k = 25 * (0.3 + this.dusk);
         L.addRefl(v[0], v[1], v[2], 0.9, c[0] * k, c[1] * k, c[2] * k, 0.2, 0.2);
       }
+    },
+
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.prog.p);
     },
 
     render(R, t, dt, P) {
@@ -4114,6 +4154,11 @@ void main(){
       }
       if (env.flash > 0.05 && !this.flashing) this.flashAz = (Math.random() - 0.5) * 1.6;
       this.flashing = env.flash > 0.05;
+    },
+
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.bg.p);
     },
 
     render(R, t, dt, P) {
@@ -4469,6 +4514,12 @@ void main(){
         const k = room * env.snow * 1.2;
         L.add(f[0] + R.cam.pos[0], f[1] + 0.6, f[2] + 1.2, 0.008, 16 * k, 14.5 * k, 12 * k, 0);
       }
+    },
+
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.bg.p);
+      R.gl.deleteProgram(this.fg.p);
     },
 
     render(R, t, dt, P) {
@@ -6422,6 +6473,11 @@ void main(){
           return;
         }
       }
+      const prev = app.scene;
+      if (prev && prev !== sc && prev.dispose) {
+        prev.dispose(app.R);
+        prev.ready = false;
+      }
       app.scene = sc;
       app.sceneIdx = i;
       W.store.set('scene', sc.id);
@@ -6448,6 +6504,9 @@ void main(){
   }
   app.setScene = setScene;
   app.next = (d) => setScene((app.target != null ? app.target : app.sceneIdx) + d);
+
+  // the next weather update brings a strike, if lightning is on for this place
+  app.strikeSoon = () => (nextStrike = 0);
 
   app.toggleFocus = () => {
     app.focusTarget = app.focusTarget > 0.5 ? 0 : 1;

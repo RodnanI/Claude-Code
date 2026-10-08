@@ -61,15 +61,15 @@ vec3 seaNormal(vec2 p, float t){
   g += k2.xy * cos(dot(p, k2.xy) + uTime * k2.z) * k2.w * (1.0 - smoothstep(0.4, 1.5, length(k2.xy) * fp * 3.0));
   g += k3.xy * cos(dot(p, k3.xy) + uTime * k3.z) * k3.w * (1.0 - smoothstep(0.4, 1.5, length(k3.xy) * fp * 3.0));
   g += k4.xy * cos(dot(p, k4.xy) + uTime * k4.z) * k4.w * (1.0 - smoothstep(0.4, 1.5, length(k4.xy) * fp * 3.0));
-  g *= amp;
+  g *= amp * 0.55;
   float fade = 1.0 - smoothstep(0.3, 1.4, fp * 4.0);
   vec2 q = p * 0.9 + vec2(uTime * 0.4, uTime * 0.7);
   float e = 0.15;
   float n0 = fbm3o(q), nx = fbm3o(q + vec2(e, 0.0)), nz = fbm3o(q + vec2(0.0, e));
-  g += vec2(nx - n0, nz - n0) / e * (0.25 + uWind * 0.35) * fade;
+  g += vec2(nx - n0, nz - n0) / e * (0.12 + uWind * 0.2) * fade;
   vec2 q2 = p * 3.1 + vec2(-uTime * 0.9, uTime * 1.3);
   float m0 = vnoise(q2), mx = vnoise(q2 + vec2(0.1, 0.0)), mz = vnoise(q2 + vec2(0.0, 0.1));
-  g += vec2(mx - m0, mz - m0) * 10.0 * (0.12 + uWind * 0.12) * (1.0 - smoothstep(0.1, 0.5, fp * 4.0));
+  g += vec2(mx - m0, mz - m0) * 10.0 * (0.07 + uWind * 0.08) * (1.0 - smoothstep(0.1, 0.5, fp * 4.0));
   return normalize(vec3(-g.x, 1.0, -g.y));
 }
 float foamTex(vec2 p){
@@ -96,7 +96,7 @@ void main(){
     float x = az * D;
     float hl = (90.0 + 60.0 * vnoise(vec2(x * 0.004, 2.0)) + 14.0 * vnoise(vec2(x * 0.03, 5.0))) * (1.0 - smoothstep(-1100.0, -300.0, x));
     if (y < hl && y > 0.0) {
-      col = mix(vec3(0.05, 0.035, 0.04), skyBase(vec3(rd.x, 0.02, rd.z)) * 0.75, 0.55 + 0.2 * vnoise(vec2(x * 0.02, y * 0.1)));
+      col = mix(vec3(0.03, 0.022, 0.026), skyBase(vec3(rd.x, 0.02, rd.z)) * 0.7, 0.3 + 0.12 * vnoise(vec2(x * 0.02, y * 0.1)));
       dist = D / rxz;
     }
     vec2 lh = vec2(-1020.0, 0.0);
@@ -121,7 +121,7 @@ void main(){
       vec3 r = reflect(rd, n);
       r.y = abs(r.y);
       float F = 0.02 + 0.98 * pow(1.0 - max(dot(n, V), 0.0), 5.0);
-      vec3 refl = sky(r, false);
+      vec3 refl = mix(skyBase(r), sky(r, false), 0.35);
       vec3 deep = mix(vec3(0.002, 0.01, 0.018), vec3(0.02, 0.06, 0.06), near);
       float crest = smoothstep(0.0, 0.6, waveH(p.xz) / (0.28 + uWaves * 0.5));
       vec3 sss = vec3(0.05, 0.16, 0.12) * crest * sunCol * 0.6;
@@ -203,7 +203,7 @@ void main(){
     col = mix(col, vec3(0.05, 0.04, 0.045) * (1.0 + sunCol * 0.4), cov);
   }
   // haze over distance, and the lighthouse beam in the air
-  float hz = (1.0 - exp(-min(dist, 4000.0) * (0.00025 + uFog * 0.0012 + uRain * 0.0008))) * (dist >= FAR ? 0.25 * uFog : 1.0);
+  float hz = (1.0 - exp(-min(dist, 4000.0) * (0.00012 + uFog * 0.0009 + uRain * 0.0008))) * (dist >= FAR ? 0.25 * uFog : 1.0);
   col = mix(col, skyBase(vec3(rd.x, 0.03, rd.z)) * 0.9, hz);
   vec3 lhp = vec3(-989.6, 172.0, 2186.6);
   vec3 bd = vec3(sin(uBeam), 0.0, cos(uBeam));
@@ -318,7 +318,7 @@ void main(){
           }
           if (!g.p) continue;
           const tw = Math.sin((g.t / g.life) * Math.PI) * g.k * sunK;
-          L.add(g.p[0], g.p[1], g.p[2], 0.08, 15000 * tw, 8600 * tw, 3000 * tw, 0.12);
+          L.add(g.p[0], g.p[1], g.p[2], 0.08, 15000 * tw, 8600 * tw, 3000 * tw, 0);
         }
       }
       // lighthouse, ship, a village down the coast
@@ -337,6 +337,11 @@ void main(){
         const c = W.kelvin(v[3]), k = 25 * (0.3 + this.dusk);
         L.addRefl(v[0], v[1], v[2], 0.9, c[0] * k, c[1] * k, c[2] * k, 0.2, 0.2);
       }
+    },
+
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.prog.p);
     },
 
     render(R, t, dt, P) {

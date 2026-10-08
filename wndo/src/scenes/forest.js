@@ -67,6 +67,9 @@ void main(){
     vec3 g1 = vec3(0.13, 0.2, 0.05), g2 = vec3(0.28, 0.27, 0.08);
     vec3 alb = mix(g1, g2, vnoise(p.xz * 0.15)) * (0.75 + 0.5 * vnoise(p.xz * 1.3));
     alb = mix(alb, vec3(0.07, 0.07, 0.04), edge);
+    // fine blades: streaks across the screen that tighten with distance
+    float bl = vnoise(vec2(gl_FragCoord.x * 0.55 + p.z * 3.0, p.z * 7.0)) * 0.6 + vnoise(vec2(gl_FragCoord.x * 1.3, p.z * 16.0)) * 0.4;
+    alb *= mix(1.0, 0.62 + 0.75 * bl, (1.0 - edge) * (1.0 - smoothstep(10.0, 60.0, tg)));
     // the wind running through the grass as moving bands of light
     float wave = sin(p.x * 0.22 + p.z * 0.35 - uTime * (1.6 + uWind * 2.6) + vnoise(p.xz * 0.08) * 4.0);
     float wv = smoothstep(0.3, 1.0, wave) * (0.15 + uGust * 0.6) * (1.0 - edge);
@@ -192,9 +195,9 @@ void main(){
         bb.add(x, 0, z, this.rects['birch' + r.int(0, 3)], h, 1.6, r.range(0.9, 1.1));
         this.crowns.push([x, h * 0.66, z, h]);
       }
-      for (let i = 0; i < 240; i++) {
-        const z = 2.6 + Math.pow(r(), 1.8) * 30, x = r.range(-1, 1) * (2 + z * 0.9);
-        bb.add(x, -0.02, z, this.rects['grass' + r.int(0, 3)], r.range(0.45, 0.95), 2.2, r.range(0.85, 1.15));
+      for (let i = 0; i < 520; i++) {
+        const z = 2.6 + Math.pow(r(), 1.6) * 34, x = r.range(-1, 1) * (2 + z * 0.9);
+        bb.add(x, -0.02, z, this.rects['grass' + r.int(0, 3)], r.range(0.35, 0.8) * (0.8 + z * 0.012), 2.2, r.range(0.85, 1.15));
       }
       bb.add(-2.3, 1.75, 3.4, this.rects.bough, 1.85, 0.9, 0.9);
       this.cam = { base: [0, 2.3, -0.5], yaw: 0.04, pitch: 0.035, fovY: 60 };
@@ -225,6 +228,12 @@ void main(){
       // bright sky through the crowns: soft discs only when blurred
       const sk = 1.1 + this.sun * 0.6;
       for (const g of this.gaps) { const k = sk * g[4] * (0.85 + 0.15 * Math.sin(t * 1.7 + g[3] * 9) * env.gust); L.add(g[0] + Math.sin(t * 0.9 + g[3] * 5) * env.gust * 0.4, g[1], g[2], g[3], k * 0.95, k, k * 0.9, 0, 3); }
+    },
+
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.bg.p);
+      R.gl.deleteProgram(this.fg.p);
     },
 
     render(R, t, dt, P) {

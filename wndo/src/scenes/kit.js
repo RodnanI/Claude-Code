@@ -105,7 +105,25 @@
         g.quadraticCurveTo((x + x2) / 2 + r.range(-6, 6), (y + y2) / 2 + r.range(-4, 8), x2, y2);
         g.stroke();
         if (d > 3 || len < 10) {
-          for (let k = 0; k < 20; k++) leaves.push([x2 + r.range(-26, 26) * (h / 1000), y2 + r.range(-18, 30) * (h / 1000)]);
+          // weeping twigs hanging from the tip, leaves strung along them
+          const sc = h / 1000, nt = 3 + Math.floor(r.range(0, 3));
+          for (let k = 0; k < nt; k++) {
+            const dx = r.range(-34, 34) * sc, dy = r.range(28, 80) * sc;
+            const cx1 = x2 + dx * 0.7, cy1 = y2 - r.range(2, 12) * sc;
+            const ex = x2 + dx, ey = y2 + dy;
+            g.strokeStyle = 'rgba(52,42,34,0.55)';
+            g.lineWidth = 0.8 * sc * 1.6;
+            g.beginPath();
+            g.moveTo(x2, y2);
+            g.quadraticCurveTo(cx1, cy1, ex, ey);
+            g.stroke();
+            for (let u = 0.14; u <= 1.0; u += r.range(0.08, 0.14)) {
+              const iu = 1 - u;
+              const px = iu * iu * x2 + 2 * iu * u * cx1 + u * u * ex, py = iu * iu * y2 + 2 * iu * u * cy1 + u * u * ey;
+              const side = (Math.floor(u * 40) % 2 ? 1 : -1) * r.range(2, 5) * sc;
+              leaves.push([px + side, py + r.range(-1, 2) * sc, Math.atan2(ey - cy1, ex - cx1) + side * 0.3]);
+            }
+          }
           return;
         }
         const n = 2 + Math.floor(r.range(0, 2));
@@ -115,7 +133,7 @@
           if (nx < w * 0.08 || nx > w * 0.92) na = -Math.PI / 2 + (na + Math.PI / 2) * 0.3;
           branch(x2, y2, na, len * r.range(0.55, 0.75), wd * 0.62, d + 1);
         }
-        if (d > 1) for (let k = 0; k < 10; k++) leaves.push([x + (x2 - x) * r() + r.range(-14, 14), y + (y2 - y) * r() + r.range(-6, 20)]);
+        if (d > 1) for (let k = 0; k < 6; k++) leaves.push([x + (x2 - x) * r() + r.range(-12, 12), y + (y2 - y) * r() + r.range(-4, 16)]);
       };
       for (let i = 0; i < 9; i++) {
         const t = r.range(0.35, 0.95), y = h - t * h * 0.82, x = cx + lean * t * t;
@@ -125,12 +143,13 @@
       branch(cx + lean, h * 0.18, -Math.PI / 2 + r.range(-0.2, 0.2), h * 0.12, tw * 0.4, 1);
       // leaves: lit from upper left, darker inside
       const lx = cx - w * 0.2, ly = h * 0.1;
-      for (const [x, y] of leaves) {
+      for (const [x, y, ang] of leaves) {
         const d = Math.hypot(x - lx, y - ly) / h;
-        const l = 22 + 30 * (1 - Math.min(d, 1)) + r.range(-6, 8);
-        g.fillStyle = hsl(hue + r.range(-10, 14), r.range(35, 60), l, r.range(0.75, 1));
+        const l = 24 + 30 * (1 - Math.min(d, 1)) + r.range(-8, 10);
+        g.fillStyle = hsl(hue + r.range(-10, 16), r.range(35, 62), l, r.range(0.8, 1));
         g.beginPath();
-        g.ellipse(x, y, r.range(2.2, 4.2) * (h / 1000) * 1.6, r.range(1.4, 2.6) * (h / 1000) * 1.6, r.range(0, Math.PI), 0, Math.PI * 2);
+        const a2 = ang != null ? ang + Math.PI / 2 + r.range(-0.5, 0.5) : r.range(0, Math.PI);
+        g.ellipse(x, y, r.range(2.0, 3.6) * (h / 1000) * 1.6, r.range(1.3, 2.2) * (h / 1000) * 1.6, a2, 0, Math.PI * 2);
         g.fill();
       }
     },
@@ -349,6 +368,13 @@ void main(){
       }
       gl.bindVertexArray(null);
       this.items = [];
+    }
+    dispose() {
+      const gl = this.R.gl;
+      gl.deleteTexture(this.tex);
+      gl.deleteBuffer(this.buf);
+      gl.deleteVertexArray(this.vao);
+      gl.deleteProgram(this.prog.p);
     }
     // x,y,z base, rect from atlas, height in metres, sway, brightness
     add(x, y, z, rect, height, sway = 1, bright = 1) {

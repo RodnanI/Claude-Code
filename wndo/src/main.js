@@ -98,6 +98,11 @@
           return;
         }
       }
+      const prev = app.scene;
+      if (prev && prev !== sc && prev.dispose) {
+        prev.dispose(app.R);
+        prev.ready = false;
+      }
       app.scene = sc;
       app.sceneIdx = i;
       W.store.set('scene', sc.id);
@@ -124,6 +129,9 @@
   }
   app.setScene = setScene;
   app.next = (d) => setScene((app.target != null ? app.target : app.sceneIdx) + d);
+
+  // the next weather update brings a strike, if lightning is on for this place
+  app.strikeSoon = () => (nextStrike = 0);
 
   app.toggleFocus = () => {
     app.focusTarget = app.focusTarget > 0.5 ? 0 : 1;

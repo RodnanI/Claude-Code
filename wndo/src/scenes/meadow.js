@@ -197,6 +197,11 @@ void main(){
       this.flashing = env.flash > 0.05;
     },
 
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.bg.p);
+    },
+
     render(R, t, dt, P) {
       const e = P.env;
       const moonDir = W.v3.norm([0.55, 0.45, 1]);

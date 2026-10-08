@@ -335,6 +335,12 @@ void main(){
       }
     },
 
+    dispose(R) {
+      this.bb.dispose();
+      R.gl.deleteProgram(this.bg.p);
+      R.gl.deleteProgram(this.fg.p);
+    },
+
     render(R, t, dt, P) {
       const e = P.env;
       this.bg.use().set(R.camUniforms()).set({
