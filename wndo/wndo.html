@@ -5686,6 +5686,23 @@ void main(){
     for (let i = 0; i < n; i++) g[i] += thud * Math.sin((2 * Math.PI * f * i) / sr) * Math.exp(-i / (0.006 * sr)) * 0.3;
     return norm(g, 1);
   }
+  // a single small drop on pavement: a fraction of a millisecond of filtered crackle
+  function patterGrain(sr) {
+    const n = Math.floor(sr * R(0.002, 0.006)), g = new Float32Array(n);
+    const dec = R(0.0003, 0.0012) * sr;
+    for (let i = 0; i < n; i++) g[i] = (rnd() * 2 - 1) * Math.exp(-i / dec);
+    filt(g, biquad('bp', R(1200, 5200), R(1.2, 3), sr));
+    return norm(g, 1);
+  }
+  // a fat drop on the metal ledge outside the window
+  function tinkGrain(sr) {
+    const n = Math.floor(sr * 0.08), g = new Float32Array(n);
+    for (let i = 0; i < n; i++) g[i] = (rnd() * 2 - 1) * Math.exp(-i / (0.0008 * sr));
+    filt(g, biquad('bp', R(2300, 4200), R(18, 40), sr));
+    const f2 = R(700, 1100);
+    for (let i = 0; i < n; i++) g[i] += Math.sin((2 * Math.PI * f2 * i) / sr) * Math.exp(-i / (0.012 * sr)) * 0.05;
+    return norm(g, 1);
+  }
   function plinkGrain(sr) {
     const n = Math.floor(sr * 0.25), g = new Float32Array(n);
     const f0 = R(520, 1300), tau = R(0.035, 0.09) * sr;
@@ -5902,6 +5919,7 @@ void main(){
       brown: noiseBuf(ctx, 8, 'brown'),
       taps1: grainLoop(ctx, 9.7, 26, tapGrain),
       taps2: grainLoop(ctx, 11.3, 70, tapGrain),
+      patter: grainLoop(ctx, 7.7, 420, patterGrain, { pool: 60, amp: () => Math.pow(rnd(), 3) * 0.9 + 0.1 }),
       rustle: modLoop(ctx, 7.9, 22, 3),
       flick: modLoop(ctx, 9.1, 7, 2),
     };
@@ -5912,6 +5930,7 @@ void main(){
       clack: Array.from({ length: 6 }, () => clackGrain(sr)),
       bell: [bellGrain(sr)],
       tick: [tickGrain(sr, 2900), tickGrain(sr, 2300)],
+      tink: Array.from({ length: 8 }, () => tinkGrain(sr)),
     };
     this.buildWeather();
   };
@@ -5981,6 +6000,8 @@ void main(){
     this.chain(this.loopSrc(b.taps1), this.filter('highpass', 900), L.taps1, this.bus.glass);
     L.taps2 = this.gain();
     this.chain(this.loopSrc(b.taps2), this.filter('highpass', 700), L.taps2, this.bus.glass);
+    L.patter = this.gain();
+    this.chain(this.loopSrc(b.patter), this.filter('highpass', 600), L.patter, this.bus.rain);
     L.windBP = this.filter('bandpass', 400, 0.55);
     L.wind = this.gain();
     this.chain(this.loopSrc(b.pink, 0.9), L.windBP, L.wind, this.bus.wind);
@@ -6034,6 +6055,7 @@ void main(){
     this.ramp(L.rainLow.gain, Math.pow(rain, 2.2) * 0.5, tc);
     this.ramp(L.taps1.gain, W.smoothstep(0.02, 0.4, rain) * 0.5, tc);
     this.ramp(L.taps2.gain, W.smoothstep(0.35, 1, rain) * 0.42, tc);
+    this.ramp(L.patter.gain, Math.pow(rain, 0.9) * 0.55, tc);
     const wscale = sc.windSound != null ? sc.windSound : 1;
     this.ramp(L.wind.gain, (e.wind * 0.06 + gust * 0.32) * wscale, 0.3);
     this.ramp(L.windBP.frequency, 260 + gust * 520, 0.4);
@@ -6048,9 +6070,22 @@ void main(){
   // sparse events with a 2 s horizon
   A.schedule = function () {
     const ctx = this.ctx;
-    if (!ctx || !this.scape || !this.scape.events) return;
+    if (!ctx) return;
     const now = ctx.currentTime, horizon = now + 2.2;
-    for (const ev of this.scape.events) {
+    if (!this.weatherEvents) {
+      this.weatherEvents = [{
+        first: () => R(0.5, 2),
+        gap: () => R(0.25, 1.4) / (0.2 + (this.app.env.rain || 0) * 1.6),
+        fire: (t) => {
+          const sc = this.app.scene, r = sc && !sc.dry ? this.app.env.rain : 0;
+          if (r < 0.12 || (sc && sc.id === 'train')) return;
+          this.grain(this.grains.tink[Math.floor(rnd() * this.grains.tink.length)], t, R(0.012, 0.04) * r, R(-0.7, 0.7), this.bus.glass, R(0.9, 1.1));
+        },
+      }];
+    }
+    const lists = [this.weatherEvents];
+    if (this.scape && this.scape.events) lists.push(this.scape.events);
+    for (const list of lists) for (const ev of list) {
       if (ev.next == null) ev.next = now + ev.first();
       while (ev.next < horizon) {
         if (ev.next > now - 0.05) ev.fire(ev.next);
