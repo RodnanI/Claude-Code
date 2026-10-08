@@ -236,6 +236,20 @@ void main(){
       const v = this.v;
       this.x += v * dt;
       env.speedMs = v;
+      // keep coordinates small for float precision on long runs; shift the world while in a tunnel, where nobody sees it
+      const inTunnel = this.feats.some((f) => f.type === 3 && this.x > f.x0 + 30 && this.x < f.x1 - 30);
+      if ((this.x > 60000 && inTunnel) || this.x > 150000) {
+        const d = Math.floor(this.x / 1300) * 1300 - 2600;
+        this.x -= d;
+        this.genTo -= d;
+        for (const f of this.feats) {
+          f.x0 -= d; f.x1 -= d;
+          if (f.lights) for (const l of f.lights) l[0] -= d;
+        }
+        for (const c of this.cars) c.x -= d;
+        for (const c of this.lane) c.x -= d;
+        if (this.towns) this.towns.clear();
+      }
       this.gen(this.x + 5000);
       const x = this.x;
       this.cam.base = [x, 6.2, -1.25];
