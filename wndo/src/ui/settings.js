@@ -5,6 +5,7 @@
   // type: range | choice | toggle. scope: global (default) or scene (remembered per place)
   const SCHEMA = [
     { tab: 'View', items: [
+      { key: 'focus', label: 'Focus', hint: 'from the glass to far away; space or double-tap jumps between the ends', type: 'range', min: 0, max: 1, step: 0.01, def: 0, live: true },
       { key: 'aperture', label: 'Blur strength', type: 'range', min: 0.15, max: 1.6, step: 0.01, def: 0.75 },
       { key: 'blades', label: 'Bokeh shape', type: 'choice', options: [['0', 'round'], ['5', 'five'], ['6', 'six'], ['8', 'eight']], def: '0' },
       { key: 'bokehBright', label: 'Bokeh brightness', type: 'range', min: 0.2, max: 2.5, step: 0.01, def: 1 },
@@ -99,6 +100,7 @@
     }
     // value for key, considering the current scene
     get(key, scene) {
+      if (key === 'focus') return W.app ? W.app.focusTarget : 0;
       const it = this.item(key);
       if (it && it.scope === 'scene') {
         const s = this.s[scene.id] || {};
@@ -112,6 +114,10 @@
       return this.g[key];
     }
     set(key, val, scene) {
+      if (key === 'focus') {
+        if (W.app) W.app.focusTarget = val;
+        return;
+      }
       const it = this.item(key);
       if (it && it.scope === 'scene') {
         (this.s[scene.id] = this.s[scene.id] || {})[key] = val;

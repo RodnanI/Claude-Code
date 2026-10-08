@@ -43,6 +43,7 @@
     // tools
     $('#t-set').innerHTML = ICONS.set;
     $('#t-full').innerHTML = ICONS.full;
+    if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) $('#t-full').style.display = 'none';
     this.paintTools();
     $('#t-focus').addEventListener('click', () => {
       app.toggleFocus();
@@ -183,7 +184,9 @@
           S.set(it.key, +inp.value, sc);
           out.textContent = fmt(+inp.value, it);
           paint();
+          if (it.key === 'focus') this.paintTools();
         });
+        if (it.key === 'focus') this.focusInput = { inp, out, paint, it };
         if (it.hint) row.appendChild(el('div', 'hint', it.hint));
         row.appendChild(inp);
       } else if (it.type === 'toggle') {
@@ -221,6 +224,7 @@
   };
 
   function fmt(v, it) {
+    if (it.key === 'focus') return v < 0.02 ? 'glass' : v > 0.98 ? 'far' : Math.round(v * 100) + '';
     if (it.key === 'exposure') return (v > 0 ? '+' : '') + v.toFixed(1) + ' ev';
     if (it.key === 'warm') return (v > 0 ? '+' : '') + Math.round(v * 100);
     return Math.round(((v - it.min) / (it.max - it.min)) * 100) + '';
@@ -298,6 +302,10 @@
       return [sx + hx + a / 2, sy + hy + 0.5];
     };
     canvas.addEventListener('pointerdown', (e) => {
+      if ($('#panel').classList.contains('open')) {
+        this.panel(false);
+        return;
+      }
       if (!app.S.g.wipe) return;
       canvas.setPointerCapture(e.pointerId);
       last = toGlass(e);
@@ -356,6 +364,12 @@
   UI.tick = function (dt, t, ms) {
     const app = this.app, S = app.S, now = performance.now();
     this.idle += dt;
+    const fi = this.focusInput;
+    if (fi && fi.inp.isConnected && document.activeElement !== fi.inp && Math.abs(+fi.inp.value - app.focusTarget) > 0.005) {
+      fi.inp.value = app.focusTarget;
+      fi.out.textContent = fmt(app.focusTarget, fi.it);
+      fi.paint();
+    }
     const open = $('#panel').classList.contains('open');
     if (this.opened && !open && this.idle > +S.g.hideDelay) document.body.classList.add('idle');
     if (S.g.clock !== 'off') {
