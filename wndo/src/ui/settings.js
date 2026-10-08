@@ -88,6 +88,8 @@
       this.g = {};
       this.s = W.store.get('scene-settings', {});
       this.listeners = [];
+      this.idx = new Map();
+      for (const tab of SCHEMA) for (const it of tab.items) this.idx.set(it.key, it);
       for (const tab of SCHEMA) for (const it of tab.items) if (it.scope !== 'scene') this.g[it.key] = it.def;
       if (navigator.maxTouchPoints > 0 && Math.min(screen.width, screen.height) < 1100) this.g.quality = 'balanced';
       Object.assign(this.g, W.store.get('settings', {}));
@@ -95,8 +97,7 @@
       this.focus = 0;
     }
     item(key) {
-      for (const tab of SCHEMA) for (const it of tab.items) if (it.key === key) return it;
-      return null;
+      return this.idx.get(key) || null;
     }
     // value for key, considering the current scene
     get(key, scene) {

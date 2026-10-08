@@ -244,6 +244,7 @@
     const app = this.app, S = app.S;
     if (key === 'quality' || key === '*') {
       app.dyn = 1;
+      app.dynCeil = 1;
       app.applyQuality();
     }
     if (key === 'clock' || key === '*') $('#clock').hidden = S.g.clock === 'off';

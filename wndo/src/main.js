@@ -360,11 +360,16 @@
     const avg = ft.reduce((a, b) => a + b, 0) / ft.length;
     const cap = +app.S.g.fps || 60;
     const target = 1000 / Math.min(cap, 60);
+    const now = performance.now();
+    if (app.ceilUntil && now > app.ceilUntil) app.dynCeil = 1;
     if (avg > target * 1.35 && app.dyn > 0.55) {
+      // remember what was too much for a while, so it does not climb straight back and stutter again
+      app.dynCeil = app.dyn - 0.01;
+      app.ceilUntil = now + 90000;
       app.dyn = Math.max(0.55, app.dyn - 0.1);
       applyQuality();
       ft.length = 0;
-    } else if (avg < target * 1.08 && app.dyn < 1) {
+    } else if (avg < target * 1.08 && app.dyn < 1 && app.dyn + 0.05 < (app.dynCeil || 1)) {
       app.dyn = Math.min(1, app.dyn + 0.05);
       applyQuality();
       ft.length = 0;
