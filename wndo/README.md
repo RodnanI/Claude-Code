@@ -9,10 +9,10 @@ Open `wndo.html` in any current desktop or tablet browser. It is a single standa
 | | place | what is out there | what you hear |
 |---|---|---|---|
 | 01 | City Rain | a wet avenue from the sixth floor at 2 a.m., traffic lights cycling, cars that stop at red, buses, neon, pedestrians with umbrellas, an occasional storm | rain on the glass, a gutter dripping into a puddle, tyres hissing past, thunder |
-| 02 | Pine Wind | a birch clearing and misty pines from a cabin, gusts you can see travelling through the trees and the grass, leaves blowing past, the sun breaking through now and then | wind in gusts, leaves, branches creaking, birds when it calms |
+| 02 | Pine Wind | a birch clearing and misty pines from a cabin, gusts you can see travelling through the trees and the grass, leaves blowing past, a flock crossing now and then, the sun breaking through in shafts | wind in gusts, leaves, branches creaking, birds when it calms |
 | 03 | Low Tide | a beach house at sunset, breaking waves that run up the sand, the glitter path, gulls, a lighthouse, a ship | each wave you see breaking, surf, gulls |
-| 04 | Fireflies | a hay meadow on a June night, the moon, heat lightning far off, a farm across the fields | crickets, peepers, an owl; the window is open a crack |
-| 05 | First Snow | a village at blue hour, a lantern lighting the falling snow, string lights, chimney smoke, frost on the panes, flakes landing on the glass and melting | the fire behind you, a clock |
+| 04 | Fireflies | a hay meadow on a June night, the moon, shooting stars, heat lightning far off, a farm across the fields | crickets, peepers, an owl; the window is open a crack |
+| 05 | First Snow | a village at blue hour, a lantern lighting the falling snow, string lights, chimney smoke, a car crawling along the lane now and then, frost on the panes, flakes landing on the glass and melting | the fire behind you, a clock |
 | 06 | Night Train | a window seat in the rain: catenary poles whipping past, level crossings, stations, tunnels, a motorway, towns and wind turbines on the horizon | rail joints, the rumble, crossing bells sliding past with the Doppler drop |
 
 ## Controls
@@ -29,12 +29,12 @@ Open `wndo.html` in any current desktop or tablet browser. It is a single standa
 Everything is in the drawer (the sliders icon), grouped as View, Weather, Window, Sound, Image, Performance and Extras. Weather is remembered per place. Highlights:
 
 - **Bokeh**: blur strength, aperture shape (round, five, six, eight blades), soap-bubble edge, cat's-eye vignetting, colour fringe, brightness, glow in the air
-- **Weather**: rain, wind, mist, condensation, frost, lightning, plus traffic, snowfall, swell, firefly count or train speed depending on the place
+- **Weather**: rain (which swells and eases on its own over minutes), wind, mist, condensation, frost, lightning, plus traffic, snowfall, swell, firefly count or train speed depending on the place
 - **Window**: frame style (picture, casement, cross, sash, loft, train, none), finish, candle, tea, plant, room lamp, reflections, how fast the fog returns
 - **Sound**: master and five layers (rain, wind, life outside, room, thunder), window open or closed
 - **Image**: brightness, warmth, colour, film grain, vignette
 - **Performance**: quality preset, **bokeh only** (skips the scenery entirely and keeps just the lights, glass and room, very light on a tablet battery), frame cap, adaptive resolution, half-detail scenery while blurred
-- **Extras**: clock, sleep timer (fades picture and sound over the last minute), wander (drifts to another place every so often)
+- **Extras**: clock, sleep timer (fades picture and sound over the last minute), wander (drifts to another place every so often), keep the screen awake
 
 ## How it works
 

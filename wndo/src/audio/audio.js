@@ -491,14 +491,14 @@
   // a car on wet asphalt: the hiss swells, slides across, and fades
   A.carPass = function (e) {
     const ctx = this.ctx;
-    if (!ctx || !this.scape || this.scape.id !== 'city') return;
+    if (!ctx || !this.scape || (this.scape.id !== 'city' && this.scape.id !== 'snow')) return;
     const t0 = ctx.currentTime, T = e.eta, len = T + R(2.5, 4);
     const src = ctx.createBufferSource();
     src.buffer = this.buf.white;
     const bp = this.filter('bandpass', 1400, 0.45);
     const lp = this.filter('lowpass', 1500, 0.5);
     lp.frequency.setValueAtTime(1200, t0);
-    lp.frequency.linearRampToValueAtTime(5200 + e.wet * 2000, t0 + T);
+    lp.frequency.linearRampToValueAtTime(e.snow ? 1300 : 5200 + e.wet * 2000, t0 + T);
     lp.frequency.linearRampToValueAtTime(1400, t0 + len);
     const g = this.gain(0);
     const peak = (0.05 + 0.1 * e.wet) * e.near;

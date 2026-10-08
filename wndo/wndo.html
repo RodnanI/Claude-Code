@@ -3411,6 +3411,8 @@ ${W.GLSL.camera}
 uniform float uGust, uWind, uRain, uSun, uLeaves;
 uniform sampler2D uDepth;
 uniform vec2 uSunUV;
+uniform vec4 uBirds[10];
+uniform float uBirdN;
 out vec4 o;
 void main(){
   vec3 rd = camRay(gl_FragCoord.xy);
@@ -3472,6 +3474,26 @@ void main(){
       acc.rgb += vec3(0.55, 0.58, 0.6) * s * 0.12 * (1.0 - acc.a);
       acc.a = max(acc.a, s * 0.12);
     }
+  }
+  // birds: small flapping silhouettes, hidden behind nearer trees
+  float sceneD = texture(uDepth, gl_FragCoord.xy / uRes).a;
+  for (int i = 0; i < 10; i++) {
+    if (float(i) >= uBirdN) break;
+    vec4 b = uBirds[i];
+    vec3 v = b.xyz - uCamPos;
+    float tc = dot(v, rd);
+    if (tc <= 0.0 || tc > sceneD) continue;
+    vec3 q = uCamPos + rd * tc - b.xyz;
+    vec2 l = vec2(dot(q, R), dot(q, U)) / 0.32;
+    float flap = sin(b.w) * 0.55;
+    l.x = abs(l.x);
+    float wing = abs(l.y - l.x * flap + l.x * l.x * 0.25) - 0.09 * (1.0 - l.x);
+    float sd = max(wing, l.x - 1.0);
+    sd = min(sd, length(l * vec2(1.0, 1.6)) - 0.16);
+    float px = tc * 2.0 * uTanHalf.y / uRes.y / 0.32;
+    float cov = 1.0 - smoothstep(-px, px * 1.5, sd);
+    acc.rgb = mix(acc.rgb, vec3(0.02, 0.022, 0.025), cov * (1.0 - acc.a));
+    acc.a = max(acc.a, cov);
   }
   o = vec4(acc.rgb + shafts * (1.0 - acc.a), acc.a);
 }
@@ -3539,6 +3561,23 @@ void main(){
     update(dt, t, env, R) {
       const L = R.lights;
       this.sun = W.smoothstep(0.3, 0.68, this.sunN(t * 0.025)) * (1 - env.rain * 0.8) * (1 - env.fog * 0.5);
+      // a flock crossing the clearing now and then
+      this.flockNext = (this.flockNext == null ? 10 : this.flockNext) - dt;
+      if (!this.flock && this.flockNext < 0) {
+        const dir = Math.random() < 0.5 ? 1 : -1, n = 4 + Math.floor(Math.random() * 7);
+        const z = 30 + Math.random() * 35, y = 16 + Math.random() * 12;
+        this.flock = { dir, birds: Array.from({ length: n }, (_, i) => ({ x: -90 * dir - dir * i * (1.5 + Math.random() * 2), y: y + (Math.random() - 0.5) * 3, z: z + (Math.random() - 0.5) * 6, ph: Math.random() * 6, f: 9 + Math.random() * 4 })) };
+        this.flockNext = 35 + Math.random() * 60;
+      }
+      if (this.flock) {
+        const f = this.flock;
+        for (const b of f.birds) {
+          b.x += f.dir * (9 + env.gust * 3) * dt;
+          b.ph += dt * (Math.sin(t * 0.8 + b.f) > -0.3 ? b.f : 0.5);
+          b.y += Math.sin(t * 1.3 + b.f) * dt * 0.6;
+        }
+        if (f.birds.every((b) => Math.abs(b.x) > 100)) this.flock = null;
+      }
       // sun glints on fluttering leaves
       if (this.sun > 0.05) {
         for (const s of this.spark) {
@@ -3557,6 +3596,12 @@ void main(){
       R.gl.deleteProgram(this.fg.p);
     },
 
+    birdData() {
+      const d = new Float32Array(40);
+      if (this.flock) this.flock.birds.slice(0, 10).forEach((b, i) => d.set([b.x, b.y, b.z, b.ph], i * 4));
+      return d;
+    },
+
     render(R, t, dt, P) {
       const e = P.env;
       const sunDir = W.v3.norm([-0.45, 0.32, 1]);
@@ -3573,7 +3618,7 @@ void main(){
       const sp = R.cam.project(W.v3.add(R.cam.pos, W.v3.mul(sunDir, 1000)));
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7, uDepth: dc, uSunUV: [sp[0] * 0.5 + 0.5, sp[1] * 0.5 + 0.5] });
+      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7, uDepth: dc, uSunUV: [sp[0] * 0.5 + 0.5, sp[1] * 0.5 + 0.5], uBirds: this.birdData(), uBirdN: this.flock ? Math.min(10, this.flock.birds.length) : 0 });
       R.G.drawFS();
       gl.disable(gl.BLEND);
     },
@@ -3967,6 +4012,8 @@ ${W.GLSL.camera}
 uniform vec3 uMoonDir;
 uniform float uFog, uWind, uFlash, uRain, uGust;
 uniform vec2 uFlashAz;
+uniform vec4 uMet;        // start azimuth, elevation, end azimuth, elevation
+uniform float uMetT;      // progress 0..1, below 0 when none
 out vec4 o;
 #define FAR 9000.0
 vec3 stars(vec3 rd){
@@ -4002,10 +4049,11 @@ vec3 sky(vec3 rd){
   c += vec3(0.25, 0.3, 0.45) * (pow(mu, 30.0) * 0.06 + pow(mu, 300.0) * 0.25);
   float clouds = 0.0;
   if (rd.y > 0.0) {
-    c += (stars(rd) * 0.012 + milky(rd)) * smoothstep(0.0, 0.15, h) * (1.0 - uRain);
+    float moonWash = 1.0 - 0.6 * pow(mu, 4.0);
+    c += (stars(rd) * 0.04 + milky(rd) * 1.8) * smoothstep(0.0, 0.15, h) * (1.0 - uRain) * moonWash;
     vec2 cp = rd.xz / (h + 0.06) * 0.7 + vec2(uTime * 0.006 * (0.5 + uWind), 0.0);
     float d = fbm(cp * 0.6);
-    clouds = smoothstep(0.5 - uRain * 0.3, 0.85, d);
+    clouds = smoothstep(0.6 - uRain * 0.4, 0.9, d) * (0.6 + 0.4 * smoothstep(0.3, 0.7, fbm(cp * 0.15 + 9.0)));
     vec3 cc = vec3(0.03, 0.035, 0.05) + vec3(0.2, 0.24, 0.34) * pow(mu, 6.0) * 0.4;
     c = mix(c, cc, clouds * 0.85);
   }
@@ -4016,6 +4064,16 @@ vec3 sky(vec3 rd){
     vec2 mq = vec2(dot(rd, t), dot(rd, b)) / 0.0173;
     float mare = smoothstep(0.45, 0.7, fbm(mq * 2.5 + 3.0));
     c = mix(c, vec3(0.95, 0.93, 0.88) * (0.55 - mare * 0.18) * 7.0, 1.0 - clouds * 0.9);
+  }
+  // a shooting star: a bright head with a fading tail
+  if (uMetT >= 0.0 && rd.y > 0.0) {
+    vec2 p = vec2(az, asin(rd.y));
+    vec2 hd = mix(uMet.xy, uMet.zw, uMetT), tl = mix(uMet.xy, uMet.zw, max(uMetT - 0.3, 0.0));
+    vec2 pa = p - tl, ba = hd - tl;
+    float hseg = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-8), 0.0, 1.0);
+    float d = length(pa - ba * hseg);
+    float life = sin(uMetT * PI);
+    c += vec3(0.85, 0.9, 1.0) * exp(-sq(d / 0.0012)) * hseg * hseg * life * 3.0 * (1.0 - clouds);
   }
   // heat lightning low on the horizon
   float fl = exp(-pow((az - uFlashAz.x) / 0.35, 2.0)) * exp(-h * 9.0);
@@ -4153,6 +4211,22 @@ void main(){
         L.add(cx + 1.5, 1.0, 700, 0.3, 120, 110, 90, 0.4);
       }
       if (env.flash > 0.05 && !this.flashing) this.flashAz = (Math.random() - 0.5) * 1.6;
+      // now and then a shooting star
+      this.metNext = (this.metNext == null ? 6 : this.metNext) - dt;
+      if (this.met) {
+        this.met.t += dt / this.met.dur;
+        if (this.met.t > 1) this.met = null;
+      } else if (this.metNext < 0 && env.rain < 0.3) {
+        const a0 = (Math.random() - 0.5) * 1.3, e0 = 0.35 + Math.random() * 0.4;
+        const ang = -0.4 - Math.random() * 1.2, len = 0.15 + Math.random() * 0.2;
+        this.met = { a: [a0, e0, a0 + Math.cos(ang) * len * (Math.random() < 0.5 ? 1 : -1), e0 + Math.sin(ang) * len], t: 0, dur: 0.5 + Math.random() * 0.5 };
+        this.metNext = 12 + Math.random() * 40;
+      }
+      if (this.met) {
+        const m = this.met, h = [m.a[0] + (m.a[2] - m.a[0]) * m.t, m.a[1] + (m.a[3] - m.a[1]) * m.t];
+        const k = Math.sin(m.t * Math.PI) * 400;
+        L.add(Math.sin(h[0]) * Math.cos(h[1]) * 4000, Math.sin(h[1]) * 4000 + 2, Math.cos(h[0]) * Math.cos(h[1]) * 4000, 4, k * 0.85, k * 0.9, k, 0);
+      }
       this.flashing = env.flash > 0.05;
     },
 
@@ -4164,7 +4238,7 @@ void main(){
     render(R, t, dt, P) {
       const e = P.env;
       const moonDir = W.v3.norm([0.55, 0.45, 1]);
-      this.bg.use().set(R.camUniforms()).set({ uTime: t, uMoonDir: moonDir, uFog: e.fog, uWind: e.wind, uFlash: e.flash * 0.6, uRain: e.rain, uGust: e.gust, uFlashAz: [this.flashAz, 0] });
+      this.bg.use().set(R.camUniforms()).set({ uTime: t, uMoonDir: moonDir, uFog: e.fog, uWind: e.wind, uFlash: e.flash * 0.6, uRain: e.rain, uGust: e.gust, uFlashAz: [this.flashAz, 0], uMet: this.met ? this.met.a : [0, 0, 0, 0], uMetT: this.met ? this.met.t : -1 });
       R.G.drawFS();
       this.bb.draw(t, {
         gust: e.gust, wind: e.wind, flutter: 0.5,
@@ -4189,6 +4263,7 @@ ${W.GLSL.camera}
 uniform vec4 uHA[6], uHB[6];
 uniform float uHN, uSnow, uWind, uFog, uGust, uFlash;
 uniform vec3 uLamp; uniform vec4 uLampP;
+uniform vec4 uCar;
 out vec4 o;
 #define FAR 9000.0
 vec3 sky(vec3 rd){
@@ -4311,9 +4386,18 @@ void main(){
     vec2 tc = boxT(ro, ird, vec3(a.x + (a.z - a.x) * 0.7, b.x, zc - 0.35), vec3(a.x + (a.z - a.x) * 0.7 + 0.7, b.x + b.y + 1.1, zc + 0.35), nn);
     if (tc.x < tc.y && tc.x > 0.0 && tc.x < t) { t = tc.x; n = nn; hid = i; roof = false; kind = 4; }
   }
+  // a car on the cross road
+  if (uCar.w > 0.5) {
+    vec3 nn;
+    vec2 tb = boxT(ro, ird, vec3(uCar.x - 2.15, 0.28, uCar.y - 0.85), vec3(uCar.x + 2.15, 1.05, uCar.y + 0.85), nn);
+    if (tb.x < tb.y && tb.x > 0.0 && tb.x < t) { t = tb.x; n = nn; kind = 7; }
+    tb = boxT(ro, ird, vec3(uCar.x - 1.2, 1.05, uCar.y - 0.75), vec3(uCar.x + 1.0, 1.5, uCar.y + 0.75), nn);
+    if (tb.x < tb.y && tb.x > 0.0 && tb.x < t) { t = tb.x; n = nn; kind = 7; }
+  }
   // fence posts with snow caps, and the lantern post
   for (int i = 0; i < 20; i++) {
     float z = 6.0 + float(i) * 2.3;
+    if (z > 22.5 && z < 28.5) continue;
     vec2 pc = vec2(-3.2 - z * 0.08, z);
     vec3 nn;
     vec2 tb = boxT(ro, ird, vec3(pc.x - 0.06, 0.0, pc.y - 0.06), vec3(pc.x + 0.06, 1.15, pc.y + 0.06), nn);
@@ -4336,6 +4420,19 @@ void main(){
     col = sn * lightAt(p, n) * 1.25;
     float sp = step(0.996, hash12(floor(p.xz * 40.0))) * (1.0 - smoothstep(0.0, 25.0, t));
     col += sp * (uLamp * 0.25 / (dot(uLampP.xyz - p, uLampP.xyz - p) + 2.0) + 0.06);
+    // the cross road, ploughed and rutted
+    float road = 1.0 - smoothstep(1.6, 2.4, abs(p.z - 25.5));
+    col *= 1.0 - road * (0.08 + 0.12 * step(abs(abs(p.z - 25.5) - 0.75), 0.16));
+    // headlight beam on the snow
+    if (uCar.w > 0.5) {
+      vec2 rel = p.xz - vec2(uCar.x + uCar.z * 2.2, uCar.y);
+      float along = rel.x * uCar.z;
+      if (along > 0.0 && along < 40.0) {
+        float side = abs(rel.y);
+        float beam = (1.0 - smoothstep(0.7 + along * 0.16, 1.8 + along * 0.32, side)) / (1.0 + along * along * 0.006);
+        col += vec3(1.0, 0.92, 0.78) * beam * 1.6;
+      }
+    }
     // window glow on the snow in front of the houses
     for (int i = 0; i < 6; i++) {
       if (i >= hn) break;
@@ -4347,6 +4444,7 @@ void main(){
   else if (kind == 4) col = (n.y > 0.5 ? vec3(0.8, 0.84, 0.9) : vec3(0.18, 0.08, 0.06)) * lightAt(p, n);
   else if (kind == 5) col = (n.y > 0.5 ? vec3(0.8, 0.84, 0.9) : vec3(0.1, 0.08, 0.06)) * lightAt(p, n) * 1.2;
   else if (kind == 6) col = vec3(1.0, 0.62, 0.3) * 3.0;
+  else if (kind == 7) col = (n.y > 0.5 ? vec3(0.8, 0.84, 0.9) : vec3(0.05, 0.06, 0.07)) * lightAt(p, n) + vec3(0.02, 0.03, 0.05) * step(1.05, p.y) * (1.0 - step(0.5, n.y));
   if (kind != 0 && kind != 3) col = mix(col, sky(vec3(rd.x, 0.02, rd.z)) * 0.95, 1.0 - exp(-t * (0.006 + uFog * 0.012 + uSnow * 0.008)));
   // chimney smoke drifting downwind
   for (int i = 0; i < 6; i++) {
@@ -4504,6 +4602,26 @@ void main(){
           L.add(a[0] + (k + 0.5) * (wd / nw), b[0] * 0.45, a[1] - 0.1, 0.6, 2.6, 1.6, 0.8, 0, 3);
         }
       });
+      // every so often a car crawls along the cross road
+      this.carNext = (this.carNext == null ? 14 : this.carNext) - dt;
+      if (!this.car && this.carNext < 0) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        this.car = { x: -70 * dir, dir, v: 5 + Math.random() * 2, sent: false };
+        this.carNext = 45 + Math.random() * 70;
+      }
+      if (this.car) {
+        const c = this.car;
+        c.x += c.dir * c.v * dt;
+        if (!c.sent && c.dir * c.x > -35) {
+          c.sent = true;
+          W.bus.emit('carpass', { eta: Math.abs(c.x - 10) / c.v, dir: c.dir, wet: 0, near: 0.5, bus: false, snow: true });
+        }
+        for (const s of [-1, 1]) {
+          L.add(c.x + c.dir * 2.17, 0.7, 25.5 + s * 0.6, 0.12, 220, 200, 170, 1.2);
+          L.add(c.x - c.dir * 2.17, 0.85, 25.5 + s * 0.62, 0.09, 40, 2, 1, 0.6);
+        }
+        if (Math.abs(c.x) > 75) this.car = null;
+      }
       // big flakes right outside the glass, lit by the room
       const room = 0.6;
       for (const f of this.near) {
@@ -4526,7 +4644,7 @@ void main(){
       const e = P.env;
       this.bg.use().set(R.camUniforms()).set({
         uTime: t, uHA: this.HA, uHB: this.HB, uHN: HOUSES.length, uSnow: e.snow, uWind: e.wind, uFog: e.fog, uGust: e.gust, uFlash: e.flash,
-        uLamp: this.lamp, uLampP: this.lampP,
+        uLamp: this.lamp, uLampP: this.lampP, uCar: this.car ? [this.car.x, 25.5, this.car.dir, 1] : [0, 0, 1, 0],
       });
       R.G.drawFS();
       this.bb.draw(t, {
@@ -5989,14 +6107,14 @@ void main(){
   // a car on wet asphalt: the hiss swells, slides across, and fades
   A.carPass = function (e) {
     const ctx = this.ctx;
-    if (!ctx || !this.scape || this.scape.id !== 'city') return;
+    if (!ctx || !this.scape || (this.scape.id !== 'city' && this.scape.id !== 'snow')) return;
     const t0 = ctx.currentTime, T = e.eta, len = T + R(2.5, 4);
     const src = ctx.createBufferSource();
     src.buffer = this.buf.white;
     const bp = this.filter('bandpass', 1400, 0.45);
     const lp = this.filter('lowpass', 1500, 0.5);
     lp.frequency.setValueAtTime(1200, t0);
-    lp.frequency.linearRampToValueAtTime(5200 + e.wet * 2000, t0 + T);
+    lp.frequency.linearRampToValueAtTime(e.snow ? 1300 : 5200 + e.wet * 2000, t0 + T);
     lp.frequency.linearRampToValueAtTime(1400, t0 + len);
     const g = this.gain(0);
     const peak = (0.05 + 0.1 * e.wet) * e.near;
@@ -6394,6 +6512,7 @@ void main(){
     started: false,
   });
 
+  const rainN = W.noise1(17);
   const gustN = W.noise1(11), gustN2 = W.noise1(12), flickN = W.noise1(13), flickN2 = W.noise1(14), driftN = W.noise1(15), driftN2 = W.noise1(16);
   let pulses = [];
   let nextStrike = 20;
@@ -6521,6 +6640,7 @@ void main(){
       frost: S.get('frost', sc), traffic: S.get('traffic', sc), snow: S.get('snow', sc), waves: S.get('waves', sc),
       fireflies: S.get('fireflies', sc), speed: S.get('speed', sc),
     };
+    if (target.rain > 0) target.rain = W.clamp(target.rain * (0.72 + 0.56 * rainN(t / 75)), 0, 1);
     const k = 1 - Math.exp(-dt * 1.5);
     for (const key in target) {
       const v = target[key] == null ? 0 : +target[key];

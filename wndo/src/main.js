@@ -19,6 +19,7 @@
     started: false,
   });
 
+  const rainN = W.noise1(17);
   const gustN = W.noise1(11), gustN2 = W.noise1(12), flickN = W.noise1(13), flickN2 = W.noise1(14), driftN = W.noise1(15), driftN2 = W.noise1(16);
   let pulses = [];
   let nextStrike = 20;
@@ -146,6 +147,7 @@
       frost: S.get('frost', sc), traffic: S.get('traffic', sc), snow: S.get('snow', sc), waves: S.get('waves', sc),
       fireflies: S.get('fireflies', sc), speed: S.get('speed', sc),
     };
+    if (target.rain > 0) target.rain = W.clamp(target.rain * (0.72 + 0.56 * rainN(t / 75)), 0, 1);
     const k = 1 - Math.exp(-dt * 1.5);
     for (const key in target) {
       const v = target[key] == null ? 0 : +target[key];

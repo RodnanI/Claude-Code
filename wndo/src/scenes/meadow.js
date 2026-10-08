@@ -8,6 +8,8 @@ ${W.GLSL.camera}
 uniform vec3 uMoonDir;
 uniform float uFog, uWind, uFlash, uRain, uGust;
 uniform vec2 uFlashAz;
+uniform vec4 uMet;        // start azimuth, elevation, end azimuth, elevation
+uniform float uMetT;      // progress 0..1, below 0 when none
 out vec4 o;
 #define FAR 9000.0
 vec3 stars(vec3 rd){
@@ -43,10 +45,11 @@ vec3 sky(vec3 rd){
   c += vec3(0.25, 0.3, 0.45) * (pow(mu, 30.0) * 0.06 + pow(mu, 300.0) * 0.25);
   float clouds = 0.0;
   if (rd.y > 0.0) {
-    c += (stars(rd) * 0.012 + milky(rd)) * smoothstep(0.0, 0.15, h) * (1.0 - uRain);
+    float moonWash = 1.0 - 0.6 * pow(mu, 4.0);
+    c += (stars(rd) * 0.04 + milky(rd) * 1.8) * smoothstep(0.0, 0.15, h) * (1.0 - uRain) * moonWash;
     vec2 cp = rd.xz / (h + 0.06) * 0.7 + vec2(uTime * 0.006 * (0.5 + uWind), 0.0);
     float d = fbm(cp * 0.6);
-    clouds = smoothstep(0.5 - uRain * 0.3, 0.85, d);
+    clouds = smoothstep(0.6 - uRain * 0.4, 0.9, d) * (0.6 + 0.4 * smoothstep(0.3, 0.7, fbm(cp * 0.15 + 9.0)));
     vec3 cc = vec3(0.03, 0.035, 0.05) + vec3(0.2, 0.24, 0.34) * pow(mu, 6.0) * 0.4;
     c = mix(c, cc, clouds * 0.85);
   }
@@ -57,6 +60,16 @@ vec3 sky(vec3 rd){
     vec2 mq = vec2(dot(rd, t), dot(rd, b)) / 0.0173;
     float mare = smoothstep(0.45, 0.7, fbm(mq * 2.5 + 3.0));
     c = mix(c, vec3(0.95, 0.93, 0.88) * (0.55 - mare * 0.18) * 7.0, 1.0 - clouds * 0.9);
+  }
+  // a shooting star: a bright head with a fading tail
+  if (uMetT >= 0.0 && rd.y > 0.0) {
+    vec2 p = vec2(az, asin(rd.y));
+    vec2 hd = mix(uMet.xy, uMet.zw, uMetT), tl = mix(uMet.xy, uMet.zw, max(uMetT - 0.3, 0.0));
+    vec2 pa = p - tl, ba = hd - tl;
+    float hseg = clamp(dot(pa, ba) / max(dot(ba, ba), 1e-8), 0.0, 1.0);
+    float d = length(pa - ba * hseg);
+    float life = sin(uMetT * PI);
+    c += vec3(0.85, 0.9, 1.0) * exp(-sq(d / 0.0012)) * hseg * hseg * life * 3.0 * (1.0 - clouds);
   }
   // heat lightning low on the horizon
   float fl = exp(-pow((az - uFlashAz.x) / 0.35, 2.0)) * exp(-h * 9.0);
@@ -194,6 +207,22 @@ void main(){
         L.add(cx + 1.5, 1.0, 700, 0.3, 120, 110, 90, 0.4);
       }
       if (env.flash > 0.05 && !this.flashing) this.flashAz = (Math.random() - 0.5) * 1.6;
+      // now and then a shooting star
+      this.metNext = (this.metNext == null ? 6 : this.metNext) - dt;
+      if (this.met) {
+        this.met.t += dt / this.met.dur;
+        if (this.met.t > 1) this.met = null;
+      } else if (this.metNext < 0 && env.rain < 0.3) {
+        const a0 = (Math.random() - 0.5) * 1.3, e0 = 0.35 + Math.random() * 0.4;
+        const ang = -0.4 - Math.random() * 1.2, len = 0.15 + Math.random() * 0.2;
+        this.met = { a: [a0, e0, a0 + Math.cos(ang) * len * (Math.random() < 0.5 ? 1 : -1), e0 + Math.sin(ang) * len], t: 0, dur: 0.5 + Math.random() * 0.5 };
+        this.metNext = 12 + Math.random() * 40;
+      }
+      if (this.met) {
+        const m = this.met, h = [m.a[0] + (m.a[2] - m.a[0]) * m.t, m.a[1] + (m.a[3] - m.a[1]) * m.t];
+        const k = Math.sin(m.t * Math.PI) * 400;
+        L.add(Math.sin(h[0]) * Math.cos(h[1]) * 4000, Math.sin(h[1]) * 4000 + 2, Math.cos(h[0]) * Math.cos(h[1]) * 4000, 4, k * 0.85, k * 0.9, k, 0);
+      }
       this.flashing = env.flash > 0.05;
     },
 
@@ -205,7 +234,7 @@ void main(){
     render(R, t, dt, P) {
       const e = P.env;
       const moonDir = W.v3.norm([0.55, 0.45, 1]);
-      this.bg.use().set(R.camUniforms()).set({ uTime: t, uMoonDir: moonDir, uFog: e.fog, uWind: e.wind, uFlash: e.flash * 0.6, uRain: e.rain, uGust: e.gust, uFlashAz: [this.flashAz, 0] });
+      this.bg.use().set(R.camUniforms()).set({ uTime: t, uMoonDir: moonDir, uFog: e.fog, uWind: e.wind, uFlash: e.flash * 0.6, uRain: e.rain, uGust: e.gust, uFlashAz: [this.flashAz, 0], uMet: this.met ? this.met.a : [0, 0, 0, 0], uMetT: this.met ? this.met.t : -1 });
       R.G.drawFS();
       this.bb.draw(t, {
         gust: e.gust, wind: e.wind, flutter: 0.5,

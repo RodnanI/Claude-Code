@@ -90,6 +90,8 @@ ${W.GLSL.camera}
 uniform float uGust, uWind, uRain, uSun, uLeaves;
 uniform sampler2D uDepth;
 uniform vec2 uSunUV;
+uniform vec4 uBirds[10];
+uniform float uBirdN;
 out vec4 o;
 void main(){
   vec3 rd = camRay(gl_FragCoord.xy);
@@ -151,6 +153,26 @@ void main(){
       acc.rgb += vec3(0.55, 0.58, 0.6) * s * 0.12 * (1.0 - acc.a);
       acc.a = max(acc.a, s * 0.12);
     }
+  }
+  // birds: small flapping silhouettes, hidden behind nearer trees
+  float sceneD = texture(uDepth, gl_FragCoord.xy / uRes).a;
+  for (int i = 0; i < 10; i++) {
+    if (float(i) >= uBirdN) break;
+    vec4 b = uBirds[i];
+    vec3 v = b.xyz - uCamPos;
+    float tc = dot(v, rd);
+    if (tc <= 0.0 || tc > sceneD) continue;
+    vec3 q = uCamPos + rd * tc - b.xyz;
+    vec2 l = vec2(dot(q, R), dot(q, U)) / 0.32;
+    float flap = sin(b.w) * 0.55;
+    l.x = abs(l.x);
+    float wing = abs(l.y - l.x * flap + l.x * l.x * 0.25) - 0.09 * (1.0 - l.x);
+    float sd = max(wing, l.x - 1.0);
+    sd = min(sd, length(l * vec2(1.0, 1.6)) - 0.16);
+    float px = tc * 2.0 * uTanHalf.y / uRes.y / 0.32;
+    float cov = 1.0 - smoothstep(-px, px * 1.5, sd);
+    acc.rgb = mix(acc.rgb, vec3(0.02, 0.022, 0.025), cov * (1.0 - acc.a));
+    acc.a = max(acc.a, cov);
   }
   o = vec4(acc.rgb + shafts * (1.0 - acc.a), acc.a);
 }
@@ -218,6 +240,23 @@ void main(){
     update(dt, t, env, R) {
       const L = R.lights;
       this.sun = W.smoothstep(0.3, 0.68, this.sunN(t * 0.025)) * (1 - env.rain * 0.8) * (1 - env.fog * 0.5);
+      // a flock crossing the clearing now and then
+      this.flockNext = (this.flockNext == null ? 10 : this.flockNext) - dt;
+      if (!this.flock && this.flockNext < 0) {
+        const dir = Math.random() < 0.5 ? 1 : -1, n = 4 + Math.floor(Math.random() * 7);
+        const z = 30 + Math.random() * 35, y = 16 + Math.random() * 12;
+        this.flock = { dir, birds: Array.from({ length: n }, (_, i) => ({ x: -90 * dir - dir * i * (1.5 + Math.random() * 2), y: y + (Math.random() - 0.5) * 3, z: z + (Math.random() - 0.5) * 6, ph: Math.random() * 6, f: 9 + Math.random() * 4 })) };
+        this.flockNext = 35 + Math.random() * 60;
+      }
+      if (this.flock) {
+        const f = this.flock;
+        for (const b of f.birds) {
+          b.x += f.dir * (9 + env.gust * 3) * dt;
+          b.ph += dt * (Math.sin(t * 0.8 + b.f) > -0.3 ? b.f : 0.5);
+          b.y += Math.sin(t * 1.3 + b.f) * dt * 0.6;
+        }
+        if (f.birds.every((b) => Math.abs(b.x) > 100)) this.flock = null;
+      }
       // sun glints on fluttering leaves
       if (this.sun > 0.05) {
         for (const s of this.spark) {
@@ -236,6 +275,12 @@ void main(){
       R.gl.deleteProgram(this.fg.p);
     },
 
+    birdData() {
+      const d = new Float32Array(40);
+      if (this.flock) this.flock.birds.slice(0, 10).forEach((b, i) => d.set([b.x, b.y, b.z, b.ph], i * 4));
+      return d;
+    },
+
     render(R, t, dt, P) {
       const e = P.env;
       const sunDir = W.v3.norm([-0.45, 0.32, 1]);
@@ -252,7 +297,7 @@ void main(){
       const sp = R.cam.project(W.v3.add(R.cam.pos, W.v3.mul(sunDir, 1000)));
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7, uDepth: dc, uSunUV: [sp[0] * 0.5 + 0.5, sp[1] * 0.5 + 0.5] });
+      this.fg.use().set(R.camUniforms()).set({ uTime: t, uGust: e.gust, uWind: e.wind, uRain: e.rain, uSun: this.sun, uLeaves: 0.3 + e.wind * 0.7, uDepth: dc, uSunUV: [sp[0] * 0.5 + 0.5, sp[1] * 0.5 + 0.5], uBirds: this.birdData(), uBirdN: this.flock ? Math.min(10, this.flock.birds.length) : 0 });
       R.G.drawFS();
       gl.disable(gl.BLEND);
     },

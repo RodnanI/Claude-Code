@@ -8,6 +8,7 @@ ${W.GLSL.camera}
 uniform vec4 uHA[6], uHB[6];
 uniform float uHN, uSnow, uWind, uFog, uGust, uFlash;
 uniform vec3 uLamp; uniform vec4 uLampP;
+uniform vec4 uCar;
 out vec4 o;
 #define FAR 9000.0
 vec3 sky(vec3 rd){
@@ -130,9 +131,18 @@ void main(){
     vec2 tc = boxT(ro, ird, vec3(a.x + (a.z - a.x) * 0.7, b.x, zc - 0.35), vec3(a.x + (a.z - a.x) * 0.7 + 0.7, b.x + b.y + 1.1, zc + 0.35), nn);
     if (tc.x < tc.y && tc.x > 0.0 && tc.x < t) { t = tc.x; n = nn; hid = i; roof = false; kind = 4; }
   }
+  // a car on the cross road
+  if (uCar.w > 0.5) {
+    vec3 nn;
+    vec2 tb = boxT(ro, ird, vec3(uCar.x - 2.15, 0.28, uCar.y - 0.85), vec3(uCar.x + 2.15, 1.05, uCar.y + 0.85), nn);
+    if (tb.x < tb.y && tb.x > 0.0 && tb.x < t) { t = tb.x; n = nn; kind = 7; }
+    tb = boxT(ro, ird, vec3(uCar.x - 1.2, 1.05, uCar.y - 0.75), vec3(uCar.x + 1.0, 1.5, uCar.y + 0.75), nn);
+    if (tb.x < tb.y && tb.x > 0.0 && tb.x < t) { t = tb.x; n = nn; kind = 7; }
+  }
   // fence posts with snow caps, and the lantern post
   for (int i = 0; i < 20; i++) {
     float z = 6.0 + float(i) * 2.3;
+    if (z > 22.5 && z < 28.5) continue;
     vec2 pc = vec2(-3.2 - z * 0.08, z);
     vec3 nn;
     vec2 tb = boxT(ro, ird, vec3(pc.x - 0.06, 0.0, pc.y - 0.06), vec3(pc.x + 0.06, 1.15, pc.y + 0.06), nn);
@@ -155,6 +165,19 @@ void main(){
     col = sn * lightAt(p, n) * 1.25;
     float sp = step(0.996, hash12(floor(p.xz * 40.0))) * (1.0 - smoothstep(0.0, 25.0, t));
     col += sp * (uLamp * 0.25 / (dot(uLampP.xyz - p, uLampP.xyz - p) + 2.0) + 0.06);
+    // the cross road, ploughed and rutted
+    float road = 1.0 - smoothstep(1.6, 2.4, abs(p.z - 25.5));
+    col *= 1.0 - road * (0.08 + 0.12 * step(abs(abs(p.z - 25.5) - 0.75), 0.16));
+    // headlight beam on the snow
+    if (uCar.w > 0.5) {
+      vec2 rel = p.xz - vec2(uCar.x + uCar.z * 2.2, uCar.y);
+      float along = rel.x * uCar.z;
+      if (along > 0.0 && along < 40.0) {
+        float side = abs(rel.y);
+        float beam = (1.0 - smoothstep(0.7 + along * 0.16, 1.8 + along * 0.32, side)) / (1.0 + along * along * 0.006);
+        col += vec3(1.0, 0.92, 0.78) * beam * 1.6;
+      }
+    }
     // window glow on the snow in front of the houses
     for (int i = 0; i < 6; i++) {
       if (i >= hn) break;
@@ -166,6 +189,7 @@ void main(){
   else if (kind == 4) col = (n.y > 0.5 ? vec3(0.8, 0.84, 0.9) : vec3(0.18, 0.08, 0.06)) * lightAt(p, n);
   else if (kind == 5) col = (n.y > 0.5 ? vec3(0.8, 0.84, 0.9) : vec3(0.1, 0.08, 0.06)) * lightAt(p, n) * 1.2;
   else if (kind == 6) col = vec3(1.0, 0.62, 0.3) * 3.0;
+  else if (kind == 7) col = (n.y > 0.5 ? vec3(0.8, 0.84, 0.9) : vec3(0.05, 0.06, 0.07)) * lightAt(p, n) + vec3(0.02, 0.03, 0.05) * step(1.05, p.y) * (1.0 - step(0.5, n.y));
   if (kind != 0 && kind != 3) col = mix(col, sky(vec3(rd.x, 0.02, rd.z)) * 0.95, 1.0 - exp(-t * (0.006 + uFog * 0.012 + uSnow * 0.008)));
   // chimney smoke drifting downwind
   for (int i = 0; i < 6; i++) {
@@ -323,6 +347,26 @@ void main(){
           L.add(a[0] + (k + 0.5) * (wd / nw), b[0] * 0.45, a[1] - 0.1, 0.6, 2.6, 1.6, 0.8, 0, 3);
         }
       });
+      // every so often a car crawls along the cross road
+      this.carNext = (this.carNext == null ? 14 : this.carNext) - dt;
+      if (!this.car && this.carNext < 0) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        this.car = { x: -70 * dir, dir, v: 5 + Math.random() * 2, sent: false };
+        this.carNext = 45 + Math.random() * 70;
+      }
+      if (this.car) {
+        const c = this.car;
+        c.x += c.dir * c.v * dt;
+        if (!c.sent && c.dir * c.x > -35) {
+          c.sent = true;
+          W.bus.emit('carpass', { eta: Math.abs(c.x - 10) / c.v, dir: c.dir, wet: 0, near: 0.5, bus: false, snow: true });
+        }
+        for (const s of [-1, 1]) {
+          L.add(c.x + c.dir * 2.17, 0.7, 25.5 + s * 0.6, 0.12, 220, 200, 170, 1.2);
+          L.add(c.x - c.dir * 2.17, 0.85, 25.5 + s * 0.62, 0.09, 40, 2, 1, 0.6);
+        }
+        if (Math.abs(c.x) > 75) this.car = null;
+      }
       // big flakes right outside the glass, lit by the room
       const room = 0.6;
       for (const f of this.near) {
@@ -345,7 +389,7 @@ void main(){
       const e = P.env;
       this.bg.use().set(R.camUniforms()).set({
         uTime: t, uHA: this.HA, uHB: this.HB, uHN: HOUSES.length, uSnow: e.snow, uWind: e.wind, uFog: e.fog, uGust: e.gust, uFlash: e.flash,
-        uLamp: this.lamp, uLampP: this.lampP,
+        uLamp: this.lamp, uLampP: this.lampP, uCar: this.car ? [this.car.x, 25.5, this.car.dir, 1] : [0, 0, 1, 0],
       });
       R.G.drawFS();
       this.bb.draw(t, {
