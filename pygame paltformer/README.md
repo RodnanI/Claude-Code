@@ -58,7 +58,7 @@ The controller is built to be forgiving where it should be and exact everywhere 
 
 Every level has embers to collect, checkpoints, and a speedrun timer. Best times, ember counts and total deaths are saved to `save.json` next to the game. Every level is unlocked from the level select screen.
 
-All ten levels were verified completable by a search-based solver that drives the real player physics.
+Every level was proven completable by a search-based solver that drives the real player physics (checkpoint by checkpoint on the longest ones), and every ember was checked reachable the same way.
 
 ## Making levels
 
