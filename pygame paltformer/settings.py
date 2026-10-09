@@ -8,6 +8,7 @@ import os
 TITLE = "UPDRAFT"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVE_PATH = os.path.join(BASE_DIR, "save.json")
+GHOST_PATH = os.path.join(BASE_DIR, "ghosts.json")
 
 VIEW_W, VIEW_H = 480, 270
 TILE = 16
@@ -72,7 +73,7 @@ GRAPPLE_MAX = 140.0
 GRAPPLE_JUMP = 300.0
 GRAPPLE_MAX_SPEED = 560.0
 
-PLATFORM_SPEED = 55.0
+PLATFORM_SPEED = 70.0
 CRYSTAL_RESPAWN = 2.5
 CRUMBLE_DELAY = 0.45
 CRUMBLE_RESPAWN = 2.4

@@ -14,7 +14,7 @@ import random
 import pygame
 
 import font
-from settings import (TILE, VIEW_W, VIEW_H, PLAYER_W, PLAYER_H, WORLDS, SPIKE, SPIKE_DARK)
+from settings import (TILE, VIEW_H, PLAYER_W, PLAYER_H, WORLDS, SPIKE, SPIKE_DARK)
 
 SPAWN_CHARS = set('EcdSkowfhv')
 

@@ -627,6 +627,9 @@ class Player:
                 sc.particles.dust(self.x + (self.w if self.facing > 0 else 0), self.y + 3, 1, sc.dust_color,
                                   dirx=-self.facing * 0.4, up=-0.4)
                 sc.audio.play('slide', 0.6)
+        if abs(self.vx) > 260 and not self.dashing and random.random() < 0.6:
+            sc.particles.add(self.x + random.uniform(0, self.w), self.y + random.uniform(0, self.h),
+                             -self.vx * 0.35, 0.0, 0.18, 1, (255, 236, 210), sc.dust_color, kind='spark')
         if self.trail_t > 0 and not self.dashing:
             self.ghost_t -= dt
             if self.ghost_t <= 0:

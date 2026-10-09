@@ -413,7 +413,7 @@ class Mover(Entity):
     def __init__(self, c, r, n, axis, lvl):
         super().__init__(c * TILE, r * TILE, n * TILE, 8)
         self.axis, self.lvl = axis, lvl
-        self.dir = 1 if axis == 'h' else -1
+        self.dir = 1 if axis == 'h' else 0
         self.rem = 0.0
         self.vx = self.vy = 0.0
         self.home = (self.x, self.y, self.dir)
@@ -432,23 +432,33 @@ class Mover(Entity):
         return not p.dead and p.vy >= 0 and p.y + p.h == self.y and p.x + p.w > self.x and p.x < self.x + self.w
 
     def update(self, sc, dt):
+        p = sc.player
+        if self.axis == 'v':
+            # elevator: climbs while ridden, sinks home when left alone
+            self.dir = -1 if self.rides(p) else (1 if self.y < self.home[1] else 0)
+            if not self.dir:
+                self.vy = self.rem = 0.0
+                return
         self.rem += PLATFORM_SPEED * dt
         steps = int(self.rem)
         self.rem -= steps
-        p = sc.player
+        moved = False
         for _ in range(steps):
             dx = self.dir if self.axis == 'h' else 0
             dy = self.dir if self.axis == 'v' else 0
-            if self._blocked(self.x + dx, self.y + dy):
-                self.dir = -self.dir
+            if (self._blocked(self.x + dx, self.y + dy) or
+                    (dy > 0 and self.y + dy > self.home[1])):
+                if self.axis == 'h':
+                    self.dir = -self.dir
                 break
             riding = self.rides(p)
             self.x += dx
             self.y += dy
+            moved = True
             if riding:
                 p.carry(sc, dx, dy)
         self.vx = self.dir * PLATFORM_SPEED if self.axis == 'h' else 0.0
-        self.vy = self.dir * PLATFORM_SPEED if self.axis == 'v' else 0.0
+        self.vy = self.dir * PLATFORM_SPEED if (self.axis == 'v' and moved) else 0.0
 
     def reset(self, sc):
         self.x, self.y, self.dir = self.home

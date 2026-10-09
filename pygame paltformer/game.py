@@ -3,10 +3,11 @@ import json
 
 import pygame
 
-from settings import TITLE, VIEW_W, VIEW_H, FPS, DT, SAVE_PATH
+from settings import (TITLE, VIEW_W, VIEW_H, FPS, DT, SAVE_PATH, GHOST_PATH, OUTLINE, PLAYER_BODY,
+                      SCARF_READY, SCARF_READY_DARK)
 
 DEFAULT_SAVE = {'best': {}, 'embers': {}, 'deaths': 0, 'cleared': 0,
-                'opt': {'music': True, 'sfx': True, 'shake': True}}
+                'opt': {'music': True, 'sfx': True, 'shake': True, 'ghost': True}}
 
 
 class Game:
@@ -14,18 +15,35 @@ class Game:
         pygame.mixer.pre_init(22050, -16, 1, 512)
         pygame.init()
         pygame.display.set_caption(TITLE)
+        pygame.display.set_icon(self.make_icon())
         self.screen = pygame.display.set_mode((VIEW_W, VIEW_H), pygame.SCALED | pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
         from audio import Audio
         from inputs import Input
         self.input = Input()
         self.save = self.load_save()
+        self.ghosts = self.load_json(GHOST_PATH) or {}
         self.audio = Audio()
         self.apply_options()
         self._backdrops = {}
         self.running = True
         from scenes import TitleScene
         self.scene = TitleScene(self)
+
+    @staticmethod
+    def make_icon():
+        icon = pygame.Surface((32, 32), pygame.SRCALPHA)
+        for i, (x, y) in enumerate(((5, 19), (3, 22), (2, 25))):
+            pygame.draw.circle(icon, OUTLINE, (x, y), 4 - i)
+            pygame.draw.circle(icon, SCARF_READY, (x, y), 3 - i)
+        pygame.draw.rect(icon, OUTLINE, (6, 5, 22, 25), border_radius=8)
+        pygame.draw.rect(icon, PLAYER_BODY, (8, 7, 18, 21), border_radius=7)
+        icon.fill(OUTLINE, (7, 16, 20, 7))
+        icon.fill(SCARF_READY, (8, 17, 18, 4))
+        icon.fill(SCARF_READY_DARK, (8, 20, 18, 1))
+        icon.fill(OUTLINE, (15, 10, 3, 4))
+        icon.fill(OUTLINE, (21, 10, 3, 4))
+        return icon
 
     def load_save(self):
         data = json.loads(json.dumps(DEFAULT_SAVE))
@@ -40,6 +58,22 @@ class Game:
         except (OSError, ValueError):
             pass
         return data
+
+    @staticmethod
+    def load_json(path):
+        try:
+            with open(path) as f:
+                return json.load(f)
+        except (OSError, ValueError):
+            return None
+
+    def save_ghost(self, index, frames):
+        self.ghosts[str(index)] = frames
+        try:
+            with open(GHOST_PATH, 'w') as f:
+                json.dump(self.ghosts, f, separators=(',', ':'))
+        except OSError:
+            pass
 
     def write_save(self):
         try:

@@ -193,10 +193,12 @@ class LevelSelectScene(MenuBase):
                 pygame.draw.rect(surf, pal['accent'], (x - 1, y - 1, cw + 2, ch + 2), 1)
             key = str(i)
             done = key in sv['best']
-            font.draw(surf, str(i + 1), x + 6, y + 6, pal['accent'] if sel else pal['text'], scale=2, shadow=UI_SHADOW)
-            font.draw(surf, data['name'], x + 28, y + 6, UI_TEXT if sel else UI_DIM)
+            num = str(i + 1)
+            font.draw(surf, num, x + 6, y + 6, pal['accent'] if sel else pal['text'], scale=2, shadow=UI_SHADOW)
+            tx = x + 12 + font.width(num, 2)
+            font.draw(surf, data['name'], tx, y + 6, UI_TEXT if sel else UI_DIM)
             best = sv['best'].get(key)
-            font.draw(surf, fmt_time(best) if done else "NEW", x + 28, y + 17, UI_GOOD if done else pal['accent'])
+            font.draw(surf, fmt_time(best) if done else "NEW", tx, y + 17, UI_GOOD if done else pal['accent'])
             got, total = sv['embers'].get(key, 0), EMBER_COUNTS[i]
             font.draw(surf, f"{got}/{total}", x + cw - 6, y + 17, EMBER if got == total and total else UI_DIM,
                       align='right')
@@ -214,12 +216,13 @@ class OptionsScene(MenuBase):
         o = self.game.save['opt']
         onoff = lambda v: 'ON' if v else 'OFF'
         return [f"MUSIC  {onoff(o['music'])}", f"SOUND  {onoff(o['sfx'])}",
-                f"SCREEN SHAKE  {onoff(o['shake'])}", "TOGGLE FULLSCREEN", "BACK"]
+                f"SCREEN SHAKE  {onoff(o['shake'])}", f"BEST RUN GHOST  {onoff(o.get('ghost', True))}",
+                "TOGGLE FULLSCREEN", "BACK"]
 
     def update(self, dt):
         self.tick(dt)
         inp = self.game.input
-        self.nav(5)
+        self.nav(6)
         o = self.game.save['opt']
         hit = inp.pressed('confirm') or inp.pressed('jump') or inp.pressed('left') or inp.pressed('right')
         if inp.pressed('back'):
@@ -234,9 +237,11 @@ class OptionsScene(MenuBase):
             o['sfx'] = not o['sfx']
         elif self.sel == 2:
             o['shake'] = not o['shake']
-        elif self.sel == 3 and not (inp.pressed('left') or inp.pressed('right')):
-            pygame.display.toggle_fullscreen()
+        elif self.sel == 3:
+            o['ghost'] = not o.get('ghost', True)
         elif self.sel == 4 and not (inp.pressed('left') or inp.pressed('right')):
+            pygame.display.toggle_fullscreen()
+        elif self.sel == 5 and not (inp.pressed('left') or inp.pressed('right')):
             self.audio.play('back')
             self.game.change(self.back())
             return
@@ -247,7 +252,7 @@ class OptionsScene(MenuBase):
     def draw(self, surf):
         self.draw_bg(surf)
         font.draw_outlined(surf, "OPTIONS", VIEW_W // 2, 50, UI_TEXT, UI_SHADOW, scale=2, align='center')
-        self.items_menu(surf, self.labels(), 100, WORLDS[0], 18)
+        self.items_menu(surf, self.labels(), 92, WORLDS[0], 18)
         font.draw(surf, "M MUTES MUSIC   F11 FULLSCREEN   R QUICK RESPAWN", VIEW_W // 2, VIEW_H - 14, UI_DIM,
                   align='center', shadow=UI_SHADOW)
 

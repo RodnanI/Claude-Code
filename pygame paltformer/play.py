@@ -52,6 +52,10 @@ class PlayScene:
         self.menu_sel = 0
         self.new_best = False
         self.iris = None
+        self.rec, self.rec_n = [], 0
+        self.ghost = None
+        if game.save['opt'].get('ghost', True) and not headless:
+            self.ghost = game.ghosts.get(str(index))
         self.lava_y = None
         if self.level.rising:
             self.lava_y = float(self.level.ph + 40)
@@ -155,6 +159,7 @@ class PlayScene:
         self.new_best = best is None or self.time < best
         if self.new_best:
             sv['best'][key] = round(self.time, 2)
+            self.game.save_ghost(self.index, self.rec)
         sv['embers'][key] = max(sv['embers'].get(key, 0), self.embers)
         sv['cleared'] = max(sv.get('cleared', 0), self.index + 1)
         self.game.write_save()
@@ -238,9 +243,12 @@ class PlayScene:
         self.banner -= dt
         self.flash = max(0.0, self.flash - dt)
         self.combo_t -= dt
-        if self.state == 'play':
+        if self.state in ('play', 'dead'):
             self.time += dt
-        elif self.state == 'dead':
+            if self.rec_n % 2 == 0 and len(self.rec) < 40000:
+                self.rec.append((p.x, p.y, p.facing, 0 if p.dead else 1))
+            self.rec_n += 1
+        if self.state == 'dead':
             self.state_t += dt
             if self.state_t > 0.5 and self.iris is None:
                 self.start_iris('close', 0.28, p.cx - self.camera.ox, p.cy - self.camera.oy, self.respawn_player)
@@ -305,6 +313,7 @@ class PlayScene:
             if e.alive and e.visible(ox, oy):
                 e.draw(surf, ox, oy, self.t)
         self.particles.draw_ghosts(surf, ox, oy)
+        self.draw_ghost(surf, ox, oy)
         self.player.draw(surf, ox, oy)
         self.particles.draw(surf, ox, oy)
         self.draw_rising_lava(surf, oy)
@@ -321,6 +330,24 @@ class PlayScene:
         elif self.state == 'paused':
             self.draw_pause(surf)
         self.draw_iris(surf)
+
+    def draw_ghost(self, surf, ox, oy):
+        if not self.ghost or self.state == 'complete':
+            return
+        i = min(self.rec_n // 2, len(self.ghost) - 1)
+        x, y, facing, alive = self.ghost[i]
+        if not alive:
+            return
+        if not hasattr(self, '_ghost_img'):
+            img = pygame.Surface((14, 15), pygame.SRCALPHA)
+            pygame.draw.rect(img, (255, 236, 210, 70), (0, 0, 14, 15), border_radius=5)
+            pygame.draw.rect(img, (255, 236, 210, 150), (0, 0, 14, 15), 1, border_radius=5)
+            self._ghost_img = img
+        gx, gy = x + PLAYER_W // 2 - 7 - ox, y + PLAYER_H - 15 - oy
+        surf.blit(self._ghost_img, (gx, gy))
+        ex = gx + 7 + facing * 2
+        surf.fill((255, 236, 210), (ex - 3, gy + 4, 1, 2))
+        surf.fill((255, 236, 210), (ex + 2, gy + 4, 1, 2))
 
     def draw_motes(self, surf, near):
         cam, col, sky = self.camera, self.pal['mote'], self.pal['sky']
