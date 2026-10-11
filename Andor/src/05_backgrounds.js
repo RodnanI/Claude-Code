@@ -495,18 +495,26 @@ class Backdrop {
   }
   drawLanternString(g, cam, vw, vh, t, lift) {
     const span = 150, f = 0.42;
-    const ox = -((cam.x * f) % span);
+    // Anchor every string to a world index so each lantern keeps its own colour
+    // and flicker phase as the camera scrolls (they used to reshuffle per step).
+    const px = cam.x * f, base = Math.floor(px / span);
+    const ox = Math.round(base * span - px);
     const y0 = Math.round(vh * 0.2 + lift * 0.2);
-    for (let sx = ox - span; sx < vw + span; sx += span) {
+    const cols = ['#f4cf62', '#d9482f', '#3fb5a3', '#f07a22'];
+    for (let j = -1, sx = ox - span; sx < vw + span; j++, sx += span) {
+      const n = base + j;
       for (let i = 0; i <= 30; i++) {
         const u = i / 30;
         const x = Math.round(sx + u * span), y = Math.round(y0 + Math.sin(u * Math.PI) * 22);
         g.fillStyle = '#20140e';
         g.fillRect(x, y, 1, 1);
         if (i % 5 === 3) {
-          const cols = ['#f4cf62', '#d9482f', '#3fb5a3', '#f07a22'];
-          const col = cols[(i + Math.round(sx)) & 3];
-          const fl = 0.75 + 0.25 * Math.sin(t * 7 + i + sx);
+          const k = (i - 3) / 5;
+          const h = ((n * 5 + k * 3) % 4 + 4) % 4;
+          const col = cols[h];
+          // slow, gentle candle breathing with a per-lantern phase
+          const ph = n * 2.39 + k * 1.7;
+          const fl = Settings.reduceMotion ? 1 : 0.88 + 0.12 * Math.sin(t * 1.6 + ph) * Math.sin(t * 0.7 + ph * 0.5);
           g.globalAlpha = 0.25 * fl;
           g.drawImage(lightStamp(6, col, 3), x - 6, y - 3);
           g.globalAlpha = 1;

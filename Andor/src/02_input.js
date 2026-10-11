@@ -109,12 +109,22 @@ window.addEventListener('keyup', (e) => {
   const m = KEYMAP[e.code];
   if (m) for (const b of m) Input.kb[b] = false;
 });
-window.addEventListener('blur', () => {
-  Input.kb = {};
+// Drop every held touch: the stick and buttons go neutral.
+function _releaseAllTouch() {
   Input.touch = {};
   Input.pointers.clear();
   Input.stick = null;
+}
+window.addEventListener('blur', () => {
+  Input.kb = {};
+  _releaseAllTouch();
   Bus.emit('blur');
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    Input.kb = {};
+    _releaseAllTouch();
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -206,7 +216,10 @@ cv.addEventListener('pointerdown', (e) => {
     const c = _ctrlAt(p.x, p.y);
     const z = TouchUI.stickZone;
     if (c) rec.ctrl = c.id;
-    else if (!Input.stick && p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h) {
+    else if (p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h) {
+      // The newest thumb in the zone owns the stick, so a stale stick whose
+      // release got lost can never keep the hero walking.
+      for (const o of Input.pointers.values()) o.stick = false;
       rec.stick = true;
       Input.stick = { id: e.pointerId, ox: p.x, oy: p.y, x: p.x, y: p.y };
     }
@@ -252,5 +265,33 @@ function _pointerEnd(e) {
 }
 cv.addEventListener('pointerup', _pointerEnd);
 cv.addEventListener('pointercancel', _pointerEnd);
+cv.addEventListener('lostpointercapture', _pointerEnd);
+
+// iOS Safari: a held finger triggers its own long-press UI (the share/copy
+// callout, text selection, drag previews). Pointer events can't veto those,
+// touch events can, so swallow them here. Pointer events still fire.
+// When the OS steals a touch it may never send pointerup, which used to leave
+// the stick latched in one direction; touch events give us a second source of
+// truth: once no finger is on the glass, nothing can be held.
+const _noTouchDefault = (e) => {
+  if (e.cancelable) e.preventDefault();
+};
+const _touchEnd = (e) => {
+  _noTouchDefault(e);
+  if (!e.touches || e.touches.length === 0) {
+    if (Input.pointers.size || Input.stick) {
+      _releaseAllTouch();
+      _recomputeTouch();
+    }
+  }
+  // touchend is the gesture iOS trusts for starting audio
+  Bus.emit('pointerdown');
+};
+document.addEventListener('touchstart', _noTouchDefault, { passive: false });
+document.addEventListener('touchmove', _noTouchDefault, { passive: false });
+document.addEventListener('touchend', _touchEnd, { passive: false });
+document.addEventListener('touchcancel', _touchEnd, { passive: false });
+for (const ev of ['gesturestart', 'gesturechange', 'contextmenu', 'selectstart', 'dragstart'])
+  document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
 cv.addEventListener('contextmenu', (e) => e.preventDefault());
 cv.addEventListener('pointerleave', () => (Input.hover = null));

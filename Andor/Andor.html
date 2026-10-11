@@ -10,7 +10,13 @@
 <meta name="description" content="Andor: a pixel adventure through the bazaars of Isfahan, the sea of dunes, the tombs of Egypt and the lost City of Brass.">
 <title>Andor</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%230e0907'/%3E%3Cpath fill='%23e3a92f' d='M7 1h2v3h3v3h3v2h-3v3h-3v3H7v-3H4V9H1V7h3V4h3z'/%3E%3Cpath fill='%23fff0b0' d='M7 6h2v4H7z'/%3E%3C/svg%3E">
-<style>html, body {
+<style>* {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+html, body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -33,6 +39,10 @@ canvas#game {
   image-rendering: pixelated;
   outline: none;
   cursor: default;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
 }
 body.hide-cursor canvas#game {
   cursor: none;
@@ -817,12 +827,22 @@ window.addEventListener('keyup', (e) => {
   const m = KEYMAP[e.code];
   if (m) for (const b of m) Input.kb[b] = false;
 });
-window.addEventListener('blur', () => {
-  Input.kb = {};
+// Drop every held touch: the stick and buttons go neutral.
+function _releaseAllTouch() {
   Input.touch = {};
   Input.pointers.clear();
   Input.stick = null;
+}
+window.addEventListener('blur', () => {
+  Input.kb = {};
+  _releaseAllTouch();
   Bus.emit('blur');
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    Input.kb = {};
+    _releaseAllTouch();
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -914,7 +934,10 @@ cv.addEventListener('pointerdown', (e) => {
     const c = _ctrlAt(p.x, p.y);
     const z = TouchUI.stickZone;
     if (c) rec.ctrl = c.id;
-    else if (!Input.stick && p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h) {
+    else if (p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h) {
+      // The newest thumb in the zone owns the stick, so a stale stick whose
+      // release got lost can never keep the hero walking.
+      for (const o of Input.pointers.values()) o.stick = false;
       rec.stick = true;
       Input.stick = { id: e.pointerId, ox: p.x, oy: p.y, x: p.x, y: p.y };
     }
@@ -960,6 +983,34 @@ function _pointerEnd(e) {
 }
 cv.addEventListener('pointerup', _pointerEnd);
 cv.addEventListener('pointercancel', _pointerEnd);
+cv.addEventListener('lostpointercapture', _pointerEnd);
+
+// iOS Safari: a held finger triggers its own long-press UI (the share/copy
+// callout, text selection, drag previews). Pointer events can't veto those,
+// touch events can, so swallow them here. Pointer events still fire.
+// When the OS steals a touch it may never send pointerup, which used to leave
+// the stick latched in one direction; touch events give us a second source of
+// truth: once no finger is on the glass, nothing can be held.
+const _noTouchDefault = (e) => {
+  if (e.cancelable) e.preventDefault();
+};
+const _touchEnd = (e) => {
+  _noTouchDefault(e);
+  if (!e.touches || e.touches.length === 0) {
+    if (Input.pointers.size || Input.stick) {
+      _releaseAllTouch();
+      _recomputeTouch();
+    }
+  }
+  // touchend is the gesture iOS trusts for starting audio
+  Bus.emit('pointerdown');
+};
+document.addEventListener('touchstart', _noTouchDefault, { passive: false });
+document.addEventListener('touchmove', _noTouchDefault, { passive: false });
+document.addEventListener('touchend', _touchEnd, { passive: false });
+document.addEventListener('touchcancel', _touchEnd, { passive: false });
+for (const ev of ['gesturestart', 'gesturechange', 'contextmenu', 'selectstart', 'dragstart'])
+  document.addEventListener(ev, (e) => e.preventDefault(), { passive: false });
 cv.addEventListener('contextmenu', (e) => e.preventDefault());
 cv.addEventListener('pointerleave', () => (Input.hover = null));
 
@@ -2408,18 +2459,26 @@ class Backdrop {
   }
   drawLanternString(g, cam, vw, vh, t, lift) {
     const span = 150, f = 0.42;
-    const ox = -((cam.x * f) % span);
+    // Anchor every string to a world index so each lantern keeps its own colour
+    // and flicker phase as the camera scrolls (they used to reshuffle per step).
+    const px = cam.x * f, base = Math.floor(px / span);
+    const ox = Math.round(base * span - px);
     const y0 = Math.round(vh * 0.2 + lift * 0.2);
-    for (let sx = ox - span; sx < vw + span; sx += span) {
+    const cols = ['#f4cf62', '#d9482f', '#3fb5a3', '#f07a22'];
+    for (let j = -1, sx = ox - span; sx < vw + span; j++, sx += span) {
+      const n = base + j;
       for (let i = 0; i <= 30; i++) {
         const u = i / 30;
         const x = Math.round(sx + u * span), y = Math.round(y0 + Math.sin(u * Math.PI) * 22);
         g.fillStyle = '#20140e';
         g.fillRect(x, y, 1, 1);
         if (i % 5 === 3) {
-          const cols = ['#f4cf62', '#d9482f', '#3fb5a3', '#f07a22'];
-          const col = cols[(i + Math.round(sx)) & 3];
-          const fl = 0.75 + 0.25 * Math.sin(t * 7 + i + sx);
+          const k = (i - 3) / 5;
+          const h = ((n * 5 + k * 3) % 4 + 4) % 4;
+          const col = cols[h];
+          // slow, gentle candle breathing with a per-lantern phase
+          const ph = n * 2.39 + k * 1.7;
+          const fl = Settings.reduceMotion ? 1 : 0.88 + 0.12 * Math.sin(t * 1.6 + ph) * Math.sin(t * 0.7 + ph * 0.5);
           g.globalAlpha = 0.25 * fl;
           g.drawImage(lightStamp(6, col, 3), x - 6, y - 3);
           g.globalAlpha = 1;
