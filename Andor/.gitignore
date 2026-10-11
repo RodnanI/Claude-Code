@@ -2,3 +2,4 @@ tools/out/
 tools/.bundle-map.json
 *.png
 !docs/*.png
+__pycache__/
