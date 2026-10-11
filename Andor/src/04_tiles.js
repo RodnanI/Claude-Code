@@ -268,6 +268,15 @@ THEMES.desert = (() => {
       }
     }
   };
+  theme.deep = (pb, px, py) => {
+    for (let y = 0; y < 16; y++)
+      for (let x = 0; x < 16; x++) {
+        const wx = px + x, wy = py + y;
+        const warp = vnoise(wx / 24, wy / 40, 3) * 7;
+        const b = Math.floor((wy + warp) / 3.5);
+        pb.set(wx, wy, c.bands[((b % 6) + 6) % 6]);
+      }
+  };
   theme.alt = (pb, px, py, tx, ty, n) => {
     // ancient carved ruin blocks
     for (let y = 0; y < 16; y++)
@@ -321,7 +330,7 @@ THEMES.desert = (() => {
 THEMES.tomb = (() => {
   const c = {
     out: C('#2a221c'), b0: C('#c9b896'), b1: C('#b5a37f'), b2: C('#9c8b6a'), line: C('#6b5d48'), hi: C('#e4d6b6'),
-    carve: C('#7d6e56'), carveL: C('#ddd0b2'), red: C('#a8432c'), lap: C('#2b4a7c'), gold: C('#d9a12e'), tealP: C('#2f7f74'),
+    carve: C('#7d6e56'), carveL: C('#ddd0b2'), red: C('#a8432c'), lap: C('#2b4a7c'), lapL: C('#4a72b0'), gold: C('#d9a12e'), tealP: C('#2f7f74'),
     bk0: C('#4e443a'), bk1: C('#443b32'), bk2: C('#372f28'), bkG: C('#5d5246'),
     lg0: C('#d8c8a6'), lg1: C('#a8977a'), lg2: C('#6b5d48'),
   };
@@ -339,9 +348,19 @@ THEMES.tomb = (() => {
         if (ly === 0) col = c.hi;
         if (ly === 7 || lx === 23) col = c.line;
         if (painted) {
-          const pr = (wy >> 1) % 8;
-          if (ly >= 2 && ly <= 5) col = pr < 2 ? c.red : pr < 4 ? c.gold : pr < 6 ? c.lap : c.tealP;
-          if (ly === 1 || ly === 6) col = c.gold;
+          // a lotus frieze: gold and ochre bands framing lapis buds on cream
+          const fy = wy & 15, fx = wx & 7;
+          if (fy < 2 || fy > 13) col = c.gold;
+          else if (fy < 3 || fy > 12) col = c.red;
+          else {
+            col = C('#e4d4b0');
+            const bud = (fx === 3 || fx === 4) && fy > 6 && fy < 12;
+            const head = fy >= 4 && fy <= 6 && Math.abs(fx - 3.5) <= (6 - fy) + 1;
+            if (bud) col = c.tealP;
+            if (head) col = fy === 4 ? c.lapL : c.lap;
+            if (fx === 0 && fy > 3 && fy < 12) col = c.red;
+          }
+          if (fbm(wx / 5, wy / 5, 64) > 0.72) col = c.b2;
         }
         pb.set(wx, wy, col);
       }
@@ -351,6 +370,20 @@ THEMES.tomb = (() => {
   };
   theme.solid = (pb, px, py, tx, ty, n) => block(pb, px, py, tx, ty, n, false);
   theme.alt = (pb, px, py, tx, ty, n) => block(pb, px, py, tx, ty, n, true);
+  // buried masonry: same coursing, no noise (cheap; it is mostly in shadow)
+  theme.deep = (pb, px, py) => {
+    for (let y = 0; y < 16; y++) {
+      const wy = py + y, row = wy >> 3, off = Math.floor(hash2(row, 0, 61) * 16), ly = wy & 7;
+      for (let x = 0; x < 16; x++) {
+        const wx = px + x, lx = (wx + off) % 24;
+        const tone = hash2(Math.floor((wx + off) / 24), row, 62);
+        let col = tone > 0.66 ? c.b0 : tone > 0.33 ? c.b1 : c.b2;
+        if (ly === 0) col = c.hi;
+        if (ly === 7 || lx === 23) col = c.line;
+        pb.set(wx, wy, col);
+      }
+    }
+  };
   theme.oneway = (pb, px, py, tx, ty, n) => {
     for (let x = 0; x < 16; x++) {
       const wx = px + x;

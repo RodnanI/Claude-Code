@@ -493,7 +493,7 @@ const Music = {
     }
     if (tr.n) {
       const np = step % tr.n.len;
-      for (const n of tr.n.notes) if (n.pos === np) this.ney(degFreq(tr.root, scale, n.deg), t, n.len * dt16, out, 0.06);
+      for (const n of tr.n.notes) if (n.pos === np) this.ney(degFreq(tr.root, scale, n.deg), t, n.len * dt16, out, 0.09);
     }
     // accompaniment
     if (tr.acc === 'bass' && (ch === 'D' || (ch === 'T' && s === 8))) {
@@ -508,7 +508,7 @@ const Music = {
     }
   },
   // Breathy ney: sine + triangle partial, delayed vibrato, breath noise, glide in.
-  ney(f, t, dur, out, vol = 0.12) {
+  ney(f, t, dur, out, vol = 0.2) {
     const c = AudioSys.ctx;
     const o = c.createOscillator(), o2 = c.createOscillator();
     o.type = 'sine';
@@ -597,8 +597,8 @@ const Sfx = {
 };
 const SFX = {
   jump: (v) => {
-    tone('triangle', 260, 520, 0.09, { gain: 0.12 * v });
-    noise(0.08, { bp: 1200, sweep: 3000, gain: 0.08 * v });
+    tone('triangle', 260, 520, 0.09, { gain: 0.16 * v });
+    noise(0.08, { bp: 1200, sweep: 3000, gain: 0.12 * v });
   },
   walljump: (v) => {
     tone('triangle', 330, 640, 0.08, { gain: 0.12 * v });
@@ -615,8 +615,8 @@ const SFX = {
     noise(0.05, { bp: 2500, gain: 0.08 * v });
   },
   climb: (v) => noise(0.06, { lp: 1200, gain: 0.12 * v }),
-  roll: (v) => noise(0.24, { bp: 600, sweep: 2400, sweepT: 0.24, q: 1.4, gain: 0.22 * v }),
-  whoosh: (v) => noise(0.08, { bp: 900, sweep: 2600, sweepT: 0.08, q: 1.2, gain: 0.14 * v }),
+  roll: (v) => noise(0.24, { bp: 600, sweep: 2400, sweepT: 0.24, q: 1.4, gain: 0.34 * v }),
+  whoosh: (v) => noise(0.08, { bp: 900, sweep: 2600, sweepT: 0.08, q: 1.2, gain: 0.22 * v }),
   crack: (v) => {
     playBuf(AudioSys.bufs.crack, { hp: 1400, gain: 0.55 * v, rev: 0.15, rate: rnd(0.95, 1.08) });
     tone('square', 1800, 900, 0.015, { gain: 0.08 * v });

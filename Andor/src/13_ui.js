@@ -311,8 +311,8 @@ function drawHUD(g, vw, vh, t) {
   // boss bar
   const b = Game.boss;
   if (b && !b.dead && b.introDone) {
-    const w = Math.min(180, vw - 40), x = Math.round(vw / 2 - w / 2), y = vh - 16;
-    drawText(g, b.title, vw / 2, y - 11, '#f4cf62', { align: 'center', outline: '#0e0805' });
+    const w = Math.min(170, vw - 96), x = Math.round(vw / 2 - w / 2), y = 17;
+    drawText(g, b.title, vw / 2, 4, '#f4cf62', { align: 'center', outline: '#0e0805' });
     fillR(g, x - 2, y - 2, w + 4, 8, '#0e0805');
     fillR(g, x - 1, y - 1, w + 2, 6, '#6e3f10');
     fillR(g, x, y, w, 4, '#2a1410');
@@ -324,15 +324,20 @@ function drawHUD(g, vw, vh, t) {
     drawSprite(g, STAR8, x - 3, y + 2);
     drawSprite(g, STAR8, x + w + 3, y + 2);
   }
-  // banner
+  // banner (wrapped onto two lines on narrow screens)
   if (Game.bannerT > 0) {
     const a = Math.min(1, Game.bannerT * 3, (Game.bannerMax - Game.bannerT) * 4);
     g.globalAlpha = a;
-    const bw = textWidth(Game.bannerText) + 24;
-    fillR(g, vw / 2 - bw / 2, 34, bw, 13, 'rgba(14,8,5,0.75)');
-    fillR(g, vw / 2 - bw / 2, 34, bw, 1, '#dea12a');
-    fillR(g, vw / 2 - bw / 2, 46, bw, 1, '#dea12a');
-    drawText(g, Game.bannerText, vw / 2, 37, '#f4cf62', { align: 'center' });
+    const lines = wrapText(Game.bannerText, vw - 36);
+    const bw = Math.min(vw - 16, Math.max(...lines.map((l) => textWidth(l))) + 24);
+    const bh = lines.length * 10 + 4;
+    const by = 32;
+    fillR(g, vw / 2 - bw / 2, by, bw, bh, 'rgba(14,8,5,0.78)');
+    fillR(g, vw / 2 - bw / 2, by, bw, 1, '#dea12a');
+    fillR(g, vw / 2 - bw / 2, by + bh - 1, bw, 1, '#dea12a');
+    drawSprite(g, STAR8, vw / 2 - bw / 2, by + bh / 2);
+    drawSprite(g, STAR8, vw / 2 + bw / 2 - 1, by + bh / 2);
+    lines.forEach((l, i) => drawText(g, l, vw / 2, by + 3 + i * 10, '#f4cf62', { align: 'center' }));
     g.globalAlpha = 1;
   }
 }

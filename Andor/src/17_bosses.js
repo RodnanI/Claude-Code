@@ -731,6 +731,19 @@ class Djinn extends BossBase {
     ];
     this.headLow = 0;
     this.dustCols = ['#dea12a', '#f4cf62', '#79f0a5'];
+    for (const f of this.fists) {
+      const r = this.restPos(f);
+      f.x = r.x;
+      f.y = r.y;
+    }
+  }
+  idle(dt) {
+    // dormant above the lamp, breathing smoke, fists resting
+    for (const f of this.fists) {
+      const r = this.restPos(f);
+      f.x = lerp(f.x, r.x, Math.min(1, dt * 5));
+      f.y = lerp(f.y, r.y, Math.min(1, dt * 5));
+    }
   }
   hurtBox() {
     // the head is only reachable while it sags; slammed fists can always be struck

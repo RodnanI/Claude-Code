@@ -65,12 +65,12 @@ function debugMap(idx) {
   L.drawChunks(g, cam, L.pw, L.ph);
   for (const e of Game.entities) e.draw(g, cam);
   Game.player.draw(g, cam);
-  L.drawFakes(g, cam, null, 0);
+  L.drawFakes(g, cam, null, 0, L.pw, L.ph);
   window.__map = c.toDataURL('image/png');
 }
 
 // Inspection handle for tools and the curious.
-window.__andor = { Game, Cam, Input, Screen, LEVELS, Parts, Music, Settings };
+window.__andor = { Game, Cam, Input, Screen, LEVELS, Parts, Music, Settings, AudioSys, Sfx, SFX, TRACKS };
 
 if (DEBUG.sheet) debugSheet();
 else if (DEBUG.map !== undefined) {

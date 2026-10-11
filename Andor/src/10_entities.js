@@ -137,7 +137,13 @@ class Relic extends Entity {
     }
   }
   draw(g, cam) {
-    const bob = Math.round(Math.sin(this.t * 2) * 2);
+    if (this.idol) {
+      const px = Math.round(this.cx - cam.x), py = Math.round(this.y + 11 - cam.y);
+      fillR(g, px - 7, py + 1, 14, 4, '#1c140e');
+      fillR(g, px - 6, py + 1, 12, 3, '#9c8b6a');
+      fillR(g, px - 6, py + 1, 12, 1, '#d8c8a6');
+    }
+    const bob = this.idol ? 0 : Math.round(Math.sin(this.t * 2) * 2);
     g.globalAlpha = 0.35 + 0.15 * Math.sin(this.t * 3);
     g.drawImage(lightStamp(14, '#f4cf62', 3), Math.round(this.cx - cam.x - 14), Math.round(this.cy - cam.y - 14 + bob));
     g.globalAlpha = 1;
@@ -476,6 +482,58 @@ class Lantern extends Entity {
   }
 }
 
+class Crystal extends Entity {
+  constructor(x, y) {
+    super(x + 2, y + 6, 12, 10);
+    this.layer = 0;
+  }
+  update(dt) {
+    this.t += dt;
+    if (Math.random() < dt * 1.5) Parts.add({ x: this.cx + rnd(-5, 5), y: this.y + rnd(0, 6), vy: -10, life: 1, col: '#a8ffc8', g: -6, front: false });
+  }
+  draw(g, cam) {
+    g.globalAlpha = 0.25 + 0.1 * Math.sin(this.t * 2);
+    g.drawImage(lightStamp(16, '#25b56a', 3), Math.round(this.cx - cam.x - 16), Math.round(this.y + 4 - cam.y - 16));
+    g.globalAlpha = 1;
+    drawSprite(g, ART.crystal, this.cx - cam.x, this.y + 10 - cam.y);
+  }
+  light() {
+    Lighting.add(this.cx, this.y + 4, 46 + Math.sin(this.t * 2) * 3, '#25b56a', 0.9);
+  }
+}
+
+// A beam of daylight falling from a crack in the ceiling to the floor.
+class LightShaft extends Entity {
+  constructor(x, y) {
+    super(x, y, 16, 16);
+    this.layer = 2;
+    const L = Game.level;
+    let ty = Math.floor(y / TILE);
+    while (ty < L.h && !isSolidT(L.tileAt(Math.floor(x / TILE), ty)) && !isOneWayT(L.tileAt(Math.floor(x / TILE), ty))) ty++;
+    this.bottom2 = ty * TILE;
+  }
+  update(dt) {
+    this.t += dt;
+    if (Math.random() < dt * 4) Parts.add({ x: this.x + rnd(-6, 22), y: lerp(this.y, this.bottom2, Math.random()), vx: rnd(-3, 3), vy: rnd(-4, 4), life: 2, col: '#fff1b3', g: 0, front: false });
+  }
+  draw(g, cam) {
+    const x = Math.round(this.x - cam.x), y0 = Math.round(this.y - cam.y), y1 = Math.round(this.bottom2 - cam.y);
+    g.globalCompositeOperation = 'lighter';
+    for (let y = y0; y < y1; y++) {
+      const u = (y - y0) / Math.max(1, y1 - y0);
+      const w = Math.round(10 + u * 14);
+      g.globalAlpha = 0.07 + 0.04 * Math.sin(this.t * 2 + y * 0.05);
+      fillR(g, x + 8 - w / 2 + u * 6, y, w, 1, '#fff1b3');
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+  }
+  light() {
+    for (let y = this.y; y < this.bottom2; y += 40) Lighting.add(this.cx + (y - this.y) * 0.2, y, 34, '#fff1b3', 0.9);
+    Lighting.add(this.cx + 6, this.bottom2 - 6, 50, '#fff1b3', 1);
+  }
+}
+
 class Decor extends Entity {
   constructor(x, y, spr, front = false) {
     super(x, y, spr.w, spr.h);
@@ -569,7 +627,7 @@ class DartTrap extends Entity {
     if (this.timer <= 0) {
       this.timer = this.period;
       if (this.onScreen(80)) {
-        Game.spawn(new Projectile('dart', this.dir > 0 ? this.x + 16 : this.x - 6, this.y + 7, this.dir * 165, 0));
+        Game.spawn(new Projectile('dart', this.dir > 0 ? this.x + 16 : this.x - 6, this.y + 13, this.dir * 165, 0));
         Sfx.play('dart', 0.7);
       }
     }
@@ -578,8 +636,8 @@ class DartTrap extends Entity {
     drawSprite(g, ART.dartFace, this.cx - cam.x, this.y + 13 - cam.y, this.dir < 0);
     if (this.timer < 0.35) {
       g.globalAlpha = 1 - this.timer / 0.35;
-      fillR(g, this.cx - cam.x - 3, this.y + 6 - cam.y, 2, 1, '#ff8a2a');
-      fillR(g, this.cx - cam.x + 2, this.y + 6 - cam.y, 2, 1, '#ff8a2a');
+      fillR(g, this.cx - cam.x - 3, this.y + 4 - cam.y, 2, 1, '#ff8a2a');
+      fillR(g, this.cx - cam.x + 2, this.y + 4 - cam.y, 2, 1, '#ff8a2a');
       g.globalAlpha = 1;
     }
   }
@@ -590,7 +648,11 @@ class SwingBlade extends Entity {
     super(x + 8, y + 2, 1, 1);
     this.px = x + 8;
     this.py = y + 2;
-    this.len = 52;
+    // reach down to chest height above whatever floor or ledge lies beneath
+    const L = Game.level;
+    let ty = Math.floor(y / TILE) + 1;
+    while (ty < L.h && !isSolidT(L.tileAt(Math.floor(x / TILE), ty)) && !isOneWayT(L.tileAt(Math.floor(x / TILE), ty)) && !isSpikeT(L.tileAt(Math.floor(x / TILE), ty))) ty++;
+    this.len = clamp(ty * TILE - this.py - 14, 30, 150);
     this.phase = phase;
     this.layer = 2;
     this.ang = 0;

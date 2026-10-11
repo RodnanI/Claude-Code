@@ -92,6 +92,66 @@ const ART = {};
     '.kCCCcccccccCk......',
     '..kkkkkkkkkkkk......',
   ], { k: '#2a1a0e', c: '#c99a5c', C: '#9a6a3a' }, 7, 11);
+  ART.sarcophagus = S([
+    '....kkkk....', '...kyYYyk...', '..kylyylyk..', '.kylyYYylyk.', '.klyYyyYylk.', '.kyYkyykYyk.', '.klyYyyYylk.', '.kylyYYylyk.',
+    '.klyykkyylk.', '..kyyyyyyk..', '.kkrrggrrkk.', 'kgyrryyrrygk', 'kyyyYkkYyyyk', 'kyyYkyykYyyk', 'kwwwwwwwwwwk', 'kwllwwwwllwk',
+    'kwwwwyywwwwk', 'kwlwlwwlwlwk', 'kwwwwwwwwwwk', '.kwwyyyywwk.', '.kwwwwwwwwk.', '.kwlwlwlwlk.', '..kwwwwwwk..', '..kkkkkkkk..',
+  ], { k: '#1c140e', y: '#dea12a', Y: '#fff1b3', l: '#2b4a7c', r: '#a8432c', g: '#2f7f74', w: '#e4d4b0' }, 6, 24);
+  ART.crystal = S([
+    '.....k......', '....kek.....', '....kEk..k..', '.k..kEek.ek.', 'kek.kEEk.Ek.', 'kEk.kEEkkEk.', 'kEEkkEEkEEk.', '.kEEkEEEEk..', '.kEEEEEEEk..', 'kddddddddddk',
+  ], { k: '#06200f', e: '#a8ffc8', E: '#25b56a', d: '#3a2a10' }, 6, 10);
+  // Date palm: ringed trunk with a crown of drooping fronds and dates.
+  (function palm() {
+    const W = 30, H = 44, pb = new PixBuf(W, H);
+    const tr = C('#7a5232'), trD = C('#4e3220'), trL = C('#a8763e'), out = C('#2a1a0e');
+    const fr = C('#4f7a33'), frD = C('#2f4a22'), frL = C('#89ad48'), date = C('#b8622c');
+    let x = 15;
+    for (let y = H - 1; y > 14; y--) {
+      const lean = Math.round(Math.sin((H - y) / 30) * 3);
+      const cx = x + lean;
+      pb.set(cx - 2, y, out);
+      pb.set(cx + 2, y, out);
+      pb.set(cx - 1, y, (y % 3 === 0) ? trD : trL);
+      pb.set(cx, y, (y % 3 === 0) ? trD : tr);
+      pb.set(cx + 1, y, trD);
+    }
+    const topX = 15 + Math.round(Math.sin((H - 15) / 30) * 3), topY = 14;
+    for (let k = 0; k < 8; k++) {
+      const a = Math.PI + (k / 7) * Math.PI;
+      const len = 12 + (k % 2) * 2;
+      for (let i = 0; i < len; i++) {
+        const u = i / len;
+        const fx = topX + Math.cos(a) * i * 1.05, fy = topY + Math.sin(a) * i * 0.55 + u * u * 9;
+        pb.set(fx, fy + 1, out);
+        pb.set(fx, fy, u < 0.5 ? frL : fr);
+        if (i % 2 === 0 && u > 0.2) pb.set(fx, fy + 2, frD);
+      }
+    }
+    for (const [dx, dy] of [[-2, 2], [-1, 3], [1, 3], [2, 2], [0, 4]]) pb.set(topX + dx, topY + dy, date);
+    ART.palm = new Sprite(pb.toCanvas(), 15, H);
+  })();
+  // Bedouin tent: striped goat-hair cloth on poles, guy ropes, a rug at the door.
+  (function tent() {
+    const W = 40, H = 22, pb = new PixBuf(W, H);
+    const k = C('#1c120d'), dark = C('#3a2a22'), mid = C('#5a4030'), cream = C('#d8c49a'), rope = C('#c9b080'), rugR = C('#b02a2c'), rugY = C('#dea12a');
+    for (let x = 2; x < W - 2; x++) {
+      const t = Math.abs(x - W / 2) / (W / 2 - 2);
+      const top = Math.round(3 + t * t * 9);
+      for (let y = top; y < H - 1; y++) {
+        let col = Math.floor(x / 3) % 4 === 0 ? cream : (y + x) % 7 === 0 ? mid : dark;
+        if (y === top) col = k;
+        if (x > W / 2 - 5 && x < W / 2 + 4 && y > H - 10) col = C('#120a06');
+        pb.set(x, y, col);
+      }
+    }
+    for (const px of [W / 2 - 1, 4, W - 5]) for (let y = 1; y < H; y++) if (px === W / 2 - 1 || y > 10) pb.set(px, y, C('#6b4024'));
+    for (let i = 0; i < 6; i++) {
+      pb.set(1 - i * 0.2, 12 + i * 1.6, rope);
+      pb.set(W - 2 + i * 0.2, 12 + i * 1.6, rope);
+    }
+    for (let x = W / 2 - 7; x < W / 2 + 7; x++) pb.set(x, H - 1, (x % 2) ? rugR : rugY);
+    ART.tent = new Sprite(pb.toCanvas(), W >> 1, H);
+  })();
 })();
 
 // Procedural flame drawn upward from (x, y); size ~ height in pixels.

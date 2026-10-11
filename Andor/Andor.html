@@ -322,7 +322,7 @@ const ctx = cv.getContext('2d', { alpha: false });
 
 // Screen: the main canvas (W x H game pixels) holds the game view rect and,
 // in portrait touch mode, a control deck underneath it like a handheld.
-const Screen = { W: 320, H: 200, S: 1, dpr: 1, vx: 0, vy: 0, vw: 320, vh: 200, portrait: false, cssW: 0, cssH: 0, left: 0, top: 0 };
+const Screen = { W: 320, H: 200, S: 1, dpr: 1, vx: 0, vy: 0, vw: 320, vh: 200, portrait: false, split: false, cssW: 0, cssH: 0, left: 0, top: 0 };
 const VC = makeCanvas(320, 200);
 const vctx = VC.getContext('2d');
 
@@ -343,7 +343,8 @@ function resizeScreen(touchMode) {
     H = Math.min(280, Math.ceil(devH / S));
   }
   Object.assign(Screen, { W, H, S, dpr, portrait });
-  if (portrait) {
+  if (portrait && Screen.split) {
+    // handheld layout during play: game view on top, control deck below
     Screen.vx = 0;
     Screen.vy = 0;
     Screen.vw = W;
@@ -793,7 +794,7 @@ const Input = {
   setTouchMode(on) {
     if (this.touchMode === on) return;
     this.touchMode = on;
-    document.body.classList.toggle('hide-cursor', on);
+    if (document.body) document.body.classList.toggle('hide-cursor', on);
     Bus.emit('resize');
   },
 };
@@ -887,6 +888,19 @@ function _recomputeTouch() {
     if (T[b] && !Input.touch[b]) Input.press(b);
   Input.touch = T;
 }
+
+// Touch-first devices start with on-screen controls; any touch anywhere
+// (even on the letterbox) switches modes and unlocks audio.
+try {
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) Input.touchMode = true;
+} catch (e) {}
+document.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch' || e.pointerType === 'pen') Input.setTouchMode(true);
+  if (e.target !== cv) {
+    Bus.emit('pointerdown');
+    Input.anyKey = true;
+  }
+});
 
 cv.addEventListener('pointerdown', (e) => {
   e.preventDefault();
@@ -1587,6 +1601,15 @@ THEMES.desert = (() => {
       }
     }
   };
+  theme.deep = (pb, px, py) => {
+    for (let y = 0; y < 16; y++)
+      for (let x = 0; x < 16; x++) {
+        const wx = px + x, wy = py + y;
+        const warp = vnoise(wx / 24, wy / 40, 3) * 7;
+        const b = Math.floor((wy + warp) / 3.5);
+        pb.set(wx, wy, c.bands[((b % 6) + 6) % 6]);
+      }
+  };
   theme.alt = (pb, px, py, tx, ty, n) => {
     // ancient carved ruin blocks
     for (let y = 0; y < 16; y++)
@@ -1640,7 +1663,7 @@ THEMES.desert = (() => {
 THEMES.tomb = (() => {
   const c = {
     out: C('#2a221c'), b0: C('#c9b896'), b1: C('#b5a37f'), b2: C('#9c8b6a'), line: C('#6b5d48'), hi: C('#e4d6b6'),
-    carve: C('#7d6e56'), carveL: C('#ddd0b2'), red: C('#a8432c'), lap: C('#2b4a7c'), gold: C('#d9a12e'), tealP: C('#2f7f74'),
+    carve: C('#7d6e56'), carveL: C('#ddd0b2'), red: C('#a8432c'), lap: C('#2b4a7c'), lapL: C('#4a72b0'), gold: C('#d9a12e'), tealP: C('#2f7f74'),
     bk0: C('#4e443a'), bk1: C('#443b32'), bk2: C('#372f28'), bkG: C('#5d5246'),
     lg0: C('#d8c8a6'), lg1: C('#a8977a'), lg2: C('#6b5d48'),
   };
@@ -1658,9 +1681,19 @@ THEMES.tomb = (() => {
         if (ly === 0) col = c.hi;
         if (ly === 7 || lx === 23) col = c.line;
         if (painted) {
-          const pr = (wy >> 1) % 8;
-          if (ly >= 2 && ly <= 5) col = pr < 2 ? c.red : pr < 4 ? c.gold : pr < 6 ? c.lap : c.tealP;
-          if (ly === 1 || ly === 6) col = c.gold;
+          // a lotus frieze: gold and ochre bands framing lapis buds on cream
+          const fy = wy & 15, fx = wx & 7;
+          if (fy < 2 || fy > 13) col = c.gold;
+          else if (fy < 3 || fy > 12) col = c.red;
+          else {
+            col = C('#e4d4b0');
+            const bud = (fx === 3 || fx === 4) && fy > 6 && fy < 12;
+            const head = fy >= 4 && fy <= 6 && Math.abs(fx - 3.5) <= (6 - fy) + 1;
+            if (bud) col = c.tealP;
+            if (head) col = fy === 4 ? c.lapL : c.lap;
+            if (fx === 0 && fy > 3 && fy < 12) col = c.red;
+          }
+          if (fbm(wx / 5, wy / 5, 64) > 0.72) col = c.b2;
         }
         pb.set(wx, wy, col);
       }
@@ -1670,6 +1703,20 @@ THEMES.tomb = (() => {
   };
   theme.solid = (pb, px, py, tx, ty, n) => block(pb, px, py, tx, ty, n, false);
   theme.alt = (pb, px, py, tx, ty, n) => block(pb, px, py, tx, ty, n, true);
+  // buried masonry: same coursing, no noise (cheap; it is mostly in shadow)
+  theme.deep = (pb, px, py) => {
+    for (let y = 0; y < 16; y++) {
+      const wy = py + y, row = wy >> 3, off = Math.floor(hash2(row, 0, 61) * 16), ly = wy & 7;
+      for (let x = 0; x < 16; x++) {
+        const wx = px + x, lx = (wx + off) % 24;
+        const tone = hash2(Math.floor((wx + off) / 24), row, 62);
+        let col = tone > 0.66 ? c.b0 : tone > 0.33 ? c.b1 : c.b2;
+        if (ly === 0) col = c.hi;
+        if (ly === 7 || lx === 23) col = c.line;
+        pb.set(wx, wy, col);
+      }
+    }
+  };
   theme.oneway = (pb, px, py, tx, ty, n) => {
     for (let x = 0; x < 16; x++) {
       const wx = px + x;
@@ -2510,7 +2557,12 @@ class Level {
         // paint one extra tile of margin for front so shadows across chunk edges work
         for (let ty = ty0; ty < ty0 + tht; ty++)
           for (let tx = tx0; tx < tx0 + tw; tx++) {
-            if (this.back[ty * this.w + tx]) th.back(back, tx * TILE, ty * TILE, tx, ty);
+            const i = ty * this.w + tx;
+            if (th.deep && depth[i] >= 4 && this.tiles[i] === T.SOLID) {
+              th.deep(front, tx * TILE, ty * TILE, tx, ty);
+              continue;
+            }
+            if (this.back[i]) th.back(back, tx * TILE, ty * TILE, tx, ty);
             this.paintTile(front, tx, ty);
           }
         // composite with a soft drop shadow onto the back wall
@@ -2599,13 +2651,13 @@ class Level {
       g.drawImage(ch.c, Math.round(x), Math.round(y));
     }
   }
-  drawFakes(g, cam, player, dt) {
+  drawFakes(g, cam, player, dt, vw = Screen.vw, vh = Screen.vh) {
     for (const f of this.fakeTiles) {
       const near = player && Math.abs(player.cx - (f.x * TILE + 8)) < 40 && Math.abs(player.cy - (f.y * TILE + 8)) < 36 && this.def.fakeRegion !== false;
       const inside = player && player.x < f.x * TILE + 16 + 24 && player.x + player.w > f.x * TILE - 24 && player.y < f.y * TILE + 16 + 20 && player.y + player.h > f.y * TILE - 20;
       f.a = approach(f.a, inside && near ? 0.15 : 1, dt * 3);
       const x = f.x * TILE - cam.x, y = f.y * TILE - cam.y;
-      if (x < -16 || y < -16 || x > Screen.vw || y > Screen.vh) continue;
+      if (x < -16 || y < -16 || x > vw || y > vh) continue;
       g.globalAlpha = f.a;
       g.drawImage(f.c, Math.round(x), Math.round(y));
       g.globalAlpha = 1;
@@ -3210,7 +3262,20 @@ class Player extends Body {
       this.vy = Math.max(this.vy, 20);
       this.jumping = false;
     }
-    if (this.hitWall) this.vx = 0;
+    if (this.hitWall) {
+      // a knee-high step: hop it instead of stopping dead
+      if (this.onGround && dir === this.hitWall && !this.crouch) {
+        const fx = dir > 0 ? this.x + this.w + 1 : this.x - 1;
+        const ty = Math.floor((this.y + this.h - 1) / TILE);
+        const tx = Math.floor(fx / TILE);
+        if (isSolidT(level.tileAt(tx, ty)) && !level.rectSolid(dir > 0 ? this.x + 2 : this.x - 2, (ty - 1) * TILE - this.h + 16 - 2, this.w, this.h) && !isSolidT(level.tileAt(tx, ty - 1)) && !isSolidT(level.tileAt(tx, ty - 2))) {
+          this.vy = -235;
+          this.onGround = false;
+          this.coyote = 0;
+        }
+      }
+      this.vx = 0;
+    }
 
     if (!wasGround && this.onGround) this.onLand(vyBefore, level);
     if (wasGround && !this.onGround && this.vy >= 0) this.fallStartY = this.y;
@@ -4025,6 +4090,66 @@ const ART = {};
     '.kCCCcccccccCk......',
     '..kkkkkkkkkkkk......',
   ], { k: '#2a1a0e', c: '#c99a5c', C: '#9a6a3a' }, 7, 11);
+  ART.sarcophagus = S([
+    '....kkkk....', '...kyYYyk...', '..kylyylyk..', '.kylyYYylyk.', '.klyYyyYylk.', '.kyYkyykYyk.', '.klyYyyYylk.', '.kylyYYylyk.',
+    '.klyykkyylk.', '..kyyyyyyk..', '.kkrrggrrkk.', 'kgyrryyrrygk', 'kyyyYkkYyyyk', 'kyyYkyykYyyk', 'kwwwwwwwwwwk', 'kwllwwwwllwk',
+    'kwwwwyywwwwk', 'kwlwlwwlwlwk', 'kwwwwwwwwwwk', '.kwwyyyywwk.', '.kwwwwwwwwk.', '.kwlwlwlwlk.', '..kwwwwwwk..', '..kkkkkkkk..',
+  ], { k: '#1c140e', y: '#dea12a', Y: '#fff1b3', l: '#2b4a7c', r: '#a8432c', g: '#2f7f74', w: '#e4d4b0' }, 6, 24);
+  ART.crystal = S([
+    '.....k......', '....kek.....', '....kEk..k..', '.k..kEek.ek.', 'kek.kEEk.Ek.', 'kEk.kEEkkEk.', 'kEEkkEEkEEk.', '.kEEkEEEEk..', '.kEEEEEEEk..', 'kddddddddddk',
+  ], { k: '#06200f', e: '#a8ffc8', E: '#25b56a', d: '#3a2a10' }, 6, 10);
+  // Date palm: ringed trunk with a crown of drooping fronds and dates.
+  (function palm() {
+    const W = 30, H = 44, pb = new PixBuf(W, H);
+    const tr = C('#7a5232'), trD = C('#4e3220'), trL = C('#a8763e'), out = C('#2a1a0e');
+    const fr = C('#4f7a33'), frD = C('#2f4a22'), frL = C('#89ad48'), date = C('#b8622c');
+    let x = 15;
+    for (let y = H - 1; y > 14; y--) {
+      const lean = Math.round(Math.sin((H - y) / 30) * 3);
+      const cx = x + lean;
+      pb.set(cx - 2, y, out);
+      pb.set(cx + 2, y, out);
+      pb.set(cx - 1, y, (y % 3 === 0) ? trD : trL);
+      pb.set(cx, y, (y % 3 === 0) ? trD : tr);
+      pb.set(cx + 1, y, trD);
+    }
+    const topX = 15 + Math.round(Math.sin((H - 15) / 30) * 3), topY = 14;
+    for (let k = 0; k < 8; k++) {
+      const a = Math.PI + (k / 7) * Math.PI;
+      const len = 12 + (k % 2) * 2;
+      for (let i = 0; i < len; i++) {
+        const u = i / len;
+        const fx = topX + Math.cos(a) * i * 1.05, fy = topY + Math.sin(a) * i * 0.55 + u * u * 9;
+        pb.set(fx, fy + 1, out);
+        pb.set(fx, fy, u < 0.5 ? frL : fr);
+        if (i % 2 === 0 && u > 0.2) pb.set(fx, fy + 2, frD);
+      }
+    }
+    for (const [dx, dy] of [[-2, 2], [-1, 3], [1, 3], [2, 2], [0, 4]]) pb.set(topX + dx, topY + dy, date);
+    ART.palm = new Sprite(pb.toCanvas(), 15, H);
+  })();
+  // Bedouin tent: striped goat-hair cloth on poles, guy ropes, a rug at the door.
+  (function tent() {
+    const W = 40, H = 22, pb = new PixBuf(W, H);
+    const k = C('#1c120d'), dark = C('#3a2a22'), mid = C('#5a4030'), cream = C('#d8c49a'), rope = C('#c9b080'), rugR = C('#b02a2c'), rugY = C('#dea12a');
+    for (let x = 2; x < W - 2; x++) {
+      const t = Math.abs(x - W / 2) / (W / 2 - 2);
+      const top = Math.round(3 + t * t * 9);
+      for (let y = top; y < H - 1; y++) {
+        let col = Math.floor(x / 3) % 4 === 0 ? cream : (y + x) % 7 === 0 ? mid : dark;
+        if (y === top) col = k;
+        if (x > W / 2 - 5 && x < W / 2 + 4 && y > H - 10) col = C('#120a06');
+        pb.set(x, y, col);
+      }
+    }
+    for (const px of [W / 2 - 1, 4, W - 5]) for (let y = 1; y < H; y++) if (px === W / 2 - 1 || y > 10) pb.set(px, y, C('#6b4024'));
+    for (let i = 0; i < 6; i++) {
+      pb.set(1 - i * 0.2, 12 + i * 1.6, rope);
+      pb.set(W - 2 + i * 0.2, 12 + i * 1.6, rope);
+    }
+    for (let x = W / 2 - 7; x < W / 2 + 7; x++) pb.set(x, H - 1, (x % 2) ? rugR : rugY);
+    ART.tent = new Sprite(pb.toCanvas(), W >> 1, H);
+  })();
 })();
 
 // Procedural flame drawn upward from (x, y); size ~ height in pixels.
@@ -4185,7 +4310,13 @@ class Relic extends Entity {
     }
   }
   draw(g, cam) {
-    const bob = Math.round(Math.sin(this.t * 2) * 2);
+    if (this.idol) {
+      const px = Math.round(this.cx - cam.x), py = Math.round(this.y + 11 - cam.y);
+      fillR(g, px - 7, py + 1, 14, 4, '#1c140e');
+      fillR(g, px - 6, py + 1, 12, 3, '#9c8b6a');
+      fillR(g, px - 6, py + 1, 12, 1, '#d8c8a6');
+    }
+    const bob = this.idol ? 0 : Math.round(Math.sin(this.t * 2) * 2);
     g.globalAlpha = 0.35 + 0.15 * Math.sin(this.t * 3);
     g.drawImage(lightStamp(14, '#f4cf62', 3), Math.round(this.cx - cam.x - 14), Math.round(this.cy - cam.y - 14 + bob));
     g.globalAlpha = 1;
@@ -4524,6 +4655,58 @@ class Lantern extends Entity {
   }
 }
 
+class Crystal extends Entity {
+  constructor(x, y) {
+    super(x + 2, y + 6, 12, 10);
+    this.layer = 0;
+  }
+  update(dt) {
+    this.t += dt;
+    if (Math.random() < dt * 1.5) Parts.add({ x: this.cx + rnd(-5, 5), y: this.y + rnd(0, 6), vy: -10, life: 1, col: '#a8ffc8', g: -6, front: false });
+  }
+  draw(g, cam) {
+    g.globalAlpha = 0.25 + 0.1 * Math.sin(this.t * 2);
+    g.drawImage(lightStamp(16, '#25b56a', 3), Math.round(this.cx - cam.x - 16), Math.round(this.y + 4 - cam.y - 16));
+    g.globalAlpha = 1;
+    drawSprite(g, ART.crystal, this.cx - cam.x, this.y + 10 - cam.y);
+  }
+  light() {
+    Lighting.add(this.cx, this.y + 4, 46 + Math.sin(this.t * 2) * 3, '#25b56a', 0.9);
+  }
+}
+
+// A beam of daylight falling from a crack in the ceiling to the floor.
+class LightShaft extends Entity {
+  constructor(x, y) {
+    super(x, y, 16, 16);
+    this.layer = 2;
+    const L = Game.level;
+    let ty = Math.floor(y / TILE);
+    while (ty < L.h && !isSolidT(L.tileAt(Math.floor(x / TILE), ty)) && !isOneWayT(L.tileAt(Math.floor(x / TILE), ty))) ty++;
+    this.bottom2 = ty * TILE;
+  }
+  update(dt) {
+    this.t += dt;
+    if (Math.random() < dt * 4) Parts.add({ x: this.x + rnd(-6, 22), y: lerp(this.y, this.bottom2, Math.random()), vx: rnd(-3, 3), vy: rnd(-4, 4), life: 2, col: '#fff1b3', g: 0, front: false });
+  }
+  draw(g, cam) {
+    const x = Math.round(this.x - cam.x), y0 = Math.round(this.y - cam.y), y1 = Math.round(this.bottom2 - cam.y);
+    g.globalCompositeOperation = 'lighter';
+    for (let y = y0; y < y1; y++) {
+      const u = (y - y0) / Math.max(1, y1 - y0);
+      const w = Math.round(10 + u * 14);
+      g.globalAlpha = 0.07 + 0.04 * Math.sin(this.t * 2 + y * 0.05);
+      fillR(g, x + 8 - w / 2 + u * 6, y, w, 1, '#fff1b3');
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+  }
+  light() {
+    for (let y = this.y; y < this.bottom2; y += 40) Lighting.add(this.cx + (y - this.y) * 0.2, y, 34, '#fff1b3', 0.9);
+    Lighting.add(this.cx + 6, this.bottom2 - 6, 50, '#fff1b3', 1);
+  }
+}
+
 class Decor extends Entity {
   constructor(x, y, spr, front = false) {
     super(x, y, spr.w, spr.h);
@@ -4617,7 +4800,7 @@ class DartTrap extends Entity {
     if (this.timer <= 0) {
       this.timer = this.period;
       if (this.onScreen(80)) {
-        Game.spawn(new Projectile('dart', this.dir > 0 ? this.x + 16 : this.x - 6, this.y + 7, this.dir * 165, 0));
+        Game.spawn(new Projectile('dart', this.dir > 0 ? this.x + 16 : this.x - 6, this.y + 13, this.dir * 165, 0));
         Sfx.play('dart', 0.7);
       }
     }
@@ -4626,8 +4809,8 @@ class DartTrap extends Entity {
     drawSprite(g, ART.dartFace, this.cx - cam.x, this.y + 13 - cam.y, this.dir < 0);
     if (this.timer < 0.35) {
       g.globalAlpha = 1 - this.timer / 0.35;
-      fillR(g, this.cx - cam.x - 3, this.y + 6 - cam.y, 2, 1, '#ff8a2a');
-      fillR(g, this.cx - cam.x + 2, this.y + 6 - cam.y, 2, 1, '#ff8a2a');
+      fillR(g, this.cx - cam.x - 3, this.y + 4 - cam.y, 2, 1, '#ff8a2a');
+      fillR(g, this.cx - cam.x + 2, this.y + 4 - cam.y, 2, 1, '#ff8a2a');
       g.globalAlpha = 1;
     }
   }
@@ -4638,7 +4821,11 @@ class SwingBlade extends Entity {
     super(x + 8, y + 2, 1, 1);
     this.px = x + 8;
     this.py = y + 2;
-    this.len = 52;
+    // reach down to chest height above whatever floor or ledge lies beneath
+    const L = Game.level;
+    let ty = Math.floor(y / TILE) + 1;
+    while (ty < L.h && !isSolidT(L.tileAt(Math.floor(x / TILE), ty)) && !isOneWayT(L.tileAt(Math.floor(x / TILE), ty)) && !isSpikeT(L.tileAt(Math.floor(x / TILE), ty))) ty++;
+    this.len = clamp(ty * TILE - this.py - 14, 30, 150);
     this.phase = phase;
     this.layer = 2;
     this.ang = 0;
@@ -6065,7 +6252,7 @@ const Music = {
     }
     if (tr.n) {
       const np = step % tr.n.len;
-      for (const n of tr.n.notes) if (n.pos === np) this.ney(degFreq(tr.root, scale, n.deg), t, n.len * dt16, out, 0.06);
+      for (const n of tr.n.notes) if (n.pos === np) this.ney(degFreq(tr.root, scale, n.deg), t, n.len * dt16, out, 0.09);
     }
     // accompaniment
     if (tr.acc === 'bass' && (ch === 'D' || (ch === 'T' && s === 8))) {
@@ -6080,7 +6267,7 @@ const Music = {
     }
   },
   // Breathy ney: sine + triangle partial, delayed vibrato, breath noise, glide in.
-  ney(f, t, dur, out, vol = 0.12) {
+  ney(f, t, dur, out, vol = 0.2) {
     const c = AudioSys.ctx;
     const o = c.createOscillator(), o2 = c.createOscillator();
     o.type = 'sine';
@@ -6169,8 +6356,8 @@ const Sfx = {
 };
 const SFX = {
   jump: (v) => {
-    tone('triangle', 260, 520, 0.09, { gain: 0.12 * v });
-    noise(0.08, { bp: 1200, sweep: 3000, gain: 0.08 * v });
+    tone('triangle', 260, 520, 0.09, { gain: 0.16 * v });
+    noise(0.08, { bp: 1200, sweep: 3000, gain: 0.12 * v });
   },
   walljump: (v) => {
     tone('triangle', 330, 640, 0.08, { gain: 0.12 * v });
@@ -6187,8 +6374,8 @@ const SFX = {
     noise(0.05, { bp: 2500, gain: 0.08 * v });
   },
   climb: (v) => noise(0.06, { lp: 1200, gain: 0.12 * v }),
-  roll: (v) => noise(0.24, { bp: 600, sweep: 2400, sweepT: 0.24, q: 1.4, gain: 0.22 * v }),
-  whoosh: (v) => noise(0.08, { bp: 900, sweep: 2600, sweepT: 0.08, q: 1.2, gain: 0.14 * v }),
+  roll: (v) => noise(0.24, { bp: 600, sweep: 2400, sweepT: 0.24, q: 1.4, gain: 0.34 * v }),
+  whoosh: (v) => noise(0.08, { bp: 900, sweep: 2600, sweepT: 0.08, q: 1.2, gain: 0.22 * v }),
   crack: (v) => {
     playBuf(AudioSys.bufs.crack, { hp: 1400, gain: 0.55 * v, rev: 0.15, rate: rnd(0.95, 1.08) });
     tone('square', 1800, 900, 0.015, { gain: 0.08 * v });
@@ -6710,8 +6897,8 @@ function drawHUD(g, vw, vh, t) {
   // boss bar
   const b = Game.boss;
   if (b && !b.dead && b.introDone) {
-    const w = Math.min(180, vw - 40), x = Math.round(vw / 2 - w / 2), y = vh - 16;
-    drawText(g, b.title, vw / 2, y - 11, '#f4cf62', { align: 'center', outline: '#0e0805' });
+    const w = Math.min(170, vw - 96), x = Math.round(vw / 2 - w / 2), y = 17;
+    drawText(g, b.title, vw / 2, 4, '#f4cf62', { align: 'center', outline: '#0e0805' });
     fillR(g, x - 2, y - 2, w + 4, 8, '#0e0805');
     fillR(g, x - 1, y - 1, w + 2, 6, '#6e3f10');
     fillR(g, x, y, w, 4, '#2a1410');
@@ -6723,15 +6910,20 @@ function drawHUD(g, vw, vh, t) {
     drawSprite(g, STAR8, x - 3, y + 2);
     drawSprite(g, STAR8, x + w + 3, y + 2);
   }
-  // banner
+  // banner (wrapped onto two lines on narrow screens)
   if (Game.bannerT > 0) {
     const a = Math.min(1, Game.bannerT * 3, (Game.bannerMax - Game.bannerT) * 4);
     g.globalAlpha = a;
-    const bw = textWidth(Game.bannerText) + 24;
-    fillR(g, vw / 2 - bw / 2, 34, bw, 13, 'rgba(14,8,5,0.75)');
-    fillR(g, vw / 2 - bw / 2, 34, bw, 1, '#dea12a');
-    fillR(g, vw / 2 - bw / 2, 46, bw, 1, '#dea12a');
-    drawText(g, Game.bannerText, vw / 2, 37, '#f4cf62', { align: 'center' });
+    const lines = wrapText(Game.bannerText, vw - 36);
+    const bw = Math.min(vw - 16, Math.max(...lines.map((l) => textWidth(l))) + 24);
+    const bh = lines.length * 10 + 4;
+    const by = 32;
+    fillR(g, vw / 2 - bw / 2, by, bw, bh, 'rgba(14,8,5,0.78)');
+    fillR(g, vw / 2 - bw / 2, by, bw, 1, '#dea12a');
+    fillR(g, vw / 2 - bw / 2, by + bh - 1, bw, 1, '#dea12a');
+    drawSprite(g, STAR8, vw / 2 - bw / 2, by + bh / 2);
+    drawSprite(g, STAR8, vw / 2 + bw / 2 - 1, by + bh / 2);
+    lines.forEach((l, i) => drawText(g, l, vw / 2, by + 3 + i * 10, '#f4cf62', { align: 'center' }));
     g.globalAlpha = 1;
   }
 }
@@ -6917,6 +7109,29 @@ const CREDITS = [
   ['THANK YOU FOR PLAYING', '#f4cf62'],
 ];
 
+// Contextual hints: keyboard / touch / gamepad wording.
+const HINTS = {
+  move: ['ARROWS OR A D TO RUN.  SPACE OR Z TO JUMP', 'DRAG THE LEFT SIDE TO RUN.  TAP JUMP TO LEAP', 'STICK TO RUN.  A TO JUMP'],
+  whip: ['X CRACKS THE WHIP.  POTS HIDE DINARS', 'TAP WHIP TO CRACK IT.  POTS HIDE DINARS', 'X CRACKS THE WHIP.  POTS HIDE DINARS'],
+  awning: ['DROP ONTO THE AWNING TO BOUNCE.  HOLD JUMP TO SOAR', 'DROP ONTO THE AWNING.  HOLD JUMP TO SOAR', 'DROP ONTO THE AWNING.  HOLD A TO SOAR'],
+  ring: ['JUMP, THEN X NEAR A GOLDEN RING TO SWING.  JUMP LETS GO', 'JUMP, THEN WHIP NEAR A GOLDEN RING.  JUMP LETS GO', 'JUMP, THEN X NEAR A GOLDEN RING.  A LETS GO'],
+  walljump: ['PRESS INTO A WALL AND JUMP TO LEAP OFF IT', 'HOLD TOWARD A WALL AND JUMP TO LEAP OFF IT', 'HOLD TOWARD A WALL AND PRESS A TO LEAP OFF IT'],
+  dash: ['IN THE AIR, C TUMBLES YOU FORWARD', 'IN THE AIR, TAP ROLL TO TUMBLE FARTHER', 'IN THE AIR, B TUMBLES YOU FORWARD'],
+  hatch: ['THE HATCH IN THE ROOF IS THE WAY ON', 'THE HATCH IN THE ROOF IS THE WAY ON', 'THE HATCH IN THE ROOF IS THE WAY ON'],
+  roll: ['C ROLLS YOU UNDER LOW GAPS, UNHARMED', 'TAP ROLL TO SLIP UNDER LOW GAPS', 'B ROLLS YOU UNDER LOW GAPS'],
+  pogo: ['HOLD DOWN AND WHIP IN THE AIR TO BOUNCE OFF FOES', 'HOLD DOWN AND WHIP MIDAIR TO BOUNCE OFF FOES', 'HOLD DOWN AND X MIDAIR TO BOUNCE OFF FOES'],
+  shield: ['BRASS TURNS THE WHIP.  STRIKE FROM ABOVE OR BEHIND', 'BRASS TURNS THE WHIP.  STRIKE FROM ABOVE OR BEHIND', 'BRASS TURNS THE WHIP.  STRIKE FROM ABOVE OR BEHIND'],
+  duck: ['HOLD DOWN TO DUCK UNDER THE DARTS', 'DRAG DOWN TO DUCK UNDER THE DARTS', 'HOLD DOWN TO DUCK UNDER THE DARTS'],
+  ledge: ['JUMP AT A LEDGE TO CATCH IT.  JUMP AGAIN TO CLIMB', 'JUMP AT A LEDGE TO CATCH IT.  JUMP AGAIN TO CLIMB', 'JUMP AT A LEDGE TO CATCH IT.  A TO CLIMB'],
+  quicksand: ['QUICKSAND DRAGS YOU DOWN.  KEEP JUMPING', 'QUICKSAND DRAGS YOU DOWN.  KEEP JUMPING', 'QUICKSAND DRAGS YOU DOWN.  KEEP JUMPING'],
+  idol: ['A GOLDEN FACE ON A PEDESTAL.  WHAT COULD GO WRONG?', 'A GOLDEN FACE ON A PEDESTAL.  WHAT COULD GO WRONG?', 'A GOLDEN FACE ON A PEDESTAL.  WHAT COULD GO WRONG?'],
+};
+function hintText(key) {
+  const h = HINTS[key];
+  if (!h) return key;
+  return Input.touchMode ? h[1] : Input.usingPad ? h[2] : h[0];
+}
+
 // ==== 15_game.js ====
 // ANDOR :: game state, loop, scenes.
 
@@ -7028,6 +7243,12 @@ const Game = {
     this.sceneT = 0;
     if (this.scene.enter) this.scene.enter(arg);
     TouchUI.visible = state === 'play';
+    // portrait phones split into view + control deck only around gameplay
+    const split = ['play', 'pause', 'dead', 'scroll'].includes(state) || (state === 'options' && arg === 'pause');
+    if (split !== Screen.split) {
+      Screen.split = split;
+      Bus.emit('resize');
+    }
   },
 
   // ---- levels --------------------------------------------------------------
@@ -7043,6 +7264,7 @@ const Game = {
     this.runRelics = this.save.relics[idx].slice();
     this.checkpoint = null;
     this.litCheckpoints = new Set();
+    this.hintsShown = new Set();
     this.boss = null;
     this.bossDone = false;
     this.totalCoins = 0;
@@ -7086,6 +7308,15 @@ const Game = {
           if (!this.collected.has(id)) add(r).sid = id;
           break;
         }
+        case 'I': {
+          const r = new Relic(px + 8, py + 8, 2);
+          r.idol = true;
+          if (!this.collected.has(id)) add(r).sid = id;
+          break;
+        }
+        case 'S': add(new Decor(px + 8 - ART.sarcophagus.ax, py + 16 - ART.sarcophagus.h, ART.sarcophagus)); break;
+        case 'V': add(new Crystal(px, py)); break;
+        case 'U': add(new LightShaft(px, py)); break;
         case '?': {
           const sc = new Scroll(px + 8, py + 10, scrollI++);
           if (!this.collected.has(id)) add(sc).sid = id;
@@ -7143,6 +7374,8 @@ const Game = {
           if (!this.bossDone) this.boss = add(makeBoss(+s.ch, px, py));
           break;
         case 'Q': add(new Decor(px, py + 5, ART.camel)); break;
+        case 'p': add(new Decor(px + 8 - ART.palm.ax, py + 16 - ART.palm.h, ART.palm)); break;
+        case 'T': add(new Decor(px + 8 - ART.tent.ax, py + 16 - ART.tent.h, ART.tent)); break;
         case 'Z': add(new Decor(px + 5, py + 11, ART.skull)); break;
       }
     }
@@ -7171,7 +7404,7 @@ const Game = {
     Parts.add({ x: r.cx, y: r.cy, type: 'ring', s: 30, life: 0.6, col: '#f4cf62' });
     const n = this.runRelics.filter(Boolean).length;
     this.banner((already ? 'RELIC (ALREADY KNOWN) ' : 'RELIC FOUND ') + n + '/3: ' + RELIC_NAMES[this.chapterIdx][r.idx], 2.6);
-    if (this.chapterIdx === 2 && r.idx === 2 && this.boulders.length) {
+    if (r.idol && this.boulders.length) {
       // the golden idol was resting on a pressure plate...
       setTimeout(() => {
         if (this.state === 'play') for (const b of this.boulders) if (!b.active && !b.dead) b.start();
@@ -7303,6 +7536,16 @@ const Game = {
         Music.play('boss', 0.3);
       }
     }
+    // tutorial hints, each once per chapter run
+    if (def.hints)
+      for (let i = 0; i < def.hints.length; i++) {
+        if (this.hintsShown.has(i)) continue;
+        const [hx, hy, hw, hh, key] = def.hints[i];
+        if (p.cx >= hx * TILE && p.cx <= (hx + hw) * TILE && p.cy >= hy * TILE && p.cy <= (hy + hh) * TILE) {
+          this.hintsShown.add(i);
+          this.banner(hintText(key), 4.2);
+        }
+      }
     // boulder trigger
     if (this.boulderTrigger !== undefined && p.x > this.boulderTrigger) for (const b of this.boulders) if (!b.active && !b.dead) b.start();
     Cam.update(dt, p, L);
@@ -7395,7 +7638,7 @@ SCENES.title = {
   draw(g, vw, vh) {
     this.bd.draw(g, this.cam, vw, vh, vh * 0.98, this.t);
     // foreground dune with the wanderer
-    const duneY = vh - 30;
+    const duneY = vh - Math.max(30, vh * 0.16);
     g.fillStyle = '#1d1410';
     for (let x = 0; x < vw; x++) {
       const y = Math.round(duneY - Math.sin((x / vw) * Math.PI * 1.1 + 0.2) * 14);
@@ -7438,11 +7681,12 @@ SCENES.title = {
       fillR(g, vw - sx, sy, 2, 1, i % 3 ? '#5a4030' : '#8a6a48');
     }
     Vignette.draw(g, vw, vh, 1);
-    const sc = vw >= 330 ? 3 : 2;
-    const ly = Math.round(vh * 0.1);
+    const sc = vw >= 330 && vh >= 240 ? 3 : 2;
+    const ly = Math.round(vh * (vh > 300 ? 0.14 : 0.07));
     drawLogo(g, vw / 2, ly, sc, this.t);
-    drawText(g, 'THE SANDS REMEMBER', vw / 2, ly + 27 * sc, '#e9dcc0', { align: 'center', shadow: '#0e0805' });
-    const my = Math.round(vh * 0.5);
+    const sub = ly + 26 * sc + 3;
+    drawText(g, 'THE SANDS REMEMBER', vw / 2, sub, '#e9dcc0', { align: 'center', shadow: '#0e0805' });
+    const my = Math.max(sub + 18, Math.round(vh * 0.48));
     this.menu.draw(g, vw / 2, my, { width: 170 });
     const hint = Input.touchMode ? 'TAP TO CHOOSE' : Input.usingPad ? 'A: CHOOSE   D-PAD: MOVE' : 'ARROWS: MOVE   ENTER / Z: CHOOSE';
     drawText(g, hint, vw / 2, vh - 12, '#8a7a60', { align: 'center' });
@@ -8004,6 +8248,7 @@ function frame(ts) {
   _acc += dt;
   let steps = 0;
   while (_acc >= STEP && steps < 6) {
+    if (window.__autopilot) window.__autopilot(Game, Input, Cam);
     Input.step();
     Game.time += STEP;
     if (Game.scene && Game.scene.update) Game.scene.update(STEP);
@@ -8109,7 +8354,7 @@ function boot() {
 //  1-4 bosses   Q camel   Z skull
 
 const LEVELS = [
-  {"arena": {"x": 247, "y": 6, "w": 25, "h": 16, "trigger": 3, "floor": 21, "seal": [[246, 18, 3], [270, 17, 4]]}, "theme": "bazaar",
+  {"arena": {"x": 247, "y": 6, "w": 25, "h": 17, "trigger": 3, "floor": 21, "seal": [[246, 18, 3], [270, 17, 4]]}, "theme": "bazaar",
     "music": "bazaar",
     "ambience": "bazaar",
     "par": 300, "scrolls": ["A merchant's ledger: \"Saffron, three dinars. Rosewater, two. A map to Andor: NOT FOR SALE, not to the vizier, not at any price.\"",
@@ -8140,103 +8385,108 @@ const LEVELS = [
     "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
     "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
     "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################"], "back": [[1, 10, 10, 7], [100, 10, 36, 7], [137, 14, 4, 3], [173, 2, 3, 10], [248, 10, 22, 11]], "hints": [[1, 10, 6, 7, "move"], [7, 10, 4, 7, "whip"], [43, 9, 5, 7, "awning"], [130, 11, 6, 6, "hatch"], [146, 2, 6, 7, "ring"], [170, 3, 6, 9, "walljump"], [204, 4, 9, 6, "dash"]]},
-  {"arena": {"x": 247, "y": 6, "w": 25, "h": 16, "trigger": 3, "floor": 21, "seal": [[246, 18, 3], [270, 17, 4]]}, "theme": "desert",
-    "music": "bazaar",
-    "ambience": "bazaar",
-    "par": 300, "scrolls": ["A merchant's ledger: \"Saffron, three dinars. Rosewater, two. A map to Andor: NOT FOR SALE, not to the vizier, not at any price.\"",
-    "Chalked inside a stall: The Watch searches the roofs by night. Their captain fights like a lion, but he guards his left side.",
-    "Scratched beneath the archer's post: \"Bahram drills his men at the city gate. Nobody leaves Isfahan tonight. Nobody.\""], "map": [
-    "..................................................................................................................................................................................................................................................................................",
-    "..................................................................................................................................................................................................................R...............................................................",
-    "...........................................................................................................................................................................##.......ooo................................*..........................................................",
-    "............................................................................................................................................................R..............##.o......................................-----........................................................",
-    "..............................................................................*..a........................................................................o...o............##......o...o.....................................R....................................................",
-    ".............................................................................%%%%%%......................................................................o.....o...........##.o.##......a.....g..P...........................................................................%%%%.",
-    "...........................................................................oo.####.........................................................................................##...##%%%%%%%%%%%%%%%%%%%.........................................................................##..",
-    "..........................................................................====####.........................................................................................##.o.#####################...ooo.......................oo..........................................##..",
-    "..............................................................................####...............................................................K..h......................##...#####################..-----..........ooo........CCCC....a.^^^.?.....%%%%.....................##..",
-    "%%%%%%%%%%%%...............................................................oo.####.................%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%...%%#####%%%%%%%%%....................##.o.#####################................-----.............##########.....##%%%%%............%%%%%##..",
-    "#..l....l..#......................................o.o.o.o.o...............====####....................l.....l.....l.....l.....l.....l...###############.........................#####################..........CCC.....................##########.....##......................##..",
-    "#..........#....................................%%%%%%%%%%%%%%................#..#......................................................###############................P........#####################..................................##########.....##..........R...........##..",
-    "#..........#....................................##############.........g......#..#....P..P.......................?..oooo...........====.###############...........%%%%%%%%%##########################..................................##########.....##......................##..",
-    "#.o........#......oo............................##############....###########################............oooo......======......ooo......###############...........###################################..................................##########.....##......................##..",
-    "#====............o..o...........................##############....###########################...........======................======....FFFFF##########...........###################################..................................##########.K...##......................##..",
-    "#...............o....o..................######..##############....##############################........................................FFoFo##########...........###################################..................................##############.##......................##..",
-    "#.@..?..P.........##..............g...P.######ww##############....##############################.......P......g.......Q....g.P..........FFF*F##########...........###################################..................................##############.##.......========.......##..",
-    "#############%%%%%########...#################################....#####################################################################################...........###################################..................................##############.##..........................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############.............................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############.............................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############...ww............1.....ww..E.",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################"], "back": [[1, 10, 10, 7], [100, 10, 36, 7], [137, 14, 4, 3], [173, 2, 3, 10], [248, 10, 22, 11]], "hints": [[1, 10, 6, 7, "move"], [7, 10, 4, 7, "whip"], [43, 9, 5, 7, "awning"], [130, 11, 6, 6, "hatch"], [146, 2, 6, 7, "ring"], [170, 3, 6, 9, "walljump"], [204, 4, 9, 6, "dash"]]},
-  {"arena": {"x": 247, "y": 6, "w": 25, "h": 16, "trigger": 3, "floor": 21, "seal": [[246, 18, 3], [270, 17, 4]]}, "theme": "tomb",
-    "music": "bazaar",
-    "ambience": "bazaar",
-    "par": 300, "scrolls": ["A merchant's ledger: \"Saffron, three dinars. Rosewater, two. A map to Andor: NOT FOR SALE, not to the vizier, not at any price.\"",
-    "Chalked inside a stall: The Watch searches the roofs by night. Their captain fights like a lion, but he guards his left side.",
-    "Scratched beneath the archer's post: \"Bahram drills his men at the city gate. Nobody leaves Isfahan tonight. Nobody.\""], "map": [
-    "..................................................................................................................................................................................................................................................................................",
-    "..................................................................................................................................................................................................................R...............................................................",
-    "...........................................................................................................................................................................##.......ooo................................*..........................................................",
-    "............................................................................................................................................................R..............##.o......................................-----........................................................",
-    "..............................................................................*..a........................................................................o...o............##......o...o.....................................R....................................................",
-    ".............................................................................%%%%%%......................................................................o.....o...........##.o.##......a.....g..P...........................................................................%%%%.",
-    "...........................................................................oo.####.........................................................................................##...##%%%%%%%%%%%%%%%%%%%.........................................................................##..",
-    "..........................................................................====####.........................................................................................##.o.#####################...ooo.......................oo..........................................##..",
-    "..............................................................................####...............................................................K..h......................##...#####################..-----..........ooo........CCCC....a.^^^.?.....%%%%.....................##..",
-    "%%%%%%%%%%%%...............................................................oo.####.................%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%...%%#####%%%%%%%%%....................##.o.#####################................-----.............##########.....##%%%%%............%%%%%##..",
-    "#..l....l..#......................................o.o.o.o.o...............====####....................l.....l.....l.....l.....l.....l...###############.........................#####################..........CCC.....................##########.....##......................##..",
-    "#..........#....................................%%%%%%%%%%%%%%................#..#......................................................###############................P........#####################..................................##########.....##..........R...........##..",
-    "#..........#....................................##############.........g......#..#....P..P.......................?..oooo...........====.###############...........%%%%%%%%%##########################..................................##########.....##......................##..",
-    "#.o........#......oo............................##############....###########################............oooo......======......ooo......###############...........###################################..................................##########.....##......................##..",
-    "#====............o..o...........................##############....###########################...........======................======....FFFFF##########...........###################################..................................##########.K...##......................##..",
-    "#...............o....o..................######..##############....##############################........................................FFoFo##########...........###################################..................................##############.##......................##..",
-    "#.@..?..P.........##..............g...P.######ww##############....##############################.......P......g.......Q....g.P..........FFF*F##########...........###################################..................................##############.##.......========.......##..",
-    "#############%%%%%########...#################################....#####################################################################################...........###################################..................................##############.##..........................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############.............................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############.............................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############...ww............1.....ww..E.",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################"], "back": [[1, 10, 10, 7], [100, 10, 36, 7], [137, 14, 4, 3], [173, 2, 3, 10], [248, 10, 22, 11]], "hints": [[1, 10, 6, 7, "move"], [7, 10, 4, 7, "whip"], [43, 9, 5, 7, "awning"], [130, 11, 6, 6, "hatch"], [146, 2, 6, 7, "ring"], [170, 3, 6, 9, "walljump"], [204, 4, 9, 6, "dash"]]},
-  {"arena": {"x": 247, "y": 6, "w": 25, "h": 16, "trigger": 3, "floor": 21, "seal": [[246, 18, 3], [270, 17, 4]]}, "theme": "andor",
-    "music": "bazaar",
-    "ambience": "bazaar",
-    "par": 300, "scrolls": ["A merchant's ledger: \"Saffron, three dinars. Rosewater, two. A map to Andor: NOT FOR SALE, not to the vizier, not at any price.\"",
-    "Chalked inside a stall: The Watch searches the roofs by night. Their captain fights like a lion, but he guards his left side.",
-    "Scratched beneath the archer's post: \"Bahram drills his men at the city gate. Nobody leaves Isfahan tonight. Nobody.\""], "map": [
-    "..................................................................................................................................................................................................................................................................................",
-    "..................................................................................................................................................................................................................R...............................................................",
-    "...........................................................................................................................................................................##.......ooo................................*..........................................................",
-    "............................................................................................................................................................R..............##.o......................................-----........................................................",
-    "..............................................................................*..a........................................................................o...o............##......o...o.....................................R....................................................",
-    ".............................................................................%%%%%%......................................................................o.....o...........##.o.##......a.....g..P...........................................................................%%%%.",
-    "...........................................................................oo.####.........................................................................................##...##%%%%%%%%%%%%%%%%%%%.........................................................................##..",
-    "..........................................................................====####.........................................................................................##.o.#####################...ooo.......................oo..........................................##..",
-    "..............................................................................####...............................................................K..h......................##...#####################..-----..........ooo........CCCC....a.^^^.?.....%%%%.....................##..",
-    "%%%%%%%%%%%%...............................................................oo.####.................%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%...%%#####%%%%%%%%%....................##.o.#####################................-----.............##########.....##%%%%%............%%%%%##..",
-    "#..l....l..#......................................o.o.o.o.o...............====####....................l.....l.....l.....l.....l.....l...###############.........................#####################..........CCC.....................##########.....##......................##..",
-    "#..........#....................................%%%%%%%%%%%%%%................#..#......................................................###############................P........#####################..................................##########.....##..........R...........##..",
-    "#..........#....................................##############.........g......#..#....P..P.......................?..oooo...........====.###############...........%%%%%%%%%##########################..................................##########.....##......................##..",
-    "#.o........#......oo............................##############....###########################............oooo......======......ooo......###############...........###################################..................................##########.....##......................##..",
-    "#====............o..o...........................##############....###########################...........======................======....FFFFF##########...........###################################..................................##########.K...##......................##..",
-    "#...............o....o..................######..##############....##############################........................................FFoFo##########...........###################################..................................##############.##......................##..",
-    "#.@..?..P.........##..............g...P.######ww##############....##############################.......P......g.......Q....g.P..........FFF*F##########...........###################################..................................##############.##.......========.......##..",
-    "#############%%%%%########...#################################....#####################################################################################...........###################################..................................##############.##..........................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############.............................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############.............................",
-    "##########################...#################################....#####################################################################################...........###################################..................................##############...ww............1.....ww..E.",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################",
-    "##########################...#################################....#####################################################################################...........###################################..................................###########################################"], "back": [[1, 10, 10, 7], [100, 10, 36, 7], [137, 14, 4, 3], [173, 2, 3, 10], [248, 10, 22, 11]], "hints": [[1, 10, 6, 7, "move"], [7, 10, 4, 7, "whip"], [43, 9, 5, 7, "awning"], [130, 11, 6, 6, "hatch"], [146, 2, 6, 7, "ring"], [170, 3, 6, 9, "walljump"], [204, 4, 9, 6, "dash"]]},
+    "##########################...#################################....#####################################################################################...........###################################..................................###########################################"], "back": [[1, 10, 10, 7], [100, 10, 36, 7], [137, 14, 4, 3], [173, 2, 3, 10]], "hints": [[1, 10, 6, 7, "move"], [7, 10, 4, 7, "whip"], [43, 9, 5, 7, "awning"], [130, 11, 6, 6, "hatch"], [146, 2, 6, 7, "ring"], [170, 3, 6, 9, "walljump"], [204, 4, 9, 6, "dash"]]},
+  {"storm": [[143, 202, 0.85]], "arena": {"x": 233, "y": 6, "w": 30, "h": 16, "trigger": 3, "floor": 20, "seal": [[233, 17, 3], [262, 17, 3]]}, "theme": "desert",
+    "music": "desert",
+    "ambience": "desert",
+    "par": 330, "scrolls": ["A camel driver's prayer, stitched into a saddle: \"Let the wind be at my back, and the scorpion asleep beneath its stone.\"",
+    "Carved over the temple door: HERE STOOD A CITY OF A HUNDRED WELLS. THE SAND DRANK THEM ALL."], "map": [
+    "..........................................................................................................................................................................................................................................................................",
+    "..........................................................................................................................................................................................................................................................................",
+    "..........................................................................................................................................................................................................................................................................",
+    "..........................................................................................................................................................................................................................................................................",
+    ".....................................................................................................................................................................................................*....................................................................",
+    "....................................................................................................................................................................................................##....................................................................",
+    "....................................................................................................................................................................................................##....................................................................",
+    ".....................................................................................................................................................................................u..............##....................................................................",
+    "................................................................................u..............................................................................................................##...##.................................%%%%%.........................%%%%%",
+    "...............................................u...............................................%%%%%%%%%%%....%%%%%%%%%%%%%........................................................R...........##.o.##..................................###...........................###.",
+    "...............................................................................................%%%%%%%%%%%....%%%%%%%%%%%%%....................................................................##...##..................................###...........................###.",
+    "...............................................................................................FF........................%%....................................................................##...##..................................###.............R.............###.",
+    "...............................................................................................FF........................%%....................................................................##.o.##..................................###...........................###.",
+    "....................................o..........o...............................................o*................Po........................................R...................................##...##..................................###...........................###.",
+    "...................................o.o........o.o..............................................FF..........oo...====...........................................................................##...##..................................###...........................###.",
+    "....................oo............o...o...c..o...o.............................................%%.........====..............................................................c..................##.o.##..................................###...%%%%%...........%%%%%...###.",
+    "...................o..o................######..................oo.....oo.....oo.....oo.........%%..oo?oo............=====%%%%%...........................o...o............#####................##...##...................o..............###...........................###.",
+    "..................o....o...............######.................o..o...o..o.c.o..o...o..o............=====.................%%................................o.......d......#####.....................##..................CCC...............................................",
+    "..................................################................%%%....%%%....%%%......................................D%....................................########...#####............d........##..h...........o..........####.......................................",
+    "..@.p.T....Q..?.P..####..s..######################...s...P........%%%....%%%....%%%......s..........................d....%%.....p.K..h.p..Q.p..................########...#####.........#######################....CCC.........####..K.h.....Z..................2..Z....E.",
+    "##############################################################qqqq###qqqq###qqqq###qqqq###################CCC##########################################........########...#####.........#######################................###########################################",
+    "##############################################################qqqq###qqqq###qqqq###qqqq###################...##########################################........########...#####.........####################FFF..............#############################################",
+    "##########################################################################################################...##########################################........########...#####.........####################FFF........oo....#############################################",
+    "##########################################################################################################...##########################################........########...#####.........####################*OF###...s....s..#############################################",
+    "##########################################################################################################...##########################################........########...#####.........##################################################################################",
+    "##########################################################################################################^^^##########################################........########...#####.........##################################################################################"], "back": [[97, 11, 24, 9], [95, 11, 2, 4], [204, 21, 3, 3]], "hints": [[58, 13, 5, 7, "quicksand"], [97, 15, 5, 5, "duck"], [190, 8, 6, 11, "walljump"]]},
+  {"interior": true, "arena": {"x": 300, "y": 12, "w": 27, "h": 18, "trigger": 3, "floor": 29, "seal": [[300, 26, 3], [327, 26, 3]]}, "theme": "tomb",
+    "music": "tomb",
+    "ambience": "tomb",
+    "par": 420, "dark": 0.9, "playerLight": 82, "scrolls": ["A warning cut in four scripts: TOUCH NOT THE GOLDEN FACE. The fourth script is just a drawing of a very large ball."], "map": [
+    "############################################################################################################################################################################################################################################################################################################################################",
+    "############################################################################################################################################################################################################################################################################################################################################",
+    "#.............................##############################################################################################################################################################################################################################################################################################################",
+    "#.............................##############################################################################################################################################################################################################################################################################################################",
+    "#.......t.....................##############################################################################################################################################################################################################################################################################################################",
+    "#.............................##############################################################################################################################################################################################################################################################################################################",
+    "#..@.?........................##############################################################################################################################################################################################################################################################################################################",
+    "#######.......................##############################################################################################################################################################################################################################################################################################################",
+    "#######.......................############################........................................##########################################################################################################################################################################################################################################",
+    "##########........t.ooo....t..############################..............b.t.......................##########################################################################################################################################################################################################################################",
+    "##########.P.......%...%......############################.t...................................t..##########################################################################################################################################################################################################################################",
+    "#############......=====......###t###########t############..............................*.........##########################################################################################################################################################################################################################################",
+    "#############............................................#.......................R.....===........##########################################################################################################################################################################################################################################",
+    "################.........................................D..........%%%.....%%%...................###########################################################################################################################################################################################################..........................#####",
+    "################......P.............o...o...o...o........#...........Y.......Y....................#################################################...##################...........r..........r................................##############################################################################..........................#####",
+    "###################################################...####........................................#################################################.*.##################...............................................U.......##############################################################################..........................#####",
+    "###################################################...####.....................o...o...........................####################################...##################.......................................................##############################################################################..t.........R..........t..#####",
+    "###################################################.......................................................b...t####################################.o.##################.................t.....................................##############################################################################..........................#####",
+    "###################################################.......................o....................................#################.........................................t...............................t...t..............t..##############################################################################..........................#####",
+    "###################################################...............o......===..............oh...................#################...............r...===.........................................................................##############################################################################..........................#####",
+    "##############################################################...===.....................===.##########.o...b..#################..t.........t.........t.........t..............................................................##############################################################################..........======..........#####",
+    "##############################################################...............................##########===.................#####...............oo........................................o.......................B.............##############################################################################..........................#####",
+    "##############################################################...............................##########....................#####..............====.............................o....................o...........####...........#######################################################################.................................#####",
+    "##############################################################...............................##########......o..t........t.#####.................................................................................................................#####################################################.................................#####",
+    "##############################################################...............................##########.....===............#####..........ooo............oo..........................xM......x....................................................................................................####..........====............====...#####",
+    "##############################################################...............................##########.b..................#####.........=====..........====..............x.M.....x.............xM......x.........................................................................................####.....................................#",
+    "##############################################################...............................##########...o................#####..................................................................................................o.......o.......................................................####...................3.................#",
+    "##############################################################...............................##########............K...h...........S...m.....k..S.P..m.....k.S..m.P.jS.............f..........f.............K..........I............................o......o.......o......o.........o......o......####.....................................#",
+    "##############################################################^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^##############################################################################.......###........###........##############################..####..###.......................................................K.....S......S.......S.......S...E.#",
+    "###########################################################################################################################################################################^^^^^^^###^^^^^^^^###^^^^^^^^##############################^^####^^#########^^####^^#######^^####^^#########^^###################################################"], "back": [], "hints": [[29, 11, 6, 4, "duck"], [117, 24, 6, 4, "roll"], [211, 22, 6, 6, "idol"], [282, 25, 8, 4, "roll"]]},
+  {"arena": {"x": 242, "y": 8, "w": 35, "h": 19, "trigger": 2, "floor": 26, "seal": [[241, 23, 3], [277, 23, 3]]}, "theme": "andor",
+    "music": "andor",
+    "ambience": "andor",
+    "par": 420, "dark": 0.55, "darkTint": "#020806",
+    "playerLight": 90, "scrolls": ["A brass plate, still warm: WE BUILT A CITY THAT COULD NEVER FALL. WE FORGOT TO BUILD ONE THAT COULD EVER LEAVE.",
+    "Engraved in emerald over a market stall: WHAT IS WRITTEN HERE BELONGS TO WHOEVER READS IT."], "map": [
+    "####......................................................................................................................................................................................................................................................................................",
+    "####......................................................................................................................................................................................................................................................................................",
+    "####...................................................................................................................................................................x..................................................................................................................",
+    "####........................................................................................................................................................................%%%%..........................................................................................................",
+    "####.............................................................................R..###.....................................................................................####..........................................................................................................",
+    "####................................................................................###.....................................................................................####....R.....................................................................................................",
+    "####............................................................................x...###.o*o.................................................................................####............R............R................................................................................",
+    "####................................................................................###=====...........................................................................N....####.................................R........................................................................",
+    "####................................................................................###..........................%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%...%#####%%%%......####........o.......o...............................*..............###...................................###..",
+    ".............................................................................===.o..###.............................l...........l...........l...........l...##########......####.............................o......o..........%%%.............###...................................###..",
+    "............................................................o...o...................###.....................................................................##########}.....####..................h............................###.............###...................................###..",
+    "....................................................................................###.....................................................................##########}.....####..........z......%%%%........z.................###.............###...................................###..",
+    "....................................................z............................o.z###................................................................=====##########}.o..{####.................####.................%%%%...R.###.............###...................................###..",
+    "..............................................................R.....................###=========R.................................?.........................FFFFF#####}....{####.................####.................####.....###.............###...................................###..",
+    ".................................................o...o..............................###....................................o.o.o.......o.o.o.......o.o......FFFFF#####}....{####.................####.................####.....###.............###........R...............R..........###..",
+    "..............o..................................................................o..###...................................======......======......=====.....FFFFF#####}....{####.................####.................####.....###.....V.K..h..###...................................###..",
+    ".............o.o...............o...o................................................###.....................................................................FooFo#####}.z..{####.................####.................####.....###...%%%%%%%%%.###...................................###..",
+    ".............................................x..M........x..........................###..............V..K...h.V........n....P......f.....j.....f..P...n.....FFF*F#####}....{####.................####.................####.....###...#########.###............=========..............###..",
+    "..........................................V.........................................###............%%%%%%%%%%%%%%##########################################.##########}.o..{####.................####.................####.....###...#########.###...................................###..",
+    "..@.V.?....V.....n.....P...x..M.........x%%%%..........................n........N...###............###################################################################}....{####.................####.................####.....###...#########.###...................................###..",
+    "%%%%%%%%%%%%%%%%%%%%%%%%%%%..............####......................%%%%%%%%%%###....###............###################################################################}....{####.................####.................####.....###...#########.###...................................###..",
+    "###########################..............####......................#############....###............###################################################################}....{####.................####.................####.....###...#########.###...=====.................=====.....###..",
+    "###########################..............####......................#############....###............###################################################################}....{####.................####.................####.....###...#########.###...................................###..",
+    "###########################..............####......................#############....###............###################################################################}....{####.................####.................####.....###...#########............................................",
+    "###########################..............####......................#############....###............###################################################################}.o..{####.................####.................####.....###...#########............................................",
+    "###########################..............####......................#############....###............###################################################################}....{####.................####.................####.....###...#########....................4.....................E.",
+    "###########################..............####......................#############....###............###################################################################}....{####.................####.................####.....###...#########%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%",
+    "###########################..............####......................#############....###............###################################################################.x....####.................####.................####.....###...#####################################################",
+    "###########################..............####......................#############....###............###################################################################......####.................####.................####.....###...#####################################################",
+    "###########################..............####......................#############....###............###################################################################......####.................####.................####.....###...#####################################################"], "back": [[113, 9, 43, 9], [156, 13, 5, 5]], "hints": [[12, 14, 5, 6, "shield"], [146, 9, 10, 6, "ledge"]]},
 ];
 
 // ==== 17_bosses.js ====
@@ -8973,6 +9223,19 @@ class Djinn extends BossBase {
     ];
     this.headLow = 0;
     this.dustCols = ['#dea12a', '#f4cf62', '#79f0a5'];
+    for (const f of this.fists) {
+      const r = this.restPos(f);
+      f.x = r.x;
+      f.y = r.y;
+    }
+  }
+  idle(dt) {
+    // dormant above the lamp, breathing smoke, fists resting
+    for (const f of this.fists) {
+      const r = this.restPos(f);
+      f.x = lerp(f.x, r.x, Math.min(1, dt * 5));
+      f.y = lerp(f.y, r.y, Math.min(1, dt * 5));
+    }
   }
   hurtBox() {
     // the head is only reachable while it sags; slammed fists can always be struck
@@ -9302,12 +9565,12 @@ function debugMap(idx) {
   L.drawChunks(g, cam, L.pw, L.ph);
   for (const e of Game.entities) e.draw(g, cam);
   Game.player.draw(g, cam);
-  L.drawFakes(g, cam, null, 0);
+  L.drawFakes(g, cam, null, 0, L.pw, L.ph);
   window.__map = c.toDataURL('image/png');
 }
 
 // Inspection handle for tools and the curious.
-window.__andor = { Game, Cam, Input, Screen, LEVELS, Parts, Music, Settings };
+window.__andor = { Game, Cam, Input, Screen, LEVELS, Parts, Music, Settings, AudioSys, Sfx, SFX, TRACKS };
 
 if (DEBUG.sheet) debugSheet();
 else if (DEBUG.map !== undefined) {

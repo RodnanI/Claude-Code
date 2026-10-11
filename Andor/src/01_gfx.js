@@ -5,7 +5,7 @@ const ctx = cv.getContext('2d', { alpha: false });
 
 // Screen: the main canvas (W x H game pixels) holds the game view rect and,
 // in portrait touch mode, a control deck underneath it like a handheld.
-const Screen = { W: 320, H: 200, S: 1, dpr: 1, vx: 0, vy: 0, vw: 320, vh: 200, portrait: false, cssW: 0, cssH: 0, left: 0, top: 0 };
+const Screen = { W: 320, H: 200, S: 1, dpr: 1, vx: 0, vy: 0, vw: 320, vh: 200, portrait: false, split: false, cssW: 0, cssH: 0, left: 0, top: 0 };
 const VC = makeCanvas(320, 200);
 const vctx = VC.getContext('2d');
 
@@ -26,7 +26,8 @@ function resizeScreen(touchMode) {
     H = Math.min(280, Math.ceil(devH / S));
   }
   Object.assign(Screen, { W, H, S, dpr, portrait });
-  if (portrait) {
+  if (portrait && Screen.split) {
+    // handheld layout during play: game view on top, control deck below
     Screen.vx = 0;
     Screen.vy = 0;
     Screen.vw = W;

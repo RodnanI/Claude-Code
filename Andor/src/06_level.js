@@ -126,7 +126,12 @@ class Level {
         // paint one extra tile of margin for front so shadows across chunk edges work
         for (let ty = ty0; ty < ty0 + tht; ty++)
           for (let tx = tx0; tx < tx0 + tw; tx++) {
-            if (this.back[ty * this.w + tx]) th.back(back, tx * TILE, ty * TILE, tx, ty);
+            const i = ty * this.w + tx;
+            if (th.deep && depth[i] >= 4 && this.tiles[i] === T.SOLID) {
+              th.deep(front, tx * TILE, ty * TILE, tx, ty);
+              continue;
+            }
+            if (this.back[i]) th.back(back, tx * TILE, ty * TILE, tx, ty);
             this.paintTile(front, tx, ty);
           }
         // composite with a soft drop shadow onto the back wall
@@ -215,13 +220,13 @@ class Level {
       g.drawImage(ch.c, Math.round(x), Math.round(y));
     }
   }
-  drawFakes(g, cam, player, dt) {
+  drawFakes(g, cam, player, dt, vw = Screen.vw, vh = Screen.vh) {
     for (const f of this.fakeTiles) {
       const near = player && Math.abs(player.cx - (f.x * TILE + 8)) < 40 && Math.abs(player.cy - (f.y * TILE + 8)) < 36 && this.def.fakeRegion !== false;
       const inside = player && player.x < f.x * TILE + 16 + 24 && player.x + player.w > f.x * TILE - 24 && player.y < f.y * TILE + 16 + 20 && player.y + player.h > f.y * TILE - 20;
       f.a = approach(f.a, inside && near ? 0.15 : 1, dt * 3);
       const x = f.x * TILE - cam.x, y = f.y * TILE - cam.y;
-      if (x < -16 || y < -16 || x > Screen.vw || y > Screen.vh) continue;
+      if (x < -16 || y < -16 || x > vw || y > vh) continue;
       g.globalAlpha = f.a;
       g.drawImage(f.c, Math.round(x), Math.round(y));
       g.globalAlpha = 1;

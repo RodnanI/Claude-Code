@@ -230,7 +230,20 @@ class Player extends Body {
       this.vy = Math.max(this.vy, 20);
       this.jumping = false;
     }
-    if (this.hitWall) this.vx = 0;
+    if (this.hitWall) {
+      // a knee-high step: hop it instead of stopping dead
+      if (this.onGround && dir === this.hitWall && !this.crouch) {
+        const fx = dir > 0 ? this.x + this.w + 1 : this.x - 1;
+        const ty = Math.floor((this.y + this.h - 1) / TILE);
+        const tx = Math.floor(fx / TILE);
+        if (isSolidT(level.tileAt(tx, ty)) && !level.rectSolid(dir > 0 ? this.x + 2 : this.x - 2, (ty - 1) * TILE - this.h + 16 - 2, this.w, this.h) && !isSolidT(level.tileAt(tx, ty - 1)) && !isSolidT(level.tileAt(tx, ty - 2))) {
+          this.vy = -235;
+          this.onGround = false;
+          this.coyote = 0;
+        }
+      }
+      this.vx = 0;
+    }
 
     if (!wasGround && this.onGround) this.onLand(vyBefore, level);
     if (wasGround && !this.onGround && this.vy >= 0) this.fallStartY = this.y;

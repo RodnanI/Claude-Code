@@ -108,6 +108,12 @@ const Game = {
     this.sceneT = 0;
     if (this.scene.enter) this.scene.enter(arg);
     TouchUI.visible = state === 'play';
+    // portrait phones split into view + control deck only around gameplay
+    const split = ['play', 'pause', 'dead', 'scroll'].includes(state) || (state === 'options' && arg === 'pause');
+    if (split !== Screen.split) {
+      Screen.split = split;
+      Bus.emit('resize');
+    }
   },
 
   // ---- levels --------------------------------------------------------------
@@ -123,6 +129,7 @@ const Game = {
     this.runRelics = this.save.relics[idx].slice();
     this.checkpoint = null;
     this.litCheckpoints = new Set();
+    this.hintsShown = new Set();
     this.boss = null;
     this.bossDone = false;
     this.totalCoins = 0;
@@ -166,6 +173,15 @@ const Game = {
           if (!this.collected.has(id)) add(r).sid = id;
           break;
         }
+        case 'I': {
+          const r = new Relic(px + 8, py + 8, 2);
+          r.idol = true;
+          if (!this.collected.has(id)) add(r).sid = id;
+          break;
+        }
+        case 'S': add(new Decor(px + 8 - ART.sarcophagus.ax, py + 16 - ART.sarcophagus.h, ART.sarcophagus)); break;
+        case 'V': add(new Crystal(px, py)); break;
+        case 'U': add(new LightShaft(px, py)); break;
         case '?': {
           const sc = new Scroll(px + 8, py + 10, scrollI++);
           if (!this.collected.has(id)) add(sc).sid = id;
@@ -223,6 +239,8 @@ const Game = {
           if (!this.bossDone) this.boss = add(makeBoss(+s.ch, px, py));
           break;
         case 'Q': add(new Decor(px, py + 5, ART.camel)); break;
+        case 'p': add(new Decor(px + 8 - ART.palm.ax, py + 16 - ART.palm.h, ART.palm)); break;
+        case 'T': add(new Decor(px + 8 - ART.tent.ax, py + 16 - ART.tent.h, ART.tent)); break;
         case 'Z': add(new Decor(px + 5, py + 11, ART.skull)); break;
       }
     }
@@ -251,7 +269,7 @@ const Game = {
     Parts.add({ x: r.cx, y: r.cy, type: 'ring', s: 30, life: 0.6, col: '#f4cf62' });
     const n = this.runRelics.filter(Boolean).length;
     this.banner((already ? 'RELIC (ALREADY KNOWN) ' : 'RELIC FOUND ') + n + '/3: ' + RELIC_NAMES[this.chapterIdx][r.idx], 2.6);
-    if (this.chapterIdx === 2 && r.idx === 2 && this.boulders.length) {
+    if (r.idol && this.boulders.length) {
       // the golden idol was resting on a pressure plate...
       setTimeout(() => {
         if (this.state === 'play') for (const b of this.boulders) if (!b.active && !b.dead) b.start();
@@ -383,6 +401,16 @@ const Game = {
         Music.play('boss', 0.3);
       }
     }
+    // tutorial hints, each once per chapter run
+    if (def.hints)
+      for (let i = 0; i < def.hints.length; i++) {
+        if (this.hintsShown.has(i)) continue;
+        const [hx, hy, hw, hh, key] = def.hints[i];
+        if (p.cx >= hx * TILE && p.cx <= (hx + hw) * TILE && p.cy >= hy * TILE && p.cy <= (hy + hh) * TILE) {
+          this.hintsShown.add(i);
+          this.banner(hintText(key), 4.2);
+        }
+      }
     // boulder trigger
     if (this.boulderTrigger !== undefined && p.x > this.boulderTrigger) for (const b of this.boulders) if (!b.active && !b.dead) b.start();
     Cam.update(dt, p, L);
@@ -475,7 +503,7 @@ SCENES.title = {
   draw(g, vw, vh) {
     this.bd.draw(g, this.cam, vw, vh, vh * 0.98, this.t);
     // foreground dune with the wanderer
-    const duneY = vh - 30;
+    const duneY = vh - Math.max(30, vh * 0.16);
     g.fillStyle = '#1d1410';
     for (let x = 0; x < vw; x++) {
       const y = Math.round(duneY - Math.sin((x / vw) * Math.PI * 1.1 + 0.2) * 14);
@@ -518,11 +546,12 @@ SCENES.title = {
       fillR(g, vw - sx, sy, 2, 1, i % 3 ? '#5a4030' : '#8a6a48');
     }
     Vignette.draw(g, vw, vh, 1);
-    const sc = vw >= 330 ? 3 : 2;
-    const ly = Math.round(vh * 0.1);
+    const sc = vw >= 330 && vh >= 240 ? 3 : 2;
+    const ly = Math.round(vh * (vh > 300 ? 0.14 : 0.07));
     drawLogo(g, vw / 2, ly, sc, this.t);
-    drawText(g, 'THE SANDS REMEMBER', vw / 2, ly + 27 * sc, '#e9dcc0', { align: 'center', shadow: '#0e0805' });
-    const my = Math.round(vh * 0.5);
+    const sub = ly + 26 * sc + 3;
+    drawText(g, 'THE SANDS REMEMBER', vw / 2, sub, '#e9dcc0', { align: 'center', shadow: '#0e0805' });
+    const my = Math.max(sub + 18, Math.round(vh * 0.48));
     this.menu.draw(g, vw / 2, my, { width: 170 });
     const hint = Input.touchMode ? 'TAP TO CHOOSE' : Input.usingPad ? 'A: CHOOSE   D-PAD: MOVE' : 'ARROWS: MOVE   ENTER / Z: CHOOSE';
     drawText(g, hint, vw / 2, vh - 12, '#8a7a60', { align: 'center' });
@@ -1084,6 +1113,7 @@ function frame(ts) {
   _acc += dt;
   let steps = 0;
   while (_acc >= STEP && steps < 6) {
+    if (window.__autopilot) window.__autopilot(Game, Input, Cam);
     Input.step();
     Game.time += STEP;
     if (Game.scene && Game.scene.update) Game.scene.update(STEP);

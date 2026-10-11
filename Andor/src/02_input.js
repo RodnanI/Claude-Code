@@ -86,7 +86,7 @@ const Input = {
   setTouchMode(on) {
     if (this.touchMode === on) return;
     this.touchMode = on;
-    document.body.classList.toggle('hide-cursor', on);
+    if (document.body) document.body.classList.toggle('hide-cursor', on);
     Bus.emit('resize');
   },
 };
@@ -180,6 +180,19 @@ function _recomputeTouch() {
     if (T[b] && !Input.touch[b]) Input.press(b);
   Input.touch = T;
 }
+
+// Touch-first devices start with on-screen controls; any touch anywhere
+// (even on the letterbox) switches modes and unlocks audio.
+try {
+  if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) Input.touchMode = true;
+} catch (e) {}
+document.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch' || e.pointerType === 'pen') Input.setTouchMode(true);
+  if (e.target !== cv) {
+    Bus.emit('pointerdown');
+    Input.anyKey = true;
+  }
+});
 
 cv.addEventListener('pointerdown', (e) => {
   e.preventDefault();
