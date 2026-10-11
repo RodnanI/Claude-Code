@@ -249,7 +249,7 @@ const Game = {
     const p = new Player(cp ? cp.x : start.x, cp ? cp.y : start.y);
     this.player = p;
     p.lastSafe = { x: p.x, y: p.y };
-    if (this.checkpointFeatherUsed) p.feather = 0;
+    if (this.featherUsed) p.feather = 0;
   },
   setCheckpoint(cp) {
     if (this.checkpoint && this.checkpoint.idx === cp.idx) return;
@@ -440,6 +440,15 @@ const Game = {
     }
     Weather.draw(g, cam, vw, vh, this.time);
     Vignette.draw(g, vw, vh, def.dark ? 1 : 0.7);
+    const p = this.player;
+    if (p.hp === 1 && p.state !== 'dead') {
+      // a heartbeat at the edges when one blow from the end
+      const beat = Math.max(0, Math.sin(this.time * 5.5)) ** 3;
+      g.globalCompositeOperation = 'source-over';
+      g.globalAlpha = 0.25 + beat * 0.35;
+      g.drawImage(Vignette.red(vw, vh), 0, 0);
+      g.globalAlpha = 1;
+    }
   },
 };
 
@@ -868,11 +877,12 @@ SCENES.dead = {
   },
   draw(g, vw, vh) {
     Game.drawWorld(g);
-    const a = Math.min(0.75, this.t * 0.8);
-    fillR(g, 0, 0, vw, vh, `rgba(40,6,6,${a})`);
-    g.globalAlpha = Math.min(1, this.t);
+    const a = Math.min(0.82, this.t * 1.1);
+    fillR(g, 0, 0, vw, vh, `rgba(22,4,4,${a})`);
+    g.globalAlpha = Math.min(1, this.t * 2);
+    drawDivider(g, vw / 2, Math.round(vh * 0.42) - 8, 120, '#8a2622');
     drawText(g, this.line, vw / 2, vh * 0.42, '#f4cf62', { align: 'center', outline: '#0e0805' });
-    drawText(g, 'YOU RISE AGAIN BY THE LAST FLAME', vw / 2, vh * 0.42 + 14, '#c9b896', { align: 'center' });
+    drawText(g, 'YOU RISE AGAIN BY THE LAST FLAME', vw / 2, vh * 0.42 + 14, '#e9dcc0', { align: 'center', outline: '#0e0805' });
     g.globalAlpha = 1;
   },
 };
@@ -997,7 +1007,7 @@ SCENES.shop = {
     drawText(g, 'THE CARAVANSERAI', vw / 2, y + 8, '#f4cf62', { align: 'center' });
     drawDivider(g, vw / 2, y + 20, 100);
     // merchant: a turbaned elder with a lamp
-    const mf = rigFrame('archer', 'idle0');
+    const mf = rigFrame('merchant', Math.floor(this.t * 1.5) % 2 ? 'idle1' : 'idle0');
     drawSprite(g, mf, x + 22, y + 52);
     drawFlame(g, x + 34, y + 44, 6, this.t);
     const lines = wrapText('"' + this.msg + '"', w - 56);
@@ -1091,7 +1101,7 @@ function startChapterFlow(idx, withStory) {
   else Game.go('card', idx);
 }
 function beginPlay(idx) {
-  Game.checkpointFeatherUsed = false;
+  Game.featherUsed = false;
   Game.loadChapter(idx);
   const L = LEVELS[idx];
   Music.play(L.music, 1);

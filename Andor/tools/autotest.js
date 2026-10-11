@@ -40,7 +40,39 @@ const PILOTS = {
     if (window.__t % 30 === 0) window.__log.push([Math.round(p.x / 16 * 10) / 10, Math.round(p.y / 16 * 10) / 10, p.state, p.wallDir]);
   }`,
 };
+PILOTS.djinn = `(G, I) => {
+    const p = G.player, b = G.boss;
+    if (!p || G.state !== 'play') return;
+    const k = I.kb; k.left = k.right = false;
+    window.__t = (window.__t || 0) + 1;
+    if (!b || !b.active) { k.right = true; return; }
+    // stand under the action; lash any slammed fist in reach, or the sagging head
+    const f = b.fists.find((f) => f.state === 'down' && Math.abs(f.x - p.cx) < 60);
+    if (f) { p.face = Math.sign(f.x - p.cx) || 1; if (Math.abs(f.x - p.cx) > 30) (f.x > p.cx ? k.right = true : k.left = true); else if (window.__t % 12 === 0) I._pend.whip = true; }
+    else if (b.state === 'tired' && window.__t % 10 === 0) { I.kb.up = true; I._pend.jump = true; I._pend.whip = true; }
+    else { const tx = b.cx + Math.sin(window.__t / 60) * 80; if (Math.abs(tx - p.cx) > 10) (tx > p.cx ? k.right = true : k.left = true); }
+    if (b.state !== 'tired') I.kb.up = false;
+    window.__log = window.__log || [];
+    if (window.__t % 60 === 0) window.__log.push([b.hp, b.state, p.hp]);
+  }`;
+PILOTS.pharaoh = `(G, I) => {
+    const p = G.player, b = G.boss, L = G.level;
+    if (!p || G.state !== 'play') return;
+    const k = I.kb; k.left = k.right = false; k.up = false;
+    window.__t = (window.__t || 0) + 1;
+    if (!b || !b.active) { k.right = true; return; }
+    // get under him, jump and lash upward
+    const dx = b.cx - p.cx;
+    if (Math.abs(dx) > 14) (dx > 0 ? k.right = true : k.left = true);
+    if (p.onGround && Math.abs(dx) < 40 && window.__t % 30 === 0) { I._pend.jump = true; window.__hold = 16; }
+    window.__hold = Math.max(0, (window.__hold || 0) - 1); k.jump = window.__hold > 0;
+    if (!p.onGround && p.vy > -60 && p.vy < 60) { k.up = true; I._pend.whip = true; }
+    window.__log = window.__log || [];
+    if (window.__t % 60 === 0) window.__log.push([b.hp, b.state, p.hp]);
+  }`;
 const SETUP = {
+  djinn: 'level=3&x=246&y=24&god',
+  pharaoh: 'level=2&x=304&y=27&god',
   boulder: 'level=2&x=210&y=27',
   shaft: 'level=0&x=168&y=11',
 };

@@ -525,7 +525,8 @@ class Pharaoh extends BossBase {
       case 'float': {
         // drift between high stations, bobbing
         if (!this.station || this.stT > 2.4) {
-          this.station = { x: A.x + 60 + Math.random() * (A.w - 120), y: A.y + 48 + Math.random() * 36 };
+          // low enough to lash from the ledges, high enough to need them
+          this.station = { x: A.x + 60 + Math.random() * (A.w - 120), y: A.floor - 178 + Math.random() * 56 };
           this.stT = 0;
         }
         floatTo(this.station.x, this.station.y + Math.sin(this.t * 2) * 6, 1.6);
@@ -719,7 +720,7 @@ class Shockwave extends Entity {
 // IV. THE BRASS DJINN OF ANDOR
 class Djinn extends BossBase {
   constructor(x, y) {
-    super(x - 16, y - 40, 40, 56, 32, 'THE BRASS DJINN OF ANDOR');
+    super(x - 16, y - 40, 40, 56, 26, 'THE BRASS DJINN OF ANDOR');
     this.gravity = false;
     this.contact = 0;
     this.face = -1;
@@ -746,9 +747,11 @@ class Djinn extends BossBase {
     }
   }
   hurtBox() {
-    // the head is only reachable while it sags; slammed fists can always be struck
-    const h = this.headBox();
-    return { x: Math.min(h.x, this.x - 60), y: Math.min(h.y, this.y), w: this.w + 120, h: this.arena.floor - Math.min(h.y, this.y) };
+    // union of the head and both fists, wherever they have slammed down
+    const boxes = [this.headBox(), ...this.fists.map((f) => ({ x: f.x - 9, y: f.y - 9, w: 18, h: 18 }))];
+    const x0 = Math.min(...boxes.map((b) => b.x)), y0 = Math.min(...boxes.map((b) => b.y));
+    const x1 = Math.max(...boxes.map((b) => b.x + b.w)), y1 = Math.max(...boxes.map((b) => b.y + b.h));
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   }
   headBox() {
     return { x: this.cx - 9, y: this.y - 4 + this.headLow, w: 18, h: 18 };

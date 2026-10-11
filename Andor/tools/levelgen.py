@@ -120,6 +120,7 @@ def level_bazaar():
     lv.row(74, 77, 7, '=')
     lv.put(81, 4, 'a')
     lv.put(78, 4, '*')               # relic 1, on the archer's perch
+    lv.put(80, 2, 'O')
     lv.coins([(75, 9), (76, 9), (75, 6), (76, 6)])
     lv.put(71, 12, 'g')
     lv.put(86, 12, 'P')
@@ -150,6 +151,7 @@ def level_bazaar():
     lv.fill(136, 14, 140, 16, 'F')
     lv.zone(137, 14, 140, 16)
     lv.put(139, 16, '*')             # relic 2
+    lv.put(137, 16, 'O')
     lv.coins([(138, 15), (140, 15)])
     lv.hint(130, 11, 135, 16, 'hatch')
     # -- 5. Courtyard flame and the first ring ---------------------------
@@ -171,6 +173,7 @@ def level_bazaar():
     lv.bld(173, 175, 12)             # shaft floor
     lv.carve(171, 10, 172, 11)       # door in from the roof
     lv.coins([(174, 9), (174, 7), (174, 5), (174, 3)])
+    lv.put(173, 3, 'O')
     lv.hint(170, 3, 175, 11, 'walljump')
     lv.bld(178, 196, 6)
     lv.row(178, 196, 6, '%')
@@ -236,6 +239,7 @@ def level_desert():
     lv.bld(34, 38, G - 2)
     lv.bld(39, 44, G - 4)
     lv.put(42, G - 5, 'c')
+    lv.hint(33, G - 9, 38, G - 2, 'pogo')
     lv.bld(45, 49, G - 2)
     lv.bld(50, 58, G)
     lv.put(53, G - 1, 's')
@@ -312,6 +316,7 @@ def level_desert():
     lv.carve(191, G - 3, 192, G - 2)        # a crack into the chimney
     lv.coins([(194, 15), (194, 12), (194, 9)])
     lv.put(197, 4, '*')                     # relic 2
+    lv.put(196, 3, 'O')
     lv.bld(198, 202, G - 1)
     lv.put(200, G - 2, 'h')
     lv.hint(190, 8, 195, G - 2, 'walljump')
@@ -402,6 +407,7 @@ def level_tomb():
     lv.put(81, 12, 'R')
     lv.row(87, 89, 12, '=')                 # high ledge with relic 1: swing hard
     lv.put(88, 11, '*')
+    lv.put(87, 11, 'O')
     lv.coins([(66, 19), (74, 18), (79, 16), (83, 16), (90, 19)])
     lv.put(59, 10, 't')
     lv.put(95, 10, 't')
@@ -447,6 +453,7 @@ def level_tomb():
     lv.carve(147, 14, 149, 17)              # alcove up to relic 2
     lv.row(147, 149, 19, '=')
     lv.put(148, 15, '*')
+    lv.put(147, 15, 'O')
     lv.put(148, 17, 'o')
     lv.put(164, 27, 'j')
     lv.put(143, 19, 'r')
@@ -500,6 +507,7 @@ def level_tomb():
     # -- 10. The burial chamber -------------------------------------------------------------
     lv.carve(294, 22, 300, 28)
     lv.put(296, 28, 'K')
+    lv.put(298, 28, 'O')
     lv.fill(294, 29, 331, 29)
     lv.carve(301, 13, 326, 28)
     lv.row(304, 307, 24, '=')
@@ -559,6 +567,7 @@ def level_andor():
     lv.put(81, 4, 'R')
     lv.row(87, 91, 7, '=')
     lv.put(89, 6, '*')                       # relic 1, on the tower's shoulder
+    lv.put(91, 6, 'O')
     lv.coins([(81, 15), (81, 12), (81, 9), (88, 6), (90, 6)])
     lv.put(83, 12, 'z')
     lv.fill(87, 13, 95, 13, '=')
@@ -595,6 +604,7 @@ def level_andor():
     lv.fill(157, 13, 160, 17, 'F')
     lv.zone(156, 13, 160, 17)
     lv.put(159, 17, '*')
+    lv.put(157, 17, 'O')
     lv.coins([(157, 16), (158, 16), (160, 16)])
     lv.carve(155, 18, 155, 18)
     # the market's exit: up and over through a roof hatch
@@ -629,6 +639,7 @@ def level_andor():
     lv.bld(223, 225, 9)                     # far island, relic 3: dash to it
     lv.row(223, 225, 9, '%')
     lv.put(224, 8, '*')
+    lv.put(225, 8, 'O')
     lv.put(221, 12, 'R')
     lv.bld(229, 237, 16)
     lv.row(229, 237, 16, '%')

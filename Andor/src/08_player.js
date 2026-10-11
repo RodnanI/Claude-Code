@@ -179,8 +179,9 @@ class Player extends Body {
         this.onGround = false;
         this.jumpBuf = 0;
         this.coyote = 0;
-      } else if (this.coyote > 0 || this.onGround) {
-        this.doJump(quick ? 0.72 : 1);
+      } else if (this.coyote > 0 || this.onGround || (quick && this.vy >= 0)) {
+        // sand gives a weaker push, but you can always fight your way up
+        this.doJump(quick ? 0.8 : 1);
       } else if (this.wallGrace > 0 && this.lastWall) {
         const wd = this.lastWall;
         this.vx = -wd * PHYS.wallJumpX;
@@ -663,6 +664,7 @@ class Player extends Body {
     if (navigator.vibrate && Settings.vibrate) navigator.vibrate(60);
     if (this.hp <= 0 && this.feather > 0) {
       this.feather = 0;
+      Game.featherUsed = true;
       this.hp = 1;
       Parts.burst(this.cx, this.cy, 24, { col: ['#f4cf62', '#fff1b3', '#3fb5a3'], speed: 120, g: -40, life: 1 });
       Parts.text(this.cx, this.y - 8, 'SIMURGH FEATHER!', PAL.turq2);
@@ -697,6 +699,7 @@ class Player extends Body {
     Parts.burst(this.cx, this.cy, 10, { col: ['#f2e6c8', '#c0392b'], speed: 90 });
     if (this.hp <= 0 && this.feather > 0) {
       this.feather = 0;
+      Game.featherUsed = true;
       this.hp = 1;
       Parts.text(this.cx, this.y - 8, 'SIMURGH FEATHER!', PAL.turq2);
     }

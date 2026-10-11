@@ -54,7 +54,6 @@ const STORY = {
 };
 
 const CREDITS = [
-  ['ANDOR', '#f4cf62'],
   ['THE SANDS REMEMBER'],
   [''],
   ['DESIGN, CODE, PIXELS AND MUSIC', '#dea12a'],

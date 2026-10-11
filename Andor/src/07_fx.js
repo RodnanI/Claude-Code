@@ -262,4 +262,20 @@ const Vignette = {
     g.drawImage(this.c, 0, 0);
     g.globalAlpha = 1;
   },
+  red(vw, vh) {
+    const key = vw + 'x' + vh;
+    if (this.redKey !== key) {
+      this.redKey = key;
+      const pb = new PixBuf(vw, vh);
+      for (let y = 0; y < vh; y++)
+        for (let x = 0; x < vw; x++) {
+          const dx = (x - vw / 2) / (vw / 2), dy = (y - vh / 2) / (vh / 2);
+          const v = clamp((Math.sqrt(dx * dx * 0.7 + dy * dy) - 0.62) * 1.6, 0, 1);
+          const q = Math.floor(v * 4 + bayer(x, y)) / 4;
+          if (q > 0) pb.set(x, y, packRgb(150, 16, 20, Math.round(q * 200)));
+        }
+      this.redC = pb.toCanvas();
+    }
+    return this.redC;
+  },
 };

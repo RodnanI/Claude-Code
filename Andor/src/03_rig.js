@@ -131,6 +131,13 @@ const SKINS = {
     L: { sl: 'n', slF: 'n', hd: 's', hdF: 'S', tr: 'n', trF: 'n', bt: 'y', btF: 'y', out: 'k' },
     weapon: 'spear',
   },
+  merchant: {
+    w: 30, h: 28,
+    pal: { k: '#1c120d', t: '#f4ead2', T: '#c0392b', s: '#c98a5e', S: '#8f5636', h: '#ece4d4', r: '#7e1b23', R: '#4f1015', y: '#dea12a', b: '#5a3a22', B: '#33200f', e: '#1c120d' },
+    head: ['..kkkkkk...', '.kttTTttk..', 'kTttttTTtk.', 'kttTTttTTk.', '.kkkkkkkk..', '.kSssskssk.', '.kSsssssssk', '.khhhhhhhk.', '..khhhhhhk.', '...khhhhk..'],
+    torso: ['.kRrrrrk.', 'kRrryrrrk', 'kRrryrrrk', 'kRrryrrrk', 'kyyyyyyyk', '.kRrrrRk.'],
+    L: { sl: 'r', slF: 'R', hd: 's', hdF: 'S', tr: 'r', trF: 'R', bt: 'b', btF: 'B', out: 'k' },
+  },
   sentinel: {
     w: 36, h: 30,
     pal: { k: '#0d0a08', a: '#a86d16', A: '#6e3f10', g: '#dea12a', G: '#f4cf62', e: '#79f0a5', E: '#25b56a', d: '#3a2a10' },

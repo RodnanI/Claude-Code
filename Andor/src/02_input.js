@@ -156,7 +156,7 @@ function _ctrlAt(x, y) {
   for (const c of Input.controls) {
     if (c.id === 'pause' && !TouchUI.visible) continue;
     const d = Math.hypot(x - c.x, y - c.y);
-    const lim = c.r + (c.small ? 6 : 9);
+    const lim = c.r * (c.small ? 1 : Settings.touchSize || 1) + (c.small ? 6 : 9);
     if (d < lim && d < bd) {
       bd = d;
       best = c;
