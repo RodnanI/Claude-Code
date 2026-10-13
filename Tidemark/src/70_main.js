@@ -14,6 +14,7 @@ function step(S) {
   if (S.tick % 10 === 3) stepPower(S);
   stepProduction(S);
   if (S.tick % 10 === 5) stepHouses(S);
+  if (S.tick % 200 === 77) stepMoves(S);
   if (S.tick % 20 === 9) stepMarkets(S);
   stepForests(S);
   stepTrade(S);

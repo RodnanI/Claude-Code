@@ -108,6 +108,24 @@ function stepHouses(S) {
   }
 }
 
+/* Families drift toward the better homes: every 200 ticks, in each labour
+   market, residents of the emptiest house move into the fullest house that
+   still has room, is powered and has bread. Full houses can then build up. */
+function stepMoves(S) {
+  const root = labourRoots(S), groups = new Map();
+  for (const b of S.blds) if (b.type === 'house') { const a = bAcc(S, b); if (a < 0) continue; const k = root(rcOf(S, a)); let g = groups.get(k); if (!g) { g = []; groups.set(k, g); } g.push(b); }
+  for (const g of groups.values()) {
+    for (let n = 0; n < 2; n++) {
+      let src = null, dst = null;
+      for (const b of g) {
+        if (b.res > 0 && (!src || b.lvl < src.lvl || (b.lvl === src.lvl && (b.res < src.res || (b.res === src.res && b.id > src.id))))) src = b;
+        if (b.res < HCAP[b.lvl] && b.pwOn && b.inv[R.bread] > 0 && (!dst || b.lvl > dst.lvl || (b.lvl === dst.lvl && (b.res > dst.res || (b.res === dst.res && b.id < dst.id))))) dst = b;
+      }
+      if (!src || !dst || src === dst || src.lvl > dst.lvl || (src.lvl === dst.lvl && src.res >= dst.res)) break;
+      src.res--; dst.res++;
+    }
+  }
+}
 /* Markets: residents walk in and carry goods home (internal transfer). */
 function housesNear(S, m) {
   if (m._hnV === S.ver.road && m._hn) return m._hn;
@@ -164,11 +182,12 @@ function labourRoots(S) {
 }
 function stepLabour(S) {
   const rn = roadNet(S); const pool = new Map(), tot = new Map(), root = labourRoots(S);
+  const resid = new Map();
   for (const b of S.blds) if (b.type === 'house') {
     const a = bAcc(S, b); if (a < 0) continue; const k = root(rn.rc[a]);
-    const w = Math.floor(b.res * WORK_PCT / 100);
-    pool.set(k, (pool.get(k) || 0) + w); tot.set(k, (tot.get(k) || 0) + w);
+    resid.set(k, (resid.get(k) || 0) + b.res);
   }
+  for (const [k, n] of resid) { const w = Math.floor(n * WORK_PCT / 100); pool.set(k, w); tot.set(k, w); }
   // works that sat idle (no input, or output nobody collects) hire after busy ones
   const pr = b => workPrio(b) + (BT[b.type].out && (b.st === 3 || b.st === 4) ? 3 : 0);
   const work = S.blds.filter(b => BT[b.type].jobs > 0).sort((a, b) => pr(a) - pr(b) || a.id - b.id);
@@ -185,7 +204,7 @@ function stepLabour(S) {
     pop += b.res;
     const a = bAcc(S, b); if (a < 0) { b.jobsOk = 0; continue; }
     const k = root(rn.rc[a]), un = pool.get(k) || 0, all = tot.get(k) || 0;
-    b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 20 + 600) ? 1 : 0;
+    b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 25 + 1000) ? 1 : 0;
   }
   let wf = 0; for (const v of tot.values()) wf += v;
   S.labour = { pop, jobs, emp, wf, unemp: wf - emp };

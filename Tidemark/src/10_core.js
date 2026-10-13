@@ -60,7 +60,7 @@ const HCAP = [0, 6, 14, 24];                 // residents per house level
 const HPOW = [0, 1, 2, 3];                   // MW per house level (x1.5 in the evening)
 const MEAL = 2 * TPD;                        // resident-ticks per loaf: one loaf feeds a resident for two days
 const TAX = [0, 3, 5, 8];                    // credits per resident per day
-const WORK_PCT = 45;                         // share of residents in the labour force
+const WORK_PCT = 40;                         // share of residents in the labour force
 const BURN = 9600;                           // MW-ticks per unit of coal
 const UPG = [null, [[R.bricks, 4], [R.planks, 2]], [[R.bricks, 6], [R.planks, 4], [R.furniture, 2]]];
 
