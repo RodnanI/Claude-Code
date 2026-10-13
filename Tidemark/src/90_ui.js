@@ -20,6 +20,7 @@ const ICON = {
   power: '<path d="M12 2v20M6 6h12M8 10h8"/><path d="M6 6 3 9M18 6l3 3"/>',
   build: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
   bulldoze: '<path d="M4 15h11l3-5h3M4 15v4h14v-4"/><circle cx="7" cy="19" r="1.4"/><circle cx="15" cy="19" r="1.4"/><path d="M4 15 2 9h6l2 6"/>',
+  panel: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   vehicle: '<rect x="2" y="8" width="12" height="8" rx="1"/><path d="M14 11h4l3 3v2h-7"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
 };
 function icon(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
@@ -47,8 +48,9 @@ function recipeText(bt) {
 }
 
 function buildChrome() {
-  $('tools').innerHTML = TOOLS.map(([k, n, key]) => '<button class="tool" data-tool="' + k + '" title="' + n + ' (' + key + ')">' + icon(k) + '<span>' + n + '</span></button>').join('');
-  $('tools').onclick = e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); };
+  $('tools').innerHTML = TOOLS.map(([k, n, key]) => '<button class="tool" data-tool="' + k + '" title="' + n + ' (' + key + ')">' + icon(k) + '<span>' + n + '</span></button>').join('') +
+    '<button class="tool" id="panelTool" title="Show or hide the panel">' + icon('panel') + '<span>Panel</span></button>';
+  $('tools').onclick = e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); else if (e.target.closest('#panelTool')) { const show = $('panel').classList.contains('collapsed'); if (show && narrow() && G.tool !== 'inspect') setTool('inspect'); openPanel(show); renderPanel(true); } };
   let pal = '<div class="pal">';
   for (const [title, list] of PAL) { pal += '<h4>' + esc(title) + '</h4><div class="grid">' + list.map(bt => '<button class="card" data-bt="' + bt + '"><b>' + esc(BT[bt].name) + '</b><small>' + fmt(BT[bt].cost) + ' cr. ' + esc(recipeText(bt)) + '</small></button>').join('') + '</div>'; }
   pal += '<p class="small-note">Rotate with R or the Rotate button. On touch, tap to position and confirm with Build.</p></div>';
@@ -60,7 +62,6 @@ function buildChrome() {
   $('overlaySeg').onclick = e => { const b = e.target.closest('[data-ov]'); if (b) { RV.showNet = b.dataset.ov; syncChrome(); } };
   $('tabs').innerHTML = [['inspect', 'Inspect'], ['ledger', 'Ledger'], ['logi', 'Logistics'], ['time', 'Time'], ['goals', 'Goals'], ['trade', 'Trade'], ['settings', 'Settings']].map(([k, n]) => '<button data-tab="' + k + '" role="tab">' + n + '</button>').join('');
   $('tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { G.tab = b.dataset.tab; openPanel(true); renderPanel(true); } };
-  $('panelToggle').onclick = () => openPanel($('panel').classList.contains('collapsed'));
   $('panelBody').onclick = panelClick;
   // never swap the panel's DOM under a finger or a mouse button that is still down
   $('panel').addEventListener('pointerdown', () => { G.panelHold = true; });
@@ -76,11 +77,13 @@ function syncChrome() {
   for (const b of document.querySelectorAll('#overlaySeg button')) b.classList.toggle('on', b.dataset.ov === RV.showNet);
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === G.tab);
   for (const b of document.querySelectorAll('#palette .card')) b.classList.toggle('on', G.tool === 'place' && b.dataset.bt === G.bt);
-  $('palette').hidden = !(G.tool === 'build' || G.tool === 'place');
+  $('palette').hidden = !(G.tool === 'build' || (G.tool === 'place' && !narrow()));
 }
 function openPanel(on) { $('panel').classList.toggle('collapsed', !on); G.settings.panel = on ? 1 : 0; }
+const narrow = () => (window.innerWidth || 1000) <= 760;
 function setTool(t) {
   if (t === 'build' && G.tool === 'build') t = 'inspect';
+  if (narrow() && t !== 'inspect') openPanel(false);
   G.tool = t; RV.tool = t; RV.ghost = null; hideConfirm();
   if (t !== 'place' && t !== 'build') G.bt = null;
   $('view').style.cursor = t === 'inspect' ? 'default' : 'crosshair';
@@ -110,7 +113,7 @@ function updateTop() {
   $('pop').textContent = fmt(L.pop) + ' res. ' + L.emp + '/' + L.jobs + ' jobs';
   let sup = 0, dem = 0; for (const p of S.pstat || []) { sup += p[1]; dem += p[2]; }
   $('pwr').textContent = sup + '/' + dem + ' MW'; $('pwr').className = dem > sup ? 'warn' : '';
-  const n = S.alerts.length; $('alertBtn').textContent = n + (n === 1 ? ' alert' : ' alerts'); $('alertBtn').classList.toggle('hot', n > 0);
+  const n = S.alerts.length; $('alertBtn').textContent = narrow() ? n + '!' : n + (n === 1 ? ' alert' : ' alerts'); $('alertBtn').classList.toggle('hot', n > 0);
   drawTideGauge(S);
 }
 function drawTideGauge(S) {
@@ -396,6 +399,7 @@ function panelSettings(S) {
   h += '<div class="row"><span>Weather effects</span><span class="seg small"><button data-a="wxv" data-i="1" class="' + (G.settings.wx ? 'on' : '') + '">On</button><button data-a="wxv" data-i="0" class="' + (!G.settings.wx ? 'on' : '') + '">Off</button></span></div>';
   h += '<div class="row"><span>Residents shown</span><span class="seg small">' + ['None', 'Some', 'Many'].map((n, i) => '<button data-a="walk" data-i="' + i + '" class="' + (G.settings.walk === i ? 'on' : '') + '">' + n + '</button>').join('') + '</span></div>';
   h += '<p class="small-note">These settings only change drawing. Weather still slows boats and trucks with effects off; residents on screen are a visual sample of the commuting the labour model already counts. <a href="#" data-a="hashcheck">Check: state hash before and after toggling detail</a>' + (G.hashCheck ? ' <b class="' + (G.hashCheck.same ? 'pass' : 'fail') + '">' + esc(G.hashCheck.text) + '</b>' : '') + '</p>';
+  h += '<h3>Map overlay</h3><div class="row"><span class="seg small">' + [['', 'City'], ['roads', 'Road nets'], ['power', 'Power'], ['traffic', 'Traffic'], ['rail', 'Rail']].map(([k, n]) => '<button data-a="ov" data-k="' + k + '" class="' + (RV.showNet === k ? 'on' : '') + '">' + n + '</button>').join('') + '</span></div>';
   h += '<h3>Save</h3><div class="row"><button class="btn small" data-a="export">Export save file</button><button class="btn small" data-a="import">Import save file</button></div><p class="small-note">A save holds the full state, the action log and the latest snapshots, so verification and rewinding keep working after loading.</p>';
   h += '<h3>Scene</h3><div class="row"><button class="btn small" data-a="scene">Living scene (hide interface, H)</button><button class="btn small" data-a="recenter">Recentre camera</button></div>';
   h += '<h3>Keys</h3><p class="small-note mono">Space pause, 1-6 speed, I R T G C L P B X tools, R rotate while placing, Esc cancel, arrows or WASD pan, +/- zoom, H scene mode, F follow</p>';

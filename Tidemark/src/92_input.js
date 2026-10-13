@@ -76,7 +76,7 @@ function bindInput() {
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
     if (G.menuOpen) return;
-    cv.setPointerCapture(e.pointerId);
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* synthetic or already released */ }
     PT.down.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (PT.down.size === 2) {
       const [a, b] = [...PT.down.values()];
@@ -151,7 +151,7 @@ function bindInput() {
 function placeNow() {
   if (!PT.placeAt || !G.bt) return;
   const r = act({ type: 'place', bt: G.bt, x: PT.placeAt[0], y: PT.placeAt[1], rot: G.rot });
-  if (r.ok) { toast(BT[G.bt].name + ' built'); if (G.bt !== 'house') { select({ b: r.b.id }); } }
+  if (r.ok) { toast(BT[G.bt].name + ' built'); if (PT.touch) RV.ghost = null; if (G.bt !== 'house' && !narrow()) { select({ b: r.b.id }); } }
 }
 function onKey(e) {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
@@ -205,6 +205,7 @@ function panelClick(e) {
     case 'wxv': G.settings.wx = +el.dataset.i; applySettings(); break;
     case 'walk': G.settings.walk = +el.dataset.i; applySettings(); break;
     case 'hashcheck': { const h1 = hashState(S); const q0 = G.settings.q; G.settings.q = (q0 + 1) % 3; applySettings(); renderFrame(S, 0); G.settings.q = q0; applySettings(); const h2 = hashState(S); G.hashCheck = { same: h1 === h2, text: h1 === h2 ? 'unchanged (' + hex(h1) + ')' : 'changed' }; G.lastPanel = ''; break; }
+    case 'ov': RV.showNet = el.dataset.k; syncChrome(); break;
     case 'export': exportSave(); break;
     case 'import': $('fileIn').click(); break;
     case 'scene': toggleScene(); break;

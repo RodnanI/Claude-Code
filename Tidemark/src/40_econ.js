@@ -87,7 +87,8 @@ function stepHouses(S) {
     }
     const cap = HCAP[b.lvl];
     const fed = b.inv[R.bread] > 0;
-    if (acc && b.pwOn && (fed || b.res < 2) && b.res < cap && b.jobsOk) {
+    // two pioneer residents move in without power or bread; beyond that a home needs both
+    if (acc && (b.pwOn || b.res < 2) && (fed || b.res < 2) && b.res < cap && b.jobsOk) {
       b.growAcc += 10;
       if (b.growAcc >= 150) { b.growAcc = 0; b.res++; }
     }
@@ -166,7 +167,7 @@ function stepLabour(S) {
     pop += b.res;
     const a = bAcc(S, b); if (a < 0) { b.jobsOk = 0; continue; }
     const k = rn.rc[a], un = pool.get(k) || 0, all = tot.get(k) || 0;
-    b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 15 + 400) ? 1 : 0;
+    b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 20 + 600) ? 1 : 0;
   }
   let wf = 0; for (const v of tot.values()) wf += v;
   S.labour = { pop, jobs, emp, wf, unemp: wf - emp };

@@ -55,7 +55,8 @@ function drawGroundTile(c, S, t) {
   const dep = S.dep[t];
   if (coast && !S.bld[t] && !S.road[t]) col = GC.sand;
   else if (dep === D_FERTILE && nearFarm(S, t) && !S.road[t] && !S.rail[t] && !S.bld[t]) col = (x + y) & 1 ? GC.field : GC.soil;
-  fillPoly(c, tileQ(x, y, 0, -0.014), col);
+  const ov = -0.9 / (HW * (RV.chunkZ || 1));
+  fillPoly(c, tileQ(x, y, 0, ov), col);
   if (RV.q >= 1 && !S.road[t] && !S.bld[t]) {
     if (dep === D_FERTILE && nearFarm(S, t) && !S.rail[t]) {     // crop rows
       const ax = (x * 3 + y) % 2;
@@ -83,7 +84,7 @@ function drawWater(c, S, t, x, y, ter) {
   let col;
   if (ter === T_SEA) { const d = seaDepth(S)[t]; col = mixHex(GC.shallow, GC.deep, Math.min(1, (d - 1) / 5)); }
   else col = GC.canal;
-  fillPoly(c, tileQ(x, y, z, -0.014), col);
+  fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.cam.z * RV.dpr || 1))), col);
   if (edge(3)) { // west edge: face toward +x
     fillPoly(c, [P(x - 0.5, y - 0.5, 0), P(x - 0.5, y + 0.5, 0), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], shade(wallCol(3), 0.78));
     if (ter === T_SEA) fillPoly(c, [P(x - 0.5, y - 0.5, -2), P(x - 0.5, y + 0.5, -2), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], 'rgba(40,50,40,0.28)');
@@ -157,7 +158,7 @@ function drawLockChamber(c, S, t, x, y, z) {
 function roadNbMask(S, t) { let m = 0; for (let k = 0; k < 4; k++) { const n = nb(S, t, k); if (n >= 0 && S.road[n]) m |= 1 << k; } return m; }
 function drawRoad(c, S, t, x, y, z) {
   const m = roadNbMask(S, t);
-  fillPoly(c, tileQ(x, y, z, -0.014), GC.walk);
+  fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.chunkZ || 1))), GC.walk);
   const w = 0.32;           // half-width of the carriageway
   const ctr = [P(x - w, y - w, z), P(x + w, y - w, z), P(x + w, y + w, z), P(x - w, y + w, z)];
   fillPoly(c, ctr, GC.road);

@@ -2,8 +2,7 @@
 // every unit, replay the deletion from a snapshot and compare.
 const { loadSim } = require('./load');
 const T = loadSim();
-const S = T.newSim(7, 56, 56);
-T.shapeTidemark(S); T.buildTidemark(S, 'canal');
+const S = T.startScenario('stress');
 for (let i = 0; i < T.TPD; i++) T.step(S);
 const groups = T.bridgeGroups(S);
 console.log('bridges:', groups.map((g, i) => i + ':' + g.kind + '[' + g.tiles.map(t => T.xy(S, t)).join(' ') + ']').join('  '));

@@ -54,9 +54,10 @@ button { font: inherit; color: inherit; }
 .tool { width: 58px; min-height: 54px; background: var(--paper); border: 1px solid var(--ink2); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; padding: 4px 2px; box-shadow: 0 1px 0 rgba(43,38,34,.35); font: 500 11px var(--sans); }
 .tool svg { width: 24px; height: 24px; stroke: var(--ink); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .tool.on { background: var(--ink); color: var(--paper); }
+#panelTool { margin-top: 8px; }
 .tool.on svg { stroke: var(--paper); }
 .tool .k { font: 10px var(--mono); opacity: .55; }
-#palette { position: fixed; left: 78px; top: calc(var(--top) + 10px); width: 330px; max-height: calc(100vh - var(--top) - 24px); overflow: auto; z-index: 16; padding: 10px; }
+#palette { position: fixed; left: 78px; top: calc(var(--top) + 10px); width: 330px; max-height: calc(100vh - var(--top) - 24px); overflow: auto; z-index: 19; padding: 10px; }
 .sheet { background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); }
 .pal h4 { margin: 8px 2px 4px; font: 600 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink2); }
 .pal .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -70,7 +71,6 @@ button { font: inherit; color: inherit; }
 /* ---------- panel ---------- */
 #panel { position: fixed; right: 10px; top: calc(var(--top) + 10px); bottom: 10px; width: 372px; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; box-shadow: var(--shadow); z-index: 18; display: flex; flex-direction: column; transition: transform .2s ease; }
 #panel.collapsed { transform: translateX(calc(100% + 14px)); }
-#panelToggle { position: absolute; left: -64px; top: 0; background: var(--paper); border: 1px solid var(--rule); box-shadow: var(--shadow); }
 .tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 0; padding: 6px 4px 0; border-bottom: 1px solid var(--rule); }
 .tabs::-webkit-scrollbar { display: none; }
 .tabs button { flex: none; border: 0; background: transparent; padding: 7px 6px 8px; cursor: pointer; font: 600 12.5px var(--sans); color: var(--ink2); border-bottom: 2px solid transparent; min-height: 34px; }
@@ -137,18 +137,20 @@ input[type=number], input[type=text] { font: 13px var(--mono); padding: 5px 7px;
 /* ---------- narrow screens: bottom tool rail and sheet panel ---------- */
 @media (max-width: 760px) {
   :root { --top: 46px; }
-  #top { gap: 8px; padding: 0 8px; }
-  .mark { font-size: 15px; letter-spacing: .1em; }
-  #scenName, #wx, #pop, #tide { display: none; }
-  .stats { gap: 8px; font-size: 12px; }
-  .seg button { min-width: 30px; padding: 4px 6px; }
+  #top { gap: 6px; padding: 0 6px; }
+  .brand, #wx, #pop, #pwr, #tide { display: none; }
+  .clockbox { font-size: 12px; white-space: nowrap; }
+  .stats { gap: 6px; font-size: 12px; margin-left: auto; }
+  #speed button { min-width: 28px; padding: 3px 4px; font-size: 11px; min-height: 30px; }
+  #speed button[data-sp="5"] { display: none; }
+  #alertBtn { padding: 2px 7px; }
+  #menuBtn { padding: 4px 6px; }
+  #overlaySeg { display: none; }
   #tools { left: 0; right: 0; top: auto; bottom: 0; flex-direction: row; overflow-x: auto; padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--rule); gap: 6px; }
   .tool { flex: none; width: 56px; min-height: 52px; }
   #palette { left: 8px; right: 8px; width: auto; top: auto; bottom: 74px; max-height: 50vh; }
   #panel { left: 0; right: 0; top: auto; bottom: 66px; width: auto; height: 56vh; border-radius: 12px 12px 0 0; }
   #panel.collapsed { transform: translateY(calc(100% + 70px)); }
-  #panelToggle { left: auto; right: 10px; top: -40px; }
-  #overlaySeg { bottom: auto; top: calc(var(--top) + 8px); }
   .confirm { bottom: 76px; }
   .kv { grid-template-columns: 96px 1fr; }
 }
@@ -181,7 +183,6 @@ input[type=number], input[type=text] { font: 13px var(--mono); padding: 5px 7px;
 <aside id="panel" class="collapsed">
   <div id="tabs" class="tabs" role="tablist"></div>
   <div id="panelBody"></div>
-  <button id="panelToggle" class="btn ghost small" aria-label="Show or hide panel">Panel</button>
 </aside>
 
 <div id="confirmBar" class="confirm" hidden>
@@ -265,7 +266,7 @@ const HCAP = [0, 6, 14, 24];                 // residents per house level
 const HPOW = [0, 1, 2, 3];                   // MW per house level (x1.5 in the evening)
 const MEAL = 2 * TPD;                        // resident-ticks per loaf: one loaf feeds a resident for two days
 const TAX = [0, 3, 5, 8];                    // credits per resident per day
-const WORK_PCT = 60;                         // share of residents in the labour force
+const WORK_PCT = 45;                         // share of residents in the labour force
 const BURN = 9600;                           // MW-ticks per unit of coal
 const UPG = [null, [[R.bricks, 4], [R.planks, 2]], [[R.bricks, 6], [R.planks, 4], [R.furniture, 2]]];
 
@@ -1079,7 +1080,8 @@ function stepHouses(S) {
     }
     const cap = HCAP[b.lvl];
     const fed = b.inv[R.bread] > 0;
-    if (acc && b.pwOn && (fed || b.res < 2) && b.res < cap && b.jobsOk) {
+    // two pioneer residents move in without power or bread; beyond that a home needs both
+    if (acc && (b.pwOn || b.res < 2) && (fed || b.res < 2) && b.res < cap && b.jobsOk) {
       b.growAcc += 10;
       if (b.growAcc >= 150) { b.growAcc = 0; b.res++; }
     }
@@ -1158,7 +1160,7 @@ function stepLabour(S) {
     pop += b.res;
     const a = bAcc(S, b); if (a < 0) { b.jobsOk = 0; continue; }
     const k = rn.rc[a], un = pool.get(k) || 0, all = tot.get(k) || 0;
-    b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 15 + 400) ? 1 : 0;
+    b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 20 + 600) ? 1 : 0;
   }
   let wf = 0; for (const v of tot.values()) wf += v;
   S.labour = { pop, jobs, emp, wf, unemp: wf - emp };
@@ -3392,7 +3394,8 @@ const SCEN = {
       ['Deliver 80 loaves to market halls', S => { const n = sinceStart(S, 'delivered', R.bread); return [n >= 80, n + '/80']; }],
       ['Grow Tidemark to 110 residents', S => { const p = S.labour ? S.labour.pop : 0; return [p >= 110, p + '/110']; }],
     ],
-    hints: ['Mills and bakeries need electricity. The tide mill only turns while the tide runs, so at slack water the mill stops. More tide mills along the shore smooth it out.',
+    hints: ['Families only move in when there is work for them. Every workplace you add, a forester or a sawmill, lets the town grow further.',
+      'Mills and bakeries need electricity. The tide mill only turns while the tide runs, so at slack water the mill stops. More tide mills along the shore smooth it out.',
       'Buildings work only when residents can reach them by road. Check a building\'s staff count.',
       'Select a hungry house and press Why? to follow the shortage back through the chain.'],
   },
@@ -3724,7 +3727,8 @@ function drawGroundTile(c, S, t) {
   const dep = S.dep[t];
   if (coast && !S.bld[t] && !S.road[t]) col = GC.sand;
   else if (dep === D_FERTILE && nearFarm(S, t) && !S.road[t] && !S.rail[t] && !S.bld[t]) col = (x + y) & 1 ? GC.field : GC.soil;
-  fillPoly(c, tileQ(x, y, 0, -0.014), col);
+  const ov = -0.9 / (HW * (RV.chunkZ || 1));
+  fillPoly(c, tileQ(x, y, 0, ov), col);
   if (RV.q >= 1 && !S.road[t] && !S.bld[t]) {
     if (dep === D_FERTILE && nearFarm(S, t) && !S.rail[t]) {     // crop rows
       const ax = (x * 3 + y) % 2;
@@ -3752,7 +3756,7 @@ function drawWater(c, S, t, x, y, ter) {
   let col;
   if (ter === T_SEA) { const d = seaDepth(S)[t]; col = mixHex(GC.shallow, GC.deep, Math.min(1, (d - 1) / 5)); }
   else col = GC.canal;
-  fillPoly(c, tileQ(x, y, z, -0.014), col);
+  fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.cam.z * RV.dpr || 1))), col);
   if (edge(3)) { // west edge: face toward +x
     fillPoly(c, [P(x - 0.5, y - 0.5, 0), P(x - 0.5, y + 0.5, 0), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], shade(wallCol(3), 0.78));
     if (ter === T_SEA) fillPoly(c, [P(x - 0.5, y - 0.5, -2), P(x - 0.5, y + 0.5, -2), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], 'rgba(40,50,40,0.28)');
@@ -3826,7 +3830,7 @@ function drawLockChamber(c, S, t, x, y, z) {
 function roadNbMask(S, t) { let m = 0; for (let k = 0; k < 4; k++) { const n = nb(S, t, k); if (n >= 0 && S.road[n]) m |= 1 << k; } return m; }
 function drawRoad(c, S, t, x, y, z) {
   const m = roadNbMask(S, t);
-  fillPoly(c, tileQ(x, y, z, -0.014), GC.walk);
+  fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.chunkZ || 1))), GC.walk);
   const w = 0.32;           // half-width of the carriageway
   const ctr = [P(x - w, y - w, z), P(x + w, y - w, z), P(x + w, y + w, z), P(x - w, y + w, z)];
   fillPoly(c, ctr, GC.road);
@@ -4431,6 +4435,129 @@ function drawGulls(c, S, dt) {
   }
 }
 
+/* ==== 87_cache.js ==== */
+/* =====================================================================
+   Drawing caches. Buildings are drawn once into sprites keyed by every
+   input that changes their look; dry land is drawn into 4x4-tile chunks
+   re-rendered only when the tiles under them change. Water, locks, piles
+   that animate and every vehicle stay live.
+   ===================================================================== */
+const LIVE_TYPES = new Set(['coalmine', 'oremine', 'quay', 'wharf', 'tidemill', 'lighthouse']);
+const HMARGIN = { house: 36, lighthouse: 86, steelworks: 80, powerplant: 90, brickworks: 70, mill: 58, warehouse: 60, market: 40, farm: 46 };
+function zoomBucket() { return Math.max(0.5, Math.round(RV.cam.z * RV.dpr * 4) / 4); }
+function stockSig(b) { let s = ''; for (let r = 0; r < NR; r++) { const n = b.inv[r] + b.out[r] + (b.exp ? b.exp[r] : 0); if (n > 0) s += r + ':' + Math.min(8, Math.ceil(n / 6)) + ','; } return s; }
+function bldKey(S, b, night) {
+  let k = b.id + '|' + b.type + '|' + b.rot;
+  if (b.type === 'house') return k + '|' + b.lvl + '|' + (night ? 1 : 0) + (b.pwOn ? 1 : 0) + (b.res > 0 ? 1 : 0);
+  k += '|' + stockSig(b) + '|' + b.st + '|' + (night ? 1 : 0) + (b.pwOn ? 1 : 0) + (b.load > 0 ? 1 : 0) + (b.wk > 0 ? 1 : 0) + (dusk(S) ? 1 : 0);
+  if (b.type === 'depot') { let n = 0; for (const v of S.vehs) if (v.k === 'truck' && v.st === 'depot' && v.at === b.id) n++; k += '|' + Math.min(3, n); }
+  return k;
+}
+function drawBuilding(c, S, b, night) {
+  const f = DRAWB[b.type]; if (!f) return;
+  if (RV.q === 0 || LIVE_TYPES.has(b.type) || typeof document === 'undefined') { f(c, S, b, night); return; }
+  const zb = zoomBucket();
+  if (RV.spriteZ !== zb || !RV.sprites) { RV.sprites = new Map(); RV.spriteZ = zb; }
+  const key = bldKey(S, b, night);
+  let e = RV.sprites.get(key);
+  if (!e) {
+    const hm = (HMARGIN[b.type] || 50) + (b.type === 'house' ? (b.lvl || 1) * 13 : 0);
+    const a = P(b.x - 0.7, b.y - 0.7, 0), bb = P(b.x + b.w - 0.3, b.y - 0.7, 0), cc2 = P(b.x + b.w - 0.3, b.y + b.h - 0.3, 0), d = P(b.x - 0.7, b.y + b.h - 0.3, 0);
+    const minX = Math.min(a[0], d[0]) - 10, maxX = Math.max(bb[0], cc2[0]) + 10, minY = a[1] - hm, maxY = cc2[1] + 14;
+    const W = Math.ceil((maxX - minX) * zb), H = Math.ceil((maxY - minY) * zb);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'); ctx.setTransform(zb, 0, 0, zb, -minX * zb, -minY * zb);
+    const l0 = RV.lights.length, s0 = RV.smoke.length;
+    f(ctx, S, b, night);
+    e = { cv, x: minX, y: minY, w: W / zb, h: H / zb, lights: RV.lights.splice(l0), smoke: RV.smoke.splice(s0) };
+    // forget the previous look of this building
+    const old = RV.spriteOf && RV.spriteOf.get(b.id); if (old && old !== key) RV.sprites.delete(old);
+    if (!RV.spriteOf) RV.spriteOf = new Map(); RV.spriteOf.set(b.id, key);
+    RV.sprites.set(key, e);
+  }
+  c.drawImage(e.cv, e.x, e.y, e.w, e.h);
+  for (const L of e.lights) RV.lights.push(L);
+  for (const s of e.smoke) RV.smoke.push(s);
+}
+
+/* ---------------- land chunks ---------------- */
+const CHK = 4;
+function landSigKey(S) { return S.ver.road + '/' + S.ver.rail + '/' + S.ver.water + '/' + S.blds.length + '/' + S.W + 'x' + S.H; }
+function chunkSig(S, cx, cy) {
+  let h = 7;
+  for (let y = cy * CHK; y < Math.min(S.H, cy * CHK + CHK); y++) for (let x = cx * CHK; x < Math.min(S.W, cx * CHK + CHK); x++) {
+    const t = y * S.W + x;
+    h = hmix(h, S.ter[t] | (S.road[t] << 2) | (S.rail[t] << 3) | (S.dep[t] << 7) | ((S.bld[t] ? 1 : 0) << 10) | (nearFarm(S, t) << 11) | (S.road[t] ? roadNbMask(S, t) << 12 : 0));
+  }
+  return h;
+}
+function drawLandChunk(c, S, cx, cy) {
+  for (let s = 0; s < CHK * 2 - 1; s++) for (let i = 0; i < CHK; i++) {
+    const x = cx * CHK + i, y = cy * CHK + (s - i);
+    if (s - i < 0 || s - i >= CHK || !inb(S, x, y)) continue;
+    const t = y * S.W + x;
+    if (S.ter[t] === T_LAND) drawGroundTile(c, S, t);
+  }
+}
+function landPass(c, S, vis) {
+  const zb = zoomBucket(), nx = Math.ceil(S.W / CHK), ny = Math.ceil(S.H / CHK);
+  if (!RV.chunks || RV.chunkZ !== zb || RV.chunkN !== nx * ny) { RV.chunks = new Map(); RV.chunkZ = zb; RV.chunkN = nx * ny; RV.chunkSigs = null; }
+  const key = landSigKey(S);
+  if (RV.chunkKey !== key || !RV.chunkSigs) {
+    RV.chunkKey = key; const sigs = new Array(nx * ny);
+    for (let cy = 0; cy < ny; cy++) for (let cx = 0; cx < nx; cx++) sigs[cy * nx + cx] = chunkSig(S, cx, cy);
+    RV.chunkSigs = sigs;
+  }
+  let budget = 10;
+  const order = [];
+  for (let cy = 0; cy < ny; cy++) for (let cx = 0; cx < nx; cx++) {
+    const mx = cx * CHK + CHK / 2 - 0.5, my = cy * CHK + CHK / 2 - 0.5;
+    if (!vis(mx, my) && !vis(cx * CHK, cy * CHK) && !vis(cx * CHK + CHK - 1, cy * CHK + CHK - 1) && !vis(cx * CHK + CHK - 1, cy * CHK) && !vis(cx * CHK, cy * CHK + CHK - 1)) continue;
+    order.push([cx + cy, cx, cy]);
+  }
+  order.sort((a, b) => a[0] - b[0]);
+  for (const [, cx, cy] of order) {
+    const id = cy * nx + cx, sig = RV.chunkSigs[id];
+    let e = RV.chunks.get(id);
+    if (!e || e.sig !== sig) {
+      if (budget-- <= 0 || typeof document === 'undefined') { drawLandChunk(c, S, cx, cy); continue; }
+      const a = P(cx * CHK - 0.5, cy * CHK - 0.5, 0), b = P(cx * CHK + CHK - 0.5, cy * CHK - 0.5, 0), d = P(cx * CHK - 0.5, cy * CHK + CHK - 0.5, 0), f = P(cx * CHK + CHK - 0.5, cy * CHK + CHK - 0.5, 0);
+      const minX = d[0] - 2, maxX = b[0] + 2, minY = a[1] - 8, maxY = f[1] + 3;
+      const W = Math.ceil((maxX - minX) * zb), H = Math.ceil((maxY - minY) * zb);
+      const cv = e && e.cv.width === W && e.cv.height === H ? e.cv : document.createElement('canvas');
+      cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d'); ctx.setTransform(zb, 0, 0, zb, -minX * zb, -minY * zb);
+      drawLandChunk(ctx, S, cx, cy);
+      e = { cv, x: minX, y: minY, w: W / zb, h: H / zb, sig, used: 0 };
+      RV.chunks.set(id, e);
+    }
+    e.used = RV.t;
+    c.drawImage(e.cv, e.x, e.y, e.w, e.h);
+  }
+  // drop chunks unseen for a while (memory at high zoom)
+  if (RV.chunks.size > 140) for (const [id, e] of RV.chunks) if (RV.t - e.used > 3) RV.chunks.delete(id);
+}
+
+/* trees: one small sprite per tile and growth stage */
+function drawTreesCached(c, S, t) {
+  if (RV.q === 0 || typeof document === 'undefined') { drawTrees(c, S, t, t % S.W, (t / S.W) | 0); return; }
+  const zb = zoomBucket();
+  if (RV.treeZ !== zb || !RV.trees) { RV.trees = new Map(); RV.treeZ = zb; }
+  const key = t * 4 + S.tree[t];
+  let e = RV.trees.get(key);
+  if (!e) {
+    const x = t % S.W, y = (t / S.W) | 0, a = P(x, y, 0);
+    const minX = a[0] - 30, minY = a[1] - 40, W = Math.ceil(60 * zb), H = Math.ceil(56 * zb);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'); ctx.setTransform(zb, 0, 0, zb, -minX * zb, -minY * zb);
+    drawTrees(ctx, S, t, x, y);
+    e = { cv, x: minX, y: minY, w: W / zb, h: H / zb };
+    RV.trees.set(key, e);
+    if (RV.trees.size > 4000) RV.trees.clear();
+  }
+  c.drawImage(e.cv, e.x, e.y, e.w, e.h);
+}
+
 /* ==== 88_render.js ==== */
 /* =====================================================================
    Frame orchestration: camera, culling, depth sorting, light, weather.
@@ -4478,11 +4605,12 @@ function renderFrame(S, dt) {
   const [w0x, w0y] = screenToWorld(-80, -120), [w1x, w1y] = screenToWorld(RV.vw + 80, RV.vh + 160);
   const vis = (x, y) => { const px = (x - y) * HW, py = (x + y) * HH; return px > w0x - 40 && px < w1x + 40 && py > w0y - 30 && py < w1y + 60; };
   const W = S.W, H = S.H;
-  // ground pass, back to front
+  // ground: water live (it moves with the tide), dry land from cached chunks on top
   for (let s = 0; s <= W + H - 2; s++) {
     const xa = Math.max(0, s - H + 1), xb = Math.min(W - 1, s);
-    for (let x = xa; x <= xb; x++) { const y = s - x; if (!vis(x, y)) continue; drawGroundTile(c, S, y * W + x); }
+    for (let x = xa; x <= xb; x++) { const y = s - x, t = y * W + x; if (S.ter[t] === T_LAND || !vis(x, y)) continue; drawGroundTile(c, S, t); }
   }
+  landPass(c, S, vis);
   shadowsPass(c, S, vis);
   // objects
   const objs = [];
@@ -4509,8 +4637,8 @@ function renderFrame(S, dt) {
   objs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   for (const o of objs) {
     switch (o[1]) {
-      case 0: drawTrees(c, S, o[3], o[3] % W, (o[3] / W) | 0); break;
-      case 1: { const b = o[2]; const f = DRAWB[b.type]; if (f) f(c, S, b, night); if (RV.sel && RV.sel.b === b.id) selOutline(c, S, b); break; }
+      case 0: drawTreesCached(c, S, o[3]); break;
+      case 1: { const b = o[2]; drawBuilding(c, S, b, night); if (RV.sel && RV.sel.b === b.id) selOutline(c, S, b); break; }
       case 2: {
         const v = o[2];
         if (v.k === 'train') { const cars = o[3]; const zt = trainZ(S, v); drawTrain(c, S, v, cars, zt); const sp = worldToScreen(...P(cars[0].x, cars[0].y, zt + 6)); RV.vpos.set(v.id, sp); }
@@ -4603,6 +4731,7 @@ function lightingPass(S) {
   const amb = ambient(S), c = RV.ctx, cv = RV.cv;
   if (amb.warm > 0) { c.fillStyle = 'rgba(255,150,70,' + amb.warm.toFixed(3) + ')'; c.globalCompositeOperation = 'soft-light'; c.fillRect(0, 0, cv.width, cv.height); c.globalCompositeOperation = 'source-over'; }
   if (amb.a < 0.02) return;
+  if (amb.a < 0.14) { c.fillStyle = 'rgba(12,20,36,' + amb.a.toFixed(3) + ')'; c.fillRect(0, 0, cv.width, cv.height); return; }
   const L = RV.light, lc = RV.lctx, k = L.width / cv.width;
   lc.globalCompositeOperation = 'source-over'; lc.clearRect(0, 0, L.width, L.height);
   lc.fillStyle = 'rgba(12,20,36,' + amb.a.toFixed(3) + ')'; lc.fillRect(0, 0, L.width, L.height);
@@ -4700,6 +4829,7 @@ const ICON = {
   power: '<path d="M12 2v20M6 6h12M8 10h8"/><path d="M6 6 3 9M18 6l3 3"/>',
   build: '<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
   bulldoze: '<path d="M4 15h11l3-5h3M4 15v4h14v-4"/><circle cx="7" cy="19" r="1.4"/><circle cx="15" cy="19" r="1.4"/><path d="M4 15 2 9h6l2 6"/>',
+  panel: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   vehicle: '<rect x="2" y="8" width="12" height="8" rx="1"/><path d="M14 11h4l3 3v2h-7"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
 };
 function icon(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
@@ -4727,8 +4857,9 @@ function recipeText(bt) {
 }
 
 function buildChrome() {
-  $('tools').innerHTML = TOOLS.map(([k, n, key]) => '<button class="tool" data-tool="' + k + '" title="' + n + ' (' + key + ')">' + icon(k) + '<span>' + n + '</span></button>').join('');
-  $('tools').onclick = e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); };
+  $('tools').innerHTML = TOOLS.map(([k, n, key]) => '<button class="tool" data-tool="' + k + '" title="' + n + ' (' + key + ')">' + icon(k) + '<span>' + n + '</span></button>').join('') +
+    '<button class="tool" id="panelTool" title="Show or hide the panel">' + icon('panel') + '<span>Panel</span></button>';
+  $('tools').onclick = e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); else if (e.target.closest('#panelTool')) { const show = $('panel').classList.contains('collapsed'); if (show && narrow() && G.tool !== 'inspect') setTool('inspect'); openPanel(show); renderPanel(true); } };
   let pal = '<div class="pal">';
   for (const [title, list] of PAL) { pal += '<h4>' + esc(title) + '</h4><div class="grid">' + list.map(bt => '<button class="card" data-bt="' + bt + '"><b>' + esc(BT[bt].name) + '</b><small>' + fmt(BT[bt].cost) + ' cr. ' + esc(recipeText(bt)) + '</small></button>').join('') + '</div>'; }
   pal += '<p class="small-note">Rotate with R or the Rotate button. On touch, tap to position and confirm with Build.</p></div>';
@@ -4740,7 +4871,6 @@ function buildChrome() {
   $('overlaySeg').onclick = e => { const b = e.target.closest('[data-ov]'); if (b) { RV.showNet = b.dataset.ov; syncChrome(); } };
   $('tabs').innerHTML = [['inspect', 'Inspect'], ['ledger', 'Ledger'], ['logi', 'Logistics'], ['time', 'Time'], ['goals', 'Goals'], ['trade', 'Trade'], ['settings', 'Settings']].map(([k, n]) => '<button data-tab="' + k + '" role="tab">' + n + '</button>').join('');
   $('tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if (b) { G.tab = b.dataset.tab; openPanel(true); renderPanel(true); } };
-  $('panelToggle').onclick = () => openPanel($('panel').classList.contains('collapsed'));
   $('panelBody').onclick = panelClick;
   // never swap the panel's DOM under a finger or a mouse button that is still down
   $('panel').addEventListener('pointerdown', () => { G.panelHold = true; });
@@ -4756,11 +4886,13 @@ function syncChrome() {
   for (const b of document.querySelectorAll('#overlaySeg button')) b.classList.toggle('on', b.dataset.ov === RV.showNet);
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('on', b.dataset.tab === G.tab);
   for (const b of document.querySelectorAll('#palette .card')) b.classList.toggle('on', G.tool === 'place' && b.dataset.bt === G.bt);
-  $('palette').hidden = !(G.tool === 'build' || G.tool === 'place');
+  $('palette').hidden = !(G.tool === 'build' || (G.tool === 'place' && !narrow()));
 }
 function openPanel(on) { $('panel').classList.toggle('collapsed', !on); G.settings.panel = on ? 1 : 0; }
+const narrow = () => (window.innerWidth || 1000) <= 760;
 function setTool(t) {
   if (t === 'build' && G.tool === 'build') t = 'inspect';
+  if (narrow() && t !== 'inspect') openPanel(false);
   G.tool = t; RV.tool = t; RV.ghost = null; hideConfirm();
   if (t !== 'place' && t !== 'build') G.bt = null;
   $('view').style.cursor = t === 'inspect' ? 'default' : 'crosshair';
@@ -4790,7 +4922,7 @@ function updateTop() {
   $('pop').textContent = fmt(L.pop) + ' res. ' + L.emp + '/' + L.jobs + ' jobs';
   let sup = 0, dem = 0; for (const p of S.pstat || []) { sup += p[1]; dem += p[2]; }
   $('pwr').textContent = sup + '/' + dem + ' MW'; $('pwr').className = dem > sup ? 'warn' : '';
-  const n = S.alerts.length; $('alertBtn').textContent = n + (n === 1 ? ' alert' : ' alerts'); $('alertBtn').classList.toggle('hot', n > 0);
+  const n = S.alerts.length; $('alertBtn').textContent = narrow() ? n + '!' : n + (n === 1 ? ' alert' : ' alerts'); $('alertBtn').classList.toggle('hot', n > 0);
   drawTideGauge(S);
 }
 function drawTideGauge(S) {
@@ -5076,6 +5208,7 @@ function panelSettings(S) {
   h += '<div class="row"><span>Weather effects</span><span class="seg small"><button data-a="wxv" data-i="1" class="' + (G.settings.wx ? 'on' : '') + '">On</button><button data-a="wxv" data-i="0" class="' + (!G.settings.wx ? 'on' : '') + '">Off</button></span></div>';
   h += '<div class="row"><span>Residents shown</span><span class="seg small">' + ['None', 'Some', 'Many'].map((n, i) => '<button data-a="walk" data-i="' + i + '" class="' + (G.settings.walk === i ? 'on' : '') + '">' + n + '</button>').join('') + '</span></div>';
   h += '<p class="small-note">These settings only change drawing. Weather still slows boats and trucks with effects off; residents on screen are a visual sample of the commuting the labour model already counts. <a href="#" data-a="hashcheck">Check: state hash before and after toggling detail</a>' + (G.hashCheck ? ' <b class="' + (G.hashCheck.same ? 'pass' : 'fail') + '">' + esc(G.hashCheck.text) + '</b>' : '') + '</p>';
+  h += '<h3>Map overlay</h3><div class="row"><span class="seg small">' + [['', 'City'], ['roads', 'Road nets'], ['power', 'Power'], ['traffic', 'Traffic'], ['rail', 'Rail']].map(([k, n]) => '<button data-a="ov" data-k="' + k + '" class="' + (RV.showNet === k ? 'on' : '') + '">' + n + '</button>').join('') + '</span></div>';
   h += '<h3>Save</h3><div class="row"><button class="btn small" data-a="export">Export save file</button><button class="btn small" data-a="import">Import save file</button></div><p class="small-note">A save holds the full state, the action log and the latest snapshots, so verification and rewinding keep working after loading.</p>';
   h += '<h3>Scene</h3><div class="row"><button class="btn small" data-a="scene">Living scene (hide interface, H)</button><button class="btn small" data-a="recenter">Recentre camera</button></div>';
   h += '<h3>Keys</h3><p class="small-note mono">Space pause, 1-6 speed, I R T G C L P B X tools, R rotate while placing, Esc cancel, arrows or WASD pan, +/- zoom, H scene mode, F follow</p>';
@@ -5161,7 +5294,7 @@ function bindInput() {
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
     if (G.menuOpen) return;
-    cv.setPointerCapture(e.pointerId);
+    try { cv.setPointerCapture(e.pointerId); } catch (err) { /* synthetic or already released */ }
     PT.down.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (PT.down.size === 2) {
       const [a, b] = [...PT.down.values()];
@@ -5236,7 +5369,7 @@ function bindInput() {
 function placeNow() {
   if (!PT.placeAt || !G.bt) return;
   const r = act({ type: 'place', bt: G.bt, x: PT.placeAt[0], y: PT.placeAt[1], rot: G.rot });
-  if (r.ok) { toast(BT[G.bt].name + ' built'); if (G.bt !== 'house') { select({ b: r.b.id }); } }
+  if (r.ok) { toast(BT[G.bt].name + ' built'); if (PT.touch) RV.ghost = null; if (G.bt !== 'house' && !narrow()) { select({ b: r.b.id }); } }
 }
 function onKey(e) {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
@@ -5290,6 +5423,7 @@ function panelClick(e) {
     case 'wxv': G.settings.wx = +el.dataset.i; applySettings(); break;
     case 'walk': G.settings.walk = +el.dataset.i; applySettings(); break;
     case 'hashcheck': { const h1 = hashState(S); const q0 = G.settings.q; G.settings.q = (q0 + 1) % 3; applySettings(); renderFrame(S, 0); G.settings.q = q0; applySettings(); const h2 = hashState(S); G.hashCheck = { same: h1 === h2, text: h1 === h2 ? 'unchanged (' + hex(h1) + ')' : 'changed' }; G.lastPanel = ''; break; }
+    case 'ov': RV.showNet = el.dataset.k; syncChrome(); break;
     case 'export': exportSave(); break;
     case 'import': $('fileIn').click(); break;
     case 'scene': toggleScene(); break;

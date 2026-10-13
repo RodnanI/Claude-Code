@@ -1,10 +1,7 @@
 // Build the full Tidemark city and run it, printing a daily summary.
 const { loadSim } = require('./load');
 const T = loadSim();
-const S = T.newSim(7, 56, 56);
-T.shapeTidemark(S);
-const fails = T.buildTidemark(S, process.argv[2] || 'canal');
-if (fails.length) console.log('fails', fails);
+const S = T.startScenario(process.argv[2] || 'showcase');
 const days = +(process.argv[3] || 4);
 const t0 = Date.now();
 for (let d = 0; d < days; d++) {

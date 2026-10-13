@@ -44,11 +44,12 @@ function renderFrame(S, dt) {
   const [w0x, w0y] = screenToWorld(-80, -120), [w1x, w1y] = screenToWorld(RV.vw + 80, RV.vh + 160);
   const vis = (x, y) => { const px = (x - y) * HW, py = (x + y) * HH; return px > w0x - 40 && px < w1x + 40 && py > w0y - 30 && py < w1y + 60; };
   const W = S.W, H = S.H;
-  // ground pass, back to front
+  // ground: water live (it moves with the tide), dry land from cached chunks on top
   for (let s = 0; s <= W + H - 2; s++) {
     const xa = Math.max(0, s - H + 1), xb = Math.min(W - 1, s);
-    for (let x = xa; x <= xb; x++) { const y = s - x; if (!vis(x, y)) continue; drawGroundTile(c, S, y * W + x); }
+    for (let x = xa; x <= xb; x++) { const y = s - x, t = y * W + x; if (S.ter[t] === T_LAND || !vis(x, y)) continue; drawGroundTile(c, S, t); }
   }
+  landPass(c, S, vis);
   shadowsPass(c, S, vis);
   // objects
   const objs = [];
@@ -75,8 +76,8 @@ function renderFrame(S, dt) {
   objs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   for (const o of objs) {
     switch (o[1]) {
-      case 0: drawTrees(c, S, o[3], o[3] % W, (o[3] / W) | 0); break;
-      case 1: { const b = o[2]; const f = DRAWB[b.type]; if (f) f(c, S, b, night); if (RV.sel && RV.sel.b === b.id) selOutline(c, S, b); break; }
+      case 0: drawTreesCached(c, S, o[3]); break;
+      case 1: { const b = o[2]; drawBuilding(c, S, b, night); if (RV.sel && RV.sel.b === b.id) selOutline(c, S, b); break; }
       case 2: {
         const v = o[2];
         if (v.k === 'train') { const cars = o[3]; const zt = trainZ(S, v); drawTrain(c, S, v, cars, zt); const sp = worldToScreen(...P(cars[0].x, cars[0].y, zt + 6)); RV.vpos.set(v.id, sp); }
@@ -169,6 +170,7 @@ function lightingPass(S) {
   const amb = ambient(S), c = RV.ctx, cv = RV.cv;
   if (amb.warm > 0) { c.fillStyle = 'rgba(255,150,70,' + amb.warm.toFixed(3) + ')'; c.globalCompositeOperation = 'soft-light'; c.fillRect(0, 0, cv.width, cv.height); c.globalCompositeOperation = 'source-over'; }
   if (amb.a < 0.02) return;
+  if (amb.a < 0.14) { c.fillStyle = 'rgba(12,20,36,' + amb.a.toFixed(3) + ')'; c.fillRect(0, 0, cv.width, cv.height); return; }
   const L = RV.light, lc = RV.lctx, k = L.width / cv.width;
   lc.globalCompositeOperation = 'source-over'; lc.clearRect(0, 0, L.width, L.height);
   lc.fillStyle = 'rgba(12,20,36,' + amb.a.toFixed(3) + ')'; lc.fillRect(0, 0, L.width, L.height);
