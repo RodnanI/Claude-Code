@@ -134,9 +134,10 @@ function stepMarkets(S) {
       const h = bById(S, hid); if (!h) continue;
       if (h.inv[R.bread] < 4 && m.inv[R.bread] > 0) {
         const n = Math.min(2, m.inv[R.bread], 4 - h.inv[R.bread]); m.inv[R.bread] -= n; h.inv[R.bread] += n; served++;
+        if (!h.ld) { h.ld = zr(); h.lo = zr(); } h.ld[R.bread] = S.tick; h.lo[R.bread] = m.id;
       }
       const fw = furnWant(h);
-      if (h.inv[R.furniture] < fw && m.inv[R.furniture] > 0) { m.inv[R.furniture]--; h.inv[R.furniture]++; served++; }
+      if (h.inv[R.furniture] < fw && m.inv[R.furniture] > 0) { m.inv[R.furniture]--; h.inv[R.furniture]++; served++; if (!h.ld) { h.ld = zr(); h.lo = zr(); } h.ld[R.furniture] = S.tick; h.lo[R.furniture] = m.id; }
     }
     m.served = served;
   }

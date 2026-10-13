@@ -64,7 +64,7 @@ const DRAWB = {
     // silo
     isoBox(c, x0 + 1.4, y0 + 0.3, 0.4, 0.4, 0, 26, '#cfc7b6');
     fillPoly(c, [P(x0 + 1.4 - 0.5, y0 + 0.3 - 0.5, 26), P(x0 + 1.8 - 0.5, y0 + 0.3 - 0.5, 26), P(x0 + 1.8 - 0.5, y0 + 0.7 - 0.5, 26), P(x0 + 1.4 - 0.5, y0 + 0.7 - 0.5, 26), P(x0 + 1.1, y0 + 0, 33)], '#8b9093');
-    stockDisplay(c, S, b, [[x0 + 0.8, y0 + 1.4], [x0 + 1.5, y0 + 1.4]]);
+    stockDisplay(c, S, b, [[x0 + 0.7, y0 + 1.3], [x0 + 1.3, y0 + 1.25]]);
     // hay bales
     isoBox(c, x0 + 0.2, y0 + 1.2, 0.3, 0.2, 0, 5, '#d8bf6a');
   },
@@ -80,7 +80,7 @@ const DRAWB = {
     fillPoly(c, [P(x0 - 0.3, y0 - 0.3, 0), P(x0 + 1.1, y0 - 0.3, 0), P(x0 + 1.1, y0 + 1.0, 0), P(x0 - 0.3, y0 + 1.0, 0)], '#9b5c35');
     fillPoly(c, [P(x0 - 0.15, y0 - 0.15, -4), P(x0 + 0.95, y0 - 0.15, -4), P(x0 + 0.95, y0 + 0.85, -4), P(x0 - 0.15, y0 + 0.85, -4)], '#b8703f');
     isoBox(c, x0 + 1.15, y0 + 1.1, 0.6, 0.5, 0, 10, '#9e8a6d'); gableRoof(c, x0 + 1.15, y0 + 1.1, 0.6, 0.5, 10, 7, '#5d4a3f', '#9e8a6d', 'y');
-    stockDisplay(c, S, b, [[x0 + 0.3, y0 + 1.5]]);
+    stockDisplay(c, S, b, [[x0 + 0.25, y0 + 1.3]]);
     line(c, P(x0 + 0.5, y0 + 0.4, 0), P(x0 + 1.2, y0 + 1.0, 9), '#3a3330', 1.5);
   },
   coalmine(c, S, b) { mineArt(c, S, b, '#3b3634'); },
@@ -93,7 +93,7 @@ const DRAWB = {
     gableRoof(c, x0 + 0.05, y0, W, D, 36, 13, '#535c61', '#a9583d', b.rot & 1 ? 'y' : 'x');
     const sx = b.rot & 1 ? x0 + 0.25 : x0 + 1.5, sy = b.rot & 1 ? y0 + 1.45 : y0 + 0.25;
     isoBox(c, sx, sy, 0.35, 0.35, 0, 24, '#c7c1b3');
-    stockDisplay(c, S, b, [[x0 + (b.rot & 1 ? 0.5 : 1.7), y0 + (b.rot & 1 ? 1.7 : 0.75)]]);
+    stockDisplay(c, S, b, [[x0 + (b.rot & 1 ? 0.3 : 1.15), y0 + (b.rot & 1 ? 1.15 : 0.2)]]);
     void w; void d;
   },
   bakery(c, S, b, night) {
@@ -114,7 +114,7 @@ const DRAWB = {
     for (let i = 0; i < 3; i++) winL(c, x0 + 0.1, y0 + 0.1, 1.2, 0.9, 0.15 + i * 0.3, 0.27 + i * 0.3, 0, 7, b.st === 0 ? '#e88a3c' : '#3a2a22');
     gableRoof(c, x0 + 0.1, y0 + 0.1, 1.2, 0.9, 14, 8, '#5d4a3f', '#8c4a34', 'x');
     chimney(c, x0 + 1.55, y0 + 0.35, 0, 52, '#8c4a34', b.st === 0 ? 1.5 : 0);
-    stockDisplay(c, S, b, [[x0 + 0.5, y0 + 1.5], [x0 + 1.4, y0 + 1.5]]);
+    stockDisplay(c, S, b, [[x0 + 0.5, y0 + 1.25], [x0 + 1.3, y0 + 1.25]]);
     if (b.st === 0) RV.lights.push([P(x0 + 0.6, y0 + 1.0, 4), 12, 0.45]);
   },
   steelworks(c, S, b) {
@@ -132,7 +132,7 @@ const DRAWB = {
     windowRows(c, x0 + 0.1, y0 + 0.1, 1.3, 1.1, 2, 13, 2, 1.6, b.load > 0 && dusk(S));
     gableRoof(c, x0 + 0.1, y0 + 0.1, 1.3, 1.1, 30, 9, '#4e565b', '#9b5a42', 'x');
     chimney(c, x0 + 1.6, y0 + 0.4, 0, 70, '#8a5643', b.load > 0 ? 1 + b.load / 40 : 0);
-    stockDisplay(c, S, b, [[x0 + 1.5, y0 + 1.5]]);
+    stockDisplay(c, S, b, [[x0 + 1.25, y0 + 1.25]]);
   },
   tidemill(c, S, b) {
     const x0 = b.x + 0.15, y0 = b.y + 0.15;
@@ -155,7 +155,7 @@ const DRAWB = {
     gableRoof(c, x0, y0, 1.4, 1.1, 34, 14, p.roof, '#8e5a3e', 'y');
     steppedGable(c, x0, y0, 1.4, 1.1, 34, 14, '#8e5a3e');
     line(c, wallL(x0, y0, 1.4, 1.1, 0.5, 44), P(x0 + 0.2, y0 + 1.5, 44), '#3a2a20', 1.5);
-    stockDisplay(c, S, b, [[b.x + 1.65, b.y + 0.4], [b.x + 1.65, b.y + 1.1], [b.x + 0.5, b.y + 1.7], [b.x + 1.2, b.y + 1.7]]);
+    stockDisplay(c, S, b, [[b.x + 1.25, b.y + 0.0], [b.x + 1.25, b.y + 0.6], [b.x + 0.2, b.y + 1.2], [b.x + 0.8, b.y + 1.2]]);
     void night;
   },
   depot(c, S, b) {
@@ -211,7 +211,7 @@ function mineArt(c, S, b, heapCol) {
   if (!b.out.some(n => n > 0)) heap(c, x0 + 0.6, y0 + 1.4, 3, heapCol, 40);
 }
 function shedArt(c, S, b, wall, roof, saw, chim) {
-  const x0 = b.x + 0.08, y0 = b.y + 0.08, W = b.w - 0.16, D = b.h - 0.16, H = 18;
+  const x0 = b.x + 0.08, y0 = b.y + 0.08, W = b.w - (b.rot & 1 ? 0.16 : 0.5), D = b.h - (b.rot & 1 ? 0.5 : 0.16), H = 18;
   isoBox(c, x0, y0, W, D, 0, H, wall);
   windowRows(c, x0, y0, W, D, 1, 14, 0, 1.6, b.st === 0 && dusk(S), '#cfc5b2');
   // sawtooth roof: a row of north-light ridges
@@ -221,7 +221,7 @@ function shedArt(c, S, b, wall, roof, saw, chim) {
     else { const xx = x0 + i * W / n; gableRoof(c, xx, y0, W / n, D, H, 8, roof, wall, 'y', { rows: 2 }); }
   }
   if (chim) chimney(c, x0 + 0.2, y0 + 0.2, H, 26, '#6e5a50', b.st === 0 ? 1.2 : 0);
-  stockDisplay(c, S, b, b.rot & 1 ? [[b.x + b.w - 0.1, b.y + b.h], [b.x + 0.2, b.y + b.h + 0.05]] : [[b.x + b.w, b.y + 0.3], [b.x + b.w, b.y + b.h - 0.2]]);
+  stockDisplay(c, S, b, b.rot & 1 ? [[b.x + 0.2, b.y + b.h - 0.75], [b.x + b.w - 0.8, b.y + b.h - 0.75]] : [[b.x + b.w - 0.75, b.y + 0.15], [b.x + b.w - 0.75, b.y + b.h - 0.85]]);
 }
 function craneArt(c, x, y, seed) {
   const top = 34, base = P(x, y, 1), mast = P(x, y, top);

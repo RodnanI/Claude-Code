@@ -1,6 +1,7 @@
 /* =====================================================================
    Ground: land, shore, tidal sea, canals, locks, roads, rails.
    ===================================================================== */
+const FIELD_COL = ['#d2b75b', '#a2b45c', '#8a6d4c', '#c9b98b', '#bfa24c'];
 const GC = {
   grass: ['#8ea86a', '#94ad6e', '#89a366', '#99b072'], field: '#c8b25a', fieldDark: '#a99447', soil: '#8a6d4c',
   sand: '#d8c69c', wetSand: '#a99a73', bank: '#7d6a4f', stone: '#b5ab97', stoneDark: '#8f8572',
@@ -53,19 +54,24 @@ function drawGroundTile(c, S, t) {
   let coast = false;
   for (let k = 0; k < 4; k++) { const n = nb(S, t, k); if (n >= 0 && S.ter[n] === T_SEA) coast = true; }
   const dep = S.dep[t];
+  const field = dep === D_FERTILE && nearFarm(S, t) && !S.road[t] && !S.rail[t] && !S.bld[t];
+  const parcel = ((x >> 1) * 31 + (y >> 1) * 17 + (x >> 2) * 7) % 5;
   if (coast && !S.bld[t] && !S.road[t]) col = GC.sand;
-  else if (dep === D_FERTILE && nearFarm(S, t) && !S.road[t] && !S.rail[t] && !S.bld[t]) col = (x + y) & 1 ? GC.field : GC.soil;
+  else if (field) col = FIELD_COL[parcel];
   const ov = -0.9 / (HW * (RV.chunkZ || 1));
   fillPoly(c, tileQ(x, y, 0, ov), col);
   if (RV.q >= 1 && !S.road[t] && !S.bld[t]) {
-    if (dep === D_FERTILE && nearFarm(S, t) && !S.rail[t]) {     // crop rows
-      const ax = (x * 3 + y) % 2;
-      for (let i = 1; i < 5; i++) { const u = i / 5 - 0.5; const a = ax ? P(x + u, y - 0.45, 0) : P(x - 0.45, y + u, 0), b = ax ? P(x + u, y + 0.45, 0) : P(x + 0.45, y + u, 0); line(c, a, b, (x + y) & 1 ? GC.fieldDark : '#6f5a3e', 1); }
+    if (field) {                                                   // a patchwork of crops, rows per parcel
+      const ax = parcel & 1, rc = shade(FIELD_COL[parcel], 0.82);
+      for (let i = 1; i < 6; i++) { const u = i / 6 - 0.5; const a = ax ? P(x + u, y - 0.47, 0) : P(x - 0.47, y + u, 0), b = ax ? P(x + u, y + 0.47, 0) : P(x + 0.47, y + u, 0); line(c, a, b, rc, 1); }
     } else if (dep === D_COAL || dep === D_ORE || dep === D_CLAY) {
       const cc = dep === D_COAL ? GC.coal : dep === D_ORE ? GC.ore : GC.clay;
       for (let i = 0; i < 6; i++) { const p = P(x + rnd01(t * 13 + i) - 0.5, y + rnd01(t * 17 + i * 5) - 0.5, 0); c.fillStyle = cc; c.globalAlpha = 0.55; c.fillRect(p[0] - 2, p[1] - 1, 4, 2); }
       c.globalAlpha = 1;
-    } else if (h > 0.55 && RV.q >= 2) {                            // grass tufts
+    } else if (h > 0.82 && RV.q >= 2 && !coast) {                    // wild flowers
+      const fl = ['#f4efe2', '#e8c547', '#d9714f'];
+      for (let i = 0; i < 4; i++) { const p = P(x + rnd01(t * 41 + i) - 0.5, y + rnd01(t * 43 + i) - 0.5, 0); c.fillStyle = fl[(t + i) % 3]; c.fillRect(p[0] - 0.8, p[1] - 0.8, 1.6, 1.6); }
+    } else if (h > 0.5 && RV.q >= 2) {                            // grass tufts
       const p = P(x + h - 0.5, y + rnd01(t + 9) - 0.5, 0);
       c.strokeStyle = shade(col, 0.8); c.lineWidth = 0.8; c.beginPath(); c.moveTo(p[0] - 2, p[1]); c.lineTo(p[0] - 1, p[1] - 3); c.moveTo(p[0], p[1]); c.lineTo(p[0] + 0.5, p[1] - 3.5); c.moveTo(p[0] + 2, p[1]); c.lineTo(p[0] + 2, p[1] - 2.5); c.stroke();
     }
@@ -74,6 +80,27 @@ function drawGroundTile(c, S, t) {
   if (S.rail[t]) drawRail(c, S, t, x, y, 0);
 }
 
+/* One pixel per tile, drawn through the isometric matrix with smoothing: a soft
+   depth gradient for the whole sea in a single draw. */
+function seaTexture(S) {
+  const k = S.ver.water + ':' + S.W + 'x' + S.H;
+  if (RV._seaTex && RV._seaTex.k === k) return RV._seaTex.cv;
+  const cv = document.createElement('canvas'); cv.width = S.W; cv.height = S.H;
+  const cx = cv.getContext('2d'), img = cx.createImageData(S.W, S.H), d = seaDepth(S);
+  const A = hexRgb('#6fa598'), B = hexRgb('#3e7a78'), Cc = hexRgb('#22495a');
+  for (let t = 0; t < S.W * S.H; t++) {
+    let col = A;
+    if (S.ter[t] === T_SEA) { const f = Math.min(1, (d[t] - 1) / 9); const m = f < 0.4 ? f / 0.4 : (f - 0.4) / 0.6; const P0 = f < 0.4 ? A : B, P1 = f < 0.4 ? B : Cc; col = [P0[0] + (P1[0] - P0[0]) * m, P0[1] + (P1[1] - P0[1]) * m, P0[2] + (P1[2] - P0[2]) * m]; }
+    img.data[t * 4] = col[0]; img.data[t * 4 + 1] = col[1]; img.data[t * 4 + 2] = col[2]; img.data[t * 4 + 3] = 255;
+  }
+  cx.putImageData(img, 0, 0);
+  RV._seaTex = { k, cv }; return cv;
+}
+function drawSea(c, S) {
+  if (typeof document === 'undefined') return;
+  const tex = seaTexture(S), z = seaZ(S);
+  c.save(); c.transform(HW, HH, -HW, HH, 0, -z); c.imageSmoothingEnabled = true; c.drawImage(tex, -0.5, -0.5); c.restore();
+}
 function drawWater(c, S, t, x, y, ter) {
   const sz = seaZ(S);
   const z = ter === T_SEA ? sz : ter === T_CANAL ? CANAL_Z : lockZ(S, t);
@@ -84,7 +111,7 @@ function drawWater(c, S, t, x, y, ter) {
   let col;
   if (ter === T_SEA) { const d = seaDepth(S)[t]; col = mixHex(GC.shallow, GC.deep, Math.min(1, (d - 1) / 5)); }
   else col = GC.canal;
-  fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.cam.z * RV.dpr || 1))), col);
+  if (ter !== T_SEA || typeof document === 'undefined') fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.cam.z * RV.dpr || 1))), col);
   if (edge(3)) { // west edge: face toward +x
     fillPoly(c, [P(x - 0.5, y - 0.5, 0), P(x - 0.5, y + 0.5, 0), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], shade(wallCol(3), 0.78));
     if (ter === T_SEA) fillPoly(c, [P(x - 0.5, y - 0.5, -2), P(x - 0.5, y + 0.5, -2), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], 'rgba(40,50,40,0.28)');

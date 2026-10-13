@@ -105,6 +105,7 @@ table.t tr.hl td { background: #f7e1d2; }
 #confirmText { font: 600 13px var(--sans); padding: 0 6px; }
 #toast { position: fixed; left: 50%; top: calc(var(--top) + 14px); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 8px; font: 500 13.5px var(--sans); opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 40; max-width: 90vw; }
 #toast.show { opacity: .94; }
+#tip { position: fixed; z-index: 30; pointer-events: none; background: rgba(43,38,34,.9); color: var(--paper); font: 500 12px var(--sans); padding: 4px 8px; border-radius: 6px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
 #menu { background: linear-gradient(rgba(30,40,40,.35), rgba(30,40,40,.15)); }
 .menuCard { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 22px 24px 16px; box-shadow: 0 18px 60px rgba(20,16,12,.45); }

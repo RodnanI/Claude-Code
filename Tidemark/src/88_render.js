@@ -45,6 +45,7 @@ function renderFrame(S, dt) {
   const vis = (x, y) => { const px = (x - y) * HW, py = (x + y) * HH; return px > w0x - 40 && px < w1x + 40 && py > w0y - 30 && py < w1y + 60; };
   const W = S.W, H = S.H;
   // ground: water live (it moves with the tide), dry land from cached chunks on top
+  drawSea(c, S);
   for (let s = 0; s <= W + H - 2; s++) {
     const xa = Math.max(0, s - H + 1), xb = Math.min(W - 1, s);
     for (let x = xa; x <= xb; x++) { const y = s - x, t = y * W + x; if (S.ter[t] === T_LAND || !vis(x, y)) continue; drawGroundTile(c, S, t); }

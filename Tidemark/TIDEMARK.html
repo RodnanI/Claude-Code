@@ -114,6 +114,7 @@ table.t tr.hl td { background: #f7e1d2; }
 #confirmText { font: 600 13px var(--sans); padding: 0 6px; }
 #toast { position: fixed; left: 50%; top: calc(var(--top) + 14px); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 8px; font: 500 13.5px var(--sans); opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 40; max-width: 90vw; }
 #toast.show { opacity: .94; }
+#tip { position: fixed; z-index: 30; pointer-events: none; background: rgba(43,38,34,.9); color: var(--paper); font: 500 12px var(--sans); padding: 4px 8px; border-radius: 6px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
 #menu { background: linear-gradient(rgba(30,40,40,.35), rgba(30,40,40,.15)); }
 .menuCard { width: min(560px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--paper); border: 1px solid var(--rule); border-radius: 14px; padding: 22px 24px 16px; box-shadow: 0 18px 60px rgba(20,16,12,.45); }
@@ -192,6 +193,7 @@ input[type=number], input[type=text] { font: 13px var(--mono); padding: 5px 7px;
   <button id="cfOk" class="btn primary">Build</button>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="tip" hidden></div>
 
 <div id="menu" class="overlay">
   <div class="menuCard">
@@ -1127,9 +1129,10 @@ function stepMarkets(S) {
       const h = bById(S, hid); if (!h) continue;
       if (h.inv[R.bread] < 4 && m.inv[R.bread] > 0) {
         const n = Math.min(2, m.inv[R.bread], 4 - h.inv[R.bread]); m.inv[R.bread] -= n; h.inv[R.bread] += n; served++;
+        if (!h.ld) { h.ld = zr(); h.lo = zr(); } h.ld[R.bread] = S.tick; h.lo[R.bread] = m.id;
       }
       const fw = furnWant(h);
-      if (h.inv[R.furniture] < fw && m.inv[R.furniture] > 0) { m.inv[R.furniture]--; h.inv[R.furniture]++; served++; }
+      if (h.inv[R.furniture] < fw && m.inv[R.furniture] > 0) { m.inv[R.furniture]--; h.inv[R.furniture]++; served++; if (!h.ld) { h.ld = zr(); h.lo = zr(); } h.ld[R.furniture] = S.tick; h.lo[R.furniture] = m.id; }
     }
     m.served = served;
   }
@@ -3019,7 +3022,8 @@ function explainShortage(S, b, r, depth, seen) {
   seen.add(key);
   const tgt = targetOf(S, b, r);
   out.push([depth, bName(b) + ' holds ' + b.inv[r] + ' ' + RES[r].name + (tgt ? ' and wants ' + tgt : '')]);
-  out.push([depth + 1, b.ld && b.ld[r] ? 'Last delivery of ' + RES[r].name + ' arrived ' + clockStr(b.ld[r]) + ' from ' + bName(bById(S, b.lo[r])) : 'No delivery of ' + RES[r].name + ' on record']);
+  const how = b.type === 'house' && (r === R.bread || r === R.furniture) ? 'Last fetched' : 'Last delivery of';
+  out.push([depth + 1, b.ld && b.ld[r] ? how + ' ' + RES[r].name + ' ' + (how === 'Last fetched' ? 'from ' + bName(bById(S, b.lo[r])) + ' ' + clockStr(b.ld[r]) : 'arrived ' + clockStr(b.ld[r]) + ' from ' + bName(bById(S, b.lo[r]))) : 'No ' + RES[r].name + ' received on record']);
   const inc = S.cons.filter(c => c.d === b.id && c.r === r);
   for (const c of inc) out.push([depth + 1, 'Consignment #' + c.id + ': ' + c.q + ' from ' + bName(bById(S, c.o)) + ', ' + conStatus(S, c)]);
   if (inc.length) return out;
@@ -3711,6 +3715,7 @@ function chimney(c, x, y, z, h, col, smoke) {
 /* =====================================================================
    Ground: land, shore, tidal sea, canals, locks, roads, rails.
    ===================================================================== */
+const FIELD_COL = ['#d2b75b', '#a2b45c', '#8a6d4c', '#c9b98b', '#bfa24c'];
 const GC = {
   grass: ['#8ea86a', '#94ad6e', '#89a366', '#99b072'], field: '#c8b25a', fieldDark: '#a99447', soil: '#8a6d4c',
   sand: '#d8c69c', wetSand: '#a99a73', bank: '#7d6a4f', stone: '#b5ab97', stoneDark: '#8f8572',
@@ -3763,19 +3768,24 @@ function drawGroundTile(c, S, t) {
   let coast = false;
   for (let k = 0; k < 4; k++) { const n = nb(S, t, k); if (n >= 0 && S.ter[n] === T_SEA) coast = true; }
   const dep = S.dep[t];
+  const field = dep === D_FERTILE && nearFarm(S, t) && !S.road[t] && !S.rail[t] && !S.bld[t];
+  const parcel = ((x >> 1) * 31 + (y >> 1) * 17 + (x >> 2) * 7) % 5;
   if (coast && !S.bld[t] && !S.road[t]) col = GC.sand;
-  else if (dep === D_FERTILE && nearFarm(S, t) && !S.road[t] && !S.rail[t] && !S.bld[t]) col = (x + y) & 1 ? GC.field : GC.soil;
+  else if (field) col = FIELD_COL[parcel];
   const ov = -0.9 / (HW * (RV.chunkZ || 1));
   fillPoly(c, tileQ(x, y, 0, ov), col);
   if (RV.q >= 1 && !S.road[t] && !S.bld[t]) {
-    if (dep === D_FERTILE && nearFarm(S, t) && !S.rail[t]) {     // crop rows
-      const ax = (x * 3 + y) % 2;
-      for (let i = 1; i < 5; i++) { const u = i / 5 - 0.5; const a = ax ? P(x + u, y - 0.45, 0) : P(x - 0.45, y + u, 0), b = ax ? P(x + u, y + 0.45, 0) : P(x + 0.45, y + u, 0); line(c, a, b, (x + y) & 1 ? GC.fieldDark : '#6f5a3e', 1); }
+    if (field) {                                                   // a patchwork of crops, rows per parcel
+      const ax = parcel & 1, rc = shade(FIELD_COL[parcel], 0.82);
+      for (let i = 1; i < 6; i++) { const u = i / 6 - 0.5; const a = ax ? P(x + u, y - 0.47, 0) : P(x - 0.47, y + u, 0), b = ax ? P(x + u, y + 0.47, 0) : P(x + 0.47, y + u, 0); line(c, a, b, rc, 1); }
     } else if (dep === D_COAL || dep === D_ORE || dep === D_CLAY) {
       const cc = dep === D_COAL ? GC.coal : dep === D_ORE ? GC.ore : GC.clay;
       for (let i = 0; i < 6; i++) { const p = P(x + rnd01(t * 13 + i) - 0.5, y + rnd01(t * 17 + i * 5) - 0.5, 0); c.fillStyle = cc; c.globalAlpha = 0.55; c.fillRect(p[0] - 2, p[1] - 1, 4, 2); }
       c.globalAlpha = 1;
-    } else if (h > 0.55 && RV.q >= 2) {                            // grass tufts
+    } else if (h > 0.82 && RV.q >= 2 && !coast) {                    // wild flowers
+      const fl = ['#f4efe2', '#e8c547', '#d9714f'];
+      for (let i = 0; i < 4; i++) { const p = P(x + rnd01(t * 41 + i) - 0.5, y + rnd01(t * 43 + i) - 0.5, 0); c.fillStyle = fl[(t + i) % 3]; c.fillRect(p[0] - 0.8, p[1] - 0.8, 1.6, 1.6); }
+    } else if (h > 0.5 && RV.q >= 2) {                            // grass tufts
       const p = P(x + h - 0.5, y + rnd01(t + 9) - 0.5, 0);
       c.strokeStyle = shade(col, 0.8); c.lineWidth = 0.8; c.beginPath(); c.moveTo(p[0] - 2, p[1]); c.lineTo(p[0] - 1, p[1] - 3); c.moveTo(p[0], p[1]); c.lineTo(p[0] + 0.5, p[1] - 3.5); c.moveTo(p[0] + 2, p[1]); c.lineTo(p[0] + 2, p[1] - 2.5); c.stroke();
     }
@@ -3784,6 +3794,27 @@ function drawGroundTile(c, S, t) {
   if (S.rail[t]) drawRail(c, S, t, x, y, 0);
 }
 
+/* One pixel per tile, drawn through the isometric matrix with smoothing: a soft
+   depth gradient for the whole sea in a single draw. */
+function seaTexture(S) {
+  const k = S.ver.water + ':' + S.W + 'x' + S.H;
+  if (RV._seaTex && RV._seaTex.k === k) return RV._seaTex.cv;
+  const cv = document.createElement('canvas'); cv.width = S.W; cv.height = S.H;
+  const cx = cv.getContext('2d'), img = cx.createImageData(S.W, S.H), d = seaDepth(S);
+  const A = hexRgb('#6fa598'), B = hexRgb('#3e7a78'), Cc = hexRgb('#22495a');
+  for (let t = 0; t < S.W * S.H; t++) {
+    let col = A;
+    if (S.ter[t] === T_SEA) { const f = Math.min(1, (d[t] - 1) / 9); const m = f < 0.4 ? f / 0.4 : (f - 0.4) / 0.6; const P0 = f < 0.4 ? A : B, P1 = f < 0.4 ? B : Cc; col = [P0[0] + (P1[0] - P0[0]) * m, P0[1] + (P1[1] - P0[1]) * m, P0[2] + (P1[2] - P0[2]) * m]; }
+    img.data[t * 4] = col[0]; img.data[t * 4 + 1] = col[1]; img.data[t * 4 + 2] = col[2]; img.data[t * 4 + 3] = 255;
+  }
+  cx.putImageData(img, 0, 0);
+  RV._seaTex = { k, cv }; return cv;
+}
+function drawSea(c, S) {
+  if (typeof document === 'undefined') return;
+  const tex = seaTexture(S), z = seaZ(S);
+  c.save(); c.transform(HW, HH, -HW, HH, 0, -z); c.imageSmoothingEnabled = true; c.drawImage(tex, -0.5, -0.5); c.restore();
+}
 function drawWater(c, S, t, x, y, ter) {
   const sz = seaZ(S);
   const z = ter === T_SEA ? sz : ter === T_CANAL ? CANAL_Z : lockZ(S, t);
@@ -3794,7 +3825,7 @@ function drawWater(c, S, t, x, y, ter) {
   let col;
   if (ter === T_SEA) { const d = seaDepth(S)[t]; col = mixHex(GC.shallow, GC.deep, Math.min(1, (d - 1) / 5)); }
   else col = GC.canal;
-  fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.cam.z * RV.dpr || 1))), col);
+  if (ter !== T_SEA || typeof document === 'undefined') fillPoly(c, tileQ(x, y, z, -0.9 / (HW * (RV.cam.z * RV.dpr || 1))), col);
   if (edge(3)) { // west edge: face toward +x
     fillPoly(c, [P(x - 0.5, y - 0.5, 0), P(x - 0.5, y + 0.5, 0), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], shade(wallCol(3), 0.78));
     if (ter === T_SEA) fillPoly(c, [P(x - 0.5, y - 0.5, -2), P(x - 0.5, y + 0.5, -2), P(x - 0.5, y + 0.5, z), P(x - 0.5, y - 0.5, z)], 'rgba(40,50,40,0.28)');
@@ -3989,7 +4020,7 @@ const DRAWB = {
     // silo
     isoBox(c, x0 + 1.4, y0 + 0.3, 0.4, 0.4, 0, 26, '#cfc7b6');
     fillPoly(c, [P(x0 + 1.4 - 0.5, y0 + 0.3 - 0.5, 26), P(x0 + 1.8 - 0.5, y0 + 0.3 - 0.5, 26), P(x0 + 1.8 - 0.5, y0 + 0.7 - 0.5, 26), P(x0 + 1.4 - 0.5, y0 + 0.7 - 0.5, 26), P(x0 + 1.1, y0 + 0, 33)], '#8b9093');
-    stockDisplay(c, S, b, [[x0 + 0.8, y0 + 1.4], [x0 + 1.5, y0 + 1.4]]);
+    stockDisplay(c, S, b, [[x0 + 0.7, y0 + 1.3], [x0 + 1.3, y0 + 1.25]]);
     // hay bales
     isoBox(c, x0 + 0.2, y0 + 1.2, 0.3, 0.2, 0, 5, '#d8bf6a');
   },
@@ -4005,7 +4036,7 @@ const DRAWB = {
     fillPoly(c, [P(x0 - 0.3, y0 - 0.3, 0), P(x0 + 1.1, y0 - 0.3, 0), P(x0 + 1.1, y0 + 1.0, 0), P(x0 - 0.3, y0 + 1.0, 0)], '#9b5c35');
     fillPoly(c, [P(x0 - 0.15, y0 - 0.15, -4), P(x0 + 0.95, y0 - 0.15, -4), P(x0 + 0.95, y0 + 0.85, -4), P(x0 - 0.15, y0 + 0.85, -4)], '#b8703f');
     isoBox(c, x0 + 1.15, y0 + 1.1, 0.6, 0.5, 0, 10, '#9e8a6d'); gableRoof(c, x0 + 1.15, y0 + 1.1, 0.6, 0.5, 10, 7, '#5d4a3f', '#9e8a6d', 'y');
-    stockDisplay(c, S, b, [[x0 + 0.3, y0 + 1.5]]);
+    stockDisplay(c, S, b, [[x0 + 0.25, y0 + 1.3]]);
     line(c, P(x0 + 0.5, y0 + 0.4, 0), P(x0 + 1.2, y0 + 1.0, 9), '#3a3330', 1.5);
   },
   coalmine(c, S, b) { mineArt(c, S, b, '#3b3634'); },
@@ -4018,7 +4049,7 @@ const DRAWB = {
     gableRoof(c, x0 + 0.05, y0, W, D, 36, 13, '#535c61', '#a9583d', b.rot & 1 ? 'y' : 'x');
     const sx = b.rot & 1 ? x0 + 0.25 : x0 + 1.5, sy = b.rot & 1 ? y0 + 1.45 : y0 + 0.25;
     isoBox(c, sx, sy, 0.35, 0.35, 0, 24, '#c7c1b3');
-    stockDisplay(c, S, b, [[x0 + (b.rot & 1 ? 0.5 : 1.7), y0 + (b.rot & 1 ? 1.7 : 0.75)]]);
+    stockDisplay(c, S, b, [[x0 + (b.rot & 1 ? 0.3 : 1.15), y0 + (b.rot & 1 ? 1.15 : 0.2)]]);
     void w; void d;
   },
   bakery(c, S, b, night) {
@@ -4039,7 +4070,7 @@ const DRAWB = {
     for (let i = 0; i < 3; i++) winL(c, x0 + 0.1, y0 + 0.1, 1.2, 0.9, 0.15 + i * 0.3, 0.27 + i * 0.3, 0, 7, b.st === 0 ? '#e88a3c' : '#3a2a22');
     gableRoof(c, x0 + 0.1, y0 + 0.1, 1.2, 0.9, 14, 8, '#5d4a3f', '#8c4a34', 'x');
     chimney(c, x0 + 1.55, y0 + 0.35, 0, 52, '#8c4a34', b.st === 0 ? 1.5 : 0);
-    stockDisplay(c, S, b, [[x0 + 0.5, y0 + 1.5], [x0 + 1.4, y0 + 1.5]]);
+    stockDisplay(c, S, b, [[x0 + 0.5, y0 + 1.25], [x0 + 1.3, y0 + 1.25]]);
     if (b.st === 0) RV.lights.push([P(x0 + 0.6, y0 + 1.0, 4), 12, 0.45]);
   },
   steelworks(c, S, b) {
@@ -4057,7 +4088,7 @@ const DRAWB = {
     windowRows(c, x0 + 0.1, y0 + 0.1, 1.3, 1.1, 2, 13, 2, 1.6, b.load > 0 && dusk(S));
     gableRoof(c, x0 + 0.1, y0 + 0.1, 1.3, 1.1, 30, 9, '#4e565b', '#9b5a42', 'x');
     chimney(c, x0 + 1.6, y0 + 0.4, 0, 70, '#8a5643', b.load > 0 ? 1 + b.load / 40 : 0);
-    stockDisplay(c, S, b, [[x0 + 1.5, y0 + 1.5]]);
+    stockDisplay(c, S, b, [[x0 + 1.25, y0 + 1.25]]);
   },
   tidemill(c, S, b) {
     const x0 = b.x + 0.15, y0 = b.y + 0.15;
@@ -4080,7 +4111,7 @@ const DRAWB = {
     gableRoof(c, x0, y0, 1.4, 1.1, 34, 14, p.roof, '#8e5a3e', 'y');
     steppedGable(c, x0, y0, 1.4, 1.1, 34, 14, '#8e5a3e');
     line(c, wallL(x0, y0, 1.4, 1.1, 0.5, 44), P(x0 + 0.2, y0 + 1.5, 44), '#3a2a20', 1.5);
-    stockDisplay(c, S, b, [[b.x + 1.65, b.y + 0.4], [b.x + 1.65, b.y + 1.1], [b.x + 0.5, b.y + 1.7], [b.x + 1.2, b.y + 1.7]]);
+    stockDisplay(c, S, b, [[b.x + 1.25, b.y + 0.0], [b.x + 1.25, b.y + 0.6], [b.x + 0.2, b.y + 1.2], [b.x + 0.8, b.y + 1.2]]);
     void night;
   },
   depot(c, S, b) {
@@ -4136,7 +4167,7 @@ function mineArt(c, S, b, heapCol) {
   if (!b.out.some(n => n > 0)) heap(c, x0 + 0.6, y0 + 1.4, 3, heapCol, 40);
 }
 function shedArt(c, S, b, wall, roof, saw, chim) {
-  const x0 = b.x + 0.08, y0 = b.y + 0.08, W = b.w - 0.16, D = b.h - 0.16, H = 18;
+  const x0 = b.x + 0.08, y0 = b.y + 0.08, W = b.w - (b.rot & 1 ? 0.16 : 0.5), D = b.h - (b.rot & 1 ? 0.5 : 0.16), H = 18;
   isoBox(c, x0, y0, W, D, 0, H, wall);
   windowRows(c, x0, y0, W, D, 1, 14, 0, 1.6, b.st === 0 && dusk(S), '#cfc5b2');
   // sawtooth roof: a row of north-light ridges
@@ -4146,7 +4177,7 @@ function shedArt(c, S, b, wall, roof, saw, chim) {
     else { const xx = x0 + i * W / n; gableRoof(c, xx, y0, W / n, D, H, 8, roof, wall, 'y', { rows: 2 }); }
   }
   if (chim) chimney(c, x0 + 0.2, y0 + 0.2, H, 26, '#6e5a50', b.st === 0 ? 1.2 : 0);
-  stockDisplay(c, S, b, b.rot & 1 ? [[b.x + b.w - 0.1, b.y + b.h], [b.x + 0.2, b.y + b.h + 0.05]] : [[b.x + b.w, b.y + 0.3], [b.x + b.w, b.y + b.h - 0.2]]);
+  stockDisplay(c, S, b, b.rot & 1 ? [[b.x + 0.2, b.y + b.h - 0.75], [b.x + b.w - 0.8, b.y + b.h - 0.75]] : [[b.x + b.w - 0.75, b.y + 0.15], [b.x + b.w - 0.75, b.y + b.h - 0.85]]);
 }
 function craneArt(c, x, y, seed) {
   const top = 34, base = P(x, y, 1), mast = P(x, y, top);
@@ -4651,6 +4682,7 @@ function renderFrame(S, dt) {
   const vis = (x, y) => { const px = (x - y) * HW, py = (x + y) * HH; return px > w0x - 40 && px < w1x + 40 && py > w0y - 30 && py < w1y + 60; };
   const W = S.W, H = S.H;
   // ground: water live (it moves with the tide), dry land from cached chunks on top
+  drawSea(c, S);
   for (let s = 0; s <= W + H - 2; s++) {
     const xa = Math.max(0, s - H + 1), xb = Math.min(W - 1, s);
     for (let x = xa; x <= xb; x++) { const y = s - x, t = y * W + x; if (S.ter[t] === T_LAND || !vis(x, y)) continue; drawGroundTile(c, S, t); }
@@ -5362,8 +5394,10 @@ function bindInput() {
     RV.hoverT = inb(G.S, tl[0], tl[1]) ? tl[1] * G.S.W + tl[0] : -1;
     if (!prev) {                          // hover with mouse
       if (G.tool === 'place' && !PT.touch) placeGhost(tl[0], tl[1]);
+      if (e.pointerType === 'mouse') hoverTip(e.clientX, e.clientY);
       return;
     }
+    $('tip').hidden = true;
     PT.down.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (PT.mode === 'pinch' && PT.down.size >= 2) {
       const [a, b] = [...PT.down.values()], d = Math.hypot(a.x - b.x, a.y - b.y), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
@@ -5477,6 +5511,20 @@ function panelClick(e) {
   G.lastPanel = ''; renderPanel(true);
 }
 function focusBuilding(id) { const b = bById(G.S, id); if (b) centerOnTile(b.x + (b.w - 1) / 2, b.y + (b.h - 1) / 2); }
+
+/* a one-line label for whatever is under the mouse */
+let tipAt = 0;
+function hoverTip(sx, sy) {
+  const now = performance.now(); if (now - tipAt < 90) return; tipAt = now;
+  const S = G.S, el = $('tip');
+  if (G.tool !== 'inspect' || G.menuOpen) { el.hidden = true; return; }
+  const p = pickAt(S, sx, sy); let txt = '';
+  if (p && p.v) { const v = vById(S, p.v); if (v) { let units = 0, r = -1; for (const id of v.cargo) { const c = cById(S, id); if (c) { units += c.q; r = c.r; } } txt = vName(v) + (units ? ', ' + units + ' ' + RES[r].name : ', empty') + (v.ob ? ': ' + v.ob : ''); } }
+  else if (p && p.b) { const b = bById(S, p.b); if (b) txt = bName(b) + (BT[b.type].out ? ': ' + PST[b.st] : b.type === 'house' ? ': ' + b.res + ' residents' : ''); }
+  else if (p && p.l) { const lk = S.locks.find(l => l.id === p.l); if (lk) txt = 'Lock #' + lk.id + ': ' + lk.ph + ', ' + (lk.q[0].length + lk.q[1].length) + ' waiting'; }
+  if (!txt) { el.hidden = true; return; }
+  el.textContent = txt; el.style.left = (sx + 14) + 'px'; el.style.top = (sy + 12) + 'px'; el.hidden = false;
+}
 
 /* ==== 94_app.js ==== */
 /* =====================================================================

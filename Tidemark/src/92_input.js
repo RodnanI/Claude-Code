@@ -99,8 +99,10 @@ function bindInput() {
     RV.hoverT = inb(G.S, tl[0], tl[1]) ? tl[1] * G.S.W + tl[0] : -1;
     if (!prev) {                          // hover with mouse
       if (G.tool === 'place' && !PT.touch) placeGhost(tl[0], tl[1]);
+      if (e.pointerType === 'mouse') hoverTip(e.clientX, e.clientY);
       return;
     }
+    $('tip').hidden = true;
     PT.down.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (PT.mode === 'pinch' && PT.down.size >= 2) {
       const [a, b] = [...PT.down.values()], d = Math.hypot(a.x - b.x, a.y - b.y), cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
@@ -214,3 +216,17 @@ function panelClick(e) {
   G.lastPanel = ''; renderPanel(true);
 }
 function focusBuilding(id) { const b = bById(G.S, id); if (b) centerOnTile(b.x + (b.w - 1) / 2, b.y + (b.h - 1) / 2); }
+
+/* a one-line label for whatever is under the mouse */
+let tipAt = 0;
+function hoverTip(sx, sy) {
+  const now = performance.now(); if (now - tipAt < 90) return; tipAt = now;
+  const S = G.S, el = $('tip');
+  if (G.tool !== 'inspect' || G.menuOpen) { el.hidden = true; return; }
+  const p = pickAt(S, sx, sy); let txt = '';
+  if (p && p.v) { const v = vById(S, p.v); if (v) { let units = 0, r = -1; for (const id of v.cargo) { const c = cById(S, id); if (c) { units += c.q; r = c.r; } } txt = vName(v) + (units ? ', ' + units + ' ' + RES[r].name : ', empty') + (v.ob ? ': ' + v.ob : ''); } }
+  else if (p && p.b) { const b = bById(S, p.b); if (b) txt = bName(b) + (BT[b.type].out ? ': ' + PST[b.st] : b.type === 'house' ? ': ' + b.res + ' residents' : ''); }
+  else if (p && p.l) { const lk = S.locks.find(l => l.id === p.l); if (lk) txt = 'Lock #' + lk.id + ': ' + lk.ph + ', ' + (lk.q[0].length + lk.q[1].length) + ' waiting'; }
+  if (!txt) { el.hidden = true; return; }
+  el.textContent = txt; el.style.left = (sx + 14) + 'px'; el.style.top = (sy + 12) + 'px'; el.hidden = false;
+}

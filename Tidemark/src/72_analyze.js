@@ -107,7 +107,8 @@ function explainShortage(S, b, r, depth, seen) {
   seen.add(key);
   const tgt = targetOf(S, b, r);
   out.push([depth, bName(b) + ' holds ' + b.inv[r] + ' ' + RES[r].name + (tgt ? ' and wants ' + tgt : '')]);
-  out.push([depth + 1, b.ld && b.ld[r] ? 'Last delivery of ' + RES[r].name + ' arrived ' + clockStr(b.ld[r]) + ' from ' + bName(bById(S, b.lo[r])) : 'No delivery of ' + RES[r].name + ' on record']);
+  const how = b.type === 'house' && (r === R.bread || r === R.furniture) ? 'Last fetched' : 'Last delivery of';
+  out.push([depth + 1, b.ld && b.ld[r] ? how + ' ' + RES[r].name + ' ' + (how === 'Last fetched' ? 'from ' + bName(bById(S, b.lo[r])) + ' ' + clockStr(b.ld[r]) : 'arrived ' + clockStr(b.ld[r]) + ' from ' + bName(bById(S, b.lo[r]))) : 'No ' + RES[r].name + ' received on record']);
   const inc = S.cons.filter(c => c.d === b.id && c.r === r);
   for (const c of inc) out.push([depth + 1, 'Consignment #' + c.id + ': ' + c.q + ' from ' + bName(bById(S, c.o)) + ', ' + conStatus(S, c)]);
   if (inc.length) return out;
