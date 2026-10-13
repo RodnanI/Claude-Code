@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2c565e">
+<title>Tidemark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<style>/*STYLE*/</style>
+</head>
+<body>
+<canvas id="view" aria-label="Tidemark city view"></canvas>
+
+<header id="top">
+  <div class="brand"><span class="mark">TIDEMARK</span><span id="scenName"></span></div>
+  <div class="clockbox">
+    <span id="clock">Day 1 06:00</span>
+    <canvas id="tide" width="132" height="30" title="Tide: level against the canal (dashed)"></canvas>
+    <span id="wx" title="Weather"></span>
+  </div>
+  <div id="speed" class="seg" role="group" aria-label="Simulation speed"></div>
+  <div class="stats">
+    <span id="money" title="Treasury"></span>
+    <span id="pop" title="Residents and jobs"></span>
+    <span id="pwr" title="Electricity: supply / demand"></span>
+    <button id="alertBtn" class="chip" title="Alerts"></button>
+  </div>
+  <button id="menuBtn" class="btn ghost" title="Menu (Esc)">Menu</button>
+</header>
+
+<nav id="tools" aria-label="Tools"></nav>
+<div id="palette" class="sheet" hidden></div>
+<div id="overlaySeg" class="seg small" role="group" aria-label="Map overlay"></div>
+
+<aside id="panel" class="collapsed">
+  <div id="tabs" class="tabs" role="tablist"></div>
+  <div id="panelBody"></div>
+  <button id="panelToggle" class="btn ghost small" aria-label="Show or hide panel">Panel</button>
+</aside>
+
+<div id="confirmBar" class="confirm" hidden>
+  <span id="confirmText"></span>
+  <button id="cfRotate" class="btn">Rotate</button>
+  <button id="cfCancel" class="btn">Cancel</button>
+  <button id="cfOk" class="btn primary">Build</button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<div id="menu" class="overlay">
+  <div class="menuCard">
+    <h1>Tidemark</h1>
+    <p class="sub">A harbour town that has to work. Every loaf, plank and lump of coal is real: it sits in a building, a yard, or a vehicle, and it only moves when something carries it.</p>
+    <div id="menuBody"></div>
+    <p class="fine">Simulation: seeded, integer, replayable. Graphics settings never touch it.</p>
+  </div>
+</div>
+<div id="modal" class="overlay" hidden><div class="modalCard"><button id="modalClose" class="btn ghost small">Close</button><div id="modalBody"></div></div></div>
+<input id="fileIn" type="file" accept=".json,.tidemark,application/json" hidden>
+<script>/*SCRIPT*/</script>
+</body>
+</html>

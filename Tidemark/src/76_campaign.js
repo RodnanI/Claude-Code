@@ -27,7 +27,7 @@ const SCEN = {
     build: (S) => { shapeTidemark(S); buildTidemark(S, 'canal'); S.money = 20000; },
   },
   c1: {
-    name: 'I. Bread and Tide', kind: 'campaign', map: [56, 56], seed: 7,
+    name: 'I. Bread and Tide', kind: 'campaign', map: [56, 56], seed: 7, settlers: 3,
     brief: 'Tidemark is a fishing village with a farm and a tide mill. The bakery burned down last winter and the mill was never built. Feed the town: grain must become flour, flour must become bread, and bread must reach the market halls.',
     build: (S) => { shapeTidemark(S); buildTidemark(S, 'town', { houses: 24, skip: ['mill', 'bakery', 'market2', 'sawmill', 'joinery', 'forester', 'forester2'] }); S.money = 4000; },
     goals: [
@@ -131,7 +131,7 @@ const SCEN = {
     build: (S) => { shapeTidemark(S); buildTidemark(S, 'canal'); S.money = 20000; },
   },
   sandbox: {
-    name: 'Sandbox', kind: 'sandbox', map: [64, 64], seed: 0,
+    name: 'Sandbox', kind: 'sandbox', map: [64, 64], seed: 0, settlers: 0,
     brief: 'An empty stretch of coast from a seed. Coal, iron and farmland are scattered inland; clay lies near the shore.',
     build: (S, o) => buildSandbox(S, o || {}),
   },
@@ -143,7 +143,10 @@ function startScenario(id, opts) {
   const def = SCEN[id];
   const seed = (opts.seed !== undefined ? opts.seed : def.seed) >>> 0;
   const S = newSim(seed, opts.w || def.map[0], opts.h || def.map[1]);
+  S.tick = 6 * TPH;                                                   // every story starts at dawn
   def.build(S, opts);
+  const settle = def.settlers === undefined ? 4 : def.settlers;      // households already living here
+  if (settle) for (const b of S.blds) if (b.type === 'house') b.res = Math.min(HCAP[b.lvl], settle);
   for (let i = 0; i < 2; i++) { stepLabour(S); stepPower(S); }        // settle staffing and grids before tick 0
   S.scen = { id, t0: S.tick, goals: (def.goals || []).map(() => ({ done: 0, prog: '' })), won: 0, base: {} };
   S.scen.base = { delivered: S.delivered.slice(), ledExp: S.led.exp.slice(), ledProd: S.led.prod.slice(), mexp: S.mled.exp, lockUnits: S.stats.lockUnits || 0 };

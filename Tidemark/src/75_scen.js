@@ -91,9 +91,15 @@ function buildTidemark(S, upto, opts) {
   keep.joinery = P('joinery', 'joinery', 15, 11, 0);
   if (!opts.noHouses) {
     const lim = opts.houses || 999;
-    const a = fillHouses(S, K, 4, 25, 17, 40, Math.min(46, lim), (x, y) => (x === 9 && y > 31 && y < 35));
-    const b = fillHouses(S, K, 19, 25, 31, 40, Math.min(30, Math.max(0, lim - a)));
+    const a = fillHouses(S, K, 4, 25, 17, 40, Math.min(62, lim), (x, y) => (x === 9 && y > 31 && y < 35));
+    const b = fillHouses(S, K, 19, 25, 31, 40, Math.min(44, Math.max(0, lim - a)));
     fillHouses(S, K, 7, 22, 14, 23, Math.min(6, Math.max(0, lim - a - b)));
+  }
+  // back gardens: a few trees inside the town blocks
+  for (let y = 25; y <= 40; y++) for (let x = 4; x <= 31; x++) {
+    const t = y * S.W + x; if (S.ter[t] !== T_LAND || S.bld[t] || S.road[t]) continue;
+    let adj = false; for (let d = 0; d < 4; d++) { const n = nb(S, t, d); if (n >= 0 && S.road[n]) adj = true; }
+    if (!adj && ((x * 5 + y * 3) % 4 === 0)) S.tree[t] = 1 + ((x + y) % 2);
   }
   const pw = [];
   for (let t = 0; t < S.W * S.H; t++) { const x = t % S.W, y = (t / S.W) | 0; if (S.road[t] && x <= 31 && y >= 10 && !isWater(S.ter[t])) pw.push(t); }
