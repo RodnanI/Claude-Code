@@ -1139,19 +1139,36 @@ function stepMarkets(S) {
 function workPrio(b) { const t = b.type; if (t === 'powerplant') return 0; if (t === 'market' || t === 'bakery' || t === 'mill' || t === 'farm' || BT[t].node) return 1; return 2; }
 /* Loading speed at staffed facilities: unstaffed yards work at a third of the pace. */
 function handleMul(b) { const j = BT[b.type].jobs; if (!j || b.type === 'house') return 100; return Math.max(34, Math.floor(b.wk * 100 / j)); }
+/* Road networks joined by a working rail line or a water route form one labour
+   market: commuters ride the trains and ferries between the yards. */
+function labourRoots(S) {
+  const rn = roadNet(S), par = new Map();
+  const find = k => { while (par.has(k) && par.get(k) !== k) k = par.get(k); return k; };
+  const join = (a, b) => { a = find(a); b = find(b); if (a === b) return; if (a < b) par.set(b, a); else par.set(a, b); };
+  const nodes = S.blds.filter(b => BT[b.type].node && bAcc(S, b) >= 0);
+  for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+    const a = nodes[i], b = nodes[j], ka = rn.rc[bAcc(S, a)], kb = rn.rc[bAcc(S, b)];
+    if (ka === kb || BT[a.type].node !== BT[b.type].node) continue;
+    const linked = BT[a.type].node === 'rail' ? (railStationDist(S, a, b) >= 0 || railStationDist(S, b, a) >= 0) : !!dockWaterDist(S, a, b);
+    if (linked) join(ka, kb);
+  }
+  return k => find(k);
+}
 function stepLabour(S) {
-  const rn = roadNet(S); const pool = new Map(), tot = new Map();
+  const rn = roadNet(S); const pool = new Map(), tot = new Map(), root = labourRoots(S);
   for (const b of S.blds) if (b.type === 'house') {
-    const a = bAcc(S, b); if (a < 0) continue; const k = rn.rc[a];
+    const a = bAcc(S, b); if (a < 0) continue; const k = root(rn.rc[a]);
     const w = Math.floor(b.res * WORK_PCT / 100);
     pool.set(k, (pool.get(k) || 0) + w); tot.set(k, (tot.get(k) || 0) + w);
   }
-  const work = S.blds.filter(b => BT[b.type].jobs > 0).sort((a, b) => workPrio(a) - workPrio(b) || a.id - b.id);
+  // works that sat idle (no input, or output nobody collects) hire after busy ones
+  const pr = b => workPrio(b) + (BT[b.type].out && (b.st === 3 || b.st === 4) ? 3 : 0);
+  const work = S.blds.filter(b => BT[b.type].jobs > 0).sort((a, b) => pr(a) - pr(b) || a.id - b.id);
   const open = new Map(); let jobs = 0, emp = 0;
   for (const b of work) {
     const j = BT[b.type].jobs; jobs += j;
     const a = bAcc(S, b); if (a < 0) { b.wk = 0; continue; }
-    const k = rn.rc[a], p = pool.get(k) || 0, n = Math.min(j, p);
+    const k = root(rn.rc[a]), p = pool.get(k) || 0, n = Math.min(j, p);
     b.wk = n; emp += n; pool.set(k, p - n);
     if (n < j) open.set(k, (open.get(k) || 0) + j - n);
   }
@@ -1159,7 +1176,7 @@ function stepLabour(S) {
   for (const b of S.blds) if (b.type === 'house') {
     pop += b.res;
     const a = bAcc(S, b); if (a < 0) { b.jobsOk = 0; continue; }
-    const k = rn.rc[a], un = pool.get(k) || 0, all = tot.get(k) || 0;
+    const k = root(rn.rc[a]), un = pool.get(k) || 0, all = tot.get(k) || 0;
     b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 20 + 600) ? 1 : 0;
   }
   let wf = 0; for (const v of tot.values()) wf += v;
@@ -2982,8 +2999,9 @@ function prodStatus(S, p) {
     case 1: {
       const a = bAcc(S, p); if (a < 0) return 'no workers: no road access, so nobody can commute';
       const k = rcOf(S, a); let homes = 0;
-      for (const h of S.blds) if (h.type === 'house' && h.res > 0 && rcOf(S, bAcc(S, h)) === k) homes++;
-      if (!homes) return 'no workers: nobody lives on its road network (#' + k + '), so it is cut off from the labour force';
+      const root = labourRoots(S);
+      for (const h of S.blds) if (h.type === 'house' && h.res > 0) { const ha = bAcc(S, h); if (ha >= 0 && root(rcOf(S, ha)) === root(k)) homes++; }
+      if (!homes) return 'no workers: nobody lives on its road network (#' + k + ') or on any network joined to it by rail or water, so it is cut off from the labour force';
       return 'no workers: every resident on its road network already has a job (' + (S.labour ? S.labour.unemp : 0) + ' unemployed city-wide)';
     }
     case 2: { const k = powerNet(S).pwComp[p.y * S.W + p.x]; const g = (S.pstat || []).find(x => x[0] === k); return 'no power' + (g ? ': its grid makes ' + g[1] + ' MW against ' + g[2] + ' MW demand' : ': not connected to any generator'); }
@@ -3194,9 +3212,10 @@ function shapeTidemark(S) {
 }
 
 /* Builder: wraps actions, throws in development when something fails. */
-function builder(S) {
+function builder(S, sys) {
   const fails = [];
-  const A = (a) => { const r = applyAction(S, a, 1); if (!r.res.ok) fails.push(a.type + ' ' + JSON.stringify(a).slice(0, 90) + ' -> ' + r.res.why); return r.res; };
+  if (sys === undefined) sys = 1;
+  const A = (a) => { const r = applyAction(S, a, sys); if (!r.res.ok) fails.push(a.type + ' ' + JSON.stringify(a).slice(0, 90) + ' -> ' + r.res.why); return r.res; };
   const T = (x, y) => y * S.W + x;
   const line = (x0, y0, x1, y1) => { const a = []; if (y0 === y1) { const s = x1 >= x0 ? 1 : -1; for (let x = x0; x !== x1 + s; x += s) a.push(T(x, y0)); } else { const s = y1 >= y0 ? 1 : -1; for (let y = y0; y !== y1 + s; y += s) a.push(T(x0, y)); } return a; };
   return {
@@ -3227,6 +3246,75 @@ function fillHouses(S, K, x0, y0, x1, y1, max, skip) {
   }
   return n;
 }
+
+const TM_STAGE_FN = {
+  harbour(S, K, keep, P, sd) {
+    K.road(18, 41, 30, 41);
+    keep.quay = P('quay', 'quay', 12, 42, 0);
+    keep.wh = P('wh', 'warehouse', 15, 42, 0);
+    keep.hdepot = P('hdepot', 'depot', 19, 42, 0);
+    keep.plant = P('plant', 'powerplant', 23, 42, 0);
+    const p2 = []; for (let x = 11; x <= 26; x++) p2.push(K.T(x, 41)); K.power(p2);
+    K.buy('truck', keep.hdepot, 8);
+    sd(keep.quay, R.coal, 80); sd(keep.plant, R.coal, 20);
+    K.trade(R.coal, 90, 1);
+  
+  },
+  farbank(S, K, keep, P, sd) {
+    K.road(31, 24, 32, 24); K.road(33, 24, 34, 24); K.road(35, 24, 36, 24);
+    K.road(36, 12, 52, 12); K.road(36, 13, 36, 35);
+    K.road(19, 12, 30, 12);
+    keep.efarm1 = P('efarm1', 'farm', 38, 13, 0);
+    keep.efarm2 = P('efarm2', 'farm', 42, 13, 0);
+    keep.edepot = P('edepot', 'depot', 50, 13, 0);
+    K.buy('truck', keep.edepot, 5);
+    keep.claypit = null;
+  
+  },
+  railway(S, K, keep, P, sd) {
+    K.road(18, 7, 18, 12);
+    keep.wst = P('wst', 'station2', 19, 8, 0);
+    keep.steel = P('steel', 'steelworks', 20, 13, 0);
+    keep.tools = P('tools', 'toolworks', 24, 13, 0);
+    keep.est = P('est', 'station2', 41, 8, 0);
+    K.rail([[21, 9], [22, 9], [22, 8]]);
+    K.rail([[21, 8], [41, 8]]);
+    K.rail([[23, 8], [23, 7], [30, 7], [30, 8]]);
+    K.rail([[40, 8], [40, 9], [41, 9]]);
+    K.sig(29, 8, 1); K.sig(24, 7, 3);
+    K.road(36, 5, 36, 11); K.road(37, 5, 50, 5); K.road(44, 6, 44, 11);
+    keep.coal = P('coal', 'coalmine', 37, 3, 0);
+    keep.ore = P('ore', 'oremine', 46, 3, 0);
+    keep.mdepot = P('mdepot', 'depot', 38, 6, 0);
+    keep.plant2 = P('plant2', 'powerplant', 27, 13, 0);
+    sd(keep.plant2, R.coal, 20);
+    K.buy('truck', keep.mdepot, 4);
+    K.buy('train', keep.wst, 1); K.buy('train', keep.est, 1);
+    const p3 = []; for (let y = 7; y <= 12; y++) p3.push(K.T(18, y)); for (let x = 19; x <= 28; x++) p3.push(K.T(x, 12)); K.power(p3);
+    K.trade(R.tools, 40, 0);
+  
+  },
+  canal(S, K, keep, P, sd) {
+    // Clayport: a brickmaking hamlet south of the canal, reached only by water
+    K.canal(36, 36, 46, 36);
+    K.lock(35, 36);
+    K.road(36, 38, 50, 38); K.road(36, 39, 36, 41);
+    keep.ewharf = P('ewharf', 'wharf', 44, 37, 0);
+    keep.claypit = P('claypit', 'claypit', 38, 39, 0);
+    keep.bricks = P('bricks', 'brickworks', 47, 39, 0);
+    keep.sdepot = P('sdepot', 'depot', 40, 37, 0);
+    keep.hmarket = P('hmarket', 'market', 42, 39, 0);
+    for (const [x, y] of [[44, 39], [45, 39], [46, 39], [49, 39], [50, 39], [37, 41], [37, 40]]) K.place('house', x, y, 0);
+    keep.etide = P('etide', 'tidemill', 35, 39, 0);
+    keep.etide2 = P('etide2', 'tidemill', 35, 40, 0);
+    const p4 = [K.T(36, 39), K.T(36, 38), K.T(36, 40), K.T(36, 41)]; for (let x = 37; x <= 50; x++) p4.push(K.T(x, 38)); K.power(p4);
+    K.buy('truck', keep.sdepot, 2);
+    K.buy('barge', keep.quay, 1); K.buy('barge', keep.ewharf, 1);
+    sd(keep.hmarket, R.bread, 30);
+    K.trade(R.furniture, 10, 0);
+  
+  },
+};
 
 /* Stages of the Tidemark city. */
 const TM_STAGES = ['town', 'harbour', 'farbank', 'railway', 'canal'];
@@ -3275,68 +3363,7 @@ function buildTidemark(S, upto, opts) {
   K.buy('truck', keep.depot, 8);
   sd(keep.market, R_.bread, 30); sd(keep.market2, R_.bread, 30);
   sd(keep.mill, R_.grain, 8);
-  if (has('harbour')) {
-    K.road(18, 41, 30, 41);
-    keep.quay = P('quay', 'quay', 12, 42, 0);
-    keep.wh = P('wh', 'warehouse', 15, 42, 0);
-    keep.hdepot = P('hdepot', 'depot', 19, 42, 0);
-    keep.plant = P('plant', 'powerplant', 23, 42, 0);
-    const p2 = []; for (let x = 11; x <= 26; x++) p2.push(K.T(x, 41)); K.power(p2);
-    K.buy('truck', keep.hdepot, 8);
-    sd(keep.quay, R_.coal, 80); sd(keep.plant, R_.coal, 20);
-    K.trade(R_.coal, 90, 1);
-  }
-  if (has('farbank')) {
-    K.road(31, 24, 32, 24); K.road(33, 24, 34, 24); K.road(35, 24, 36, 24);
-    K.road(36, 12, 52, 12); K.road(36, 13, 36, 35);
-    K.road(19, 12, 30, 12);
-    keep.efarm1 = P('efarm1', 'farm', 38, 13, 0);
-    keep.efarm2 = P('efarm2', 'farm', 42, 13, 0);
-    keep.edepot = P('edepot', 'depot', 50, 13, 0);
-    K.buy('truck', keep.edepot, 5);
-    keep.claypit = null;
-  }
-  if (has('railway')) {
-    K.road(18, 7, 18, 12);
-    keep.wst = P('wst', 'station2', 19, 8, 0);
-    keep.steel = P('steel', 'steelworks', 20, 13, 0);
-    keep.tools = P('tools', 'toolworks', 24, 13, 0);
-    keep.est = P('est', 'station2', 41, 8, 0);
-    K.rail([[21, 9], [22, 9], [22, 8]]);
-    K.rail([[21, 8], [41, 8]]);
-    K.rail([[23, 8], [23, 7], [30, 7], [30, 8]]);
-    K.rail([[40, 8], [40, 9], [41, 9]]);
-    K.sig(29, 8, 1); K.sig(24, 7, 3);
-    K.road(36, 5, 36, 11); K.road(37, 5, 50, 5); K.road(44, 6, 44, 11);
-    keep.coal = P('coal', 'coalmine', 37, 3, 0);
-    keep.ore = P('ore', 'oremine', 46, 3, 0);
-    keep.mdepot = P('mdepot', 'depot', 38, 6, 0);
-    keep.plant2 = P('plant2', 'powerplant', 27, 13, 0);
-    sd(keep.plant2, R_.coal, 20);
-    K.buy('truck', keep.mdepot, 4);
-    K.buy('train', keep.wst, 1); K.buy('train', keep.est, 1);
-    const p3 = []; for (let y = 7; y <= 12; y++) p3.push(K.T(18, y)); for (let x = 19; x <= 28; x++) p3.push(K.T(x, 12)); K.power(p3);
-    K.trade(R_.tools, 40, 0);
-  }
-  if (has('canal')) {
-    // Clayport: a brickmaking hamlet south of the canal, reached only by water
-    K.canal(36, 36, 46, 36);
-    K.lock(35, 36);
-    K.road(36, 38, 50, 38); K.road(36, 39, 36, 41);
-    keep.ewharf = P('ewharf', 'wharf', 44, 37, 0);
-    keep.claypit = P('claypit', 'claypit', 38, 39, 0);
-    keep.bricks = P('bricks', 'brickworks', 47, 39, 0);
-    keep.sdepot = P('sdepot', 'depot', 40, 37, 0);
-    keep.hmarket = P('hmarket', 'market', 42, 39, 0);
-    for (const [x, y] of [[44, 39], [45, 39], [46, 39], [49, 39], [50, 39], [37, 41], [37, 40]]) K.place('house', x, y, 0);
-    keep.etide = P('etide', 'tidemill', 35, 39, 0);
-    keep.etide2 = P('etide2', 'tidemill', 35, 40, 0);
-    const p4 = [K.T(36, 39), K.T(36, 38), K.T(36, 40), K.T(36, 41)]; for (let x = 37; x <= 50; x++) p4.push(K.T(x, 38)); K.power(p4);
-    K.buy('truck', keep.sdepot, 2);
-    K.buy('barge', keep.quay, 1); K.buy('barge', keep.ewharf, 1);
-    sd(keep.hmarket, R_.bread, 30);
-    K.trade(R_.furniture, 10, 0);
-  }
+  for (const st of TM_STAGES.slice(1)) if (has(st)) TM_STAGE_FN[st](S, K, keep, P, sd);
   S.flags.inf = 0;
   S.keep = {}; for (const k in keep) if (keep[k]) S.keep[k] = keep[k].id;
   return K.fails;
@@ -3354,6 +3381,17 @@ function buildSandbox(S, opts) {
     if (coast) { const r = placeBuilding(S, 'lighthouse', t % S.W, (t / S.W) | 0, 0, true); if (r.ok) break; }
   }
   S.money = opts.money || 25000; if (opts.inf) S.flags.inf = 1;
+}
+
+/* Apply one later stage to a running game as ordinary paid player actions
+   (used by the campaign playthrough tests). Returns failures. */
+function playStage(S, stage) {
+  const K = builder(S, 0), keep = {};
+  for (const k in (S.keep || {})) keep[k] = bById(S, S.keep[k]);
+  for (const b of S.blds) { if (b.type === 'quay' && !keep.quay) keep.quay = b; }
+  TM_STAGE_FN[stage](S, K, keep, (name, bt, x, y, rot) => K.place(bt, x, y, rot), () => {});
+  for (const k in keep) if (keep[k]) S.keep[k] = keep[k].id;
+  return K.fails;
 }
 
 /* ==== 76_campaign.js ==== */
@@ -4215,9 +4253,10 @@ function orientedBox(c, cx, cy, len, wid, ang, z0, h, col, o) {
 function truckShape(c, x, y, dir, z, cargoR, ang) {
   const a = ang !== undefined ? ang : Math.atan2(DY[dir], DX[dir]);
   const ca = Math.cos(a), sa = Math.sin(a);
-  orientedBox(c, x - ca * 0.1, y - sa * 0.1, 0.34, 0.2, a, z + 1.5, 4, '#5d6a70');
-  orientedBox(c, x + ca * 0.16, y + sa * 0.16, 0.13, 0.2, a, z + 1.5, 7, '#c7533a');
-  if (cargoR >= 0) orientedBox(c, x - ca * 0.1, y - sa * 0.1, 0.28, 0.16, a, z + 5.5, 3, RES[cargoR].col);
+  orientedBox(c, x - ca * 0.11, y - sa * 0.11, 0.42, 0.25, a, z + 1.5, 5, '#55636a');
+  orientedBox(c, x + ca * 0.2, y + sa * 0.2, 0.16, 0.25, a, z + 1.5, 9, '#c7533a');
+  orientedBox(c, x + ca * 0.25, y + sa * 0.25, 0.05, 0.21, a, z + 6, 2.5, '#2b3a40', { ink: false });
+  if (cargoR >= 0) orientedBox(c, x - ca * 0.11, y - sa * 0.11, 0.36, 0.21, a, z + 6.5, 4, RES[cargoR].col);
 }
 function drawVehicle(c, S, v, pos, z) {
   if (v.k === 'truck') {
@@ -4233,6 +4272,12 @@ function drawVehicle(c, S, v, pos, z) {
     fillPoly(c, [P(cr[0][0], cr[0][1], hz - 1 + (big ? 6 : 3)), P(bow[0], bow[1], hz - 1 + (big ? 6 : 3)), P(cr[1][0], cr[1][1], hz - 1 + (big ? 6 : 3))], big ? '#33414a' : '#5a3e2b');
     let units = 0, rr = -1; for (const id of v.cargo) { const cc = cById(S, id); if (cc) { units += cc.q; rr = cc.r; } }
     for (let r = 0; r < NR; r++) if (v.own[r]) { units += v.own[r]; rr = r; }
+    if (dusk(S)) { // navigation lights: red to port, green to starboard, white masthead
+      const r = [-sa, ca];
+      RV.lights.push([P(pos.x - r[0] * Wd * 0.6, pos.y - r[1] * Wd * 0.6, hz + 4), 6, 0.8, 'r']);
+      RV.lights.push([P(pos.x + r[0] * Wd * 0.6, pos.y + r[1] * Wd * 0.6, hz + 4), 6, 0.8, 'g']);
+      RV.lights.push([P(pos.x, pos.y, hz + (big ? 24 : 9)), 8, 0.7]);
+    }
     if (big) {
       orientedBox(c, pos.x - ca * 0.52, pos.y - sa * 0.52, 0.32, 0.36, pos.ang, hz + 5, 10, '#eae4d8');
       orientedBox(c, pos.x - ca * 0.5, pos.y - sa * 0.5, 0.08, 0.08, pos.ang, hz + 15, 8, '#b94a35');
@@ -5620,7 +5665,8 @@ function loop(now) {
     let n = 0, t0 = performance.now();
     const maxN = Math.max(2, Math.ceil(tps / 20));
     while (acc >= 1 && n < maxN) {
-      step(S); acc -= 1; n++;
+      try { step(S); } catch (err) { console.error(err); setSpeed(0); acc = 0; toast('Simulation halted: ' + err.message + '. Rewind to a snapshot from the Time tab.', 8000); break; }
+      acc -= 1; n++;
       if (S.tick % TPD === 0) { takeSnap('Midnight'); if (!S.scen.title) saveAuto(); }
       if (S.scen.won && !G.progress[S.scen.id]) { G.progress[S.scen.id] = 1; LS.set('tidemark.progress', JSON.stringify(G.progress)); toast(SCEN[S.scen.id].name + ': chapter complete', 4000); G.tab = 'goals'; openPanel(true); }
       if (performance.now() - t0 > 22) { acc = Math.min(acc, 2); break; }
@@ -5629,7 +5675,7 @@ function loop(now) {
     RV.alpha = G.speed ? Math.min(1, acc) : 0;
     if (G.follow && G.sel && G.sel.v) { const v = vById(S, G.sel.v); if (v) { const p = v.k === 'train' ? trainCars(S, v)[0] : vehPos(S, v); if (p) { const w = P(p.x, p.y, 0); RV.cam.x += (w[0] - RV.cam.x) * 0.15; RV.cam.y += (w[1] - RV.cam.y) * 0.15; } } }
     if (G.S.scen.title && !G.menuOpen) G.S.scen.title = 0;
-    if (G.scene || G.menuOpen) { RV.cam.x += Math.sin(now / 9000) * 0.06; }
+    if (G.scene || G.menuOpen) sceneTour(S, dt);
     updateWalkers(S, dt * (G.speed ? Math.min(3, G.speeds[G.speed]) : 0.0001));
     renderFrame(S, dt);
     updateTop();
@@ -5656,6 +5702,21 @@ function boot() {
   requestAnimationFrame(loop);
 }
 window.addEventListener('DOMContentLoaded', boot);
+
+/* living scene: drift between landmarks, lingering a while at each */
+function sceneTour(S, dt) {
+  const T0 = RV.tour || (RV.tour = { i: 0, t: 0 });
+  const pts = [];
+  for (const type of ['quay', 'market', 'station2', 'station', 'wharf', 'lighthouse', 'steelworks', 'mill']) { const b = S.blds.find(x => x.type === type); if (b) pts.push([b.x + b.w / 2 + 2, b.y + b.h / 2 + 1]); }
+  for (const lk of S.locks) pts.push([lk.t % S.W, (lk.t / S.W) | 0]);
+  if (!pts.length) return;
+  T0.t += dt;
+  if (T0.t > 24) { T0.t = 0; T0.i = (T0.i + 1) % pts.length; }
+  const [x, y] = pts[T0.i % pts.length], w = P(x, y, 0);
+  const k = Math.min(1, dt * 0.25);
+  RV.cam.x += (w[0] - RV.cam.x) * k; RV.cam.y += (w[1] - RV.cam.y) * k;
+  RV.cam.z += ((G.scene ? 1.25 : 0.95) - RV.cam.z) * k * 0.5;
+}
 </script>
 </body>
 </html>

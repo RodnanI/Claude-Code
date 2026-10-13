@@ -27,9 +27,10 @@ function shapeTidemark(S) {
 }
 
 /* Builder: wraps actions, throws in development when something fails. */
-function builder(S) {
+function builder(S, sys) {
   const fails = [];
-  const A = (a) => { const r = applyAction(S, a, 1); if (!r.res.ok) fails.push(a.type + ' ' + JSON.stringify(a).slice(0, 90) + ' -> ' + r.res.why); return r.res; };
+  if (sys === undefined) sys = 1;
+  const A = (a) => { const r = applyAction(S, a, sys); if (!r.res.ok) fails.push(a.type + ' ' + JSON.stringify(a).slice(0, 90) + ' -> ' + r.res.why); return r.res; };
   const T = (x, y) => y * S.W + x;
   const line = (x0, y0, x1, y1) => { const a = []; if (y0 === y1) { const s = x1 >= x0 ? 1 : -1; for (let x = x0; x !== x1 + s; x += s) a.push(T(x, y0)); } else { const s = y1 >= y0 ? 1 : -1; for (let y = y0; y !== y1 + s; y += s) a.push(T(x0, y)); } return a; };
   return {
@@ -60,6 +61,75 @@ function fillHouses(S, K, x0, y0, x1, y1, max, skip) {
   }
   return n;
 }
+
+const TM_STAGE_FN = {
+  harbour(S, K, keep, P, sd) {
+    K.road(18, 41, 30, 41);
+    keep.quay = P('quay', 'quay', 12, 42, 0);
+    keep.wh = P('wh', 'warehouse', 15, 42, 0);
+    keep.hdepot = P('hdepot', 'depot', 19, 42, 0);
+    keep.plant = P('plant', 'powerplant', 23, 42, 0);
+    const p2 = []; for (let x = 11; x <= 26; x++) p2.push(K.T(x, 41)); K.power(p2);
+    K.buy('truck', keep.hdepot, 8);
+    sd(keep.quay, R.coal, 80); sd(keep.plant, R.coal, 20);
+    K.trade(R.coal, 90, 1);
+  
+  },
+  farbank(S, K, keep, P, sd) {
+    K.road(31, 24, 32, 24); K.road(33, 24, 34, 24); K.road(35, 24, 36, 24);
+    K.road(36, 12, 52, 12); K.road(36, 13, 36, 35);
+    K.road(19, 12, 30, 12);
+    keep.efarm1 = P('efarm1', 'farm', 38, 13, 0);
+    keep.efarm2 = P('efarm2', 'farm', 42, 13, 0);
+    keep.edepot = P('edepot', 'depot', 50, 13, 0);
+    K.buy('truck', keep.edepot, 5);
+    keep.claypit = null;
+  
+  },
+  railway(S, K, keep, P, sd) {
+    K.road(18, 7, 18, 12);
+    keep.wst = P('wst', 'station2', 19, 8, 0);
+    keep.steel = P('steel', 'steelworks', 20, 13, 0);
+    keep.tools = P('tools', 'toolworks', 24, 13, 0);
+    keep.est = P('est', 'station2', 41, 8, 0);
+    K.rail([[21, 9], [22, 9], [22, 8]]);
+    K.rail([[21, 8], [41, 8]]);
+    K.rail([[23, 8], [23, 7], [30, 7], [30, 8]]);
+    K.rail([[40, 8], [40, 9], [41, 9]]);
+    K.sig(29, 8, 1); K.sig(24, 7, 3);
+    K.road(36, 5, 36, 11); K.road(37, 5, 50, 5); K.road(44, 6, 44, 11);
+    keep.coal = P('coal', 'coalmine', 37, 3, 0);
+    keep.ore = P('ore', 'oremine', 46, 3, 0);
+    keep.mdepot = P('mdepot', 'depot', 38, 6, 0);
+    keep.plant2 = P('plant2', 'powerplant', 27, 13, 0);
+    sd(keep.plant2, R.coal, 20);
+    K.buy('truck', keep.mdepot, 4);
+    K.buy('train', keep.wst, 1); K.buy('train', keep.est, 1);
+    const p3 = []; for (let y = 7; y <= 12; y++) p3.push(K.T(18, y)); for (let x = 19; x <= 28; x++) p3.push(K.T(x, 12)); K.power(p3);
+    K.trade(R.tools, 40, 0);
+  
+  },
+  canal(S, K, keep, P, sd) {
+    // Clayport: a brickmaking hamlet south of the canal, reached only by water
+    K.canal(36, 36, 46, 36);
+    K.lock(35, 36);
+    K.road(36, 38, 50, 38); K.road(36, 39, 36, 41);
+    keep.ewharf = P('ewharf', 'wharf', 44, 37, 0);
+    keep.claypit = P('claypit', 'claypit', 38, 39, 0);
+    keep.bricks = P('bricks', 'brickworks', 47, 39, 0);
+    keep.sdepot = P('sdepot', 'depot', 40, 37, 0);
+    keep.hmarket = P('hmarket', 'market', 42, 39, 0);
+    for (const [x, y] of [[44, 39], [45, 39], [46, 39], [49, 39], [50, 39], [37, 41], [37, 40]]) K.place('house', x, y, 0);
+    keep.etide = P('etide', 'tidemill', 35, 39, 0);
+    keep.etide2 = P('etide2', 'tidemill', 35, 40, 0);
+    const p4 = [K.T(36, 39), K.T(36, 38), K.T(36, 40), K.T(36, 41)]; for (let x = 37; x <= 50; x++) p4.push(K.T(x, 38)); K.power(p4);
+    K.buy('truck', keep.sdepot, 2);
+    K.buy('barge', keep.quay, 1); K.buy('barge', keep.ewharf, 1);
+    sd(keep.hmarket, R.bread, 30);
+    K.trade(R.furniture, 10, 0);
+  
+  },
+};
 
 /* Stages of the Tidemark city. */
 const TM_STAGES = ['town', 'harbour', 'farbank', 'railway', 'canal'];
@@ -108,68 +178,7 @@ function buildTidemark(S, upto, opts) {
   K.buy('truck', keep.depot, 8);
   sd(keep.market, R_.bread, 30); sd(keep.market2, R_.bread, 30);
   sd(keep.mill, R_.grain, 8);
-  if (has('harbour')) {
-    K.road(18, 41, 30, 41);
-    keep.quay = P('quay', 'quay', 12, 42, 0);
-    keep.wh = P('wh', 'warehouse', 15, 42, 0);
-    keep.hdepot = P('hdepot', 'depot', 19, 42, 0);
-    keep.plant = P('plant', 'powerplant', 23, 42, 0);
-    const p2 = []; for (let x = 11; x <= 26; x++) p2.push(K.T(x, 41)); K.power(p2);
-    K.buy('truck', keep.hdepot, 8);
-    sd(keep.quay, R_.coal, 80); sd(keep.plant, R_.coal, 20);
-    K.trade(R_.coal, 90, 1);
-  }
-  if (has('farbank')) {
-    K.road(31, 24, 32, 24); K.road(33, 24, 34, 24); K.road(35, 24, 36, 24);
-    K.road(36, 12, 52, 12); K.road(36, 13, 36, 35);
-    K.road(19, 12, 30, 12);
-    keep.efarm1 = P('efarm1', 'farm', 38, 13, 0);
-    keep.efarm2 = P('efarm2', 'farm', 42, 13, 0);
-    keep.edepot = P('edepot', 'depot', 50, 13, 0);
-    K.buy('truck', keep.edepot, 5);
-    keep.claypit = null;
-  }
-  if (has('railway')) {
-    K.road(18, 7, 18, 12);
-    keep.wst = P('wst', 'station2', 19, 8, 0);
-    keep.steel = P('steel', 'steelworks', 20, 13, 0);
-    keep.tools = P('tools', 'toolworks', 24, 13, 0);
-    keep.est = P('est', 'station2', 41, 8, 0);
-    K.rail([[21, 9], [22, 9], [22, 8]]);
-    K.rail([[21, 8], [41, 8]]);
-    K.rail([[23, 8], [23, 7], [30, 7], [30, 8]]);
-    K.rail([[40, 8], [40, 9], [41, 9]]);
-    K.sig(29, 8, 1); K.sig(24, 7, 3);
-    K.road(36, 5, 36, 11); K.road(37, 5, 50, 5); K.road(44, 6, 44, 11);
-    keep.coal = P('coal', 'coalmine', 37, 3, 0);
-    keep.ore = P('ore', 'oremine', 46, 3, 0);
-    keep.mdepot = P('mdepot', 'depot', 38, 6, 0);
-    keep.plant2 = P('plant2', 'powerplant', 27, 13, 0);
-    sd(keep.plant2, R_.coal, 20);
-    K.buy('truck', keep.mdepot, 4);
-    K.buy('train', keep.wst, 1); K.buy('train', keep.est, 1);
-    const p3 = []; for (let y = 7; y <= 12; y++) p3.push(K.T(18, y)); for (let x = 19; x <= 28; x++) p3.push(K.T(x, 12)); K.power(p3);
-    K.trade(R_.tools, 40, 0);
-  }
-  if (has('canal')) {
-    // Clayport: a brickmaking hamlet south of the canal, reached only by water
-    K.canal(36, 36, 46, 36);
-    K.lock(35, 36);
-    K.road(36, 38, 50, 38); K.road(36, 39, 36, 41);
-    keep.ewharf = P('ewharf', 'wharf', 44, 37, 0);
-    keep.claypit = P('claypit', 'claypit', 38, 39, 0);
-    keep.bricks = P('bricks', 'brickworks', 47, 39, 0);
-    keep.sdepot = P('sdepot', 'depot', 40, 37, 0);
-    keep.hmarket = P('hmarket', 'market', 42, 39, 0);
-    for (const [x, y] of [[44, 39], [45, 39], [46, 39], [49, 39], [50, 39], [37, 41], [37, 40]]) K.place('house', x, y, 0);
-    keep.etide = P('etide', 'tidemill', 35, 39, 0);
-    keep.etide2 = P('etide2', 'tidemill', 35, 40, 0);
-    const p4 = [K.T(36, 39), K.T(36, 38), K.T(36, 40), K.T(36, 41)]; for (let x = 37; x <= 50; x++) p4.push(K.T(x, 38)); K.power(p4);
-    K.buy('truck', keep.sdepot, 2);
-    K.buy('barge', keep.quay, 1); K.buy('barge', keep.ewharf, 1);
-    sd(keep.hmarket, R_.bread, 30);
-    K.trade(R_.furniture, 10, 0);
-  }
+  for (const st of TM_STAGES.slice(1)) if (has(st)) TM_STAGE_FN[st](S, K, keep, P, sd);
   S.flags.inf = 0;
   S.keep = {}; for (const k in keep) if (keep[k]) S.keep[k] = keep[k].id;
   return K.fails;
@@ -187,4 +196,15 @@ function buildSandbox(S, opts) {
     if (coast) { const r = placeBuilding(S, 'lighthouse', t % S.W, (t / S.W) | 0, 0, true); if (r.ok) break; }
   }
   S.money = opts.money || 25000; if (opts.inf) S.flags.inf = 1;
+}
+
+/* Apply one later stage to a running game as ordinary paid player actions
+   (used by the campaign playthrough tests). Returns failures. */
+function playStage(S, stage) {
+  const K = builder(S, 0), keep = {};
+  for (const k in (S.keep || {})) keep[k] = bById(S, S.keep[k]);
+  for (const b of S.blds) { if (b.type === 'quay' && !keep.quay) keep.quay = b; }
+  TM_STAGE_FN[stage](S, K, keep, (name, bt, x, y, rot) => K.place(bt, x, y, rot), () => {});
+  for (const k in keep) if (keep[k]) S.keep[k] = keep[k].id;
+  return K.fails;
 }

@@ -184,7 +184,8 @@ function loop(now) {
     let n = 0, t0 = performance.now();
     const maxN = Math.max(2, Math.ceil(tps / 20));
     while (acc >= 1 && n < maxN) {
-      step(S); acc -= 1; n++;
+      try { step(S); } catch (err) { console.error(err); setSpeed(0); acc = 0; toast('Simulation halted: ' + err.message + '. Rewind to a snapshot from the Time tab.', 8000); break; }
+      acc -= 1; n++;
       if (S.tick % TPD === 0) { takeSnap('Midnight'); if (!S.scen.title) saveAuto(); }
       if (S.scen.won && !G.progress[S.scen.id]) { G.progress[S.scen.id] = 1; LS.set('tidemark.progress', JSON.stringify(G.progress)); toast(SCEN[S.scen.id].name + ': chapter complete', 4000); G.tab = 'goals'; openPanel(true); }
       if (performance.now() - t0 > 22) { acc = Math.min(acc, 2); break; }
@@ -193,7 +194,7 @@ function loop(now) {
     RV.alpha = G.speed ? Math.min(1, acc) : 0;
     if (G.follow && G.sel && G.sel.v) { const v = vById(S, G.sel.v); if (v) { const p = v.k === 'train' ? trainCars(S, v)[0] : vehPos(S, v); if (p) { const w = P(p.x, p.y, 0); RV.cam.x += (w[0] - RV.cam.x) * 0.15; RV.cam.y += (w[1] - RV.cam.y) * 0.15; } } }
     if (G.S.scen.title && !G.menuOpen) G.S.scen.title = 0;
-    if (G.scene || G.menuOpen) { RV.cam.x += Math.sin(now / 9000) * 0.06; }
+    if (G.scene || G.menuOpen) sceneTour(S, dt);
     updateWalkers(S, dt * (G.speed ? Math.min(3, G.speeds[G.speed]) : 0.0001));
     renderFrame(S, dt);
     updateTop();
@@ -220,3 +221,18 @@ function boot() {
   requestAnimationFrame(loop);
 }
 window.addEventListener('DOMContentLoaded', boot);
+
+/* living scene: drift between landmarks, lingering a while at each */
+function sceneTour(S, dt) {
+  const T0 = RV.tour || (RV.tour = { i: 0, t: 0 });
+  const pts = [];
+  for (const type of ['quay', 'market', 'station2', 'station', 'wharf', 'lighthouse', 'steelworks', 'mill']) { const b = S.blds.find(x => x.type === type); if (b) pts.push([b.x + b.w / 2 + 2, b.y + b.h / 2 + 1]); }
+  for (const lk of S.locks) pts.push([lk.t % S.W, (lk.t / S.W) | 0]);
+  if (!pts.length) return;
+  T0.t += dt;
+  if (T0.t > 24) { T0.t = 0; T0.i = (T0.i + 1) % pts.length; }
+  const [x, y] = pts[T0.i % pts.length], w = P(x, y, 0);
+  const k = Math.min(1, dt * 0.25);
+  RV.cam.x += (w[0] - RV.cam.x) * k; RV.cam.y += (w[1] - RV.cam.y) * k;
+  RV.cam.z += ((G.scene ? 1.25 : 0.95) - RV.cam.z) * k * 0.5;
+}

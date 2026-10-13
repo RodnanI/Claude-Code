@@ -146,19 +146,36 @@ function stepMarkets(S) {
 function workPrio(b) { const t = b.type; if (t === 'powerplant') return 0; if (t === 'market' || t === 'bakery' || t === 'mill' || t === 'farm' || BT[t].node) return 1; return 2; }
 /* Loading speed at staffed facilities: unstaffed yards work at a third of the pace. */
 function handleMul(b) { const j = BT[b.type].jobs; if (!j || b.type === 'house') return 100; return Math.max(34, Math.floor(b.wk * 100 / j)); }
+/* Road networks joined by a working rail line or a water route form one labour
+   market: commuters ride the trains and ferries between the yards. */
+function labourRoots(S) {
+  const rn = roadNet(S), par = new Map();
+  const find = k => { while (par.has(k) && par.get(k) !== k) k = par.get(k); return k; };
+  const join = (a, b) => { a = find(a); b = find(b); if (a === b) return; if (a < b) par.set(b, a); else par.set(a, b); };
+  const nodes = S.blds.filter(b => BT[b.type].node && bAcc(S, b) >= 0);
+  for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+    const a = nodes[i], b = nodes[j], ka = rn.rc[bAcc(S, a)], kb = rn.rc[bAcc(S, b)];
+    if (ka === kb || BT[a.type].node !== BT[b.type].node) continue;
+    const linked = BT[a.type].node === 'rail' ? (railStationDist(S, a, b) >= 0 || railStationDist(S, b, a) >= 0) : !!dockWaterDist(S, a, b);
+    if (linked) join(ka, kb);
+  }
+  return k => find(k);
+}
 function stepLabour(S) {
-  const rn = roadNet(S); const pool = new Map(), tot = new Map();
+  const rn = roadNet(S); const pool = new Map(), tot = new Map(), root = labourRoots(S);
   for (const b of S.blds) if (b.type === 'house') {
-    const a = bAcc(S, b); if (a < 0) continue; const k = rn.rc[a];
+    const a = bAcc(S, b); if (a < 0) continue; const k = root(rn.rc[a]);
     const w = Math.floor(b.res * WORK_PCT / 100);
     pool.set(k, (pool.get(k) || 0) + w); tot.set(k, (tot.get(k) || 0) + w);
   }
-  const work = S.blds.filter(b => BT[b.type].jobs > 0).sort((a, b) => workPrio(a) - workPrio(b) || a.id - b.id);
+  // works that sat idle (no input, or output nobody collects) hire after busy ones
+  const pr = b => workPrio(b) + (BT[b.type].out && (b.st === 3 || b.st === 4) ? 3 : 0);
+  const work = S.blds.filter(b => BT[b.type].jobs > 0).sort((a, b) => pr(a) - pr(b) || a.id - b.id);
   const open = new Map(); let jobs = 0, emp = 0;
   for (const b of work) {
     const j = BT[b.type].jobs; jobs += j;
     const a = bAcc(S, b); if (a < 0) { b.wk = 0; continue; }
-    const k = rn.rc[a], p = pool.get(k) || 0, n = Math.min(j, p);
+    const k = root(rn.rc[a]), p = pool.get(k) || 0, n = Math.min(j, p);
     b.wk = n; emp += n; pool.set(k, p - n);
     if (n < j) open.set(k, (open.get(k) || 0) + j - n);
   }
@@ -166,7 +183,7 @@ function stepLabour(S) {
   for (const b of S.blds) if (b.type === 'house') {
     pop += b.res;
     const a = bAcc(S, b); if (a < 0) { b.jobsOk = 0; continue; }
-    const k = rn.rc[a], un = pool.get(k) || 0, all = tot.get(k) || 0;
+    const k = root(rn.rc[a]), un = pool.get(k) || 0, all = tot.get(k) || 0;
     b.jobsOk = ((open.get(k) || 0) > 0 || un * 100 <= all * 20 + 600) ? 1 : 0;
   }
   let wf = 0; for (const v of tot.values()) wf += v;

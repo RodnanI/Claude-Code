@@ -74,9 +74,10 @@ function orientedBox(c, cx, cy, len, wid, ang, z0, h, col, o) {
 function truckShape(c, x, y, dir, z, cargoR, ang) {
   const a = ang !== undefined ? ang : Math.atan2(DY[dir], DX[dir]);
   const ca = Math.cos(a), sa = Math.sin(a);
-  orientedBox(c, x - ca * 0.1, y - sa * 0.1, 0.34, 0.2, a, z + 1.5, 4, '#5d6a70');
-  orientedBox(c, x + ca * 0.16, y + sa * 0.16, 0.13, 0.2, a, z + 1.5, 7, '#c7533a');
-  if (cargoR >= 0) orientedBox(c, x - ca * 0.1, y - sa * 0.1, 0.28, 0.16, a, z + 5.5, 3, RES[cargoR].col);
+  orientedBox(c, x - ca * 0.11, y - sa * 0.11, 0.42, 0.25, a, z + 1.5, 5, '#55636a');
+  orientedBox(c, x + ca * 0.2, y + sa * 0.2, 0.16, 0.25, a, z + 1.5, 9, '#c7533a');
+  orientedBox(c, x + ca * 0.25, y + sa * 0.25, 0.05, 0.21, a, z + 6, 2.5, '#2b3a40', { ink: false });
+  if (cargoR >= 0) orientedBox(c, x - ca * 0.11, y - sa * 0.11, 0.36, 0.21, a, z + 6.5, 4, RES[cargoR].col);
 }
 function drawVehicle(c, S, v, pos, z) {
   if (v.k === 'truck') {
@@ -92,6 +93,12 @@ function drawVehicle(c, S, v, pos, z) {
     fillPoly(c, [P(cr[0][0], cr[0][1], hz - 1 + (big ? 6 : 3)), P(bow[0], bow[1], hz - 1 + (big ? 6 : 3)), P(cr[1][0], cr[1][1], hz - 1 + (big ? 6 : 3))], big ? '#33414a' : '#5a3e2b');
     let units = 0, rr = -1; for (const id of v.cargo) { const cc = cById(S, id); if (cc) { units += cc.q; rr = cc.r; } }
     for (let r = 0; r < NR; r++) if (v.own[r]) { units += v.own[r]; rr = r; }
+    if (dusk(S)) { // navigation lights: red to port, green to starboard, white masthead
+      const r = [-sa, ca];
+      RV.lights.push([P(pos.x - r[0] * Wd * 0.6, pos.y - r[1] * Wd * 0.6, hz + 4), 6, 0.8, 'r']);
+      RV.lights.push([P(pos.x + r[0] * Wd * 0.6, pos.y + r[1] * Wd * 0.6, hz + 4), 6, 0.8, 'g']);
+      RV.lights.push([P(pos.x, pos.y, hz + (big ? 24 : 9)), 8, 0.7]);
+    }
     if (big) {
       orientedBox(c, pos.x - ca * 0.52, pos.y - sa * 0.52, 0.32, 0.36, pos.ang, hz + 5, 10, '#eae4d8');
       orientedBox(c, pos.x - ca * 0.5, pos.y - sa * 0.5, 0.08, 0.08, pos.ang, hz + 15, 8, '#b94a35');

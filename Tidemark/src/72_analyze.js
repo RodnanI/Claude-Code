@@ -87,8 +87,9 @@ function prodStatus(S, p) {
     case 1: {
       const a = bAcc(S, p); if (a < 0) return 'no workers: no road access, so nobody can commute';
       const k = rcOf(S, a); let homes = 0;
-      for (const h of S.blds) if (h.type === 'house' && h.res > 0 && rcOf(S, bAcc(S, h)) === k) homes++;
-      if (!homes) return 'no workers: nobody lives on its road network (#' + k + '), so it is cut off from the labour force';
+      const root = labourRoots(S);
+      for (const h of S.blds) if (h.type === 'house' && h.res > 0) { const ha = bAcc(S, h); if (ha >= 0 && root(rcOf(S, ha)) === root(k)) homes++; }
+      if (!homes) return 'no workers: nobody lives on its road network (#' + k + ') or on any network joined to it by rail or water, so it is cut off from the labour force';
       return 'no workers: every resident on its road network already has a job (' + (S.labour ? S.labour.unemp : 0) + ' unemployed city-wide)';
     }
     case 2: { const k = powerNet(S).pwComp[p.y * S.W + p.x]; const g = (S.pstat || []).find(x => x[0] === k); return 'no power' + (g ? ': its grid makes ' + g[1] + ' MW against ' + g[2] + ' MW demand' : ': not connected to any generator'); }
