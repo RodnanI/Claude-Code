@@ -25,8 +25,8 @@ function grassCol(S, t) {
   if (!c) { const n = Math.max(0, Math.min(1, RV._gn[t])); c = RV._gc[t] = n < 0.5 ? mixHex('#86a263', '#93ac6c', n * 2) : mixHex('#93ac6c', '#a0b676', (n - 0.5) * 2); }
   return c;
 }
-function seaZ(S) { return -(2 + (124 - tideAt(S.tick)) * 0.085); }   // water surface below ground, in px
-const CANAL_Z = -4.5;
+function seaZ(S) { return -(2 + (124 - tideAt(S.tick)) * 0.12); }    // water surface below ground, in px
+const CANAL_Z = -3.5;
 /* Distance of each sea tile from land, for colour; cached per water version. */
 function seaDepth(S) {
   const c = RV._depth;
@@ -163,20 +163,28 @@ function lockZ(S, t) {
 }
 function drawLockChamber(c, S, t, x, y, z) {
   const lk = lockAt(S, t); if (!lk) return;
-  // chamber walls along the axis sides
   const ax = lk.up === 0 || lk.up === 2 ? 'ns' : 'ew';
-  const q0 = tileQ(x, y, 0);
-  if (ax === 'ns') { line(c, q0[3], q0[0], GC.stone, 3); line(c, q0[1], q0[2], GC.stone, 3); }
-  else { line(c, q0[0], q0[1], GC.stone, 3); line(c, q0[2], q0[3], GC.stone, 3); }
+  // inner chamber walls from the coping down to the water, then raised coping stones
+  const wall = (a, b, col) => fillPoly(c, [a, b, [b[0], b[1] - z], [a[0], a[1] - z]], col);
+  if (ax === 'ns') { wall(P(x - 0.42, y - 0.5, z), P(x - 0.42, y + 0.5, z), '#8c836f'); }
+  else { wall(P(x - 0.5, y - 0.42, z), P(x + 0.5, y - 0.42, z), '#9c917c'); }
+  const side = (u0, v0, u1, v1) => isoBox(c, u0, v0, u1, v1, 0, 3, GC.stone, { ink: true });
+  if (ax === 'ns') { side(x - 0.05, y, 0.12, 1); side(x + 0.93, y, 0.12, 1); }
+  else { side(x, y - 0.05, 1, 0.12); side(x, y + 0.93, 1, 0.12); }
+  // a water-level gauge on the chamber wall
+  const gz = Math.round(lk.lvl / 10);
+  for (let i = 0; i <= 12; i += 2) { const p0 = ax === 'ns' ? P(x - 0.42, y - 0.35, -14 + i) : P(x - 0.35, y - 0.42, -14 + i); c.fillStyle = i <= gz ? '#e9e1cf' : '#5a5245'; c.fillRect(p0[0] - 1, p0[1] - 1, 2, 1.4); }
   // gates: a dark beam at each end; open gates swing back against the wall
   const gate = (side) => {
     const d = side === 0 ? lk.up : lk.lo;
     const open = lk.ph === 'free' || (lk.ph === 'open' && lk.g === side) || (lk.ph === 'opening' && lk.tgt === side && lk.tm < GATE_T / 2);
     const ex = x + DX[d] * 0.45, ey = y + DY[d] * 0.45, px = DY[d] !== 0 ? 0.48 : 0, py = DX[d] !== 0 ? 0.48 : 0;
-    if (!open) line(c, P(ex - px, ey - py, 1), P(ex + px, ey + py, 1), '#3b2a1e', 3);
-    else { line(c, P(ex - px, ey - py, 1), P(ex - px * 0.3 - DX[d] * 0.3, ey - py * 0.3 - DY[d] * 0.3, 1), '#3b2a1e', 2.5); line(c, P(ex + px, ey + py, 1), P(ex + px * 0.3 - DX[d] * 0.3, ey + py * 0.3 - DY[d] * 0.3, 1), '#3b2a1e', 2.5); }
-    // balance beams
-    line(c, P(ex - px * 1.1, ey - py * 1.1, 3), P(ex - px * 1.1 + DX[d] * 0.25, ey - py * 1.1 + DY[d] * 0.25, 3), '#e9e1cf', 1.5);
+    const leaf = (a, b) => { fillPoly(c, [P(a[0], a[1], z), P(b[0], b[1], z), P(b[0], b[1], 3), P(a[0], a[1], 3)], '#4a3424'); line(c, P(a[0], a[1], 3), P(b[0], b[1], 3), '#2b1d14', 1.2); };
+    if (!open) { leaf([ex - px, ey - py], [ex, ey]); leaf([ex, ey], [ex + px, ey + py]); }
+    else { leaf([ex - px, ey - py], [ex - px * 0.35 - DX[d] * 0.38, ey - py * 0.35 - DY[d] * 0.38]); leaf([ex + px, ey + py], [ex + px * 0.35 - DX[d] * 0.38, ey + py * 0.35 - DY[d] * 0.38]); }
+    // white balance beams on the coping
+    line(c, P(ex - px * 1.1, ey - py * 1.1, 5), P(ex - px * 1.1 + DX[d] * 0.3, ey - py * 1.1 + DY[d] * 0.3, 5), '#ece6d6', 1.8);
+    line(c, P(ex + px * 1.1, ey + py * 1.1, 5), P(ex + px * 1.1 + DX[d] * 0.3, ey + py * 1.1 + DY[d] * 0.3, 5), '#ece6d6', 1.8);
   };
   gate(0); gate(1);
 }

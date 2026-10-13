@@ -85,7 +85,7 @@ function drawVehicle(c, S, v, pos, z) {
     truckShape(c, pos.x, pos.y, 0, z, con ? con.r : -1, pos.ang);
     if (dusk(S)) RV.lights.push([P(pos.x + Math.cos(pos.ang) * 0.4, pos.y + Math.sin(pos.ang) * 0.4, z + 3), 9, 0.5]);
   } else if (v.k === 'barge' || v.k === 'freighter') {
-    const big = v.k === 'freighter', L = big ? 1.5 : 0.95, Wd = big ? 0.42 : 0.3, hz = z;
+    const big = v.k === 'freighter', L = big ? 2.3 : 0.95, Wd = big ? 0.56 : 0.3, hz = z;
     const ca = Math.cos(pos.ang), sa = Math.sin(pos.ang);
     const cr = orientedBox(c, pos.x, pos.y, L, Wd, pos.ang, hz - 1, big ? 6 : 3, big ? '#33414a' : '#5a3e2b', { top: big ? '#7d6f62' : '#8a6a4c' });
     // bow point
@@ -100,10 +100,11 @@ function drawVehicle(c, S, v, pos, z) {
       RV.lights.push([P(pos.x, pos.y, hz + (big ? 24 : 9)), 8, 0.7]);
     }
     if (big) {
-      orientedBox(c, pos.x - ca * 0.52, pos.y - sa * 0.52, 0.32, 0.36, pos.ang, hz + 5, 10, '#eae4d8');
-      orientedBox(c, pos.x - ca * 0.5, pos.y - sa * 0.5, 0.08, 0.08, pos.ang, hz + 15, 8, '#b94a35');
-      const n = Math.min(6, Math.ceil(units / 20));
-      for (let i = 0; i < n; i++) orientedBox(c, pos.x + ca * (0.55 - i * 0.17), pos.y + sa * (0.55 - i * 0.17), 0.15, 0.3, pos.ang, hz + 5, 5, ['#b94a35', '#3f6f68', '#c9a23f', '#5d6a70'][i % 4]);
+      orientedBox(c, pos.x - ca * 0.86, pos.y - sa * 0.86, 0.42, 0.5, pos.ang, hz + 5, 14, '#eae4d8');
+      orientedBox(c, pos.x - ca * 0.9, pos.y - sa * 0.9, 0.3, 0.44, pos.ang, hz + 19, 4, '#d9d1c1');
+      orientedBox(c, pos.x - ca * 0.8, pos.y - sa * 0.8, 0.12, 0.12, pos.ang, hz + 23, 9, '#b94a35');
+      const n = Math.min(8, Math.ceil(units / 15));
+      for (let i = 0; i < n; i++) orientedBox(c, pos.x + ca * (0.85 - (i >> 1) * 0.3), pos.y + sa * (0.85 - (i >> 1) * 0.3) + 0, 0.26, 0.2, pos.ang, hz + 5 + (i & 1) * 5, 5, ['#b94a35', '#3f6f68', '#c9a23f', '#5d6a70'][i % 4]);
       if (dusk(S)) RV.lights.push([P(pos.x, pos.y, hz + 14), 12, 0.6]);
     } else if (units > 0) {
       const f = Math.min(1, units / 30);
@@ -204,16 +205,25 @@ function drawBridge(c, S, t, x, y) {
   const sea = seaZ(S);
   for (const [ox, oy] of [[-0.3, -0.3], [0.3, 0.3]]) isoBox(c, x + ox - 0.08, y + oy - 0.08, 0.16, 0.16, sea, z - sea, '#9c917c', { ink: true });
   if (road) {
+    // stone face with an arch on the visible side, then the deck and parapets
+    const ax = (roadNbMask(S, t) & 10) ? 1 : 0;
+    const face = ax ? [P(x - 0.5, y + 0.5, z), P(x + 0.5, y + 0.5, z), P(x + 0.5, y + 0.5, sea), P(x - 0.5, y + 0.5, sea)] : [P(x + 0.5, y - 0.5, z), P(x + 0.5, y + 0.5, z), P(x + 0.5, y + 0.5, sea), P(x + 0.5, y - 0.5, sea)];
+    fillPoly(c, face, ax ? '#9c917c' : '#857b69');
+    c.beginPath();
+    for (let i = 0; i <= 12; i++) {
+      const u = -0.38 + 0.76 * i / 12, h = sea + (z - 3 - sea) * Math.sqrt(Math.max(0, 1 - Math.pow(u / 0.38, 2)));
+      const p = ax ? P(x + u, y + 0.5, h) : P(x + 0.5, y + u, h);
+      if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]);
+    }
+    c.closePath(); c.fillStyle = 'rgba(20,32,36,0.55)'; c.fill();
     fillPoly(c, [P(x - 0.5, y - 0.5, z), P(x + 0.5, y - 0.5, z), P(x + 0.5, y + 0.5, z), P(x - 0.5, y + 0.5, z)], '#8f877b');
-    const m = roadNbMask(S, t), ax = (m & 10) ? 1 : 0;
+    const d0 = ax ? P(x - 0.3, y, z) : P(x, y - 0.3, z), d1 = ax ? P(x + 0.3, y, z) : P(x, y + 0.3, z);
+    line(c, d0, d1, 'rgba(240,235,220,0.7)', 1.2);
     for (const s of [-1, 1]) {
       const a = ax ? P(x - 0.5, y + 0.45 * s, z) : P(x + 0.45 * s, y - 0.5, z), b = ax ? P(x + 0.5, y + 0.45 * s, z) : P(x + 0.45 * s, y + 0.5, z);
       line(c, [a[0], a[1] - 4], [b[0], b[1] - 4], '#5f574d', 1.4);
       for (let i = 0; i <= 4; i++) { const f = i / 4; line(c, [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f], [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f - 4], '#5f574d', 1); }
     }
-    // side fascia
-    fillPoly(c, [P(x - 0.5, y + 0.5, z), P(x + 0.5, y + 0.5, z), P(x + 0.5, y + 0.5, z - 3), P(x - 0.5, y + 0.5, z - 3)], '#7a7064');
-    fillPoly(c, [P(x + 0.5, y - 0.5, z), P(x + 0.5, y + 0.5, z), P(x + 0.5, y + 0.5, z - 3), P(x + 0.5, y - 0.5, z - 3)], '#655c52');
   } else {
     const m = S.rail[t], ax = m === 10 ? 1 : 0;
     fillPoly(c, [P(x - 0.5, y - 0.5, z), P(x + 0.5, y - 0.5, z), P(x + 0.5, y + 0.5, z), P(x - 0.5, y + 0.5, z)], 'rgba(70,60,52,0.9)');
