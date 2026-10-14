@@ -3054,6 +3054,18 @@ function targetOf(S, b, r) {
   if (b.type === 'house') { if (r === R.bread) return 4; const w = houseWants(b); if (w) for (const [rr, n] of w) if (rr === r) return n; return 0; }
   return inTarget(b, r);
 }
+/* Nominal daily make and use of good r at full staff without tools; bread also feeds residents. */
+function dailyRates(S, r) {
+  let make = 0, use = 0;
+  for (const p of S.blds) {
+    const def = BT[p.type]; if (!def.dur) continue;
+    const cyc = TPD / def.dur;
+    if (def.out) for (const [q, n] of def.out) if (q === r) make += n * cyc;
+    if (def.inp) for (const [q, n] of def.inp) if (q === r) use += n * cyc;
+  }
+  const eat = r === R.bread && S.labour ? S.labour.pop * TPD / MEAL : 0;
+  return [Math.round(make), Math.round(use + eat), Math.round(eat)];
+}
 function producersOf(S, r) { return S.blds.filter(p => BT[p.type].out && BT[p.type].out.some(o => o[0] === r)); }
 function prodStatus(S, p) {
   const def = BT[p.type];
@@ -3110,6 +3122,12 @@ function explainShortage(S, b, r, depth, seen) {
   if (held.length) { let n = 0; for (const c of held) n += c.q; out.push([depth + 1, n + ' units are already committed elsewhere (' + held.length + ' consignments)']); }
   const prods = producersOf(S, r);
   if (!prods.length) out.push([depth + 1, 'Nothing in the city produces ' + RES[r].name + '.' + (S.trade.imp[r] ? ' Imports are ordered: ' + S.trade.imp[r] + ' per freighter.' : ' Consider importing it at the quay.')]);
+  if (prods.length && depth < 3) {
+    const [make, use, eat] = dailyRates(S, r), def = BT[prods[0].type], what = def.name;
+    const per = Math.max(1, Math.round(def.out.find(o => o[0] === r)[1] * TPD / def.dur)), k = Math.ceil((use - make) / per);
+    if (use > make) out.push([depth + 1, 'Capacity: at full speed the city makes about ' + make + ' ' + RES[r].name + ' a day and needs about ' + use + (eat ? ' (residents eat ' + eat + ')' : '') + '. ' + (k === 1 ? 'Another ' + what : k + ' more ' + what + ' buildings') + ' would close the gap.']);
+    else out.push([depth + 1, 'Capacity: about ' + make + ' ' + RES[r].name + ' a day at full speed against ' + use + ' needed, so the shortfall is in staffing, inputs or delivery below.']);
+  }
   const rtB = prods.length ? routeTable(S, b, 1) : null;
   for (const p of prods.slice(0, 4)) {
     out.push([depth + 1, bName(p) + ': ' + prodStatus(S, p) + (p.lp ? '; last finished a batch ' + clockStr(p.lp) : '')]);
