@@ -23,6 +23,10 @@ const ICON = {
   panel: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
   vehicle: '<rect x="2" y="8" width="12" height="8" rx="1"/><path d="M14 11h4l3 3v2h-7"/><circle cx="6" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>',
 };
+function junctionText(S, t) {
+  const jb = roadNet(S).jb; let n = 0; for (let i = 0; i < jb.length; i++) if (jb[i] === jb[t]) n++;
+  return n > 1 ? 'part of a ' + n + '-tile junction block (trucks reserve every tile they cross in it; paved blocks are slow)' : 'junction (one truck at a time)';
+}
 function icon(n) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICON[n] || '') + '</svg>'; }
 const TOOLS = [
   ['inspect', 'Inspect', 'I'], ['road', 'Road', 'R'], ['rail', 'Rail', 'T'], ['signal', 'Signal', 'G'], ['canal', 'Canal', 'C'],
@@ -104,13 +108,14 @@ function act(a, quiet) {
 /* ---------------- top bar ---------------- */
 function updateTop() {
   const S = G.S; if (!S) return;
-  $('clock').textContent = clockStr(S.tick);
+  $('clock').textContent = narrow() ? clockStr(S.tick).replace('Day ', 'D') : clockStr(S.tick);
   const wx = WX[S.wx.k], fx = S.wx.k === W_FOG ? ' (boats 60%)' : S.wx.k === W_STORM ? ' (no freighters)' : S.wx.k === W_RAIN ? ' (trucks 90%)' : '';
   $('wx').textContent = wx + fx;
-  $('money').textContent = (S.flags.inf ? 'unlimited' : fmt(S.money) + ' cr');
+  const m = Math.abs(S.money), short = narrow() && m >= 1e4 ? (S.money < 0 ? '-' : '') + (m >= 1e6 ? (m / 1e6).toFixed(m >= 1e7 ? 0 : 1) + 'M' : Math.round(m / 1e3) + 'k') : fmt(S.money);
+  $('money').textContent = S.flags.inf ? 'unlimited' : short + ' cr';
   $('money').className = S.money < 0 ? 'warn' : '';
   const L = S.labour || { pop: 0, emp: 0, jobs: 0 };
-  $('pop').textContent = fmt(L.pop) + ' res. ' + L.emp + '/' + L.jobs + ' jobs';
+  $('pop').innerHTML = fmt(L.pop) + ' res.<span class="jobs"> ' + (L.emp | 0) + '/' + (L.jobs | 0) + ' jobs</span>';
   let sup = 0, dem = 0; for (const p of S.pstat || []) { sup += p[1]; dem += p[2]; }
   $('pwr').textContent = sup + '/' + dem + ' MW'; $('pwr').className = dem > sup ? 'warn' : '';
   const n = S.alerts.length; $('alertBtn').textContent = narrow() ? n + '!' : n + (n === 1 ? ' alert' : ' alerts'); $('alertBtn').classList.toggle('hot', n > 0);
@@ -273,7 +278,7 @@ function inspectBuilding(S, b) {
 function inspectTile(S, t) {
   const ter = ['Land', 'Tidal sea', 'Canal', 'Lock'][S.ter[t]];
   let h = '<h2>Tile ' + esc(xy(S, t)) + '</h2><div class="kv"><span>Ground</span><span>' + ter + (S.dep[t] ? ', ' + ['', 'coal seam', 'iron ore', 'clay', 'fertile soil'][S.dep[t]] : '') + '</span>';
-  if (S.road[t]) h += '<span>Road</span><span>' + (isWater(S.ter[t]) ? 'bridge, ' : '') + 'network #' + rcOf(S, t) + (roadNet(S).jn[t] ? ', junction (one truck at a time)' : '') + '</span>';
+  if (S.road[t]) h += '<span>Road</span><span>' + (isWater(S.ter[t]) ? 'bridge, ' : '') + 'network #' + rcOf(S, t) + (roadNet(S).jn[t] ? ', ' + junctionText(S, t) : '') + '</span>';
   if (S.rail[t]) h += '<span>Track</span><span>' + (isWater(S.ter[t]) ? 'bridge, ' : '') + ['N', 'E', 'S', 'W'].filter((_, k) => S.rail[t] & (1 << k)).join('-') + (S.sig[t] ? ', one-way signal facing ' + DIRN[sigDir(S, t)] : '') + (S._rsv && S._rsv[t] ? ', reserved by Train #' + S._rsv[t] : '') + '</span>';
   if (S.pow[t]) h += '<span>Power line</span><span>grid #' + powerNet(S).pwComp[t] + '</span>';
   if (S.tree[t]) h += '<span>Trees</span><span>' + ['', 'saplings', 'young', 'mature'][S.tree[t]] + '</span>';

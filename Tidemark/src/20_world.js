@@ -248,12 +248,14 @@ function bulldozeTile(S, t, rep) {
   if (S.bld[t]) { const b = bById(S, S.bld[t]); if (b && b.type !== 'lighthouse') { demolishBuilding(S, b, rep); return true; } }
   if (S.sig[t]) { S.sig[t] = 0; bumpVer(S, 'rail'); rep.push('Removed signal ' + xy(S, t)); return true; }
   if (S.rail[t]) {
-    const m = S.rail[t];
-    for (let d = 0; d < 4; d++) if (m & (1 << d)) { const n = nb(S, t, d); if (n >= 0) S.rail[n] &= ~(1 << opp(d)); }
+    // a neighbour left with no connections at all has no track any more
+    const m = S.rail[t], gone = [t];
+    for (let d = 0; d < 4; d++) if (m & (1 << d)) { const n = nb(S, t, d); if (n >= 0) { S.rail[n] &= ~(1 << opp(d)); if (!S.rail[n]) { S.sig[n] = 0; gone.push(n); } } }
     S.rail[t] = 0;
-    railRemoved(S, [t], rep);
-    bumpVer(S, 'rail'); if (isWater(S.ter[t])) bumpVer(S, 'water');
+    railRemoved(S, gone, rep);
+    bumpVer(S, 'rail'); if (gone.some(u => isWater(S.ter[u]))) bumpVer(S, 'water');
     rep.push((isWater(S.ter[t]) ? 'Demolished railway bridge ' : 'Removed track ') + xy(S, t));
+    for (const u of gone.slice(1)) rep.push('Track ' + xy(S, u) + ' lost its last connection and was lifted too');
     return true;
   }
   if (S.road[t]) {

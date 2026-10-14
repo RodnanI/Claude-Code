@@ -143,8 +143,9 @@ function showStressReport(rep) {
 function showModal(html) { $('modalBody').innerHTML = html; $('modal').hidden = false; }
 
 /* ---------------- saves ---------------- */
-function saveText() {
-  const snaps = G.snaps.slice(-4).map(s => ({ tick: s.tick, label: s.label, text: s.text }));
+function saveText(keep) {
+  const n = keep === undefined ? 4 : keep;
+  const snaps = (n ? G.snaps.slice(-n) : []).map(s => ({ tick: s.tick, label: s.label, text: s.text }));
   return JSON.stringify({ format: 'tidemark-save', version: 1, state: serialize(G.S), snaps });
 }
 function loadText(txt) {
@@ -165,7 +166,8 @@ function exportSave() {
   a.download = 'tidemark-' + G.S.scen.id + '-day' + (Math.floor(G.S.tick / TPD) + 1) + '.json';
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
-function saveAuto() { if (G.S && !G.S.scen.title) LS.set('tidemark.auto', saveText()); }
+// a long session can outgrow browser storage: drop older snapshots before giving up
+function saveAuto() { if (G.S && !G.S.scen.title) for (const n of [4, 1, 0]) if (LS.set('tidemark.auto', saveText(n))) return; }
 function loadAuto() { const t = LS.get('tidemark.auto'); if (!t) return; try { loadText(t); } catch (e) { toast('Autosave unreadable: ' + e.message); } }
 function applySettings() {
   RV.q = G.settings.q; RV.wxOn = G.settings.wx; RV.walkDensity = [0, 0.5, 1.2][G.settings.walk];

@@ -33,7 +33,7 @@ Everything economic runs in integer arithmetic on a fixed tick (100 ticks per in
 | Bricks | clay pit + coal > brickworks (bricks) > house upgrades (bricks and planks) |
 | Power | coal > power station; tide mills follow the tidal current and stop at slack water |
 
-**Roads.** Each road tile has a lane per direction holding two trucks with a minimum gap. Junction tiles hold one truck, and a truck may only enter a junction if its exit lane has room. Trucks unload in loading bays; extra trucks wait in a yard queue off the street. Disconnected road networks cannot exchange goods or workers. Trucks stuck in traffic for 150 ticks look for a detour; after 1200 ticks a truck is forced through (the only non-physical rule, kept as a gridlock breaker).
+**Roads.** Each road tile has a lane per direction holding two trucks with a minimum gap. Junctions work like a railway block: a truck enters a junction, or a run of touching junction tiles, only when every junction tile it will cross is free and the lane beyond has room, and it holds those tiles until it has passed them. Neighbouring junctions therefore cannot lock each other, but a paved block (roads laid side by side) is slow, and the inspector says so. Trucks unload in loading bays; extra trucks wait in a yard queue off the street. Disconnected road networks cannot exchange goods or workers. Trucks stuck in traffic for 150 ticks look for a detour; after 1200 ticks a truck is forced through (the only non-physical rule, kept as a gridlock breaker).
 
 **Rail.** A stopped train reserves track ahead tile by tile up to the first one-way signal facing its direction or its platform end. If any tile is held by another train, or a road vehicle stands on a level crossing in that span, the signal stays red. Reservations behind the tail are released as it moves. Single track with no passing loop therefore carries one train at a time; a passing loop needs a one-way signal at each exit. Idle trains that block a platform are moved to a free one. Waiting trains that hold each other's next block are reported as a deadlock naming the cycle.
 
@@ -41,7 +41,7 @@ Everything economic runs in integer arithmetic on a fixed tick (100 ticks per in
 
 **People.** Houses grow while powered, fed and within reach of work; 45% of residents work. Road networks joined by a working railway or a water route share one labour market (commuters ride trains and ferries). Works that sit idle hire after busy ones.
 
-**Demolition under load.** Removing a road or railway bridge under a vehicle destroys the vehicle and books its cargo as an explicit loss. Removing land road or track strands or derails the vehicle; it resumes when the network returns. Every other vehicle re-plans: a new route, a different transfer yard, or diversion to the nearest storage with room.
+**Demolition under load.** Removing a road or railway bridge under a vehicle destroys the vehicle and books its cargo as an explicit loss. Removing land road or track strands or derails the vehicle; it resumes when the network returns. A piece of track left with no connection at all is lifted with its neighbour, and a train standing on it derails too. Every other vehicle re-plans: a new route, a different transfer yard, or diversion to the nearest storage with room.
 
 ## The ledger
 
@@ -68,7 +68,7 @@ A snapshot is taken every midnight and on demand. Rewinding restores it exactly;
 
 ## Source and tests
 
-`src/` holds the parts (`10`-`76` simulation, `80`-`88` renderer, `90`-`94` interface, `shell.html`, `style.css`). `node tools/build.js` concatenates them into `TIDEMARK.html`. `sh test/all.sh` runs the headless suite in Node: ledger balance, determinism and replay, the bridge stress test, liveness under repeated bridge demolition, every scenario, scripted playthroughs of chapters I-V, and randomised aggressive editing with replay checks. `tools/shot.js`, `tools/uitest.js` and `tools/perf.js` drive Chromium through Playwright.
+`src/` holds the parts (`10`-`76` simulation, `80`-`88` renderer, `90`-`94` interface, `shell.html`, `style.css`). `node tools/build.js` concatenates them into `TIDEMARK.html`. `sh test/all.sh` runs the headless suite in Node: ledger balance, determinism and replay, the bridge stress test, liveness under repeated bridge demolition, every scenario, scripted playthroughs that win every chapter (I-VI) with paid player actions only, randomised aggressive editing with replay checks, and an hour of player-like editing (`test/session.js`: 15 game days, an edit every 40 ticks, roads and track cut and relaid, bridges pulled, works renovated, houses and spurs sprawled, trucks churned) after which the city must deliver at least 60% of an untouched copy's goods with nothing stuck and a replay that matches. `tools/shot.js`, `tools/uitest.js` and `tools/perf.js` drive Chromium through Playwright.
 
 ## Known limits
 

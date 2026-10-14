@@ -1,7 +1,9 @@
 /* =====================================================================
    Road vehicles. Lanes are (tile, heading); a lane holds at most two
-   trucks, spaced by GAP. Junction tiles hold one truck and may only be
-   entered when the exit lane has room ("keep the box clear"). Trucks
+   trucks, spaced by GAP. Junction tiles are crossed like a railway block:
+   a truck enters a run of touching junction tiles only when every tile it
+   will use there is free and the lane beyond has room ("keep the box
+   clear"); it holds those tiles until it has passed them. Trucks
    leave the road into a yard queue at their destination, so queues for
    loading bays never deadlock the street.
    ===================================================================== */
@@ -18,29 +20,46 @@ function newTruck(S, depot) {
   return v;
 }
 function buildLanes(S) {
-  const lanes = new Map(), tileN = new Map();
+  const lanes = new Map(), held = new Map(), jb = roadNet(S).jb;
   for (const v of S.vehs) {
     if (v.k !== 'truck' || v.st !== 'go') continue;
     const key = v.t * 4 + v.hd;
     let L = lanes.get(key); if (!L) { L = []; lanes.set(key, L); }
     L.push({ v, p0: v.p });
-    tileN.set(v.t, (tileN.get(v.t) || 0) + 1);
+    if (jb[v.t] >= 0) holdBox(jb, v.t, v.path, 0, v.id, held);
   }
   for (const L of lanes.values()) L.sort((a, b) => b.p0 - a.p0 || a.v.id - b.v.id);
-  return { lanes, tileN, claims: new Map(), jclaim: new Set() };
+  return { lanes, held, claims: new Map() };
+}
+/* Junction tiles a truck at tile t uses before leaving the box: t, then path from i0. */
+function boxTiles(jb, t, path, i0) {
+  const out = [t], bx = jb[t];
+  for (let k = i0; k < path.length && jb[path[k]] === bx; k++) out.push(path[k]);
+  return out;
+}
+function holdBox(jb, t, path, i0, id, held) { for (const u of boxTiles(jb, t, path, i0)) if (!held.has(u)) held.set(u, id); }
+/* Is the box run starting at t (continuing along path from i0) free for truck id,
+   and is there room in the lane just beyond it? Returns '' or the reason. */
+function boxBlock(S, t, path, i0, id, LX) {
+  const jb = roadNet(S).jb, run = boxTiles(jb, t, path, i0);
+  for (const u of run) { const h = LX.held.get(u); if (h !== undefined && h !== id) return 'Traffic: junction ' + xy(S, u) + ' occupied'; }
+  const k = i0 + run.length - 1;
+  if (k >= path.length) return '';
+  const prev = k > i0 ? path[k - 1] : t, ex = path[k], key = ex * 4 + dirTo(S, prev, ex), L3 = LX.lanes.get(key), cl = LX.claims.get(key);
+  if ((L3 ? L3.length : 0) + (cl !== undefined ? 1 : 0) >= LANE_CAP || (L3 && L3.length && L3[L3.length - 1].p0 < GAP) || (cl !== undefined && cl < GAP)) return 'Traffic: keeping junction ' + xy(S, t) + ' clear';
+  return '';
 }
 function laneBlock(S, v, nx, nh, over, LX, force) {
   if (!S.road[nx]) return 'Road ahead removed';
   if (S._rsv && S._rsv[nx]) return 'Level crossing ' + xy(S, nx) + ' closed for Train #' + S._rsv[nx];
   if (force) return '';
-  const jn = roadNet(S).jn, key = nx * 4 + nh, L2 = LX.lanes.get(key), cl = LX.claims.get(key);
-  if (jn[nx]) {
-    if ((LX.tileN.get(nx) || 0) > 0 || LX.jclaim.has(nx)) return 'Traffic: junction ' + xy(S, nx) + ' occupied';
-    if (v.path.length >= 2) {
-      const ex = v.path[1], eh = dirTo(S, nx, ex), L3 = LX.lanes.get(ex * 4 + eh);
-      if (L3 && (L3.length >= LANE_CAP || L3[L3.length - 1].p0 < GAP)) return 'Traffic: keeping junction ' + xy(S, nx) + ' clear';
+  const jb = roadNet(S).jb, key = nx * 4 + nh, L2 = LX.lanes.get(key), cl = LX.claims.get(key);
+  if (jb[nx] >= 0) {
+    if (jb[v.t] === jb[nx]) {          // already inside: the tiles were taken on entry
+      const h = LX.held.get(nx); if (h !== undefined && h !== v.id) return 'Traffic: junction ' + xy(S, nx) + ' occupied';
+      return L2 && L2.length && L2[L2.length - 1].p0 - over < GAP ? 'Traffic: close behind the vehicle ahead' : '';
     }
-    return '';
+    return boxBlock(S, nx, v.path, 1, v.id, LX);
   }
   const n = (L2 ? L2.length : 0) + (cl !== undefined ? 1 : 0);
   if (n >= LANE_CAP) return 'Traffic: queue at ' + xy(S, nx);
@@ -52,8 +71,7 @@ function laneBlock(S, v, nx, nh, over, LX, force) {
 function laneJoinOk(S, t, hd, LX) {
   if (!S.road[t]) return false;
   if (S._rsv && S._rsv[t]) return false;
-  const jn = roadNet(S).jn;
-  if (jn[t] && ((LX.tileN.get(t) || 0) > 0 || LX.jclaim.has(t))) return false;
+  if (LX.held.has(t)) return false;
   const key = t * 4 + hd, L = LX.lanes.get(key), cl = LX.claims.get(key);
   const n = (L ? L.length : 0) + (cl !== undefined ? 1 : 0);
   if (n >= LANE_CAP) return false;
@@ -64,8 +82,10 @@ function laneJoinOk(S, t, hd, LX) {
 function joinLane(S, v, t, path, LX) {
   const hd = path.length ? dirTo(S, t, path[0]) : v.hd;
   if (!laneJoinOk(S, t, hd, LX)) return false;
+  const jb = roadNet(S).jb;
+  if (jb[t] >= 0 && boxBlock(S, t, path, 0, v.id, LX)) return false;
   const key = t * 4 + hd; LX.claims.set(key, Math.min(LX.claims.has(key) ? LX.claims.get(key) : 999, 128));
-  if (roadNet(S).jn[t]) LX.jclaim.add(t);
+  if (jb[t] >= 0) holdBox(jb, t, path, 0, v.id, LX.held);
   v.st = 'go'; v.t = t; v.hd = hd; v.p = 128; v.path = path; v.wt = 0;
   return true;
 }
@@ -109,11 +129,11 @@ function moveTruck(S, v, LX) {
     const why = nh < 0 ? 'Path broken' : laneBlock(S, v, nx, nh, over, LX, force);
     if (!why) {
       const key = nx * 4 + nh; LX.claims.set(key, Math.min(LX.claims.has(key) ? LX.claims.get(key) : 999, over));
-      if (roadNet(S).jn[nx]) LX.jclaim.add(nx);
       v.t = nx; v.hd = nh; v.p = over; v.path.shift(); v.ob = '';
+      const jb = roadNet(S).jb; if (jb[nx] >= 0) holdBox(jb, nx, v.path, 0, v.id, LX.held);
       if (force) { v.ob = ''; v.wt = 0; dec(S, 8, v.id, nx, 99); }
     } else { v.p = 255; v.ob = why; }
-  } else { v.p = np; if (L && i > 0 && np === lim) v.ob = 'Traffic: queueing behind Truck #' + L[i - 1].v.id; }
+  } else { v.p = np; if (L && i > 0 && np >= lim) v.ob = 'Traffic: queueing behind Truck #' + L[i - 1].v.id; }
   v._adv = (v.t !== t0 ? 256 : 0) + v.p - p0;
   if (v.path.length === 0 && v.p >= 128 && v.st === 'go') { truckArrive(S, v); return; }
   if (v.p === p0 && v.t === t0) v.wt++; else v.wt = 0;
@@ -284,7 +304,7 @@ function truckResume(S, v, LX) {
   }
   const path = roadPath(S, v.t, tt);
   if (!path) { v.hold = S.tick + 60; return; }
-  if (!joinLane(S, v, v.t, path, LX)) v.hold = S.tick + 5;
+  if (!joinLane(S, v, v.t, path, LX)) { v.hold = S.tick + 5; v.ob = 'Waiting to pull out into traffic'; }
 }
 function truckUnstrand(S, v, LX) {
   let t = v.t;

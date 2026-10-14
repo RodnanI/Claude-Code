@@ -53,7 +53,14 @@ function roadNet(S) {
     while (h < e) { const t = q[h++]; for (let d = 0; d < 4; d++) { const n = nb(S, t, d); if (n >= 0 && S.road[n] && rc[n] < 0) { rc[n] = k; q[e++] = n; } } }
     k++;
   }
-  c.rc = rc; c.jn = jn; c.rcN = k; c.rnV = S.ver.road; c.dist = new Map();
+  // touching junction tiles form one intersection box, entered as a unit
+  const jb = new Int32Array(N).fill(-1);
+  for (let s = 0; s < N; s++) {
+    if (!jn[s] || jb[s] >= 0) continue;
+    let h = 0, e = 0; q[e++] = s; jb[s] = s;
+    while (h < e) { const t = q[h++]; for (let d = 0; d < 4; d++) { const n = nb(S, t, d); if (n >= 0 && jn[n] && jb[n] < 0) { jb[n] = s; q[e++] = n; } } }
+  }
+  c.rc = rc; c.jn = jn; c.jb = jb; c.rcN = k; c.rnV = S.ver.road; c.dist = new Map();
   return c;
 }
 const rcOf = (S, t) => t < 0 ? -1 : roadNet(S).rc[t];

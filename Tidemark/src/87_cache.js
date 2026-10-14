@@ -9,11 +9,17 @@ const HMARGIN = { house: 36, lighthouse: 86, steelworks: 80, powerplant: 90, bri
 function zoomBucket() { return Math.max(0.5, Math.round(RV.cam.z * RV.dpr * 4) / 4); }
 function stockSig(b) { let s = ''; for (let r = 0; r < NR; r++) { const n = b.inv[r] + b.out[r] + (b.exp ? b.exp[r] : 0); if (n > 0) s += r + ':' + Math.min(8, Math.ceil(n / 6)) + ','; } return s; }
 function bldKey(S, b, night) {
-  let k = b.id + '|' + b.type + '|' + b.rot;
+  let k = b.id + '|' + b.type + '|' + b.rot + '|' + b.x + ',' + b.y;
   if (b.type === 'house') return k + '|' + b.lvl + '|' + (night ? 1 : 0) + (b.pwOn ? 1 : 0) + (b.res > 0 ? 1 : 0);
   k += '|' + stockSig(b) + '|' + b.st + '|' + (night ? 1 : 0) + (b.pwOn ? 1 : 0) + (b.load > 0 ? 1 : 0) + (b.wk > 0 ? 1 : 0) + (dusk(S) ? 1 : 0);
   if (b.type === 'depot') { let n = 0; for (const v of S.vehs) if (v.k === 'truck' && v.st === 'depot' && v.at === b.id) n++; k += '|' + Math.min(3, n); }
   return k;
+}
+/* Drop sprites of buildings that no longer exist (demolished, or gone after a rewind). */
+function pruneSprites(S) {
+  if (!RV.spriteOf) return;
+  const live = new Set(); for (const b of S.blds) live.add(b.id);
+  for (const [id, key] of RV.spriteOf) if (!live.has(id)) { RV.sprites && RV.sprites.delete(key); RV.spriteOf.delete(id); }
 }
 function drawBuilding(c, S, b, night) {
   const f = DRAWB[b.type]; if (!f) return;

@@ -31,13 +31,21 @@ button { font: inherit; color: inherit; }
 #scenName { font: 500 13px var(--sans); color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
 .clockbox { display: flex; align-items: center; gap: 8px; font: 600 14px var(--mono); }
 #tide { width: 132px; height: 30px; }
-#wx { font: 500 13px var(--sans); color: var(--ink2); white-space: nowrap; }
+#wx { font: 500 13px var(--sans); color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand, .clockbox, #speed, #menuBtn, #money, #alertBtn { flex-shrink: 0; }
+/* medium widths drop the least useful readouts first; truncating the population and
+   power readouts is the last resort, so the clock, speeds, alerts and menu always fit */
+#pop, #pwr { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1399px) and (min-width: 761px) { #scenName, #wx { display: none; } }
+@media (max-width: 1179px) and (min-width: 761px) { #top { gap: 10px; } #pwr { display: none; } #tide { width: 96px; } }
+@media (max-width: 1059px) and (min-width: 761px) { #tide { display: none; } #pop .jobs { display: none; } }
+@media (max-width: 899px) and (min-width: 761px) { #top { gap: 8px; } .mark { font-size: 16px; letter-spacing: .1em; } #speed button { min-width: 30px; padding: 4px 6px; } }
 .seg { display: inline-flex; border: 1px solid var(--ink2); border-radius: 7px; overflow: hidden; background: var(--paper); box-shadow: 0 1px 0 rgba(43,38,34,.3); }
 .seg button { border: 0; background: transparent; padding: 5px 9px; cursor: pointer; font: 600 12px var(--mono); min-height: 30px; min-width: 34px; border-right: 1px solid var(--rule); }
 .seg button:last-child { border-right: 0; }
 .seg button.on { background: var(--ink); color: var(--paper); }
 .seg.small button { font: 500 12px var(--sans); padding: 4px 8px; min-height: 28px; }
-.stats { display: flex; align-items: center; gap: 12px; margin-left: auto; font: 600 13px var(--mono); white-space: nowrap; }
+.stats { display: flex; align-items: center; gap: 12px; margin-left: auto; font: 600 13px var(--mono); white-space: nowrap; min-width: 0; }
 .stats .warn { color: var(--red); }
 
 /* ---------- tools ---------- */
@@ -135,6 +143,7 @@ input[type=number], input[type=text] { font: 13px var(--mono); padding: 5px 7px;
   .stats { gap: 6px; font-size: 12px; margin-left: auto; }
   #speed button { min-width: 28px; padding: 3px 4px; font-size: 11px; min-height: 30px; }
   #speed button[data-sp="5"] { display: none; }
+  .stats { flex-shrink: 0; }
   #alertBtn { padding: 2px 7px; }
   #menuBtn { padding: 4px 6px; }
   #overlaySeg { display: none; }
@@ -146,3 +155,5 @@ input[type=number], input[type=text] { font: 13px var(--mono); padding: 5px 7px;
   .confirm { bottom: 76px; }
   .kv { grid-template-columns: 96px 1fr; }
 }
+@media (max-width: 380px) { #speed button[data-sp="4"] { display: none; } #top { gap: 4px; } }
+@media (max-width: 340px) { .clockbox { font-size: 11px; } .stats { font-size: 11px; gap: 4px; } #menuBtn { padding: 4px 2px; font-size: 12px; } }

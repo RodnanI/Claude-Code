@@ -36,6 +36,7 @@ function ambient(S) {
 function renderFrame(S, dt) {
   const c = RV.ctx, dpr = RV.dpr, z = RV.cam.z * dpr;
   RV.lights = []; RV.smoke = []; RV.beam = null; RV.t += dt;
+  if (RV.pruneN !== S.blds.length || RV.pruneS !== S) { RV.pruneN = S.blds.length; RV.pruneS = S; pruneSprites(S); }
   const night = dusk(S);
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.fillStyle = GC.deep; c.fillRect(0, 0, RV.cv.width, RV.cv.height);
