@@ -50,12 +50,18 @@ function drawBuilding(c, S, b, night) {
 
 /* ---------------- land chunks ---------------- */
 const CHK = 4;
-function landSigKey(S) { return S.ver.road + '/' + S.ver.rail + '/' + S.ver.water + '/' + S.blds.length + '/' + S.W + 'x' + S.H; }
+/* Cheap fingerprint of the building layout (ids, places, which are houses), once per frame. */
+function bldHash(S) {
+  if (RV._bhT === RV.t && RV._bhS === S) return RV._bh;
+  let h = 5; for (const b of S.blds) h = hmix(h, b.id * 4099 + b.x * 61 + b.y * 7 + (b.type === 'house' ? 1 : 0));
+  RV._bhT = RV.t; RV._bhS = S; RV._bh = h; return h;
+}
+function landSigKey(S) { return S.ver.road + '/' + S.ver.rail + '/' + S.ver.water + '/' + bldHash(S) + '/' + S.W + 'x' + S.H; }
 function chunkSig(S, cx, cy) {
   let h = 7;
   for (let y = cy * CHK; y < Math.min(S.H, cy * CHK + CHK); y++) for (let x = cx * CHK; x < Math.min(S.W, cx * CHK + CHK); x++) {
     const t = y * S.W + x;
-    h = hmix(h, S.ter[t] | (S.road[t] << 2) | (S.rail[t] << 3) | (S.dep[t] << 7) | ((S.bld[t] ? 1 : 0) << 10) | (nearFarm(S, t) << 11) | (S.road[t] ? roadNbMask(S, t) << 12 : 0));
+    h = hmix(h, S.ter[t] | (S.road[t] << 2) | (S.rail[t] << 3) | (S.dep[t] << 7) | ((S.bld[t] ? 1 : 0) << 10) | (nearFarm(S, t) << 11) | (S.road[t] ? roadNbMask(S, t) << 12 : 0) | (gardenOf(S, t) << 16));
   }
   return h;
 }
@@ -65,6 +71,10 @@ function drawLandChunk(c, S, cx, cy) {
     if (s - i < 0 || s - i >= CHK || !inb(S, x, y)) continue;
     const t = y * S.W + x;
     if (S.ter[t] === T_LAND) drawGroundTile(c, S, t);
+  }
+  if (RV.q >= 1) for (let s = 0; s < CHK * 2 - 1; s++) for (let i = 0; i < CHK; i++) {
+    const x = cx * CHK + i, y = cy * CHK + (s - i);
+    if (s - i >= 0 && s - i < CHK && inb(S, x, y)) drawHedge(c, S, y * S.W + x);
   }
 }
 function landPass(c, S, vis) {
