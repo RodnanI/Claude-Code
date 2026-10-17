@@ -2,6 +2,7 @@
 // matching, edge rendering and tone reproduction. Not part of the wallpaper.
 ASCII.registerScene({
   id: 'test',
+  hidden: true,
   name: 'Engine test',
   loop: 20,
   bg: '#0b0b0c',

@@ -1,8 +1,11 @@
 // "The Procession": colossal stilt-legged shell creatures carrying fragments of
-// towns walk across a flooded salt flat at dusk. Everything is evaluated in
-// screen space with an analytic ground plane: creatures are 2D side-view SDF
-// figures placed at their depth, the flat mirrors them about their own ground
-// contact line, and the hexagonal salt crust is projected in perspective.
+// towns walk across a flooded salt flat at dusk, drawn like an engraving in
+// coloured type: contour lines, concentric hatching, radiating sun rays.
+//
+// Everything is evaluated in screen space with an analytic ground plane:
+// creatures are 2D side-view SDF figures placed at their depth, the flat
+// mirrors them about their own ground contact line, and the hexagonal salt
+// crust is projected in perspective.
 //
 // Loop: 120 s = 15 gait cycles of 8 s. The camera tracks the procession at
 // 1.5 m/s, so the ground scrolls 180 m per loop = 80 periods of the hex crust.
@@ -13,41 +16,42 @@ ASCII.registerScene({
   loop: 120,
   startAt: 14,
   bg: '#0a0908',
-  bigDepth: 0.0,
-  look: { exposure: 2.3, colGamma: 0.62, brightness: 1.1 },
+  bigDepth: 0.004,
+  look: { exposure: 4.0, colGamma: 0.65, brightness: 1.15 },
   palettes: [
     {
       name: 'Dusk',
       colors: {
-        uSun: '#fff0d2', uGlow: '#ff9a4a', uHigh: '#7f5a4a', uZen: '#24302f', uRim: '#ffcf8f', uBody: '#5a4636',
-        uWin: '#ffb04a', uSalt: '#efe2c8', uLeaf: '#93a35a', uFlag: '#d8553a',
+        uSun: '#fff0d2', uGlow: '#ffa257', uHigh: '#9a6a52', uZen: '#2c3836', uRim: '#ffd59a', uBody: '#6b5642',
+        uWin: '#ffb04a', uSalt: '#efe2c8', uLeaf: '#9fae62', uFlag: '#e0603e',
       },
     },
     {
       name: 'Moonlit',
       colors: {
-        uSun: '#f2f4ee', uGlow: '#9fb3a8', uHigh: '#4f5f5a', uZen: '#1a2220', uRim: '#dfe9e2', uBody: '#3d4a46',
-        uWin: '#ffb75e', uSalt: '#d9e2dc', uLeaf: '#7d9a7e', uFlag: '#c9a04a',
+        uSun: '#f4f6ef', uGlow: '#b9c9bd', uHigh: '#62736c', uZen: '#1f2826', uRim: '#e6efe8', uBody: '#4a5853',
+        uWin: '#ffb75e', uSalt: '#dfe7e1', uLeaf: '#8aa58b', uFlag: '#d6ac52',
       },
-      look: { exposure: 1.15 },
     },
     {
       name: 'Ember',
       colors: {
-        uSun: '#ffe2b0', uGlow: '#e0482a', uHigh: '#6e2f22', uZen: '#1d1412', uRim: '#ffb070', uBody: '#5e3a2a',
-        uWin: '#ffd27a', uSalt: '#f0cfae', uLeaf: '#b0a050', uFlag: '#f0d070',
+        uSun: '#ffe7b8', uGlow: '#f0582e', uHigh: '#7e3826', uZen: '#24181a', uRim: '#ffb878', uBody: '#6e4632',
+        uWin: '#ffd884', uSalt: '#f3d4b2', uLeaf: '#bca858', uFlag: '#f2d474',
       },
     },
   ],
   glyphSets: {
-    1: { edge: ' .,`\'-_~=:', tone: ' .-~=' },                                   // sky streaks
-    2: { edge: ' .,`\'-_~=:;+*/\\|()', tone: ' .:-=+*o' },                         // sun, rays
-    3: { edge: ' .,`\'-_:;!|/\\()[]{}<>=+*#%&iltrLTJVYAHXZ', tone: ' .:-=+#' },     // stone, shell, legs
-    4: { edge: ' .,`\':;~*%&@o0eacsx(){}', tone: ' .:;*%&@' },                     // foliage
-    5: { edge: ' .,`\'-_/\\|:;~=', tone: ' .-:=' },                                // salt ridges
-    6: { edge: ' .,`\'-_~=:;/\\|()!', tone: ' .-~=:' },                            // water / reflections
-    7: { edge: ' .,`\':;!|+*#=[]', tone: ' .:+*#' },                               // lit windows, lanterns
-    8: { edge: ' .`\'*+^v~-', tone: ' .`\'' },                                     // stars, birds
+    1: { edge: ' .,`\'-_/\\|:;~', tone: ' .,:-~' },                                  // sky: rays, hatching
+    2: { edge: ' .,`\'-_()/\\|=:o*+<>^v', tone: ' .:-=+*o' },                         // sun
+    3: { edge: ' .,`\'-_:;!|/\\()[]{}<>=+*#iltLTJVYAHIX^v7', tone: ' .:-=+#' },        // contours, linework
+    4: { edge: ' .,`\':;*%&@o0eacs(){}~', tone: ' .:;*%&@' },                         // foliage
+    5: { edge: ' .,`\'-_/\\|:;~=', tone: ' .-:=' },                                   // salt ridges
+    6: { edge: ' .,`\'-_~=:', tone: ' .-~=' },                                        // water strokes
+    7: { edge: ' .,`\':;!|+*#=[]', tone: ' .:+*#' },                                  // windows, lamps
+    8: { edge: ' .`\'*+^v~-', tone: ' .`\'' },                                        // stars, birds
+    9: { edge: ' .,`\'-_=~^v<>/\\|', tone: ' .-=' },                                  // flags, pennants
+    11: { edge: ' .,`\'-_~=:()', tone: ' .-~=' },                                     // cloud bands
   },
   glsl: `
 const float FOC = 1.55;     // focal length in screen units
@@ -58,6 +62,7 @@ const float HEXS = 2.25;    // hex crust period (m): 180 m / 80
 float HOR = -0.13;          // horizon height on screen
 vec2 SUN;
 float camX, camDX;
+float LW;                   // half width of a drawn line, screen units
 
 // ---------------------------------------------------------------- helpers
 float sdTaper(vec2 p, vec2 a, vec2 b, float ra, float rb){
@@ -361,6 +366,7 @@ vec4 figure(vec2 q, int i, vec4 c){
     ln += smoothstep(0.12, 0.0, abs(q.y - (by - 0.6))) * step(abs(sq.x), 9.9) * 0.8;
   }
   ln += smoothstep(0.12, 0.0, abs(length(q - hd - vec2(0.9, 0.3)) - 0.28)) * 1.5;
+  if (body < d) mt = 12.0;
   d = min(d, body);
   // the town on its back sways with the gait
   float sway = sin(TAU * (2.0 * ph + 0.3));
@@ -384,114 +390,111 @@ vec4 figure(vec2 q, int i, vec4 c){
 }
 
 // ---------------------------------------------------------------- sky
-float streaks(vec2 p, float oct){
-  vec2 s = vec2(p.x * 1.2 + uPhase * 6.0, p.y * 38.0);
-  float n = vnoise(s, ivec2(6, 0)) * 0.55 + vnoise(vec2(s.x * 2.0, s.y * 1.7 + 7.1), ivec2(12, 0)) * 0.3;
-  if (oct > 2.5) n += vnoise(vec2(s.x * 5.0, s.y * 2.9 + 3.3), ivec2(30, 0)) * 0.15;
-  return n;
-}
-// cloudlets on a horizontal plane high above the flat (units: cloudlet cells)
-float cloudCells(vec2 w, float oct){
-  vec2 g = floor(w), f = fract(w);
-  float F1 = 9.0;
-  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
-    vec2 o = vec2(i, j);
-    vec2 r = o + 0.15 + 0.7 * hash22(g + o + 41.0) - f;
-    F1 = min(F1, dot(r, r));
-  }
-  float cell = 1.0 - 1.35 * sqrt(F1);
-  float cover = vnoise(w * 0.11 + 5.0) * 0.65 + vnoise(w * 0.27 + 9.0) * 0.35;
-  float n = cell * 0.55 + cover * 0.9;
-  if (oct > 1.5) n += (vnoise(w * 2.6) - 0.5) * 0.18;
-  return n;
-}
-// seamless drift: two copies offset by one loop of wind, cross-faded with the
-// variance kept constant so the sky never thins out mid-loop
-float cloudField(vec2 w, float oct){
-  vec2 wind = vec2(9.0, 2.0);
-  float a = cloudCells(w + wind * uPhase, oct);
-  float b = cloudCells(w + wind * (uPhase - 1.0), oct);
+// slowly drifting noise that still loops: two copies one loop of drift apart,
+// cross-faded with the variance held constant
+float driftNoise(vec2 x, vec2 wind){
+  float a = vnoise(x + wind * uPhase);
+  float b = vnoise(x + wind * (uPhase - 1.0));
   float k = uPhase;
-  float m = 0.62;
-  return m + ((a - m) * (1.0 - k) + (b - m) * k) / sqrt((1.0 - k) * (1.0 - k) + k * k);
+  return 0.5 + ((a - 0.5) * (1.0 - k) + (b - 0.5) * k) / sqrt((1.0 - k) * (1.0 - k) + k * k);
+}
+float lineAt(float d){ return smoothstep(LW + uPxSize * 0.7, LW - uPxSize * 0.7, abs(d)); }
+
+// long stratus bands near the horizon: dark lenses that hide whatever is
+// behind them, with a sunlit underside line. x: inside, y: underside line
+vec2 stratus(vec2 p, float sd){
+  vec2 res = vec2(0.0);
+  for (int k = 0; k < 3; k++) {
+    float fk = float(k);
+    float yk = HOR + 0.075 + 0.085 * fk + 0.04 * fk * fk;
+    float sc = 1.6 / (1.0 + 0.6 * fk);
+    float x = p.x * sc;
+    float gap = driftNoise(vec2(x * 0.8, fk * 7.3), vec2(1.1 + 0.3 * fk, 0.0));
+    float th = (0.006 + 0.007 * fk) * smoothstep(0.45, 0.62, gap);
+    if (th <= 0.0) continue;
+    float n1 = driftNoise(vec2(x * 3.1, fk * 3.1 + 40.0), vec2(2.2, 0.0));
+    float n2 = driftNoise(vec2(x * 2.4, fk * 5.7 + 80.0), vec2(2.2, 0.0));
+    float bot = yk - th * (0.4 + 0.9 * n1);
+    float top = yk + th * (0.6 + 1.6 * n2);
+    float inside = smoothstep(bot - uPxSize, bot + uPxSize, p.y) * smoothstep(top + uPxSize, top - uPxSize, p.y);
+    res.x = max(res.x, inside);
+    res.y = max(res.y, lineAt(p.y - bot) * (0.3 + 1.6 * exp(-sd * 1.6)) * smoothstep(0.45, 0.62, gap));
+  }
+  return res;
 }
 
 vec3 skyCol(vec2 p, bool refl, out float mat){
   mat = 1.0;
-  float h = max(p.y - HOR, 0.0);
-  vec2 ds = p - SUN; ds.x *= 0.8;
-  float sd = length(ds);
-  float glow = exp(-h * 2.6) * (0.35 + 1.1 * exp(-sd * 1.9)) + 0.05 * exp(-h * 0.8);
+  float h = p.y - HOR;
+  vec2 d = p - SUN;
+  float r = length(d);
+  float sd = length(d * vec2(0.75, 1.0));
   vec3 col = vec3(0.0);
-  // low cirrus streaks along the horizon
-  float n = streaks(p, refl ? 2.0 : 3.0);
-  float thr = 0.74 - 0.3 * sat(glow);
-  float s = smoothstep(thr - 0.04, thr + 0.06, n) * exp(-h * 5.0);
-  vec3 tint = mix(uZen, uHigh, sat(glow * 1.6));
-  tint = mix(tint, uGlow, sat(exp(-sd * 2.4) * 1.3));
-  col += tint * s * glow * 1.4;
-  // mackerel sky on a plane 3 km up: big cloudlets overhead shrinking into
-  // fine rows at the horizon, lit from below by the sinking sun
-  if (h > 0.004) {
-    float D = 3000.0 * FOC / h;                       // distance along the plane
-    vec2 w = vec2((p.x * D / FOC) / 520.0, D / 260.0);
-    w.x += 0.6 * sin(w.y * 0.35);                     // rows bend slightly
-    float cf = cloudField(w, refl ? 1.0 : 2.0);
-    float fwc = (D / 260.0) * (uPxSize * 3.0) / h;    // footprint of one sample in cells
-    float thr2 = 0.80 - 0.25 * uAtmos;
-    float cl = smoothstep(thr2 - 0.02 - fwc, thr2 + 0.10 + fwc, cf);
-    float lit = 0.18 + 1.15 * exp(-sd * 1.5) + 0.3 * exp(-h * 3.0);
-    float edge = smoothstep(thr2 + 0.22, thr2 + 0.02, cf) * cl;   // brighter rims on cloudlets
-    vec3 ctint = mix(uHigh, uGlow, sat(exp(-sd * 1.7) * 1.2 + exp(-h * 4.0) * 0.4));
-    ctint = mix(ctint, uSun, sat(exp(-sd * 6.0)) * 0.6);
-    float fade = smoothstep(0.004, 0.06, h);
-    col += ctint * cl * lit * (0.55 + 0.6 * edge) * fade * 1.2;
-    if (cl > 0.3) mat = 1.0;
-  }
-  // a few heavier cloud banks, lit from below near the sun
-  float bx = p.x * 0.9 + uPhase * 5.0;
-  float bank = vnoise(vec2(bx, p.y * 9.0), ivec2(5, 0)) * 0.7 + vnoise(vec2(bx * 3.0, p.y * 22.0), ivec2(15, 0)) * 0.3;
-  float band = smoothstep(0.08, 0.0, abs(p.y - (HOR + 0.36 + 0.05 * sin(p.x * 1.3)))) + smoothstep(0.05, 0.0, abs(p.y - (HOR + 0.17 + 0.03 * sin(p.x * 2.1 + 1.0))));
-  float cb = smoothstep(0.52, 0.66, bank) * band;
-  float under = smoothstep(0.62, 0.52, bank);
-  col += mix(uHigh * 0.5, uGlow * 1.4, sat(exp(-sd * 1.6))) * cb * (0.6 + 0.8 * under);
-  // sun: disc with mottled limb, half sunk behind the far range
-  float sr = 0.052;
-  if (sd < sr) {
-    float limb = sqrt(max(0.0, 1.0 - sd * sd / (sr * sr)));
-    float gran = 0.75 + 0.25 * vnoise(p * 140.0);
-    col = mix(col, uSun * (1.5 + 2.0 * limb) * gran, smoothstep(sr, sr - 0.004, sd));
+  // twilight hatching: undulating lines whose spacing widens with height
+  // (one per text row at the horizon, several rows apart overhead), brightness
+  // following the glow; they break into long dashes as the sky darkens
+  float rowH2 = uCellPx.y * uPxSize;
+  float h0 = 0.16;
+  float A = h0 / rowH2;
+  float hh = max(h, 0.0);
+  float v = A * log(1.0 + hh / h0) + 0.25 * sin(p.x * 2.1 + hh * 7.0) + 0.12 * sin(p.x * 5.3 - 1.7);
+  float spacing = (hh + h0) / A;
+  float hl = lineAt((fract(v + 0.5) - 0.5) * spacing);
+  float glow = exp(-hh * 2.2) * (0.3 + 1.5 * exp(-sd * 1.4)) + 0.04;
+  float dn = vnoise(vec2(p.x / (uCellPx.x * uPxSize) * 0.12, floor(v + 0.5) * 2.3 + 11.0));
+  float dash = smoothstep(0.62 - glow * 0.6, 0.7 - glow * 0.6, dn);
+  vec3 htint = mix(uZen * 2.0, uHigh * 1.3, sat(glow * 1.5));
+  htint = mix(htint, uGlow, sat(exp(-sd * 1.8) * 1.2));
+  vec2 st2 = stratus(p, sd);
+  float deck = st2.x;
+  col += htint * hl * dash * min(glow, 1.4) * 1.1 * (1.0 - deck);
+  col += mix(uHigh, uGlow, sat(exp(-sd * 1.5) * 1.3)) * st2.y * 1.2;
+  if (deck > 0.3 || st2.y > 0.2) mat = 11.0;
+  // a sparse fan of rays from the sun, seen in the gaps of the deck
+  float ang = atan(d.y, d.x);
+  float N = 72.0;
+  float u = ang / PI * N;
+  float id = floor(u);
+  float hr = hash11(id + 0.37);
+  float perp = abs(fract(u) - 0.5 - (hr - 0.5) * 0.4) * (PI / N) * r;
+  float h2 = hash11(id + 7.1);
+  float len = 0.3 + 2.6 * h2 * h2;
+  float str = step(0.35, hash11(id + 3.3)) * (0.55 + 0.45 * sin(TAU * (uPhase * float(1 + int(hr * 3.0)) + hr * 5.0)));
+  float ray = lineAt(perp) * smoothstep(len, len * 0.5, r) * smoothstep(0.08, 0.14, r) * step(0.0, d.y);
+  col += mix(uHigh, uGlow, exp(-r * 1.5)) * ray * str * (1.3 / (1.0 + 2.5 * r)) * (1.0 - deck);
+  // the sun: a disc of fine concentric rings inside a bright limb, short corona
+  float R = 0.06;
+  if (r < R + LW * 2.0) {
+    float limb = lineAt(r - R) * 3.0;
+    float ringSp = LW * 2.6;
+    float rings = lineAt((fract(r / ringSp + 0.5) - 0.5) * ringSp) * step(r, R);
+    vec3 sc = uSun * (limb + rings * 2.0) + uGlow * 0.6 * step(r, R);
+    col = mix(col, sc, step(r, R + LW * 2.0));
     mat = 2.0;
-  } else {
-    // engraved rays: thin radial lines, alternating lengths, slowly turning
-    float a = atan(ds.y, ds.x);
-    float k = 36.0;
-    float rr = fract(a / TAU * k);
-    float idx = floor(a / TAU * k);
-    float hr = hash11(mod(idx, k) + 0.5);
-    float len = sr * (2.0 + 3.5 * hr + 2.0 * mod(idx, 2.0)) * (1.0 + 0.18 * sin(TAU * (uPhase * float(2 + int(hr * 3.0)) + hr)));
-    float ray = smoothstep(0.06, 0.0, abs(rr - 0.5) * sd * 7.0) * smoothstep(len, sr * 1.3, sd) * step(sr * 1.25, sd);
-    if (ray > 0.01) { col += uGlow * mix(1.0, 1.8, exp(-sd * 9.0)) * ray * 0.9; mat = 2.0; }
+  } else if (r < R * 2.0) {
+    float a2 = fract(ang / TAU * 40.0) - 0.5;
+    float cor = lineAt(a2 * TAU / 40.0 * r) * smoothstep(R * 2.0, R * 1.15, r) * step(0.4, hash11(floor(ang / TAU * 40.0)));
+    col += uSun * cor * 1.3 * (1.0 - deck);
+    if (cor > 0.1) mat = 2.0;
   }
-  // stars in the darker upper sky
-  if (!refl && h > 0.45) {
-    vec2 g = p * vec2(90.0, 90.0);
-    vec2 id = floor(g), f = fract(g) - 0.5;
-    float hs = hash12(id + 31.0);
-    if (hs > 0.93) {
-      vec2 o = (hash22(id) - 0.5) * 0.6;
-      float st = smoothstep(0.16, 0.0, length(f - o)) * (hs - 0.93) * 14.0 * smoothstep(0.45, 0.8, h);
-      st *= 0.8 + 0.2 * sin(TAU * (uPhase * 4.0 + hs * 9.0));
-      col += mix(uSun, uRim, hs) * st * 0.35;
+  // stars in the gaps of the upper sky
+  if (!refl && h > 0.4 && deck < 0.1) {
+    vec2 g = p * 85.0;
+    vec2 gid = floor(g), f = fract(g) - 0.5;
+    float hs = hash12(gid + 31.0);
+    if (hs > 0.95) {
+      vec2 o = (hash22(gid) - 0.5) * 0.6;
+      float st = smoothstep(0.18, 0.0, length(f - o)) * (hs - 0.95) * 20.0 * smoothstep(0.4, 0.75, h);
+      st *= 0.85 + 0.15 * sin(TAU * (uPhase * 4.0 + hs * 9.0));
+      col += mix(uSun, uRim, hs) * st * 0.4;
       if (st > 0.05) mat = 8.0;
     }
   }
-  // far ranges on the horizon: low silhouette with lit crest
-  float mh = 0.016 + 0.022 * vnoise(vec2(p.x * 3.1 + 2.0, 0.0)) + 0.01 * vnoise(vec2(p.x * 13.0, 1.0));
-  if (p.y < HOR + mh) {
-    float crest = smoothstep(0.004, 0.0, abs(p.y - HOR - mh));
-    col = uBody * 0.12 + uRim * crest * 0.5 * (0.3 + exp(-abs(p.x - SUN.x) * 2.0));
-    col += uHigh * 0.15 * smoothstep(0.5, 0.7, vnoise(vec2(p.x * 40.0, p.y * 200.0)));
+  // the far range: low dark silhouette with a lit crest
+  float mh = 0.012 + 0.02 * vnoise(vec2(p.x * 3.1 + 2.0, 0.0)) + 0.008 * vnoise(vec2(p.x * 13.0, 1.0));
+  if (h < mh) {
+    float crest = lineAt(h - mh) * (0.25 + 1.2 * exp(-abs(p.x - SUN.x) * 2.0));
+    col = uBody * 0.03 + uRim * crest;
     mat = 3.0;
   }
   return col;
@@ -504,31 +507,33 @@ vec3 birds(vec2 p, inout float mat){
     vec4 c = creature(i);
     float s = FOC / c.y;
     vec2 top = vec2(creX(c), groundY(c.y) + 44.0 * s);
+    if (abs(p.x - top.x) > 40.0 * s || abs(p.y - top.y) > 16.0 * s) continue;
     for (int b = 0; b < 5; b++) {
       float fb = float(b);
       float ang = TAU * (uPhase * float(3 + b % 3) + fb * 0.27 + float(i) * 0.41);
       vec2 bp = top + vec2(cos(ang) * (9.0 + 4.0 * fb), sin(ang) * 2.0 + 3.0 + fb * 1.4) * s;
-      vec2 lp = (p - bp) / (s * 1.0);
+      vec2 lp = (p - bp) / s;
       float flap = sin(TAU * (uPhase * 90.0 + fb * 0.37));
       float wing = 0.9 + 0.6 * flap;
-      lp.x *= sign(cos(ang + PI * 0.5));
       float dw = min(sdSegment(lp, vec2(0.0), vec2(-1.3, wing)), sdSegment(lp, vec2(0.0), vec2(1.3, wing)));
-      float w = smoothstep(0.32 + uPxSize / s, 0.0, dw);
-      if (w > 0.0) { col = max(col, uSun * 0.45 * w); mat = 8.0; }
+      float w = smoothstep((LW + uPxSize) / s, 0.0, dw);
+      if (w > 0.0) { col = max(col, uSun * 0.6 * w); mat = 8.0; }
     }
   }
   return col;
 }
 
 // ---------------------------------------------------------------- figures in the image
-// draws all creatures at screen point p; mirror = true reflects each about its
-// ground line. Returns rgb in .rgb and coverage in .a; depth of the hit in z.
-vec4 drawFigures(vec2 p, bool mirror, float maxZ, float minZ, out float hitZ, out float mat){
+// Draws the creatures at screen point p as an engraving: dark masses, a
+// contour line brighter where it faces the sun, concentric hatching on the
+// shells, linework, lit windows. mirror = true reflects each creature about its
+// own ground line. Front-to-back premultiplied result; hitZ = nearest hit.
+vec4 drawFigures(vec2 p, bool mirror, float minZ, out float hitZ, out float mat){
   vec4 acc = vec4(0.0);
   hitZ = 1e9;
   for (int i = 0; i < NCRE; i++) {
     vec4 c = creature(i);
-    if (c.y > maxZ || c.y < minZ) continue;
+    if (c.y < minZ) continue;
     float s = FOC / c.y;
     float yg = groundY(c.y);
     vec2 pp = p;
@@ -536,43 +541,49 @@ vec4 drawFigures(vec2 p, bool mirror, float maxZ, float minZ, out float hitZ, ou
     vec2 q = (pp - vec2(creX(c), yg)) / s;
     if (q.x < -17.0 || q.x > 19.0 || q.y < -1.5 || q.y > 60.0) continue;
     vec4 f = figure(q, i, c);
-    float pxm = uPxSize * 1.4 / s;        // one sample in metres at this depth
+    float pxm = uPxSize / s;
+    float lwm = LW / s;
     float cov = smoothstep(pxm, -pxm, f.x);
-    if (cov <= 0.0) continue;
-    // 2D normal for rim lighting (backlit by the low sun)
-    float e = max(pxm, 0.08);
-    float rimW = max(0.5, pxm * 3.0);
-    vec3 col;
-    vec2 sdir = normalize(SUN - pp + vec2(0.0, 0.25));
+    float contour = smoothstep(lwm + pxm, lwm - pxm, abs(f.x));
+    float a = max(cov, contour);
+    if (a <= 0.0) continue;
+    vec2 sdir = normalize(SUN - pp + vec2(0.0, 0.2));
     if (mirror) sdir.y = -sdir.y;
-    vec2 n = vec2(0.0, 1.0);
-    if (f.x > -rimW * 4.0) {
+    float facing = 0.5;
+    if (contour > 0.0) {
+      float e = max(pxm, 0.06);
       float dx = figure(q + vec2(e, 0.0), i, c).x - f.x;
       float dy = figure(q + vec2(0.0, e), i, c).x - f.x;
-      n = normalize(vec2(dx, dy) + 1e-6);
+      vec2 n = normalize(vec2(dx, dy) + 1e-6);
+      facing = max(0.0, dot(n, sdir));
     }
-    float inside = max(-f.x, 0.0);
-    float facing = 0.25 + 0.75 * max(0.0, dot(n, sdir));
-    float rim = exp(-inside / rimW) * facing;
-    float sky = 0.5 + 0.5 * n.y;
-    float far = f.w > 9.5 ? 0.55 : 1.0;
-    float haze = 1.0 - exp(-c.y / 2600.0);
-    col = uBody * (0.10 + 0.12 * sky) * far;
-    col += uBody * 1.1 * sat(f.z) * (0.4 + 0.6 * facing) * far;  // linework
-    col += uRim * rim * 2.6 * far;
-    if (f.w > 3.5 && f.w < 4.5) {       // foliage
-      float lv = vnoise(q * 3.0) * 0.6 + vnoise(q * 7.0) * 0.4;
-      col = mix(col, uLeaf * (0.08 + 0.5 * smoothstep(0.45, 0.8, lv)) + uRim * rim * 1.2, 0.8);
+    float haze = 1.0 - exp(-c.y / 1800.0);
+    float far = f.w > 9.5 && f.w < 10.5 ? 0.5 : 1.0;
+    vec3 col = uBody * 0.015;
+    // concentric hatching inside the shells, densest near the outline
+    if (f.w > 11.5) {
+      float hs = max(0.9, uCellPx.y * uPxSize * 1.7 / s);
+      float t = -f.x / hs;
+      float hl = smoothstep(lwm * 0.8 + pxm, lwm * 0.8 - pxm, abs(fract(t) - 0.5) * hs) * step(0.5, t);
+      col += uBody * hl * step(t, 1.6) * 0.35;
     }
-    if (f.w > 8.5 && f.w < 9.5) col = uFlag * (0.35 + 0.5 * facing) + uRim * rim * 0.8;
-    col += uWin * f.y * 1.3 * far;
-    // atmosphere: distant figures lose contrast towards the horizon light
-    vec3 hz = mix(uHigh, uGlow, exp(-abs(pp.x - SUN.x) * 1.5)) * 0.35;
-    col = mix(col, hz, haze * (0.5 + 0.5 * uAtmos));
-    // creatures are listed near to far: composite front to back (premultiplied)
-    float wgt = (1.0 - acc.a) * cov;
+    col += uBody * 0.22 * sat(f.z) * far * (f.w > 11.5 ? 0.5 : 1.0);    // linework
+    if (f.w > 3.5 && f.w < 4.5) {                                       // foliage stipple
+      float lv = vnoise(q * 3.0 + float(i)) * 0.6 + vnoise(q * 7.0) * 0.4;
+      col = uLeaf * 0.6 * smoothstep(0.5, 0.75, lv);
+    }
+    if (f.w > 8.5 && f.w < 9.5) col = uFlag * 0.55;                     // flags
+    col += uWin * f.y * 1.4 * far;                                      // windows, lamps
+    vec3 line = mix(uBody * 2.2, uRim * 2.0, pow(facing, 1.5)) * far;
+    col = mix(col, line, contour);
+    vec3 hz = mix(uHigh, uGlow, exp(-abs(pp.x - SUN.x) * 1.5)) * 0.4;
+    col = mix(col, hz * (0.3 + contour), haze * (0.45 + 0.4 * uAtmos));
+    float wgt = (1.0 - acc.a) * a;
     acc.rgb += col * wgt;
-    if (wgt > 0.25 && hitZ > 1e8) { hitZ = c.y; mat = (f.w > 3.5 && f.w < 4.5) ? 4.0 : (f.y > 0.3 ? 7.0 : 3.0); }
+    if (wgt > 0.25 && hitZ > 1e8) {
+      hitZ = c.y;
+      mat = (f.w > 3.5 && f.w < 4.5) ? 4.0 : (f.y > 0.3 ? 7.0 : ((f.w > 8.5 && f.w < 9.5) ? 9.0 : 3.0));
+    }
     acc.a += wgt;
     if (acc.a > 0.995) break;
   }
@@ -582,7 +593,9 @@ vec4 drawFigures(vec2 p, bool mirror, float maxZ, float minZ, out float hitZ, ou
 vec3 sceneColor(vec2 p, out float mat, out float depth){
   camX = VEL * uTime;
   camDX = uCamAmt * 4.0 * sin(TAU * uPhase);
-  SUN = vec2(1.02, HOR + 0.075);
+  SUN = vec2(1.02, HOR + 0.095);
+  // a line must be at least one sub-cell sample wide to be caught reliably
+  LW = 0.62 * max(uCellPx.x / 3.0, uCellPx.y / 4.0) * uPxSize;
   mat = 1.0; depth = 1.0;
   vec3 col;
   float hz; float fm = 3.0;
@@ -591,7 +604,7 @@ vec3 sceneColor(vec2 p, out float mat, out float depth){
     col = skyCol(p, false, sm);
     mat = sm;
     col += birds(p, mat);
-    vec4 fg = drawFigures(p, false, 1e9, 0.0, hz, fm);
+    vec4 fg = drawFigures(p, false, 0.0, hz, fm);
     col = fg.rgb + (1.0 - fg.a) * col;
     if (fg.a > 0.5) { mat = fm; depth = hz / 3000.0; }
     return col;
@@ -600,23 +613,13 @@ vec3 sceneColor(vec2 p, out float mat, out float depth){
   float Z = FOC * CAMH / (HOR - p.y);
   float X = camX + camDX + p.x * Z / FOC;
   depth = sat(Z / 3000.0);
-  // direct view of legs and feet standing on the flat
-  vec4 fg = drawFigures(p, false, 1e9, 0.0, hz, fm);
-  // salt crust
-  float sp = uPxSize * 2.5;                       // ~ sample spacing
-  float fw = max(Z * sp / FOC, Z * Z * sp / (FOC * CAMH)) / HEXS;
-  vec4 hc = hexCell(vec2(X, Z) / HEXS);
-  float he = hexEdge(hc.xy);
-  float rw = 0.035 + 0.02 * hash12(hc.zw);
-  float ridge = smoothstep(rw + fw, rw - fw * 0.5, he);
-  ridge = mix(ridge, rw * 3.0, sat(fw * 1.5 - 0.3));      // far away: average tone
-  float cellv = hash12(hc.zw + 17.0);
-  // ripples: footfalls of the nearest creatures and a faint breeze
-  float rip = 0.0;
+  vec4 fg = drawFigures(p, false, 0.0, hz, fm);
+  // footfall ripples of the two nearest creatures
+  float rip = 0.0, ring = 0.0;
+  float lwz = LW * Z / FOC;            // line half width in metres at this depth
   for (int i = 0; i < 2; i++) {
     vec4 c = creature(i);
-    if (abs(Z - c.y) > 18.0) continue;
-    float s = FOC / c.y;
+    if (abs(Z - c.y) > 16.0) continue;
     float Xc0 = camX + camDX + creX(c) * c.y / FOC;
     float ph = fract(uTime / TG + c.z);
     for (int j = 0; j < 4; j++) {
@@ -624,37 +627,50 @@ vec3 sceneColor(vec2 p, out float mat, out float depth){
       float baseX = (j == 0 || j == 2) ? -4.8 : 4.8;
       float zc = c.y + (j < 2 ? -2.0 : 2.0);
       for (int k = 0; k < 2; k++) {
-        float age = lph * TG + float(k) * TG;
         if (lph > 0.75 && k == 0) continue;
+        float age = lph * TG + float(k) * TG;
         float landX = Xc0 + baseX + VEL * TG * 0.5 + (j < 2 ? 0.0 : 0.8) - VEL * age;
-        float dd = length(vec2(X - landX, (Z - zc) * 1.0));
-        float r = 1.0 + 2.6 * age;
-        float a = exp(-age / 4.0) * smoothstep(0.0, 0.4, age);
-        rip += a * sin((dd - r) * 5.0) * exp(-pow((dd - r) / 1.2, 2.0));
+        float dd = length(vec2(X - landX, (Z - zc) * 0.6));
+        float rr = 1.0 + 2.4 * age;
+        float a = exp(-age / 4.5) * smoothstep(0.0, 0.4, age);
+        rip += a * sin((dd - rr) * 4.0) * exp(-pow((dd - rr) / 1.4, 2.0));
+        ring = max(ring, a * smoothstep(lwz * 2.5, 0.0, abs(dd - rr)));
       }
     }
   }
-  float breeze = gnoise(vec3(X / 3.0, Z * 0.9, uPhase * 8.0), ivec3(60, 0, 8)) * 0.35;
-  breeze *= exp(-Z / 40.0);
-  float slope = rip * 0.9 + breeze;
-  // reflection: sky mirrored about the horizon, figures about their own feet
-  vec2 pr = vec2(p.x + slope * 0.004, 2.0 * HOR - p.y + slope * 0.012 * (1.0 + 30.0 / Z));
+  // water strokes: the mirror is read through horizontal streaks of ruffled water
+  float sx = X / 6.0;                       // 180 m loop scroll = 30 noise periods
+  float wn = vnoise(vec3(sx * 1.0, Z * 2.2, uPhase * 6.0), ivec3(30, 0, 6));
+  float wn2 = vnoise(vec3(sx * 4.0, Z * 7.0, uPhase * 6.0 + 3.0), ivec3(120, 0, 6));
+  float stroke = smoothstep(0.32, 0.55, wn * 0.7 + wn2 * 0.3 + exp(-Z / 90.0) * -0.25 + 0.12);
+  float slope = rip * 0.8 + (wn2 - 0.5) * 0.6;
+  // reflection: sky about the horizon, figures about their own feet
+  vec2 pr = vec2(p.x, 2.0 * HOR - p.y + slope * 0.006 * (1.0 + 25.0 / Z));
   float sm;
   vec3 rc = skyCol(pr, true, sm);
   float rz, rm;
-  vec2 pf = vec2(p.x + slope * 0.004, p.y - slope * 0.012 * (1.0 + 30.0 / Z));
-  vec4 rf = drawFigures(pf, true, 1e9, Z, rz, rm);
+  vec2 pf = vec2(p.x, p.y - slope * 0.006 * (1.0 + 25.0 / Z));
+  vec4 rf = drawFigures(pf, true, Z, rz, rm);
   rc = rf.rgb + (1.0 - rf.a) * rc;
-  float ang = atan(CAMH / Z);
-  float R = mix(0.88, 0.28, sat(ang * 3.0));
-  vec3 wet = rc * R + uBody * 0.03;
-  wet += uRim * smoothstep(0.55, 0.9, abs(slope)) * 0.25 * exp(-abs(p.x - SUN.x) * 0.8);
-  // dry ridges catch the low light; ridge texture is part of the crust
-  vec3 salt = uSalt * (0.02 + 0.75 * exp(-Z / 14.0)) * (0.7 + 0.3 * cellv);
-  salt += uGlow * 0.05 * exp(-abs(p.x - SUN.x) * 1.2) * exp(-Z / 30.0);
-  col = mix(wet, salt, ridge);
-  mat = ridge > 0.4 ? 5.0 : (rf.a > 0.5 ? rm : 6.0);
-  if (sm > 1.5 && sm < 2.5 && rf.a < 0.5 && ridge < 0.4) mat = 2.0;
+  float R = mix(0.95, 0.35, sat(atan(CAMH / Z) * 3.5));
+  vec3 water = rc * R * 0.55 * (0.15 + 0.85 * stroke);
+  // the sun's glitter path: bright dashes in a column widening towards us
+  float gw = 0.03 + 0.5 * FOC * CAMH / Z * 0.35;
+  float gp = exp(-pow((p.x - SUN.x) / gw, 2.0)) * smoothstep(0.55, 0.75, wn2 * 0.5 + wn * 0.5 + 0.1);
+  water += uSun * gp * 1.4 * exp(-(HOR - p.y) * 1.2);
+  water += uRim * ring * 0.9;
+  // salt crust ridges: lines, lit close by, dark far away against the mirror
+  float sp = uPxSize * 2.5;
+  float fw = max(Z * sp / FOC, Z * Z * sp / (FOC * CAMH)) / HEXS;
+  vec4 hc = hexCell(vec2(X, Z) / HEXS);
+  float he = hexEdge(hc.xy);
+  float rw = max(0.028, lwz / HEXS);
+  float ridge = smoothstep(rw + fw, rw - fw * 0.5, he);
+  ridge *= sat(1.5 - fw * 1.2);
+  float cellv = hash12(hc.zw + 17.0);
+  vec3 salt = uSalt * (0.03 + 0.85 * exp(-Z / 12.0)) * (0.65 + 0.35 * cellv);
+  col = mix(water, salt, ridge);
+  mat = ridge > 0.4 ? 5.0 : (rf.a > 0.5 ? rm : (gp > 0.3 ? 2.0 : 6.0));
   col = fg.rgb + (1.0 - fg.a) * col;
   if (fg.a > 0.5) { mat = fm; depth = hz / 3000.0; }
   return col;

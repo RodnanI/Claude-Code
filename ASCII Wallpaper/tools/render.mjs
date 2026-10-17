@@ -2,10 +2,10 @@
 // Offline renderer for the ASCII wallpaper (headless Chromium, software WebGL2).
 //
 // Stills:
-//   node tools/render.mjs --scene cloudsea --t 12 --w 3840 --h 2160 --out shot.png [--set glyphPx=11,detail=1]
-//   node tools/render.mjs --scene cloudsea --times 0,10,20 --out frames/f.png      (writes f-0.png, f-1.png ...)
+//   node tools/render.mjs --scene procession --t 12 --w 3840 --h 2160 --out shot.png [--set glyphPx=11,detail=1]
+//   node tools/render.mjs --scene procession --times 0,10,20 --out frames/f.png      (writes f-0.png, f-1.png ...)
 // Video (pipes raw frames into ffmpeg):
-//   node tools/render.mjs --scene cloudsea --video out.mp4 --fps 30 --from 0 --dur 60 --w 1920 --h 1080 [--crf 16] [--codec x264|x265]
+//   node tools/render.mjs --scene procession --video out.mp4 --fps 30 --from 0 --dur 60 --w 1920 --h 1080 [--crf 16] [--codec x264|x265]
 // Options:
 //   --page index.html|src/shell.html (default: src/shell.html)   --json stats.json
 import { spawn } from 'node:child_process';

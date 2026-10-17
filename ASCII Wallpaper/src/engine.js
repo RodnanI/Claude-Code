@@ -138,10 +138,12 @@ float smax(float a, float b, float k){ return -smin(-a, -b, k); }
   // packs material id (integer part) and depth (fraction). Without them we fall
   // back to RGBA8 with a compressive colour encoding.
   const ENC_FLOAT = `
-vec4 encodeSample(vec3 c, float mat, float depth){ return vec4(max(c, 0.0), floor(mat + 0.5) + clamp(depth, 0.0, 0.998)); }
+// depth is packed into [0, 0.9] so that half-float rounding can never carry
+// it into the next material id (spacing is 1/16 at ids up to 110)
+vec4 encodeSample(vec3 c, float mat, float depth){ return vec4(max(c, 0.0), floor(mat + 0.5) + clamp(depth, 0.0, 1.0) * 0.9); }
 vec3 decodeColor(vec4 s){ return s.rgb; }
-float decodeMat(vec4 s){ return floor(s.a); }
-float decodeDepth(vec4 s){ return fract(s.a); }`;
+float decodeMat(vec4 s){ return floor(s.a + 0.02); }
+float decodeDepth(vec4 s){ return min(fract(s.a + 0.02) - 0.02, 0.9) / 0.9; }`;
   const ENC_U8 = `
 vec4 encodeSample(vec3 c, float mat, float depth){ c = max(c, 0.0); return vec4(c / (1.0 + c), (floor(mat + 0.5) * 16.0 + floor(clamp(depth, 0.0, 0.999) * 16.0)) / 255.0); }
 vec3 decodeColor(vec4 s){ vec3 c = min(s.rgb, vec3(0.996)); return c / (1.0 - c); }
@@ -171,6 +173,7 @@ uniform float uAtmos;     // 0..1
 uniform float uCamAmt;    // 0..1
 uniform float uSeed;
 uniform float uPxSize;    // size of one device pixel in scene units
+uniform vec4 uView;       // virtual frame: xy = offset of this canvas in it, zw = its size
 ${custom}
 ${palUniforms}
 out vec4 fragColor;
@@ -181,14 +184,14 @@ ${scene.glsl}
 void main(){
   vec2 gp = gl_FragCoord.xy / uSceneRes * uGridPx;
   vec2 cp = gp - 0.5 * (uGridPx - uCanvasPx);
-  vec2 p = (cp - 0.5 * uCanvasPx) / (0.5 * uCanvasPx.y);
+  vec2 p = (cp + uView.xy - 0.5 * uView.zw) / (0.5 * uView.zw.y);
   float mat = 0.0, depth = 1.0;
   vec3 c = sceneColor(p, mat, depth);
   fragColor = encodeSample(c, mat, depth);
 }`;
   }
 
-  function cellFS(q, enc) {
+  function cellFS(q, enc, S) {
     const nreg = q.rx * q.ry;
     const nvec = Math.ceil(nreg / 4);
     return `#version 300 es
@@ -199,12 +202,16 @@ precision highp int;
 #define AA ${q.aa}
 #define NREG ${nreg}
 #define NVEC ${nvec}
+#define S ${S}
 uniform sampler2D uScene;
+uniform sampler2D uBlock;     // block glyphs of this frame (S == 1 only)
+uniform float uBigOn, uBigDepth, uDither;
 uniform sampler2D uFeat;      // NVEC x NGLYPH, RGBA32F coverage per region
 uniform sampler2D uFeatMean;  // 1 x NGLYPH, r = mean coverage
 uniform sampler2D uPrev;      // previous glyph index (R8)
 uniform int uNGlyph;
 uniform uvec4 uMask[32];   // 0..15 edge sets, 16..31 tone sets (flat regions)
+uniform float uEdgeNorm, uEdgeRef;
 uniform float uExposure, uCover, uSharp, uHyst, uSat, uBright, uMinCov, uColGamma, uWhite, uHasPrev, uFlat, uMeanW, uFlatShape, uFlatTone;
 uniform vec3 uTint;
 layout(location=0) out vec4 oColor;
@@ -222,20 +229,26 @@ float dist(int g, vec4 T[NVEC], float tm, vec2 w){
 }
 void main(){
   ivec2 cell = ivec2(gl_FragCoord.xy);
+#if S == 1
+  // cells covered by a large foreground glyph stay empty
+  if (uBigOn > 0.5 && texelFetch(uBlock, cell / 2, 0).g > 0.5) { oColor = vec4(0.0); oGlyph = vec4(0.0); return; }
+#endif
+  float near = 0.0;
   vec4 T[NVEC];
   for (int v = 0; v < NVEC; v++) T[v] = vec4(0.0);
   vec3 csum = vec3(0.0); float wsum = 0.0; float lmax = 0.0; float tmax = 0.0; float tsum = 0.0;
   float mat = 0.0; float best = -1.0;
   for (int ry = 0; ry < RY; ry++) for (int rx = 0; rx < RX; rx++) {
     vec3 c = vec3(0.0);
-    for (int ay = 0; ay < AA; ay++) for (int ax = 0; ax < AA; ax++) {
-      vec4 s = texelFetch(uScene, (cell * ivec2(RX, RY) + ivec2(rx, ry)) * AA + ivec2(ax, ay), 0);
+    for (int ay = 0; ay < AA * S; ay++) for (int ax = 0; ax < AA * S; ax++) {
+      vec4 s = texelFetch(uScene, (cell * ivec2(RX, RY) + ivec2(rx, ry)) * (AA * S) + ivec2(ax, ay), 0);
       vec3 sc = decodeColor(s);
+      near += decodeDepth(s) < uBigDepth ? 1.0 : 0.0;
       c += sc;
       float sl = luma(sc);
       if (sl > best) { best = sl; mat = decodeMat(s); }
     }
-    c *= 1.0 / float(AA * AA);
+    c *= 1.0 / float(AA * AA * S * S);
     float L = luma(c) * uExposure;
     float w = L + 1e-4;
     csum += c * w; wsum += w;
@@ -257,20 +270,35 @@ void main(){
   bool isFlat = (tmax - tmin) < uFlat * tmax;
   int ms = isFlat ? m + 16 : m;
   vec2 dw = isFlat ? vec2(uFlatShape, uFlatTone) : vec2(1.0, uMeanW);
-  // local contrast enhancement: sharpen the pattern towards its brightest region
+  // local contrast enhancement: sharpen the pattern towards its brightest
+  // region. Edge normalisation: a faint line is matched as if it were at
+  // least uEdgeRef bright, so it becomes a crisp line glyph drawn in a dim
+  // colour instead of vanishing into a blank cell
   if (tmax > 1e-5 && !isFlat) {
-    for (int k = 0; k < NREG; k++) { float t = T[k >> 2][k & 3]; T[k >> 2][k & 3] = tmax * pow(t / tmax, uSharp); }
+    float gain = mix(1.0, max(1.0, uEdgeRef / tmax), uEdgeNorm);
+    for (int k = 0; k < NREG; k++) { float t = T[k >> 2][k & 3]; T[k >> 2][k & 3] = gain * tmax * pow(t / tmax, uSharp); }
+    tmean *= gain;
   }
   int bi = 0;
   if (tmax >= uMinCov) {
     if (forced >= 0 && forced < ${NGLYPH}) {
       bi = forced;
     } else {
-      float bd = dist(0, T, tmean, dw);
+      float bd = dist(0, T, tmean, dw), bd2 = 1e9;
+      int bi2 = 0;
       for (int g = 1; g < ${NGLYPH}; g++) {
         if (!allowed(ms, g)) continue;
         float d = dist(g, T, tmean, dw);
-        if (d < bd) { bd = d; bi = g; }
+        if (d < bd) { bd2 = bd; bi2 = bi; bd = d; bi = g; }
+        else if (d < bd2) { bd2 = d; bi2 = g; }
+      }
+      // glyph dithering: in flat areas alternate between the two closest tone
+      // glyphs with a fixed per-cell pattern, so even tones don't form rows of
+      // one repeated character
+      if (isFlat && bi2 > 0 && bd2 <= bd * (1.0 + uDither) + 1e-3 * uDither) {
+        uint hc = uint(cell.x) * 1597334677u ^ uint(cell.y) * 3812015801u;
+        hc ^= hc >> 15; hc *= 0x2c1b3c6du; hc ^= hc >> 12;
+        if ((hc & 1u) == 1u) { int tmp = bi; bi = bi2; bi2 = tmp; float tf = bd; bd = bd2; bd2 = tf; }
       }
       if (uHasPrev > 0.5) {
         int pg = int(texelFetch(uPrev, cell, 0).r * 255.0 + 0.5);
@@ -293,7 +321,12 @@ void main(){
   g = min(g, vec3(1.0)) + over * uWhite;
   g = clamp(g, 0.0, 1.0);
   oColor = vec4(pow(g, vec3(1.0 / 2.2)), 1.0);
-  oGlyph = vec4(float(bi) / 255.0, 0.0, 0.0, 1.0);
+#if S == 2
+  float big = (uBigOn > 0.5 && near >= 0.5 * float(NREG * AA * AA * S * S)) ? 1.0 : 0.0;
+#else
+  float big = 0.0;
+#endif
+  oGlyph = vec4(float(bi) / 255.0, big, 0.0, 1.0);
 }`;
   }
 
@@ -322,9 +355,26 @@ uniform ivec2 uOffset;    // grid offset in px
 uniform int uAtlasCols;
 uniform vec3 uBg;         // sRGB
 uniform float uGlyphGamma;
+uniform sampler2D uBlockColor;
+uniform sampler2D uBlockGlyph;
+uniform sampler2D uAtlas2;
+uniform int uBigOn;
 out vec4 fragColor;
 void main(){
   ivec2 px = ivec2(gl_FragCoord.xy) + uOffset;
+  if (uBigOn == 1) {
+    ivec2 bcell = uCell * 2;
+    ivec2 bc = px / bcell;
+    vec4 bgl = texelFetch(uBlockGlyph, bc, 0);
+    if (bgl.g > 0.5) {
+      int g = int(bgl.r * 255.0 + 0.5);
+      ivec2 lp = px - bc * bcell;
+      ivec2 tile = ivec2(g % uAtlasCols, g / uAtlasCols);
+      float a = pow(texelFetch(uAtlas2, tile * bcell + ivec2(lp.x, bcell.y - 1 - lp.y), 0).r, uGlyphGamma);
+      fragColor = vec4(mix(uBg, texelFetch(uBlockColor, bc, 0).rgb, a), 1.0);
+      return;
+    }
+  }
   ivec2 cell = px / uCell;
   ivec2 lp = px - cell * uCell;
   int g = int(texelFetch(uCellGlyph, cell, 0).r * 255.0 + 0.5);
@@ -359,7 +409,7 @@ void main(){
     scene: null,
     palette: 0,
     font: 0,
-    glyphPx: 11,
+    glyphPx: 0, // 0 = choose from screen size
     lineHeight: 1.1,
     quality: 'high',
     resScale: 1,
@@ -380,7 +430,13 @@ void main(){
     flat: 0.3,
     meanW: 0.5,
     flatShape: 0.25,
+    edgeNorm: 1,
+    edgeRef: 0.42,
     flatTone: 1.5,
+    bigGlyphs: 1,
+    dither: 0.6,
+    adaptive: 1,
+    preset: 0,
   };
   ASCII.DEFAULTS = DEFAULTS;
 
@@ -521,17 +577,34 @@ void main(){
 
     // ---------------------------------------------------------- font atlas
     _buildAtlas() {
+      const a1 = this._renderAtlas(1);
+      this.cell = a1.cell;
+      this.atlasCols = a1.cols;
+      this.atlasCanvas = a1.canvas;
+      const gl = this.gl;
+      this._del(this.atlasTex);
+      this.atlasTex = this._tex(a1.canvas.width, a1.canvas.height, gl.R8, gl.RED, gl.UNSIGNED_BYTE, a1.alpha);
+      [this.featTex, this.meanTex] = this._buildFeatures(a1.alpha, a1.canvas.width, a1.cell, [this.featTex, this.meanTex]);
+      const a2 = this._renderAtlas(2, a1.cell);
+      this._del(this.atlas2Tex);
+      this.atlas2Tex = this._tex(a2.canvas.width, a2.canvas.height, gl.R8, gl.RED, gl.UNSIGNED_BYTE, a2.alpha);
+      [this.featTex2, this.meanTex2] = this._buildFeatures(a2.alpha, a2.canvas.width, a2.cell, [this.featTex2, this.meanTex2]);
+    }
+    // Renders the 95 glyphs into a 16-column atlas. scale 2 renders the
+    // font at twice the size into cells exactly twice as large, used for
+    // the large foreground glyphs.
+    _renderAtlas(scale, baseCell) {
       const s = this.settings;
       const font = ASCII.fonts[s.font] || ASCII.fonts[0];
-      const px = Math.max(5, Math.round(s.glyphPx));
+      const px = Math.max(5, Math.round(s.glyphPx || 11)) * scale;
       const cv = document.createElement('canvas');
       let ctx = cv.getContext('2d');
       const fstr = `${font.weight || 400} ${px}px ${font.family}`;
       ctx.font = fstr;
       const m = ctx.measureText('M');
       const adv = m.width;
-      const cw = Math.max(3, Math.round(adv * (font.advance || 1)));
-      const ch = Math.max(5, Math.round(px * s.lineHeight));
+      const cw = baseCell ? baseCell[0] * scale : Math.max(3, Math.round(adv * (font.advance || 1)));
+      const ch = baseCell ? baseCell[1] * scale : Math.max(5, Math.round(px * s.lineHeight));
       const asc = m.fontBoundingBoxAscent || px * 0.8;
       const desc = m.fontBoundingBoxDescent || px * 0.2;
       const base = Math.round((ch - (asc + desc)) / 2 + asc);
@@ -558,25 +631,19 @@ void main(){
       const img = ctx.getImageData(0, 0, cv.width, cv.height).data;
       const a = new Uint8Array(cv.width * cv.height);
       for (let i = 0; i < a.length; i++) a[i] = img[i * 4 + 3];
-      this.atlasCanvas = cv;
-      this.cell = [cw, ch];
-      this.atlasCols = cols;
-      const gl = this.gl;
-      this._del(this.atlasTex);
-      this.atlasTex = this._tex(cv.width, cv.height, gl.R8, gl.RED, gl.UNSIGNED_BYTE, a);
-      this._buildFeatures(a, cv.width);
+      return { canvas: cv, alpha: a, cell: [cw, ch], cols };
     }
-    _buildFeatures(alpha, aw) {
+    _buildFeatures(alpha, aw, cellSize, old) {
       const q = QUALITY[this.settings.quality] || QUALITY.high;
-      const [cw, ch] = this.cell;
+      const [cw, ch] = cellSize;
       const nreg = q.rx * q.ry;
       const nvec = Math.ceil(nreg / 4);
       const feat = new Float32Array(nvec * 4 * NGLYPH);
       const mean = new Float32Array(4 * NGLYPH);
       const gg = this.settings.glyphGamma;
       for (let g = 0; g < NGLYPH; g++) {
-        const tx = (g % this.atlasCols) * cw;
-        const ty = Math.floor(g / this.atlasCols) * ch;
+        const tx = (g % 16) * cw;
+        const ty = Math.floor(g / 16) * ch;
         const acc = new Float32Array(nreg);
         const cnt = new Float32Array(nreg);
         let tot = 0;
@@ -601,12 +668,9 @@ void main(){
         for (let k = 0; k < nreg; k++) feat[g * nvec * 4 + k] = cnt[k] ? acc[k] / cnt[k] : 0;
         mean[g * 4] = tot / (cw * ch);
       }
-      this.glyphMean = mean;
       const gl = this.gl;
-      this._del(this.featTex);
-      this._del(this.meanTex);
-      this.featTex = this._tex(nvec, NGLYPH, gl.RGBA32F, gl.RGBA, gl.FLOAT, feat);
-      this.meanTex = this._tex(1, NGLYPH, gl.RGBA32F, gl.RGBA, gl.FLOAT, mean);
+      old.forEach((t) => this._del(t));
+      return [this._tex(nvec, NGLYPH, gl.RGBA32F, gl.RGBA, gl.FLOAT, feat), this._tex(1, NGLYPH, gl.RGBA32F, gl.RGBA, gl.FLOAT, mean)];
     }
 
     // ------------------------------------------------------------- sizing
@@ -641,12 +705,19 @@ void main(){
         this._del(this.cellFbo && this.cellFbo[i]);
       }
       this.cellFbo = [0, 1].map(() =>
-        this._fbo([this._tex(cols, rows, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE), this._tex(cols, rows, gl.R8, gl.RED, gl.UNSIGNED_BYTE)])
+        this._fbo([this._tex(cols, rows, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE), this._tex(cols, rows, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)])
       );
+      const bcols = Math.ceil(cols / 2), brows = Math.ceil(rows / 2);
+      if (this.blockFbo) this.blockFbo.forEach((f) => this._del(f));
+      this.blockFbo = [0, 1].map(() =>
+        this._fbo([this._tex(bcols, brows, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE), this._tex(bcols, brows, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE)])
+      );
+      this.bcols = bcols;
+      this.brows = brows;
       const qk = s.quality;
       this._cellProgs = this._cellProgs || {};
-      if (!this._cellProgs[qk]) this._cellProgs[qk] = this._program(VS, cellFS(q, this.enc));
-      this.cellProg = this._cellProgs[qk];
+      if (!this._cellProgs[qk]) this._cellProgs[qk] = [this._program(VS, cellFS(q, this.enc, 1)), this._program(VS, cellFS(q, this.enc, 2))];
+      [this.cellProg, this.blockProg] = this._cellProgs[qk];
       this.W = W;
       this.H = H;
       this.cols = cols;
@@ -697,7 +768,10 @@ void main(){
       this._setUniform(p, 'uAtmos', s.atmosphere);
       this._setUniform(p, 'uCamAmt', s.camera);
       this._setUniform(p, 'uSeed', s.seed || 0);
-      this._setUniform(p, 'uPxSize', 2 / this.H);
+      // a capture can render a 1:1 window of a larger virtual frame
+      const vw = s.viewW || this.W, vh = s.viewH || this.H;
+      this._setUniform(p, 'uView', [s.viewX || 0, vh - this.H - (s.viewY || 0), vw, vh]);
+      this._setUniform(p, 'uPxSize', 2 / vh);
       for (const [k, v] of Object.entries(sc.uniforms || {})) this._setUniform(p, k, (s.uniforms && s.uniforms[k]) ?? v);
       const pal = (sc.palettes || [])[s.palette];
       if (pal) for (const [k, v] of Object.entries(pal.colors || {})) this._setUniform(p, k, srgbToLin(hexToRgb(v)));
@@ -717,24 +791,65 @@ void main(){
         return;
       }
 
-      // pass 2: glyph selection
-      const prev = this.cellFbo[1 - this.cur];
+      // pass 2: glyph selection (2a: large foreground glyphs on 2x2 blocks, 2b: cells)
+      const bigOn = this.bigOn();
+      const bdst = this.blockFbo[this.cur];
+      if (bigOn) {
+        this._glyphPass(this.blockProg, bdst, this.blockFbo[1 - this.cur], this.bcols, this.brows, this.featTex2, this.meanTex2, null, pal, true);
+      }
       const dst = this.cellFbo[this.cur];
-      p = this.cellProg;
+      this._glyphPass(this.cellProg, dst, this.cellFbo[1 - this.cur], this.cols, this.rows, this.featTex, this.meanTex, bdst, pal, bigOn);
+
+      // pass 3: compose to screen
+      p = this.composeProg;
+      gl.useProgram(p);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, this.W, this.H);
+      this._bindTex(0, dst.texs[0], p._u.uCellColor);
+      this._bindTex(1, dst.texs[1], p._u.uCellGlyph);
+      this._bindTex(2, this.atlasTex, p._u.uAtlas);
+      this._bindTex(3, bdst.texs[0], p._u.uBlockColor);
+      this._bindTex(4, bdst.texs[1], p._u.uBlockGlyph);
+      this._bindTex(5, this.atlas2Tex, p._u.uAtlas2);
+      gl.uniform1i(p._u.uBigOn, bigOn ? 1 : 0);
+      gl.uniform2i(p._u.uCell, cw, ch);
+      gl.uniform2i(p._u.uOffset, this.offset[0], this.offset[1]);
+      gl.uniform1i(p._u.uAtlasCols, this.atlasCols);
+      this._setUniform(p, 'uBg', hexToRgb((pal && pal.bg) || sc.bg || '#0a0a0b'));
+      this._setUniform(p, 'uGlyphGamma', s.glyphGamma);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      this.cur = 1 - this.cur;
+      this.hasPrev = true;
+      this.frameNo++;
+    }
+    bigOn() {
+      return !!(this._scene.bigDepth > 0 && this.settings.bigGlyphs);
+    }
+    _glyphPass(p, dst, prev, w, h, feat, mean, block, pal, bigOn) {
+      const gl = this.gl;
+      const s = this.settings;
+      const sc = this._scene;
       gl.useProgram(p);
       gl.bindFramebuffer(gl.FRAMEBUFFER, dst);
       gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
-      gl.viewport(0, 0, this.cols, this.rows);
+      gl.viewport(0, 0, w, h);
       this._bindTex(0, this.sceneFbo.texs[0], p._u.uScene);
-      this._bindTex(1, this.featTex, p._u.uFeat);
-      this._bindTex(2, this.meanTex, p._u.uFeatMean);
+      this._bindTex(1, feat, p._u.uFeat);
+      this._bindTex(2, mean, p._u.uFeatMean);
       this._bindTex(3, prev.texs[1], p._u.uPrev);
+      this._bindTex(4, block ? block.texs[1] : prev.texs[1], p._u.uBlock);
+      this._setUniform(p, 'uBigOn', bigOn ? 1 : 0);
+      this._setUniform(p, 'uBigDepth', sc.bigDepth || 0);
+      this._setUniform(p, 'uDither', s.dither * ((sc.look && sc.look.dither) ?? 1));
       gl.uniform1i(p._u.uNGlyph, NGLYPH);
       gl.uniform4uiv(p._u.uMask, this.masks);
       const look = Object.assign({}, sc.look || {}, (pal && pal.look) || {});
       const lk = (k) => (s[k] ?? 1) * (look[k] ?? 1);
       this._setUniform(p, 'uFlat', s.flat * (look.flat ?? 1));
       this._setUniform(p, 'uMeanW', s.meanW);
+      this._setUniform(p, 'uEdgeNorm', s.edgeNorm * (look.edgeNorm ?? 1));
+      this._setUniform(p, 'uEdgeRef', s.edgeRef);
       this._setUniform(p, 'uFlatShape', s.flatShape);
       this._setUniform(p, 'uFlatTone', s.flatTone * (look.flatTone ?? 1));
       this._setUniform(p, 'uExposure', lk('exposure'));
@@ -749,25 +864,6 @@ void main(){
       this._setUniform(p, 'uHasPrev', this.hasPrev && s.stability > 0 ? 1 : 0);
       this._setUniform(p, 'uTint', look.tint || [1, 1, 1]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-      // pass 3: compose to screen
-      p = this.composeProg;
-      gl.useProgram(p);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, this.W, this.H);
-      this._bindTex(0, dst.texs[0], p._u.uCellColor);
-      this._bindTex(1, dst.texs[1], p._u.uCellGlyph);
-      this._bindTex(2, this.atlasTex, p._u.uAtlas);
-      gl.uniform2i(p._u.uCell, cw, ch);
-      gl.uniform2i(p._u.uOffset, this.offset[0], this.offset[1]);
-      gl.uniform1i(p._u.uAtlasCols, this.atlasCols);
-      this._setUniform(p, 'uBg', hexToRgb((pal && pal.bg) || sc.bg || '#0a0a0b'));
-      this._setUniform(p, 'uGlyphGamma', s.glyphGamma);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-      this.cur = 1 - this.cur;
-      this.hasPrev = true;
-      this.frameNo++;
     }
     _bindTex(unit, tex, loc) {
       const gl = this.gl;
@@ -789,9 +885,26 @@ void main(){
       gl.readPixels(0, 0, this.cols, this.rows, gl.RGBA, gl.UNSIGNED_BYTE, col);
       gl.readBuffer(gl.COLOR_ATTACHMENT1);
       gl.readPixels(0, 0, this.cols, this.rows, gl.RGBA, gl.UNSIGNED_BYTE, gly);
+      let big = 0, bigVisible = 0;
+      if (this.bigOn()) {
+        const bf = this.blockFbo[1 - this.cur];
+        const bn = this.bcols * this.brows;
+        const bcol = new Uint8Array(bn * 4), bgl = new Uint8Array(bn * 4);
+        gl.bindFramebuffer(gl.READ_FRAMEBUFFER, bf);
+        gl.readBuffer(gl.COLOR_ATTACHMENT0);
+        gl.readPixels(0, 0, this.bcols, this.brows, gl.RGBA, gl.UNSIGNED_BYTE, bcol);
+        gl.readBuffer(gl.COLOR_ATTACHMENT1);
+        gl.readPixels(0, 0, this.bcols, this.brows, gl.RGBA, gl.UNSIGNED_BYTE, bgl);
+        for (let i = 0; i < bn; i++) {
+          if (bgl[i * 4 + 1] < 128 || bgl[i * 4] === 0) continue;
+          big++;
+          const l = 0.2126 * bcol[i * 4] + 0.7152 * bcol[i * 4 + 1] + 0.0722 * bcol[i * 4 + 2];
+          if (l >= 40) bigVisible++;
+        }
+      }
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
-      let nonSpace = 0,
-        visible = 0;
+      let nonSpace = big,
+        visible = bigVisible;
       const hist = new Uint32Array(NGLYPH);
       for (let i = 0; i < n; i++) {
         const g = gly[i * 4];
@@ -803,7 +916,7 @@ void main(){
       }
       let distinct = 0;
       for (let g = 1; g < NGLYPH; g++) if (hist[g]) distinct++;
-      Object.assign(this.stats, { nonSpace, visible, distinct });
+      Object.assign(this.stats, { nonSpace, visible, distinct, big });
       return this.stats;
     }
   }

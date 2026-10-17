@@ -5,7 +5,7 @@
   const A = window.ASCII;
   const qs = new URLSearchParams(location.search);
   const capture = qs.has('capture');
-  const STORE = 'ascii-wallpaper-v1';
+  const STORE = 'ascii-wallpaper-v2';
 
   const $ = (s) => document.querySelector(s);
   const canvas = $('#view');
@@ -48,7 +48,7 @@
     } catch (e) {}
   }
 
-  const NUM = ['glyphPx', 'lineHeight', 'resScale', 'detail', 'speed', 'exposure', 'saturation', 'brightness', 'sharp', 'glyphGamma',
+  const NUM = ['adaptive', 'preset', 'bigGlyphs', 'dither', 'glyphPx', 'lineHeight', 'resScale', 'detail', 'speed', 'exposure', 'saturation', 'brightness', 'sharp', 'glyphGamma',
     'atmosphere', 'camera', 'stability', 'palette', 'font', 'cover', 'colGamma', 'seed'];
 
   function initialSettings() {
@@ -58,8 +58,8 @@
     if (!sc) sc = visibleScenes()[0] || A.scenes[0];
     let s = sceneDefaults(sc);
     if (stored && stored.scene === sc.id) Object.assign(s, stored);
-    s.glyphPx = s.glyphPx || autoGlyph();
     for (const k of NUM) if (qs.has(k)) s[k] = parseFloat(qs.get(k));
+    if (!s.glyphPx) s.glyphPx = autoGlyph();
     if (qs.has('quality')) s.quality = qs.get('quality');
     s.scene = sc.id;
     return s;
@@ -67,8 +67,8 @@
   // default glyph size: about 11 device px on a 2160 px tall screen, never
   // below 8 px so glyph shapes stay legible on small screens
   function autoGlyph() {
-    const h = (capture ? +qs.get('h') : screen.height * (window.devicePixelRatio || 1)) || 1080;
-    return Math.max(8, Math.min(16, Math.round(h / 196)));
+    const h = (capture ? +qs.get('h') : Math.max(screen.height, screen.width * 9 / 16) * (window.devicePixelRatio || 1)) || 1080;
+    return Math.max(8, Math.min(18, Math.round(h / 196)));
   }
 
   // ------------------------------------------------------------ engine
@@ -79,11 +79,13 @@
     fpsN = 0,
     lastMeasure = 0;
 
-  function applySettings(rebuild) {
+  function applySettings(rebuild, auto) {
     eng.settings = Object.assign(eng.settings, settings);
     if (eng.scene !== sceneById(settings.scene)) eng.setScene(settings.scene);
     if (rebuild) eng.resize(true);
-    if (!capture) store(settings);
+    // automatic quality steps are not remembered, so a slow moment never
+    // permanently lowers quality
+    if (!capture && !auto) store(settings);
   }
 
   function frame(now) {
@@ -95,6 +97,7 @@
     fpsN++;
     if (now - lastMeasure > 1500) {
       eng.stats.fps = fpsN / Math.max(fpsAcc, 1e-3);
+      governor(eng.stats.fps);
       fpsAcc = 0;
       fpsN = 0;
       lastMeasure = now;
@@ -106,10 +109,28 @@
     requestAnimationFrame(frame);
   }
 
+  // Adaptive quality: if the GPU cannot keep ~24 fps for several seconds the
+  // scene sampling is reduced one step (High -> Live), then the canvas
+  // resolution. Glyph size and look are never changed automatically.
+  let slow = 0;
+  function governor(fps) {
+    if (!settings.adaptive || eng.paused || document.hidden) return;
+    slow = fps < 24 ? slow + 1 : 0;
+    if (slow < 3) return;
+    slow = 0;
+    if (settings.quality === 'ultra') settings.quality = 'high';
+    else if (settings.quality === 'high') settings.quality = 'live';
+    else if (settings.resScale > 0.75) settings.resScale = 0.75;
+    else return;
+    applySettings(true, true);
+    if (panel.classList.contains('open')) buildPanel();
+  }
+
   // ------------------------------------------------------------ panel
   const CONTROLS = [
     { sec: 'Scene' },
     { k: 'scene', label: 'Scene', type: 'scene' },
+    { k: 'preset', label: 'Preset', type: 'preset', when: (sc) => sc.presets && sc.presets.length },
     { k: 'palette', label: 'Palette', type: 'palette' },
     { sec: 'Characters' },
     { k: 'glyphPx', label: 'Glyph size', min: 5, max: 32, step: 1, rebuild: true, fmt: (v) => v + 'px' },
@@ -118,6 +139,8 @@
     { k: 'glyphGamma', label: 'Glyph weight', min: 0.5, max: 1.4, step: 0.05, rebuild: true, invert: true },
     { k: 'sharp', label: 'Edge contrast', min: 1, max: 3, step: 0.05 },
     { k: 'cover', label: 'Ink density', min: 0.3, max: 1, step: 0.01 },
+    { k: 'dither', label: 'Texture mix', min: 0, max: 1.5, step: 0.05 },
+    { k: 'bigGlyphs', label: 'Depth type scale', type: 'toggle', when: (sc) => sc.bigDepth > 0 },
     { sec: 'World' },
     { k: 'detail', label: 'Scene detail', min: 0, max: 1, step: 0.01 },
     { k: 'atmosphere', label: 'Atmosphere', min: 0, max: 1, step: 0.01 },
@@ -131,6 +154,7 @@
     { k: 'quality', label: 'Quality', type: 'quality', rebuild: true },
     { k: 'resScale', label: 'Resolution', min: 0.5, max: 1, step: 0.05, rebuild: true, fmt: (v) => Math.round(v * 100) + '%' },
     { k: 'stability', label: 'Stability', min: 0, max: 1, step: 0.01 },
+    { k: 'adaptive', label: 'Auto quality', type: 'toggle' },
   ];
 
   function opt(v, label, sel) {
@@ -145,9 +169,15 @@
         continue;
       }
       const v = settings[c.k];
+      if (c.when && !c.when(sc)) continue;
+      if (c.type === 'toggle') {
+        h += `<div class="row sel"><label>${c.label}</label><button data-t="${c.k}" class="${v ? 'on' : ''}">${v ? 'On' : 'Off'}</button></div>`;
+        continue;
+      }
       if (c.type) {
         let o = '';
         if (c.type === 'scene') o = visibleScenes().map((s) => opt(s.id, s.name, s.id === v)).join('');
+        if (c.type === 'preset') o = opt(-1, 'Custom', v < 0) + sc.presets.map((p, i) => opt(i, p.name, i === v)).join('');
         if (c.type === 'palette') o = (sc.palettes || [{ name: 'Default' }]).map((p, i) => opt(i, p.name, i === v)).join('');
         if (c.type === 'font') o = A.fonts.map((f, i) => opt(i, f.label, i === v)).join('');
         if (c.type === 'quality') o = Object.entries(A.QUALITY).map(([k, q]) => opt(k, q.label, k === v)).join('');
@@ -169,7 +199,16 @@
     panel.innerHTML = h;
     panel.querySelectorAll('input[type=range]').forEach((el) => el.addEventListener('input', onInput));
     panel.querySelectorAll('select').forEach((el) => el.addEventListener('change', onSelect));
-    panel.querySelectorAll('button').forEach((el) => el.addEventListener('click', () => action(el.dataset.a)));
+    panel.querySelectorAll('button[data-a]').forEach((el) => el.addEventListener('click', () => action(el.dataset.a)));
+    panel.querySelectorAll('button[data-t]').forEach((el) =>
+      el.addEventListener('click', () => {
+        const k = el.dataset.t;
+        settings[k] = settings[k] ? 0 : 1;
+        el.classList.toggle('on', !!settings[k]);
+        el.textContent = settings[k] ? 'On' : 'Off';
+        applySettings(false);
+      })
+    );
     updateStats();
   }
   function fmt(c, v) {
@@ -181,6 +220,11 @@
     const c = CONTROLS.find((x) => x.k === k);
     settings[k] = parseFloat(e.target.value);
     e.target.nextElementSibling.textContent = fmt(c, settings[k]);
+    if (settings.preset >= 0) {
+      settings.preset = -1;
+      const ps = panel.querySelector('select[data-k=preset]');
+      if (ps) ps.value = '-1';
+    }
     applySettings(c.rebuild);
   }
   function onSelect(e) {
@@ -196,6 +240,18 @@
       return;
     }
     settings[k] = k === 'quality' ? v : parseFloat(v);
+    if (k === 'preset') {
+      const sc = sceneById(settings.scene);
+      const pr = sc.presets[settings.preset];
+      if (pr) {
+        const keep = { resScale: settings.resScale, quality: settings.quality, font: settings.font };
+        settings = Object.assign(sceneDefaults(sc), pr.settings || {}, keep, { preset: settings.preset });
+        if (!settings.glyphPx) settings.glyphPx = autoGlyph();
+      }
+      applySettings(true);
+      buildPanel();
+      return;
+    }
     if (k === 'palette') {
       const pal = (sceneById(settings.scene).palettes || [])[settings.palette];
       if (pal && pal.settings) Object.assign(settings, pal.settings);
