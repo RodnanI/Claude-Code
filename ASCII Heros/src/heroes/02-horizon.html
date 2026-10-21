@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Umbra · The shape of nothing</title>
+<meta name="description" content="An observatory landing hero: a ray-traced ASCII black hole with a lensed, Doppler-beamed accretion disk.">
+<meta name="ascii-hero" content='{"name":"Event Horizon","brand":"Umbra","kind":"Radio observatory","tech":"Schwarzschild photon orbits traced per glyph, Doppler beaming","accent":""}'>
+<style>
+:root{--bg:#030303;--fg:#f1efe9;--dim:rgba(241,239,233,.55);--faint:rgba(241,239,233,.16);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#efede6;--fg:#0a0a0a;--dim:rgba(10,10,10,.58);--faint:rgba(10,10,10,.16);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:12px/1.5 var(--mono);transition:background-color .6s}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{position:absolute;inset:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:24px clamp(16px,3.4vw,48px)}
+.mark{display:flex;align-items:center;gap:12px;font:600 13px/1 var(--sans);letter-spacing:.42em}
+.mark i{width:16px;height:16px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center}
+.mark i::after{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.links{display:flex;gap:32px;color:var(--dim);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.links a:hover{color:var(--fg)}
+.plate{font-size:11px;letter-spacing:.14em;text-transform:uppercase;display:flex;gap:10px;align-items:center}
+.plate span{color:var(--dim)}
+.plate button{border:1px solid var(--faint);padding:7px 12px;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;transition:border-color .3s}
+.plate button:hover{border-color:var(--dim)}
+.plate button b{font-weight:400}
+[data-theme=dark] .plate .neg,[data-theme=light] .plate .pos{opacity:.35}
+.copy{position:absolute;left:clamp(16px,3.4vw,48px);bottom:clamp(28px,8vh,88px);max-width:560px}
+.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:22px}
+h1{font:300 clamp(46px,6.6vw,104px)/.94 var(--sans);letter-spacing:-.045em;margin-bottom:24px}
+.sub{font:400 15px/1.6 var(--sans);color:var(--dim);max-width:440px;margin-bottom:30px}
+.ctas{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+.btn{font:500 13px/1 var(--sans);padding:15px 22px;background:var(--fg);color:var(--bg);letter-spacing:.01em;transition:transform .25s}
+.btn:hover{transform:translateY(-2px)}
+.link{font:500 13px/1 var(--sans);border-bottom:1px solid var(--faint);padding-bottom:4px}
+.link:hover{border-color:var(--fg)}
+.views{position:absolute;right:clamp(16px,3.4vw,48px);bottom:clamp(28px,8vh,88px);text-align:right}
+.views p{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.views .seg{display:inline-flex;border:1px solid var(--faint)}
+.views button{padding:9px 13px;font-size:11px;color:var(--dim);transition:color .2s,background-color .2s}
+.views button+button{border-left:1px solid var(--faint)}
+.views button[aria-pressed=true]{color:var(--bg);background:var(--fg)}
+.views .rx{margin-top:12px;font-size:10px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.views .rx b{font-weight:400;color:var(--fg)}
+svg.notes{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+svg.notes line{stroke:var(--dim);stroke-width:1}
+svg.notes circle{fill:none;stroke:var(--fg);stroke-width:1}
+svg.notes text{fill:var(--dim);font:10px var(--mono);letter-spacing:.14em;text-transform:uppercase}
+svg.notes text tspan.v{fill:var(--fg)}
+@media (max-width:820px){
+  .nav{padding:18px 16px}.links{display:none}.plate span{display:none}
+  .copy{left:16px;right:16px;bottom:96px}
+  h1{margin-bottom:16px}.sub{font-size:13.5px;margin-bottom:22px}.eyebrow{margin-bottom:14px}
+  .views{left:16px;right:16px;bottom:24px;text-align:left;display:flex;align-items:center;justify-content:space-between}
+  .views p{margin:0}.views .rx{display:none}.views button{padding:8px 10px}
+  svg.notes{display:none}
+}
+@media (max-height:640px) and (min-width:821px){svg.notes{display:none}}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="sky" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#"><i aria-hidden="true"></i>UMBRA</a>
+    <nav class="links" aria-label="Primary"><a href="#">The array</a><a href="#">Data release</a><a href="#">Papers</a><a href="#">Visit</a></nav>
+    <div class="plate"><span>Plate 041</span><button data-theme-toggle aria-label="Toggle negative plate"><b class="pos">Positive</b> / <b class="neg">Negative</b></button></div>
+  </header>
+  <svg class="notes" aria-hidden="true"></svg>
+  <section class="copy">
+    <p class="eyebrow">UMB-1 &middot; 6.5 &times; 10<sup>9</sup> M&#9737; &middot; 55 Mly</p>
+    <h1>The shape<br>of nothing.</h1>
+    <p class="sub">Umbra stitches radio dishes on four continents into one lens the width of the Earth. This frame was traced from 3.5 petabytes of static.</p>
+    <div class="ctas"><a class="btn" href="#">Request observing time</a><a class="link" href="#">Read the data release</a></div>
+  </section>
+  <div class="views">
+    <p>Inclination</p>
+    <div class="seg" role="group" aria-label="Viewing inclination"><button data-i="86" aria-pressed="true">86&deg;</button><button data-i="74">74&deg;</button><button data-i="52">52&deg;</button><button data-i="17">17&deg;</button></div>
+    <p class="rx">Downlink <b id="rx">000</b>% &middot; frame <b id="fr">0000</b></p>
+  </div>
+</main>
+<script>
+(() => {
+  const A = ASCII;
+  const g = A.grid(document.getElementById('sky'), { levels: 14, alpha: (t) => Math.pow(t, 1.15), size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => setup() });
+  const RAMP = A.ramp(" .'`:;-~=+*xo#%@"), NR = RAMP.length - 1;
+  const R_IN = 5.4, R_OUT = 19.5;
+  let D = 30;
+  let incl = 86, F = 800, CXp = 0, CYp = 0, scan = 0, per = 1, frameNo = 0;
+  let T, Rr, Ph, Om, Lr, Pr, Dp, St, Sp;
+  const notes = document.querySelector('svg.notes'), elRx = document.getElementById('rx'), elFr = document.getElementById('fr');
+
+  function setup() {
+    const n = g.n;
+    T = new Uint8Array(n); Rr = new Float32Array(n); Ph = new Float32Array(n); Om = new Float32Array(n);
+    Lr = new Float32Array(n); Pr = new Float32Array(n); Dp = new Float32Array(n); St = new Float32Array(n); Sp = new Float32Array(n);
+    const W = g.w, H = g.h, mob = W < 820;
+    CXp = mob ? W * 0.5 : W * 0.62;
+    CYp = mob ? H * 0.34 : H * 0.44;
+    F = mob ? Math.max(W * 1.02, 300) : Math.min(W * 0.62, H * 1.25);
+    restart();
+  }
+  function restart() { D = 30 + (86 - incl) * 0.22; scan = 0; per = Math.max(1, Math.ceil(g.rows / 50)); notesDraw(); }
+
+  // integer hash to [0,1)
+  const hash = (x, y, z) => { let h = (x * 374761393 + y * 668265263 + z * 2147483647) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+
+  // trace one glyph row: each ray lives in the plane of the camera position and its direction,
+  // where the Schwarzschild photon orbit obeys u'' = 3u^2 - u (u = 1/r, M = 1)
+  function traceRow(r) {
+    const ia = (incl * Math.PI) / 180;
+    const cy = Math.cos(ia), cz = -Math.sin(ia);            // camera direction from the hole (unit)
+    const fx = 0, fy = -cy, fz = -cz;                         // forward
+    const ux = 0, uy = fz, uz = -fy;                          // up = forward x right, right = +x
+    const { cols, cw, ch } = g, sy = ((r + 0.5) * ch - CYp) / F;
+    for (let c = 0; c < cols; c++) {
+      const i = r * cols + c, sx = ((c + 0.5) * cw - CXp) / F;
+      let dx = fx + sx, dy = fy - uy * sy, dz = fz - uz * sy;
+      const dl = Math.hypot(dx, dy, dz); dx /= dl; dy /= dl; dz /= dl;
+      const dr = dy * cy + dz * cz;                           // radial part (e1 = camera direction)
+      let px = dx, py = dy - dr * cy, pz = dz - dr * cz;
+      const dt = Math.hypot(px, py, pz);
+      T[i] = 2; St[i] = 0;
+      if (dt < 1e-7) continue;
+      px /= dt; py /= dt; pz /= dt;                           // e2
+      let u = 1 / D, v = (-u * dr) / dt, phi = 0, prevY = cy;
+      const h = 0.022;
+      for (let k = 0; k < 900; k++) {
+        const u0 = u;
+        const k1u = v, k1v = 3 * u * u - u;
+        let a = u + 0.5 * h * k1u; const k2u = v + 0.5 * h * k1v, k2v = 3 * a * a - a;
+        a = u + 0.5 * h * k2u; const k3u = v + 0.5 * h * k2v, k3v = 3 * a * a - a;
+        a = u + h * k3u; const k4u = v + h * k3v, k4v = 3 * a * a - a;
+        u += (h / 6) * (k1u + 2 * k2u + 2 * k3u + k4u);
+        v += (h / 6) * (k1v + 2 * k2v + 2 * k3v + k4v);
+        phi += h;
+        const cp = Math.cos(phi), sp = Math.sin(phi), yv = cp * cy + sp * py;
+        if ((yv > 0) !== (prevY > 0)) {
+          const f = prevY / (prevY - yv), uc = u0 + (u - u0) * f, rc = 1 / uc;
+          if (rc > R_IN * 0.92 && rc < R_OUT) {
+            const pc = phi - h + h * f, c2 = Math.cos(pc), s2 = Math.sin(pc);
+            const hx = s2 * px * rc, hz = (c2 * cz + s2 * pz) * rc;
+            // photon direction at the hit, derived from dP/dphi
+            const tx = c2 * px * rc - hx * v * rc, tz = (-s2 * cz + c2 * pz) * rc - hz * v * rc;
+            const ty = (-s2 * cy + c2 * py) * rc;
+            const tl = Math.hypot(tx, ty, tz) || 1;
+            const pd = Math.atan2(hz, hx);
+            const beta = Math.sqrt(1 / (rc - 2)), gam = 1 / Math.sqrt(1 - beta * beta);
+            const cosT = (-(-Math.sin(pd)) * tx - Math.cos(pd) * tz) / tl;  // velocity . (-k)
+            const gf = (1 / (gam * (1 - beta * cosT))) * Math.sqrt(1 - 2 / rc);
+            T[i] = 1; Rr[i] = rc; Ph[i] = pd; Om[i] = Math.pow(rc, -1.5); Lr[i] = Math.log(rc) * 3.1;
+            Pr[i] = Math.pow(R_IN / rc, 2.1) * A.smooth(R_IN * 0.92, R_IN * 1.2, rc) * (1 - A.smooth(R_OUT * 0.5, R_OUT, rc));
+            Dp[i] = gf * gf;
+            break;
+          }
+        }
+        prevY = yv;
+        if (u > 0.5) break;                                   // inside the horizon
+        if (u <= 0 || (v < 0 && u < 1 / (R_OUT * 1.08))) {     // escaping, no disk left to cross
+          const uu = Math.max(u, 1e-4), c2 = cp, s2 = sp;
+          const ex = s2 * px, ey = c2 * cy + s2 * py, ez = c2 * cz + s2 * pz;
+          const kx = (-s2 * 0 + c2 * px) - ex * v / uu, ky = (-s2 * cy + c2 * py) - ey * v / uu, kz = (-s2 * cz + c2 * pz) - ez * v / uu;
+          const kl = Math.hypot(kx, ky, kz) || 1;
+          T[i] = 0;
+          const hs = hash(Math.floor((kx / kl) * 210), Math.floor((ky / kl) * 210), Math.floor((kz / kl) * 210));
+          if (hs > 0.976) { St[i] = (hs - 0.976) / 0.024; Sp[i] = hash(c, r, 7); }
+          break;
+        }
+      }
+    }
+  }
+
+  function notesDraw() {
+    const W = g.w, H = g.h;
+    const sr = (F * 5.196) / D, ia = (incl * Math.PI) / 180;
+    const ring = (sr * 1.02).toFixed(1);
+    const xIn = CXp + ((F * R_IN) / D) * 1.02, yIn = CYp + sr * 0.15 * Math.cos(ia);
+    const fx0 = CXp + sr * 0.35, fy0 = CYp - sr * 1.22, fx1 = CXp + sr * 1.15, fy1 = Math.max(96, CYp - sr * 2.05);
+    const L = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    const lab = (x, y, a, b, anchor = 'start') => `<text x="${x}" y="${y}" text-anchor="${anchor}">${a}<tspan class="v" dx="8">${b}</tspan></text>`;
+    const ax = CXp - sr * 0.71, ay = CYp - sr * 0.71, ey = Math.max(104, CYp - sr * 2.1), ex = ax - (ay - ey);
+    notes.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    notes.innerHTML =
+      `<circle cx="${CXp}" cy="${CYp}" r="${ring}" stroke-dasharray="2 5" opacity=".5"/>` +
+      L(ax, ay, ex, ey) + L(ex, ey, ex - 70, ey) + lab(ex - 70, ey - 8, 'Shadow', '2.6 r<tspan baseline-shift="sub" font-size="7">s</tspan>') +
+      L(xIn, yIn, xIn + 40, yIn + 70) + L(xIn + 40, yIn + 70, xIn + 120, yIn + 70) + lab(xIn + 44, yIn + 62, 'ISCO', '3 r<tspan baseline-shift="sub" font-size="7">s</tspan>') +
+      L(fx0, fy0, fx1, fy1) + L(fx1, fy1, fx1 + 128, fy1) + lab(fx1 + 4, fy1 - 8, 'Far side', 'lensed');
+  }
+
+  // hot spots orbiting on their own Keplerian clocks
+  const spots = [{ r: 7.2, p: 0.4 }, { r: 10.5, p: 3.1 }, { r: 13.8, p: 5 }];
+  setup();
+  A.loop((dt, t) => {
+    if (scan < g.rows) {
+      const end = Math.min(g.rows, scan + per);
+      for (let r = scan; r < end; r++) traceRow(r);
+      scan = end;
+    }
+    g.clear();
+    const { chr, lvl, n, cols } = g, ts = t * 26, flick = 1 + 0.05 * Math.sin(t * 2.3) * Math.sin(t * 0.71);
+    const EXP = 3.1 * flick;
+    for (const s of spots) s.a = s.p + Math.pow(s.r, -1.5) * ts;
+    for (let i = 0; i < n; i++) {
+      const ty = T[i];
+      if (ty === 1) {
+        const r = Rr[i], a = Ph[i] - Om[i] * ts;
+        let I = Pr[i] * (0.74 + 0.3 * A.noise3(Math.cos(a) * 1.7, Math.sin(a) * 1.7, Lr[i]) + 0.12 * Math.sin(a * 2 + Lr[i] * 2.6));
+        for (const s of spots) {
+          let da = Ph[i] - s.a; da = Math.atan2(Math.sin(da), Math.cos(da));
+          const dr = r - s.r;
+          I += Pr[i] * 1.4 * Math.exp(-da * da * 9 - dr * dr * 0.9);
+        }
+        I *= Dp[i];
+        const b = 1 - Math.exp(-Math.pow(I, 0.7) * EXP);
+        chr[i] = RAMP[Math.max(1, Math.round(b * NR))]; lvl[i] = Math.max(1, Math.round(b * 14));
+      } else if (ty === 0) {
+        if (St[i] > 0) {
+          const b = St[i] * (0.55 + 0.45 * Math.sin(t * 1.6 + Sp[i] * 40));
+          chr[i] = b > 0.86 ? 42 : b > 0.55 ? 43 : 46; lvl[i] = 2 + Math.round(b * 8);
+        } else if (Math.random() < 0.0016) { chr[i] = 46; lvl[i] = 1; }
+      }
+    }
+    if (scan < g.rows) {
+      // the incoming scan line of the downlink
+      for (let c = 0; c < cols; c++) g.put(c, scan, c % 3 ? 45 : 61, 9);
+      g.text(2, Math.min(g.rows - 1, scan + 1), `RX ${String(Math.round((scan / g.rows) * 100)).padStart(3, '0')}%`, 6);
+    }
+    g.draw();
+    if ((frameNo++ & 7) === 0) { elRx.textContent = String(Math.round((scan / g.rows) * 100)).padStart(3, '0'); elFr.textContent = String(Math.floor(t * 24) % 10000).padStart(4, '0'); }
+  });
+
+  const seg = document.querySelector('.seg');
+  seg.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b || b.getAttribute('aria-pressed') === 'true') return;
+    seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    incl = +b.dataset.i;
+    restart();
+  });
+})();
+</script>
+</body>
+</html>

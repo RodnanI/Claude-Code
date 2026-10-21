@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Morphogen · Tissue, compiled</title>
+<meta name="description" content="A synthetic biology landing hero: Gray-Scott reaction-diffusion growing ASCII Turing patterns in a petri dish.">
+<meta name="ascii-hero" content='{"name":"Morphogen","brand":"Morphogen","kind":"Synthetic biology lab","tech":"Gray-Scott reaction-diffusion with morphing presets","accent":""}'>
+<style>
+:root{--bg:#070707;--fg:#ecece8;--dim:rgba(236,236,232,.55);--faint:rgba(236,236,232,.14);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#f4f4f1;--fg:#0e0e0e;--dim:rgba(14,14,14,.58);--faint:rgba(14,14,14,.13);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--sans);transition:background-color .5s}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);column-gap:clamp(28px,5vw,90px);padding:0 clamp(16px,3.4vw,48px);pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:22px 0;font-size:13px}
+.mark{font-weight:600;letter-spacing:-.01em;font-size:16px;display:flex;gap:9px;align-items:center}
+.mark i{width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;background:radial-gradient(circle at 35% 35%,currentColor 0 2px,transparent 2.5px),radial-gradient(circle at 68% 62%,currentColor 0 1.6px,transparent 2px)}
+.links{display:flex;gap:28px;color:var(--dim)}.links a:hover{color:var(--fg)}
+.toggle{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--faint);padding:6px 10px}
+.toggle:hover{border-color:var(--fg)}
+.copy{align-self:center;max-width:560px;padding-bottom:3vh}
+.tag{display:inline-flex;gap:10px;font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:26px}
+.tag b{font-weight:400;color:var(--fg)}
+h1{font:500 clamp(48px,6.6vw,108px)/.92 var(--sans);letter-spacing:-.055em}
+.sub{margin-top:26px;max-width:440px;color:var(--dim);font-size:16px;line-height:1.55}
+.ctas{display:flex;gap:12px;margin-top:30px}
+.btn{background:var(--fg);color:var(--bg);padding:14px 20px;font-weight:500;border-radius:2px}
+.ghost{border:1px solid var(--faint);padding:13px 19px;border-radius:2px}
+.ghost:hover{border-color:var(--fg)}
+.card{margin-top:38px;border-top:1px solid var(--faint);padding-top:16px;font:11px var(--mono);letter-spacing:.06em;color:var(--dim);display:grid;grid-template-columns:repeat(4,auto);gap:6px 26px;justify-content:start}
+.card b{display:block;font-weight:400;color:var(--fg);font-size:13px;margin-top:3px;font-variant-numeric:tabular-nums}
+.presets{display:flex;gap:6px;margin-top:16px;flex-wrap:wrap}
+.presets button{font:11px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;border:1px solid var(--faint);color:var(--dim)}
+.presets button[aria-pressed=true]{color:var(--bg);background:var(--fg);border-color:var(--fg)}
+.dish{grid-column:2;grid-row:2;align-self:center;width:min(46vw,calc(100svh - 170px),720px);aspect-ratio:1;position:relative;margin-bottom:3vh}
+.scale{position:absolute;left:0;bottom:-30px;font:10.5px var(--mono);letter-spacing:.1em;color:var(--dim);display:flex;gap:10px;align-items:center}
+.scale i{display:block;width:72px;height:6px;border:1px solid var(--dim);border-top:0}
+.spec{position:absolute;right:0;bottom:-30px;font:10.5px var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+@media (max-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr)}
+  .nav{padding:16px 0}.links{display:none}
+  .dish{grid-column:1;grid-row:2;width:min(100% - 24px,40svh);justify-self:center;margin:6px 0 36px}
+  .copy{grid-row:3;align-self:start;padding:0}.tag{margin-bottom:12px}.sub{display:none}.ctas{margin-top:18px}
+  .card{display:none}.presets{margin-top:14px}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="dish" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#"><i aria-hidden="true"></i>Morphogen</a>
+    <nav class="links" aria-label="Primary"><a href="#">Platform</a><a href="#">Research</a><a href="#">Careers</a><a href="#">Contact</a></nav>
+    <button class="toggle" data-theme-toggle aria-label="Toggle dark mode">Brightfield</button>
+  </header>
+  <section class="copy">
+    <p class="tag">Specimen <b>MG-07</b> / live culture</p>
+    <h1>Tissue,<br>compiled.</h1>
+    <p class="sub">Morphogen writes developmental programs for engineered cells. You describe the shape. Two chemicals and a few thousand generations do the rest.</p>
+    <div class="ctas"><a class="btn" href="#">Request a pilot</a><a class="ghost" href="#">Read the preprint</a></div>
+    <div class="card" aria-hidden="true"><span>Feed<b id="fF">0.0000</b></span><span>Kill<b id="fK">0.0000</b></span><span>Generation<b id="gen">0</b></span><span>Coverage<b id="cov">0%</b></span></div>
+    <div class="presets" role="group" aria-label="Pattern presets"></div>
+  </section>
+  <div class="dish" aria-hidden="true"><span class="scale"><i></i>100 &micro;m</span><span class="spec">Click to seed</span></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('dish'), { levels: 12, size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const RAMP = A.ramp(' .:-=+*#%@'), dishEl = document.querySelector('.dish'), presetsEl = document.querySelector('.presets');
+  const PRESETS = [['Mitosis', 0.0367, 0.0649], ['Coral', 0.0545, 0.062], ['Maze', 0.029, 0.057], ['Worms', 0.078, 0.061], ['Solitons', 0.03, 0.062]];
+  let N = 0, U, V, U2, V2, inside, XM, XP, X0 = 0, Y0 = 0, D = 0, F = PRESETS[0][1], K = PRESETS[0][2], tF = F, tK = K, gen = 0, pi = 0;
+  PRESETS.forEach(([name], i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = name; b.setAttribute('aria-pressed', String(i === 0));
+    b.onclick = () => { pi = i; tF = PRESETS[i][1]; tK = PRESETS[i][2]; [...presetsEl.children].forEach((x, k) => x.setAttribute('aria-pressed', String(k === i))); };
+    presetsEl.appendChild(b);
+  });
+
+  function layout() {
+    const r = g.rect(dishEl);
+    X0 = r.x0; Y0 = r.y0; D = r.x1 - r.x0;
+    N = Math.max(60, Math.round(D / (g.cw * 0.62)));
+    XM = new Int32Array(N); XP = new Int32Array(N);
+    for (let k = 0; k < N; k++) { XM[k] = (k + N - 1) % N; XP[k] = (k + 1) % N; }
+    U = new Float32Array(N * N).fill(1); V = new Float32Array(N * N); U2 = new Float32Array(N * N); V2 = new Float32Array(N * N);
+    inside = new Uint8Array(N * N);
+    const h = N / 2;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) inside[y * N + x] = Math.hypot(x + 0.5 - h, y + 0.5 - h) < h - 1 ? 1 : 0;
+    for (let s = 0; s < 40; s++) seed(N * (0.05 + Math.random() * 0.9), N * (0.05 + Math.random() * 0.9), 2 + Math.random() * 2.5);
+    gen = 0;
+  }
+  function seed(cx, cy, r) {
+    for (let y = Math.max(1, (cy - r) | 0); y < Math.min(N - 1, cy + r); y++) for (let x = Math.max(1, (cx - r) | 0); x < Math.min(N - 1, cx + r); x++) {
+      const i = y * N + x;
+      if (Math.hypot(x - cx, y - cy) < r) { U[i] = 0.5; V[i] = 0.25 + Math.random() * 0.05; }
+    }
+  }
+  // Gray-Scott: U + 2V -> 3V, U is fed at rate F, V is removed at rate F + K.
+  // The domain wraps around; the dish is only a window onto it, so its wall never feeds the reaction.
+  function step() {
+    for (let y = 0; y < N; y++) {
+      const r = y * N, rm = XM[y] * N, rp = XP[y] * N;
+      for (let x = 0; x < N; x++) {
+        const i = r + x, l = XM[x], h = XP[x];
+        const u = U[i], v = V[i];
+        const lu = 0.2 * (U[r + l] + U[r + h] + U[rm + x] + U[rp + x]) + 0.05 * (U[rm + l] + U[rm + h] + U[rp + l] + U[rp + h]) - u;
+        const lv = 0.2 * (V[r + l] + V[r + h] + V[rm + x] + V[rp + x]) + 0.05 * (V[rm + l] + V[rm + h] + V[rp + l] + V[rp + h]) - v;
+        const uvv = u * v * v;
+        U2[i] = u + (lu - uvv + F * (1 - u));
+        V2[i] = v + (0.5 * lv + uvv - (F + K) * v);
+      }
+    }
+    let t = U; U = U2; U2 = t; t = V; V = V2; V2 = t;
+    gen++;
+  }
+
+  const fF = document.getElementById('fF'), fK = document.getElementById('fK'), genEl = document.getElementById('gen'), covEl = document.getElementById('cov');
+  layout();
+  for (let k = 0; k < 1300; k++) step();
+  let hud = 0;
+  A.loop((dt, t) => {
+    F += (tF - F) * Math.min(1, dt * 0.7); K += (tK - K) * Math.min(1, dt * 0.7);
+    const its = A.reduced ? 3 : 12;
+    for (let k = 0; k < its; k++) step();
+    if (P.down && P.active) {
+      const sx = ((P.x - X0) / D) * N, sy = ((P.y - Y0) / D) * N;
+      if (sx > 0 && sy > 0 && sx < N && sy < N) seed(sx, sy, 2.5);
+    }
+    g.clear();
+    const { cols, rows, cw, ch, chr, lvl } = g;
+    const c0 = Math.floor(X0 / cw), c1 = Math.ceil((X0 + D) / cw), r0 = Math.floor(Y0 / ch), r1 = Math.ceil((Y0 + D) / ch);
+    let on = 0, all = 0;
+    for (let r = Math.max(0, r0); r < Math.min(rows, r1); r++) {
+      for (let c = Math.max(0, c0); c < Math.min(cols, c1); c++) {
+        const sx = (((c + 0.5) * cw - X0) / D) * N, sy = (((r + 0.5) * ch - Y0) / D) * N;
+        const x = sx | 0, y = sy | 0;
+        if (x < 0 || y < 0 || x >= N || y >= N) continue;
+        if (!inside[y * N + x]) continue;
+        all++;
+        // average every sim cell under this glyph
+        const xa = Math.max(0, (((c * cw - X0) / D) * N) | 0), xb = Math.min(N - 1, ((((c + 1) * cw - X0) / D) * N) | 0);
+        const ya = Math.max(0, (((r * ch - Y0) / D) * N) | 0), yb = Math.min(N - 1, ((((r + 1) * ch - Y0) / D) * N) | 0);
+        let v = 0, n = 0;
+        for (let yy = ya; yy <= yb; yy++) for (let xx = xa; xx <= xb; xx++) { v += V[yy * N + xx]; n++; }
+        v = A.clamp((v / n) * 2.7, 0, 1);
+        if (v > 0.3) on++;
+        if (v < 0.06) { if ((c + r) % 7 === 0) { chr[r * cols + c] = 46; lvl[r * cols + c] = 1; } continue; }
+        chr[r * cols + c] = RAMP[Math.max(1, Math.round(v * 9))]; lvl[r * cols + c] = Math.max(1, Math.round(v * 12));
+      }
+    }
+    // dish rim, graduations and a reticle
+    const cx = X0 + D / 2, cy = Y0 + D / 2, R = D / 2;
+    const steps = Math.ceil((6.283 * R) / (cw * 0.7));
+    for (let j = 0; j < steps; j++) {
+      const a = (j / steps) * 6.283, x = cx + Math.cos(a) * (R + cw * 0.6), y = cy + Math.sin(a) * (R + cw * 0.6);
+      g.put((x / cw) | 0, (y / ch) | 0, A.lineChar(-Math.sin(a) / cw, Math.cos(a) / ch), 7);
+    }
+    for (let k = 0; k < 36; k++) {
+      const a = (k / 36) * 6.283, len = k % 9 === 0 ? 2.2 : 1.2;
+      for (let s = 1.6; s <= 1.6 + len; s += 0.8) g.put(((cx + Math.cos(a) * (R + cw * s * 1.2)) / cw) | 0, ((cy + Math.sin(a) * (R + cw * s * 1.2)) / ch) | 0, 46, k % 9 === 0 ? 6 : 3);
+    }
+    g.put((cx / cw) | 0, (cy / ch) | 0, 43, 5);
+    g.draw();
+    if ((hud -= dt) < 0) {
+      hud = 0.2;
+      fF.textContent = F.toFixed(4); fK.textContent = K.toFixed(4);
+      genEl.textContent = gen.toLocaleString('en-US'); covEl.textContent = Math.round((on / Math.max(1, all)) * 100) + '%';
+    }
+  });
+})();
+</script>
+</body>
+</html>

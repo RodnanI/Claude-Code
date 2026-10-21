@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cairn · The mountain, line by line</title>
+<meta name="description" content="An alpine maps landing hero: a living ASCII topographic sheet with marching-squares contours, hillshade and a route.">
+<meta name="ascii-hero" content='{"name":"Contour","brand":"Cairn","kind":"Offline alpine maps","tech":"Marching-squares isolines, hillshade, terrain sculpting","accent":"#ff5a1f"}'>
+<style>
+:root{--bg:#0b0c0b;--fg:#e8e7e1;--dim:rgba(232,231,225,.55);--faint:rgba(232,231,225,.16);--accent:#ff5a1f;--panel:rgba(11,12,11,.86);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#efede5;--fg:#121210;--dim:rgba(18,18,16,.58);--faint:rgba(18,18,16,.16);--accent:#e8480f;--panel:rgba(239,237,229,.9);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:12px/1.5 var(--mono);transition:background-color .5s}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{position:absolute;inset:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:20px clamp(16px,3vw,40px);letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+.mark{display:flex;gap:10px;align-items:center;font:700 15px/1 var(--sans);letter-spacing:.02em;text-transform:none}
+.mark i{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--accent)}
+.navr{display:flex;gap:26px;align-items:center}
+.navr a{color:var(--dim)}.navr a:hover{color:var(--fg)}
+.navr button{border:1px solid var(--faint);padding:6px 10px;letter-spacing:.12em;text-transform:uppercase;font-size:10.5px;background:var(--panel)}
+.legend{position:absolute;left:clamp(16px,3vw,40px);bottom:clamp(16px,4vh,40px);width:min(470px,calc(100% - 32px));background:var(--panel);border:1px solid var(--faint);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:auto}
+.legend header{display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--faint);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.legend .body{padding:22px 16px 20px}
+h1{font:700 clamp(36px,4.2vw,62px)/.98 var(--sans);letter-spacing:-.035em}
+.sub{margin-top:16px;color:var(--dim);font:14.5px/1.55 var(--sans);max-width:400px}
+.ctas{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.btn{background:var(--accent);color:#fff;padding:12px 16px;font:600 13px/1 var(--sans)}
+.ghost{border:1px solid var(--fg);padding:11px 15px;font:600 13px/1 var(--sans)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;padding:14px 16px;border-top:1px solid var(--faint);font-size:10.5px;letter-spacing:.06em;color:var(--dim);align-items:center}
+.keys i{display:block;width:30px;height:0;border-top:1px solid var(--dim)}
+.keys i.idx{border-top-width:2px;border-color:var(--fg)}
+.keys i.rt{border-top:2px dotted var(--accent)}
+.scale{display:flex;align-items:center;gap:10px;padding:0 16px 14px;font-size:10px;color:var(--dim)}
+.scale span{display:flex;height:6px;width:160px;border:1px solid var(--dim)}
+.scale span b{flex:1}.scale span b:nth-child(odd){background:var(--dim)}
+.probe{position:fixed;left:0;top:0;pointer-events:none;font-size:10.5px;letter-spacing:.06em;padding:5px 8px;background:var(--panel);border:1px solid var(--faint);white-space:nowrap;opacity:0;transition:opacity .2s;transform:translate(14px,14px)}
+.probe b{color:var(--accent);font-weight:400}
+@media (max-width:760px){
+  .nav{padding:16px}.navr a{display:none}
+  .legend{left:16px;right:16px;bottom:16px;width:auto}
+  .legend .body{padding:16px 14px 14px}.sub{font-size:13.5px;margin-top:10px}.ctas{margin-top:16px}
+  .keys,.scale{display:none}
+}
+</style>
+<script>
+/* ASCII Heroes core. Inlined into every hero at build time.
+   Theme state, a batched glyph-grid renderer, pointer tracking, a frame loop, noise. */
+(() => {
+  'use strict';
+  const A = (window.ASCII = {});
+  const root = document.documentElement;
+  const mq = (q) => matchMedia(q);
+
+  A.MONO = 'ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono","Liberation Mono",monospace';
+  A.reduced = mq('(prefers-reduced-motion: reduce)').matches;
+  A.coarse = mq('(pointer: coarse)').matches;
+
+  // reset, prepended so every hero stylesheet wins the cascade
+  const reset = document.createElement('style');
+  reset.textContent =
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}' +
+    'html,body{height:100%}body{overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}' +
+    'button,input,textarea,select{font:inherit;color:inherit;background:none;border:0;border-radius:0;outline:0}button{cursor:pointer}' +
+    'a{color:inherit;text-decoration:none}:focus-visible{outline:1px dashed currentColor;outline-offset:4px}' +
+    'canvas.ascii{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;display:block;touch-action:none}' +
+    '.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}';
+  document.head.prepend(reset);
+
+  /* ---------- theme ---------- */
+  const KEY = 'ascii-heroes:theme';
+  let theme = null;
+  try { theme = localStorage.getItem(KEY); } catch (e) {}
+  if (theme !== 'dark' && theme !== 'light') theme = mq('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  root.dataset.theme = theme;
+  const subs = [];
+  const sync = () => document.querySelectorAll('[data-theme-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(theme === 'dark')));
+  A.theme = {
+    get: () => theme,
+    on: (fn) => subs.push(fn),
+    set(t, quiet) {
+      if ((t !== 'dark' && t !== 'light') || t === theme) return;
+      theme = t;
+      root.dataset.theme = t;
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+      sync();
+      subs.forEach((f) => f(t));
+      if (!quiet && window.parent !== window) window.parent.postMessage({ asciiTheme: t }, '*');
+    },
+    toggle: () => A.theme.set(theme === 'dark' ? 'light' : 'dark'),
+  };
+  addEventListener('message', (e) => { if (e.data && e.data.asciiTheme) A.theme.set(e.data.asciiTheme, true); });
+  // inside the showcase, hand navigation keys up to the shell
+  if (window.parent !== window) addEventListener('keydown', (e) => {
+    if (/^(ArrowLeft|ArrowRight|Escape)$/.test(e.key) && !(e.target.closest && e.target.closest('input,textarea'))) window.parent.postMessage({ asciiKey: e.key }, '*');
+  });
+  document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-theme-toggle]')) A.theme.toggle(); });
+  document.addEventListener('DOMContentLoaded', sync);
+
+  /* ---------- small helpers ---------- */
+  A.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  A.lerp = (a, b, t) => a + (b - a) * t;
+  A.smooth = (e0, e1, x) => { const t = A.clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+  A.ramp = (s) => Array.from(s, (c) => c.charCodeAt(0));
+  A.css = (name, el) => getComputedStyle(el || root).getPropertyValue(name).trim();
+  A.rgb = (s) => {
+    s = (s || '').trim();
+    if (s[0] === '#') {
+      let h = s.slice(1);
+      if (h.length === 3) h = h.replace(/./g, '$&$&');
+      const n = parseInt(h, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const m = s.match(/[\d.]+/g);
+    return m ? [+m[0], +m[1], +m[2]] : [255, 255, 255];
+  };
+  A.rng = (a) => () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  // line glyph for a direction given in cell units (dx right, dy down)
+  const LINES = A.ramp('-\\|/');
+  A.lineChar = (dx, dy) => {
+    let a = Math.atan2(dy, dx);
+    if (a < 0) a += Math.PI;
+    return LINES[Math.round(a / (Math.PI / 4)) & 3];
+  };
+  // white-on-transparent offscreen drawing, returned as an alpha mask
+  A.mask = (w, h, draw) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.fillStyle = x.strokeStyle = '#fff';
+    draw(x, w, h);
+    const d = x.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h);
+    for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3];
+    return m;
+  };
+
+  /* ---------- simplex noise (Gustavson), seedable ---------- */
+  const perm = new Uint8Array(512);
+  const G = [1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0, 1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1, 0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1];
+  A.seed = (s) => {
+    const r = A.rng(s), p = [];
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) { const j = (r() * (i + 1)) | 0; const t = p[i]; p[i] = p[j]; p[j] = t; }
+    for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  };
+  A.seed(1337);
+  const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
+  A.noise2 = (x, y) => {
+    const s = (x + y) * F2, i = Math.floor(x + s), j = Math.floor(y + s), t = (i + j) * G2;
+    const x0 = x - i + t, y0 = y - j + t, i1 = x0 > y0 ? 1 : 0, j1 = 1 - i1;
+    const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2, x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
+    const ii = i & 255, jj = j & 255;
+    let n = 0, q, g;
+    q = 0.5 - x0 * x0 - y0 * y0; if (q > 0) { g = (perm[ii + perm[jj]] % 12) * 3; q *= q; n += q * q * (G[g] * x0 + G[g + 1] * y0); }
+    q = 0.5 - x1 * x1 - y1 * y1; if (q > 0) { g = (perm[ii + i1 + perm[jj + j1]] % 12) * 3; q *= q; n += q * q * (G[g] * x1 + G[g + 1] * y1); }
+    q = 0.5 - x2 * x2 - y2 * y2; if (q > 0) { g = (perm[ii + 1 + perm[jj + 1]] % 12) * 3; q *= q; n += q * q * (G[g] * x2 + G[g + 1] * y2); }
+    return 70 * n;
+  };
+  A.noise3 = (x, y, z) => {
+    const s = (x + y + z) / 3, i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
+    const t = (i + j + k) / 6, x0 = x - i + t, y0 = y - j + t, z0 = z - k + t;
+    let i1, j1, k1, i2, j2, k2;
+    if (x0 >= y0) {
+      if (y0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+      else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
+      else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
+    } else if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
+    else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
+    else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+    const x1 = x0 - i1 + 1 / 6, y1 = y0 - j1 + 1 / 6, z1 = z0 - k1 + 1 / 6;
+    const x2 = x0 - i2 + 1 / 3, y2 = y0 - j2 + 1 / 3, z2 = z0 - k2 + 1 / 3;
+    const x3 = x0 - 0.5, y3 = y0 - 0.5, z3 = z0 - 0.5;
+    const ii = i & 255, jj = j & 255, kk = k & 255;
+    let n = 0, q, g;
+    q = 0.6 - x0 * x0 - y0 * y0 - z0 * z0; if (q > 0) { g = (perm[ii + perm[jj + perm[kk]]] % 12) * 3; q *= q; n += q * q * (G[g] * x0 + G[g + 1] * y0 + G[g + 2] * z0); }
+    q = 0.6 - x1 * x1 - y1 * y1 - z1 * z1; if (q > 0) { g = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12) * 3; q *= q; n += q * q * (G[g] * x1 + G[g + 1] * y1 + G[g + 2] * z1); }
+    q = 0.6 - x2 * x2 - y2 * y2 - z2 * z2; if (q > 0) { g = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12) * 3; q *= q; n += q * q * (G[g] * x2 + G[g + 1] * y2 + G[g + 2] * z2); }
+    q = 0.6 - x3 * x3 - y3 * y3 - z3 * z3; if (q > 0) { g = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]] % 12) * 3; q *= q; n += q * q * (G[g] * x3 + G[g + 1] * y3 + G[g + 2] * z3); }
+    return 32 * n;
+  };
+  A.fbm2 = (x, y, oct = 4) => { let s = 0, a = 0.5, f = 1, n = 0; for (let o = 0; o < oct; o++) { s += a * A.noise2(x * f, y * f); n += a; a *= 0.5; f *= 2.03; } return s / n; };
+
+  /* ---------- pointer ---------- */
+  const P = (A.pointer = { x: -1e5, y: -1e5, vx: 0, vy: 0, down: false, active: false, moved: 0, type: 'mouse' });
+  let lastT = 0;
+  const move = (e) => {
+    const now = performance.now(), dt = Math.max(8, now - lastT);
+    if (P.active && now - lastT < 120) {
+      P.vx = P.vx * 0.5 + ((e.clientX - P.x) / dt) * 500;
+      P.vy = P.vy * 0.5 + ((e.clientY - P.y) / dt) * 500;
+    } else { P.vx = P.vy = 0; }
+    lastT = now;
+    P.x = e.clientX; P.y = e.clientY; P.active = true; P.moved = now; P.type = e.pointerType || 'mouse';
+  };
+  addEventListener('pointermove', move, { passive: true });
+  addEventListener('pointerdown', (e) => { move(e); P.down = true; }, { passive: true });
+  addEventListener('pointerup', (e) => { P.down = false; if (e.pointerType && e.pointerType !== 'mouse') P.active = false; }, { passive: true });
+  addEventListener('pointercancel', () => { P.down = false; P.active = false; });
+  document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) P.active = false; });
+  addEventListener('blur', () => { P.down = false; });
+
+  /* ---------- frame loop ---------- */
+  A.loop = (fn) => {
+    let last = performance.now(), t = 0, id = 0;
+    const step = (now) => {
+      id = requestAnimationFrame(step);
+      let dt = (now - last) / 1000;
+      last = now;
+      if (dt > 0.1) dt = 0.1;
+      else if (dt < 0) dt = 0; // the first rAF stamp can predate the loop's creation
+      if (A.reduced) dt *= 0.3;
+      t += dt;
+      if (now - P.moved > 60) { P.vx *= 0.86; P.vy *= 0.86; }
+      fn(dt, t, now);
+    };
+    id = requestAnimationFrame(step);
+    return { stop: () => cancelAnimationFrame(id) };
+  };
+
+  /* ---------- glyph grid ----------
+     Each frame a hero writes char codes (chr), a level 1..L (lvl, 0 = empty) and an ink index (ink).
+     draw() batches cells by ink+level into row strings: one fillStyle per bucket, one fillText per run. */
+  A.grid = (canvas, o = {}) => {
+    const ctx = canvas.getContext('2d');
+    const L = o.levels || 10, inks = o.inks || ['--fg'], alpha = o.alpha || ((t) => t), lh = o.lh || 1.15;
+    const g = { canvas, ctx, L, cols: 0, rows: 0, n: 0, cw: 8, ch: 14, w: 0, h: 0, dpr: 1, fs: 12, font: '' };
+    const B = inks.length * (L + 1);
+    let styles = [], rb, mn, mx, list = new Int32Array(B), ops = [], singles = [];
+    for (let b = 0; b < B; b++) { ops.push([]); singles.push([]); }
+
+    g.recolor = () => {
+      styles = [];
+      inks.forEach((v) => {
+        const [r, gg, b] = A.rgb(A.css(v));
+        for (let l = 0; l <= L; l++) styles.push(`rgba(${r},${gg},${b},${A.clamp(alpha(l / L), 0, 1).toFixed(3)})`);
+      });
+    };
+
+    g.resize = () => {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return false;
+      const dpr = Math.min(o.maxDpr || 2, window.devicePixelRatio || 1);
+      const fs = typeof o.size === 'function' ? o.size(w, h) : o.size || (w < 640 ? 10 : w < 1280 ? 12 : 13);
+      if (w === g.w && h === g.h && dpr === g.dpr && fs === g.fs) return false;
+      Object.assign(g, { w, h, dpr, fs });
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      g.font = `${o.weight || 400} ${fs}px ${o.family || A.MONO}`;
+      ctx.font = g.font;
+      g.cw = ctx.measureText('MMMMMMMMMMMMMMMMMMMM').width / 20;
+      g.ch = Math.round(fs * lh * 100) / 100;
+      g.cols = Math.ceil(w / g.cw);
+      g.rows = Math.ceil(h / g.ch);
+      g.n = g.cols * g.rows;
+      g.chr = new Uint16Array(g.n).fill(32);
+      g.lvl = new Uint8Array(g.n);
+      g.ink = new Uint8Array(g.n);
+      rb = new Uint16Array(B * g.cols).fill(32);
+      mn = new Int32Array(B).fill(-1);
+      mx = new Int32Array(B);
+      g.recolor();
+      return true;
+    };
+
+    g.clear = () => { g.chr.fill(32); g.lvl.fill(0); g.ink.fill(0); };
+    g.idx = (x, y) => { const c = (x / g.cw) | 0, r = (y / g.ch) | 0; return c < 0 || r < 0 || c >= g.cols || r >= g.rows ? -1 : r * g.cols + c; };
+    g.put = (c, r, code, l, k = 0) => {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return;
+      const i = r * g.cols + c;
+      g.chr[i] = code; g.lvl[i] = l; g.ink[i] = k;
+    };
+    // write only when brighter than what is there
+    g.max = (c, r, code, l, k = 0) => {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return;
+      const i = r * g.cols + c;
+      if (l > g.lvl[i]) { g.chr[i] = code; g.lvl[i] = l; g.ink[i] = k; }
+    };
+    g.text = (c, r, s, l, k = 0) => { for (let j = 0; j < s.length; j++) g.put(c + j, r, s.charCodeAt(j), l, k); };
+    g.rect = (el) => {
+      const b = el.getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+      return { x0: b.left - cr.left, y0: b.top - cr.top, x1: b.right - cr.left, y1: b.bottom - cr.top };
+    };
+
+    g.draw = () => {
+      const { cols, rows, cw, ch, chr, lvl, ink } = g;
+      ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+      ctx.clearRect(0, 0, g.w, g.h);
+      ctx.font = g.font;
+      ctx.textBaseline = 'middle';
+      for (let b = 0; b < B; b++) { ops[b].length = 0; singles[b].length = 0; }
+      for (let r = 0, i = 0; r < rows; r++) {
+        let used = 0;
+        for (let c = 0; c < cols; c++, i++) {
+          const l = lvl[i];
+          if (!l) continue;
+          const code = chr[i];
+          if (code === 32) continue;
+          const b = ink[i] * (L + 1) + l;
+          if (code > 126) { singles[b].push(r, c, code); continue; } // outside ASCII: own cell, no run drift
+          if (mn[b] < 0) { mn[b] = c; list[used++] = b; }
+          mx[b] = c;
+          rb[b * cols + c] = code;
+        }
+        for (let k = 0; k < used; k++) {
+          const b = list[k], base = b * cols, s = mn[b], e = mx[b] + 1;
+          ops[b].push(r, s, String.fromCharCode.apply(null, rb.subarray(base + s, base + e)));
+          rb.fill(32, base + s, base + e);
+          mn[b] = -1;
+        }
+      }
+      const hc = ch * 0.5;
+      for (let b = 0; b < B; b++) {
+        const op = ops[b], sg = singles[b];
+        if (!op.length && !sg.length) continue;
+        ctx.fillStyle = styles[b];
+        ctx.textAlign = 'left';
+        for (let k = 0; k < op.length; k += 3) ctx.fillText(op[k + 2], op[k + 1] * cw, op[k] * ch + hc);
+        if (sg.length) {
+          ctx.textAlign = 'center';
+          for (let k = 0; k < sg.length; k += 3) ctx.fillText(String.fromCharCode(sg[k + 2]), (sg[k + 1] + 0.5) * cw, sg[k] * ch + hc);
+        }
+      }
+    };
+
+    A.theme.on(() => g.recolor());
+    g.resize();
+    let pend = 0;
+    new ResizeObserver(() => {
+      cancelAnimationFrame(pend);
+      pend = requestAnimationFrame(() => { if (g.resize() && o.onResize) o.onResize(g); });
+    }).observe(canvas);
+    return g;
+  };
+})();
+</script>
+</head>
+<body>
+<canvas class="ascii" id="map" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#"><i aria-hidden="true"></i>Cairn</a>
+    <div class="navr"><a href="#">Maps</a><a href="#">Routes</a><a href="#">Safety</a><button data-theme-toggle aria-label="Toggle dark mode">Day / Night</button></div>
+  </header>
+  <section class="legend">
+    <header><span>Sheet 14 / Bernese high route</span><span id="sun">Sun 000&deg;</span></header>
+    <div class="body">
+      <h1>The mountain,<br>line by line.</h1>
+      <p class="sub">Cairn turns satellite elevation into maps you can trust at three thousand metres. Offline, true to the metre, drawn for tired eyes.</p>
+      <div class="ctas"><a class="btn" href="#">Download Cairn</a><a class="ghost" href="#">Plan a route</a></div>
+    </div>
+    <div class="keys"><i></i><span>Contour, 200 m</span><i class="idx"></i><span>Index contour, 1,000 m</span><i class="rt"></i><span>Route, 11.4 km, +1,734 m</span></div>
+    <div class="scale"><span><b></b><b></b><b></b><b></b></span>0 / 1 / 2 km</div>
+  </section>
+  <div class="probe" aria-hidden="true"></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('map'), { levels: 12, inks: ['--fg', '--accent'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const probe = document.querySelector('.probe'), sunEl = document.getElementById('sun'), legend = document.querySelector('.legend');
+  const BASE = 900, SPAN = 2400, STEP = 200;
+  let HC = null, NX = 0, NY = 0, peaks = [], route = [], labels = [], box = null, W = 0, H = 0, sculpted = false;
+  const NAMES = ['Kvasshorn', 'Mittaghorn', 'Rotstock', 'Gspaltenhorn'];
+  const elev = (h) => BASE + h * SPAN;
+
+  function terrain(x, y) {
+    // ridged octaves for sharp crests, a soft dome to put the massif off to the right
+    let s = 0, a = 0.6, f = 0.42;
+    for (let o = 0; o < 3; o++) { let r = 1 - Math.abs(A.noise2(x * f + 11, y * f - 7)); r *= r; s += r * a; a *= 0.45; f *= 2.05; }
+    const mob = W < 760, cx = mob ? 0.5 : 0.66, cy = mob ? 0.32 : 0.42;
+    const dx = x - (cx * W) / 340, dy = y - (cy * H) / 340;
+    return s * 0.9 + 0.55 * Math.exp(-(dx * dx + dy * dy) * 0.32) + 0.16 * A.noise2(x * 0.3, y * 0.3);
+  }
+
+  function layout() {
+    W = g.w; H = g.h; NX = g.cols + 1; NY = g.rows + 1;
+    HC = new Float32Array(NX * NY);
+    for (let r = 0; r < NY; r++) for (let c = 0; c < NX; c++) HC[r * NX + c] = terrain((c * g.cw) / 340, (r * g.ch) / 340);
+    let mn = 1e9, mx = -1e9;
+    for (const v of HC) { if (v < mn) mn = v; if (v > mx) mx = v; }
+    for (let i = 0; i < HC.length; i++) HC[i] = (HC[i] - mn) / (mx - mn);
+    analyse();
+  }
+
+  // peaks, the route to the highest one, and contour labels: recomputed when the terrain changes
+  function analyse() {
+    const lr = legend.getBoundingClientRect();
+    box = { c0: Math.floor(lr.left / g.cw) - 1, c1: Math.ceil(lr.right / g.cw) + 1, r0: Math.floor(lr.top / g.ch) - 1, r1: Math.ceil(lr.bottom / g.ch) + 1 };
+    const free = (c, r) => !(c >= box.c0 && c <= box.c1 && r >= box.r0 && r <= box.r1) && r > 4;
+    peaks = [];
+    for (let r = 3; r < NY - 3; r++) for (let c = 3; c < NX - 3; c++) {
+      const v = HC[r * NX + c];
+      if (v < 0.55 || !free(c, r)) continue;
+      let top = true;
+      for (let dr = -3; dr <= 3 && top; dr++) for (let dc = -5; dc <= 5; dc++) if (HC[(r + dr) * NX + c + dc] > v) { top = false; break; }
+      if (top && peaks.every((p) => Math.abs(p.c - c) > 18 || Math.abs(p.r - r) > 8)) peaks.push({ c, r, v });
+    }
+    peaks.sort((a, b) => b.v - a.v);
+    peaks.length = Math.min(peaks.length, 4);
+    route = [];
+    if (peaks.length) {
+      const s = peaks[0];
+      let bc = s.c, br = Math.min(NY - 3, s.r + 22), best = 9;
+      for (let r = s.r + 10; r < NY - 2; r++) for (let c = Math.max(2, s.c - 40); c < Math.min(NX - 2, s.c + 40); c++) {
+        const v = HC[r * NX + c];
+        if (free(c, r) && v < best && v > 0.12) { best = v; bc = c; br = r; }
+      }
+      const n = 260;
+      for (let i = 0; i <= n; i++) {
+        const u = i / n, px = A.lerp(bc, s.c, u), py = A.lerp(br, s.r, u);
+        const ax = s.c - bc, ay = (s.r - br) * 2, al = Math.hypot(ax, ay) || 1;
+        const sw = Math.sin(u * Math.PI * 7) * 5 * Math.sin(u * Math.PI) * (0.4 + u);
+        route.push([px - (ay / al) * sw, py + (ax / al) * sw * 0.5]);
+      }
+    }
+    labels = [];
+    for (let k = 5; k * STEP < SPAN; k += 5) {
+      const L = k * STEP / SPAN;
+      let placed = 0;
+      for (let r = 6; r < NY - 4 && placed < 2; r += 3) for (let c = 6; c < NX - 10 && placed < 2; c += 2) {
+        const a = HC[r * NX + c], b = HC[r * NX + c + 4], d = HC[(r + 1) * NX + c];
+        if ((a - L) * (d - L) < 0 && Math.abs(a - b) < 0.012 && free(c, r) && free(c + 5, r) && labels.every((q) => Math.abs(q.c - c) > 30 || Math.abs(q.r - r) > 6)) {
+          labels.push({ c, r, s: String(BASE + k * STEP) }); placed++;
+        }
+      }
+    }
+  }
+
+  let sun = 0.8, hoverL = -1;
+  A.loop((dt, t) => {
+    const { cols, rows, chr, lvl, ink } = g;
+    sun += dt * 0.05;
+    // sculpting: hold to raise the ground under the pointer
+    if (P.down && P.active && !legend.contains(document.elementFromPoint(P.x, P.y))) {
+      const pc = P.x / g.cw, pr = P.y / g.ch, R = 5;
+      for (let r = Math.max(0, (pr - R * 1.2) | 0); r < Math.min(NY, pr + R * 1.2); r++) for (let c = Math.max(0, (pc - R * 2.4) | 0); c < Math.min(NX, pc + R * 2.4); c++) {
+        const dx = (c - pc) / (R * 2), dy = (r - pr) / R, w = Math.exp(-(dx * dx + dy * dy) * 2);
+        HC[r * NX + c] = Math.min(1.08, HC[r * NX + c] + w * dt * 0.35);
+      }
+      sculpted = true;
+    } else if (sculpted) { sculpted = false; analyse(); }
+    hoverL = -1;
+    if (P.active) {
+      const c = Math.min(NX - 1, Math.max(0, Math.round(P.x / g.cw))), r = Math.min(NY - 1, Math.max(0, Math.round(P.y / g.ch)));
+      const h = HC[r * NX + c], e = elev(h);
+      hoverL = Math.round(e / STEP) * STEP;
+      const over = document.elementFromPoint(P.x, P.y);
+      probe.style.opacity = over && over.closest('.legend,.nav,a,button') ? 0 : 1;
+      probe.style.left = P.x + 'px'; probe.style.top = P.y + 'px';
+      probe.style.transform = P.x > innerWidth - 240 ? 'translate(calc(-100% - 14px), 14px)' : '';
+      probe.innerHTML = `<b>${Math.round(e).toLocaleString('en-US')} m</b>  N46.${String(5300 + r * 3).padStart(4, '0')} E7.${String(9600 + c * 2).padStart(4, '0')}`;
+    } else probe.style.opacity = 0;
+    const sx = Math.cos(sun), sy = Math.sin(sun);
+    sunEl.textContent = `Sun ${String(Math.round(((sun * 180) / Math.PI + 90) % 360)).padStart(3, '0')}°`;
+
+    g.clear();
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const i = r * cols + c, k0 = r * NX + c;
+        const tl = HC[k0], tr = HC[k0 + 1], bl = HC[k0 + NX], br = HC[k0 + NX + 1];
+        const lo = Math.min(tl, tr, bl, br), hi = Math.max(tl, tr, bl, br);
+        const e0 = elev(lo), e1 = elev(hi);
+        let k = Math.ceil(e0 / STEP), kEnd = Math.floor(e1 / STEP);
+        if (k <= kEnd) {
+          let pick = k;
+          for (let q = k; q <= kEnd; q++) if (q % 5 === 0 || q * STEP === hoverL) { pick = q; if (q * STEP === hoverL) break; }
+          const L = (pick * STEP - BASE) / SPAN;
+          // marching squares: find where the level crosses the cell edges
+          let x1 = -1, y1 = 0, x2 = -1, y2 = 0;
+          const add = (x, y) => { if (x1 < 0) { x1 = x; y1 = y; } else if (x2 < 0) { x2 = x; y2 = y; } };
+          if ((tl - L) * (tr - L) < 0) add((L - tl) / (tr - tl), 0);
+          if ((tr - L) * (br - L) < 0) add(1, (L - tr) / (br - tr));
+          if ((bl - L) * (br - L) < 0) add((L - bl) / (br - bl), 1);
+          if ((tl - L) * (bl - L) < 0) add(0, (L - tl) / (bl - tl));
+          if (x2 >= 0) {
+            let code = A.lineChar(x2 - x1, y2 - y1);
+            if (code === 45) { const my = (y1 + y2) / 2; code = my > 0.68 ? 95 : my < 0.3 ? 175 : 45; }
+            const idx = pick % 5 === 0, hot = pick * STEP === hoverL;
+            chr[i] = code; lvl[i] = hot ? 12 : idx ? 10 : 4; ink[i] = hot ? 1 : 0;
+            continue;
+          }
+        }
+        if (hi < 0.07) {
+          // tarns in the hollows
+          if (A.noise2(c * 0.3 + t * 0.4, r * 0.9) > 0.35) { chr[i] = 126; lvl[i] = 3; }
+          continue;
+        }
+        // hillshade stipple on slopes facing away from the sun
+        const nx = (tl + bl - tr - br) * 6, ny = (tl + tr - bl - br) * 3.2;
+        const shade = (nx * sx + ny * sy) / Math.sqrt(nx * nx + ny * ny + 0.02);
+        if (shade < -0.55 && (c + r * 3) % 3 !== 0) { chr[i] = shade < -0.85 ? 58 : 46; lvl[i] = shade < -0.85 ? 3 : 2; }
+      }
+    }
+    // drifting cloud shadows dim whatever they cross
+    for (let r = 0; r < rows; r += 2) for (let c = 0; c < cols; c += 2) {
+      const v = A.noise2(c * 0.025 - t * 0.04, r * 0.05 + t * 0.01);
+      if (v > 0.38) for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { const i = (r + a) * cols + c + b; if (i < g.n && lvl[i] > 2 && !ink[i]) lvl[i] -= 2; }
+    }
+    for (const l of labels) g.text(l.c - 1, l.r, ` ${l.s} `, 9);
+    // route, hiker and summit markers
+    const hp = (t * 0.018) % 1, hi = Math.floor(hp * (route.length - 1));
+    for (let j = 0; j < route.length; j += 2) { const [x, y] = route[j]; g.put(Math.round(x), Math.round(y), 46, j < hi ? 11 : 6, 1); }
+    if (route.length) { const [x, y] = route[hi]; g.put(Math.round(x), Math.round(y), 64, 12, 1); const [bx, by] = route[0]; g.text(Math.round(bx) - 1, Math.round(by) + 1, 'x BASE 1,180', 8); }
+    peaks.forEach((p, k) => {
+      g.put(p.c, p.r, 94, 12, k === 0 ? 1 : 0);
+      g.text(p.c + 2, p.r, `${NAMES[k]} ${Math.round(elev(p.v)).toLocaleString('en-US')}`, k === 0 ? 12 : 8, k === 0 ? 1 : 0);
+    });
+    g.draw();
+  });
+  layout();
+})();
+</script>
+</body>
+</html>

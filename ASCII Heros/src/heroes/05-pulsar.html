@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pulsar 27 · A festival of low frequencies</title>
+<meta name="description" content="A music festival landing hero: a live ASCII pulsar ridgeline with hidden-line removal and optional synthesized pulses.">
+<meta name="ascii-hero" content='{"name":"Pulsar","brand":"Pulsar 27","kind":"Music festival","tech":"Hidden-line ridgeline waterfall, Web Audio pulses","accent":""}'>
+<style>
+:root{--bg:#000;--fg:#f4f3ee;--dim:rgba(244,243,238,.55);--faint:rgba(244,243,238,.18);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#f2f0ea;--fg:#050505;--dim:rgba(5,5,5,.58);--faint:rgba(5,5,5,.18);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:11px/1.5 var(--mono);transition:background-color .5s}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,34vw) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;column-gap:clamp(24px,4vw,64px);padding:0 clamp(16px,3.2vw,46px);pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:22px 0;letter-spacing:.16em;text-transform:uppercase}
+.nav .links{display:flex;gap:28px;color:var(--dim)}
+.nav .links a:hover{color:var(--fg)}
+.nav .r{display:flex;gap:20px;align-items:center}
+.inv{border:1px solid var(--faint);padding:6px 10px;letter-spacing:.16em;text-transform:uppercase;font-size:10px}
+.inv:hover{border-color:var(--fg)}
+.plot{grid-column:2;grid-row:2;margin:3vh 0 2vh}
+.side{grid-row:2;align-self:center;letter-spacing:.06em}
+.side h2{font:400 10px/1 var(--mono);letter-spacing:.24em;color:var(--dim);margin:0 0 10px;text-transform:uppercase}
+.side ul{list-style:none;margin:0 0 26px}
+.side li{font:500 13px/1.75 var(--sans);letter-spacing:-.005em}
+.side li span{color:var(--dim);font:400 10px var(--mono);letter-spacing:.12em;margin-left:8px}
+.left{grid-column:1}
+.right{grid-column:3;text-align:right}
+.right dl{margin:0 0 28px}
+.right dt{font:400 10px/1 var(--mono);letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin-top:16px}
+.right dd{margin:6px 0 0;font:500 22px/1 var(--sans);letter-spacing:-.02em;white-space:nowrap}
+.listen{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--fg);padding:11px 16px;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase}
+.listen i{width:7px;height:7px;background:currentColor;clip-path:polygon(0 0,100% 50%,0 100%);transition:clip-path .3s}
+.listen[aria-pressed=true] i{clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.listen[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+.title{grid-column:1/-1;grid-row:3;display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:clamp(14px,3vh,30px);gap:24px}
+.word{display:flex;justify-content:space-between;flex:1;font:900 clamp(56px,11.6vw,196px)/.74 var(--sans);letter-spacing:-.04em;max-width:72vw}
+.meta{text-align:right;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.meta b{display:block;font:500 13px/1.3 var(--sans);letter-spacing:0;text-transform:none;margin-bottom:12px}
+.tix{display:inline-block;background:var(--fg);color:var(--bg);padding:13px 20px;letter-spacing:.2em}
+@media (max-width:900px){
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto auto;padding:0 16px}
+  .nav{padding:16px 0}.nav .links{display:none}
+  .title{grid-row:2;padding:4px 0 0}.word{max-width:none;font-size:clamp(52px,17vw,120px)}.title .meta{display:none}
+  .plot{grid-column:1;grid-row:3;margin:2vh 0}
+  .left{display:none}
+  .right{grid-column:1;grid-row:4;text-align:left;display:flex;align-items:flex-end;justify-content:space-between}
+  .right dl{display:flex;gap:16px;margin:0;min-width:0}.right dt{margin-top:0;letter-spacing:.16em}.right dd{font-size:15px}.right .rooms{display:none}.listen{padding:9px 12px}
+  .mob{grid-row:5;display:flex;justify-content:space-between;align-items:center;padding:16px 0 18px;letter-spacing:.14em;text-transform:uppercase}
+}
+@media (min-width:901px){.mob{display:none}}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="sig" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <span>PSR/27 &middot; Reykjav&iacute;k</span>
+    <nav class="links" aria-label="Primary"><a href="#">Lineup</a><a href="#">Rooms</a><a href="#">Travel</a><a href="#">Archive</a></nav>
+    <div class="r"><button class="inv" data-theme-toggle aria-label="Invert colours">Invert</button></div>
+  </header>
+  <div class="plot" aria-hidden="true"></div>
+  <section class="side left" aria-label="Lineup">
+    <h2>Thu 12.03</h2>
+    <ul><li>Hollow Meridian<span>live</span></li><li>Saskia Vane</li><li>&Oslash;rsted Choir<span>premiere</span></li></ul>
+    <h2>Fri 13.03</h2>
+    <ul><li>Null Cartography</li><li>Mira Kessel<span>6h set</span></li><li>Low Tide Ensemble</li><li>Ferro b2b Jonah Ilse</li></ul>
+    <h2>Sat 14.03</h2>
+    <ul><li>The Quiet Mass</li><li>Anouk Darr<span>dawn</span></li></ul>
+  </section>
+  <section class="side right">
+    <dl><div><dt>Duration</dt><dd>72 h</dd></div><div class="rooms"><dt>Rooms</dt><dd>3</dd></div><div><dt>Period</dt><dd>1.3373 s</dd></div></dl>
+    <button class="listen" aria-pressed="false"><i aria-hidden="true"></i>Listen</button>
+  </section>
+  <footer class="title">
+    <h1 class="word" aria-label="Pulsar"><span>P</span><span>U</span><span>L</span><span>S</span><span>A</span><span>R</span></h1>
+    <div class="meta"><b>12/15 March 2027<br>Harpa, Reykjav&iacute;k</b><a class="tix" href="#">Tickets</a></div>
+  </footer>
+  <div class="mob"><span>12/15.03.27 &middot; Harpa</span><a class="tix" href="#">Tickets</a></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const PERIOD = 1.3373;
+  const g = A.grid(document.getElementById('sig'), { levels: 12, size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const plotEl = document.querySelector('.plot');
+  let c0 = 0, c1 = 0, r0 = 0, r1 = 0, L = 0, AMP = 7, born = 0;
+  const pulses = new Map();
+
+  function layout() {
+    const b = g.rect(plotEl);
+    c0 = Math.ceil(b.x0 / g.cw); c1 = Math.floor(b.x1 / g.cw) - 1;
+    r0 = Math.ceil(b.y0 / g.ch); r1 = Math.floor(b.y1 / g.ch) - 1;
+    AMP = A.clamp((r1 - r0) * 0.2, 5, 12);
+    L = Math.max(6, Math.floor((r1 - r0 - AMP * 1.25) / 2));
+  }
+
+  // one recorded pulse: a handful of sharp components near the centre, buried in noise
+  function pulse(n) {
+    let p = pulses.get(n);
+    if (p) return p;
+    const r = A.rng(n * 7919 + 13), k = 3 + ((r() * 4) | 0), peaks = [];
+    const drift = (r() - 0.5) * 0.04;
+    for (let j = 0; j < k; j++) peaks.push([0.5 + drift + (r() - 0.5) * 0.26, 0.032 + r() * 0.05, 0.2 + r() * 0.55]);
+    p = { peaks, seed: r() * 500, env: 0.5 + r() * 0.55 };
+    pulses.set(n, p);
+    if (pulses.size > 400) pulses.delete(pulses.keys().next().value);
+    return p;
+  }
+  function height(p, x, t, live) {
+    let h = 0;
+    for (const [px, w, a] of p.peaks) { const q = (x - px) / w; h += a * Math.exp(-q * q); }
+    const wq = (x - 0.5) / 0.17, win = Math.exp(-wq * wq);
+    h = Math.min(1.35, h * p.env) * win + win * 0.16 * Math.abs(A.noise2(x * 22 + p.seed, live ? t * 1.7 : 0));
+    return h + 0.012 * A.noise2(x * 24 - p.seed, 7.7);
+  }
+
+  layout();
+  let lastN = -1;
+  const SL = [95, 45, 175], noise = A.ramp('.`');
+  A.loop((dt, t) => {
+    g.clear();
+    const { cols, rows, chr, lvl } = g, n0 = Math.floor(t / PERIOD);
+    if (n0 !== lastN) { lastN = n0; born = t; beat(); }
+    // static in the dark around the plot
+    for (let k = 0; k < cols * rows * 0.0025; k++) { const i = (Math.random() * cols * rows) | 0; chr[i] = noise[k & 1]; lvl[i] = 1; }
+    const W = c1 - c0, inside = P.active && P.x > c0 * g.cw && P.x < c1 * g.cw && P.y > (r0 - 2) * g.ch && P.y < (r1 + 2) * g.ch;
+    const pxr = inside ? (P.x / g.cw - c0) / W : -9, pli = inside ? (P.y / g.ch - r0 - AMP) / 2 : -99;
+    const fresh = Math.max(0, 1 - (t - born) / 0.45);
+    for (let li = 0; li < L; li++) {
+      const n = n0 - (L - 1 - li), p = pulse(n), base = r0 + Math.round(AMP * 1.25) + li * 2, live = li > L - 4;
+      const lv = li === L - 1 ? 9 + Math.round(fresh * 3) : li < 4 ? 5 + li * 1.5 : 11;
+      let prev = null;
+      for (let c = c0; c <= c1; c++) {
+        const x = (c - c0) / W;
+        let h = height(p, x, t, live);
+        if (inside) { const dl = (li - pli) / 2.2, dx = (x - pxr) / 0.045; h += 0.9 * Math.exp(-dx * dx - dl * dl); }
+        const y = base + 0.86 - h * AMP, row = Math.floor(y), f = y - row;
+        for (let rr = row + 1; rr <= base; rr++) if (rr >= 0 && rr < rows) lvl[rr * cols + c] = 0;
+        let code;
+        if (prev === null || prev === row) code = f > 0.68 ? SL[0] : f > 0.36 ? SL[1] : SL[2];
+        else if (Math.abs(prev - row) === 1) code = row < prev ? 47 : 92;
+        else {
+          code = row < prev ? 47 : 92;
+          const a = Math.min(row, prev) + 1, b = Math.max(row, prev) - 1;
+          for (let rr = a; rr <= b; rr++) g.put(c, rr, 124, lv);
+        }
+        g.put(c, row, code, lv);
+        prev = row;
+      }
+    }
+    g.draw();
+  });
+
+  // optional sound: a click and a falling thump on every rotation, over a quiet drone
+  const btn = document.querySelector('.listen');
+  let ac = null, master = null, noiseBuf = null;
+  function beat() {
+    if (!ac || btn.getAttribute('aria-pressed') !== 'true') return;
+    const w = ac.currentTime + 0.02;
+    const src = ac.createBufferSource(); src.buffer = noiseBuf;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 0.9;
+    const e = ac.createGain(); e.gain.setValueAtTime(0, w); e.gain.linearRampToValueAtTime(0.55, w + 0.003); e.gain.exponentialRampToValueAtTime(0.001, w + 0.09);
+    src.connect(bp).connect(e).connect(master); src.start(w); src.stop(w + 0.12);
+    const o = ac.createOscillator(); o.frequency.setValueAtTime(110, w); o.frequency.exponentialRampToValueAtTime(38, w + 0.22);
+    const og = ac.createGain(); og.gain.setValueAtTime(0.5, w); og.gain.exponentialRampToValueAtTime(0.001, w + 0.3);
+    o.connect(og).connect(master); o.start(w); o.stop(w + 0.32);
+  }
+  btn.addEventListener('click', () => {
+    const on = btn.getAttribute('aria-pressed') !== 'true';
+    btn.setAttribute('aria-pressed', String(on));
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = new AC();
+      master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+      noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.15, ac.sampleRate);
+      const ch = noiseBuf.getChannelData(0);
+      for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+      const dr = ac.createOscillator(), dg = ac.createGain(); dr.frequency.value = 55; dg.gain.value = 0.06;
+      dr.connect(dg).connect(master); dr.start();
+      const d2 = ac.createOscillator(), d2g = ac.createGain(); d2.frequency.value = 82.4; d2g.gain.value = 0.025;
+      d2.connect(d2g).connect(master); d2.start();
+    }
+    ac.resume();
+    master.gain.cancelScheduledValues(ac.currentTime);
+    master.gain.setTargetAtTime(on ? 0.7 : 0, ac.currentTime, 0.25);
+  });
+})();
+</script>
+</body>
+</html>

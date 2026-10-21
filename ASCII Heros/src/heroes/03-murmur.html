@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Murmur · Move as one</title>
+<meta name="description" content="A collaboration tool landing hero: thousands of ASCII starlings in a 3D murmuration over a reed marsh.">
+<meta name="ascii-hero" content='{"name":"Murmuration","brand":"Murmur","kind":"Collaboration software","tech":"3D topological boids, invisible falcon on the cursor","accent":""}'>
+<style>
+:root{--bg:#070707;--fg:#ecebe6;--dim:rgba(236,235,230,.56);--faint:rgba(236,235,230,.16);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#e4e3dd;--fg:#121212;--dim:rgba(18,18,18,.6);--faint:rgba(18,18,18,.16);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);transition:background-color .6s}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none;display:flex;flex-direction:column}
+.hero a,.hero button{pointer-events:auto}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:26px clamp(16px,3.6vw,52px)}
+.mark{font:300 22px/1 var(--sans);letter-spacing:-.04em;display:flex;align-items:baseline;gap:2px}
+.mark sup{font:500 9px/1 var(--mono);letter-spacing:.1em;margin-left:4px}
+.links{display:flex;gap:30px;font-size:14px;color:var(--dim)}
+.links a:hover{color:var(--fg)}
+.right{display:flex;align-items:center;gap:20px;font-size:14px}
+.toggle{width:34px;height:18px;border-radius:999px;border:1px solid var(--dim);position:relative}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--fg);transition:transform .45s cubic-bezier(.6,0,.2,1)}
+[data-theme=light] .toggle::after{transform:translateX(16px)}
+.copy{padding:clamp(24px,7vh,80px) clamp(16px,3.6vw,52px) 0;max-width:780px}
+.eyebrow{font:400 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:26px}
+h1{font:200 clamp(68px,11.5vw,184px)/.82 var(--sans);letter-spacing:-.065em;margin-left:-.06em}
+.sub{max-width:390px;margin-top:34px;color:var(--dim);font-size:15px;line-height:1.6}
+.ctas{display:flex;gap:22px;align-items:center;margin-top:30px}
+.btn{padding:14px 24px;border-radius:999px;background:var(--fg);color:var(--bg);font-weight:500;font-size:14px;transition:transform .3s}
+.btn:hover{transform:translateY(-2px)}
+.link{font-size:14px;display:flex;gap:10px;align-items:center}
+.link i{width:26px;height:26px;border-radius:50%;border:1px solid var(--faint);display:grid;place-items:center}
+.link i::before{content:"";margin-left:2px;border-left:7px solid currentColor;border-top:4.5px solid transparent;border-bottom:4.5px solid transparent}
+.stats{position:absolute;right:clamp(16px,3.6vw,52px);bottom:clamp(18px,3.4vh,34px);font:400 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;gap:22px}
+.stats b{font-weight:400;color:var(--fg)}
+@media (max-width:760px){
+  .nav{padding:18px 16px}.links,.right .login{display:none}
+  .copy{padding:18px 16px 0}.eyebrow{margin-bottom:16px}
+  .sub{margin-top:20px;font-size:14px;max-width:330px}
+  .ctas{margin-top:22px}
+  .stats{display:none}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="sky" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">murmur<sup>3.0</sup></a>
+    <nav class="links" aria-label="Primary"><a href="#">Product</a><a href="#">Canvases</a><a href="#">Customers</a><a href="#">Pricing</a></nav>
+    <div class="right"><a class="login" href="#">Log in</a><button class="toggle" data-theme-toggle aria-label="Toggle dark mode"></button></div>
+  </header>
+  <section class="copy">
+    <p class="eyebrow">Shared canvases for whole companies</p>
+    <h1>move<br>as one.</h1>
+    <p class="sub">Murmur gives everyone the same live canvas. Nobody steers. Each person adjusts to the seven nearest them, and the whole shape turns together.</p>
+    <div class="ctas"><a class="btn" href="#">Start a flock</a><a class="link" href="#"><i aria-hidden="true"></i>See it in motion</a></div>
+  </section>
+  <p class="stats" aria-hidden="true"><span><b id="nb">0</b> birds</span><span><b>7</b> neighbours each</span><span><b>0</b> leaders</span></p>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('sky'), { levels: 12, size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const DENS = A.ramp(' .:-=+*#%@'), WATER = A.ramp('-~_'), LONE = A.ramp(".'`,."), PAIR = A.ramp(':;:');
+  let W = 0, H = 0, HZ = 0, HZr = 0, CX = 0, CY = 0, F = 1, mob = false, X0 = 0;
+  const CZ = 3.1;
+
+  // birds
+  const NB = Math.round(A.clamp((innerWidth * innerHeight) / 800, 700, 1600));
+  document.getElementById('nb').textContent = NB.toLocaleString('en-US');
+  const px = new Float32Array(NB), py = new Float32Array(NB), pz = new Float32Array(NB);
+  const vx = new Float32Array(NB), vy = new Float32Array(NB), vz = new Float32Array(NB), sp = new Float32Array(NB);
+  // uniform grid for neighbour lookup
+  const CS = 0.1, GX = -2.6, GY = -0.7, GZ = -1.7, NX = 52, NY = 29, NZ = 34, NC = NX * NY * NZ;
+  const cellOf = new Int32Array(NB), start = new Int32Array(NC + 1), cur = new Int32Array(NC + 1), order = new Int32Array(NB);
+  const RN2 = CS * CS, RS = 0.022, K = 7;
+  // neighbour cells ordered nearest-first so the capped search has no directional bias
+  const OFF = [];
+  for (let z = -1; z <= 1; z++) for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) OFF.push([x, y, z, x * x + y * y + z * z]);
+  OFF.sort((a, b) => a[3] - b[3]);
+  let dens = null, reeds = [], hills = null;
+
+  for (let i = 0; i < NB; i++) {
+    const a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * 0.6;
+    px[i] = Math.cos(a) * r * 1.4; py[i] = 0.8 + Math.sin(a) * r * 0.5; pz[i] = (Math.random() - 0.5) * 0.8;
+    vx[i] = 0.5 + Math.random() * 0.1; vy[i] = (Math.random() - 0.5) * 0.1; vz[i] = (Math.random() - 0.5) * 0.2;
+    sp[i] = 0.46 + Math.random() * 0.1;
+  }
+
+  function layout() {
+    W = g.w; H = g.h; mob = W < 760;
+    HZ = H * (mob ? 0.86 : 0.84); HZr = Math.round(HZ / g.ch);
+    CX = W * 0.5; CY = HZ; F = Math.min(H * 0.95, W * (mob ? 1.5 : 0.72));
+    X0 = mob ? 0 : Math.min(0.75, ((W * 0.6 - CX) * CZ) / F);
+    dens = new Float32Array(g.n);
+    reeds = [];
+    const base = g.rows - 1, reedH = g.rows - HZr;
+    for (let c = -2; c < g.cols + 2; c++) {
+      const clump = A.noise2(c * 0.045, 9.1);
+      if (Math.random() > 0.18 + clump * 0.5) continue;
+      const k = Math.random();
+      reeds.push({ c, h: Math.max(2, Math.round(reedH * A.lerp(0.18, 1.05, Math.random() ** 2.2) * (0.6 + clump * 0.6))), kind: k < 0.1 ? 2 : k < 0.32 ? 1 : 0, ph: Math.random() * 6.3, base });
+    }
+    hills = new Float32Array(g.cols);
+    for (let c = 0; c < g.cols; c++) hills[c] = Math.max(0, A.fbm2(c * 0.03, 4.2, 4) * 4.2 + 1.1 + Math.sin(c * 0.007) * 0.9);
+  }
+
+  function grid() {
+    start.fill(0);
+    for (let i = 0; i < NB; i++) {
+      const x = A.clamp(((px[i] - GX) / CS) | 0, 0, NX - 1), y = A.clamp(((py[i] - GY) / CS) | 0, 0, NY - 1), z = A.clamp(((pz[i] - GZ) / CS) | 0, 0, NZ - 1);
+      const c = (z * NY + y) * NX + x;
+      cellOf[i] = c; start[c + 1]++;
+    }
+    for (let c = 0; c < NC; c++) start[c + 1] += start[c];
+    cur.set(start);
+    for (let i = 0; i < NB; i++) order[cur[cellOf[i]]++] = i;
+  }
+
+  let hawkT = 0, hx = 9, hy = 9, hvx = 0, hvy = 0, wake = 0;
+  function step(dt, t) {
+    grid();
+    // roost point wanders; the flock follows it loosely
+    const tx = X0 + Math.sin(t * 0.093) * (mob ? 0.35 : 0.5) + Math.sin(t * 0.031 + 1) * 0.22;
+    const ty = (mob ? 0.95 : 0.9) + Math.sin(t * 0.14) * 0.24 + Math.sin(t * 0.051) * 0.1;
+    const tz = Math.sin(t * 0.066) * 0.45;
+    // falcon: the cursor when present, otherwise an occasional stoop through the flock
+    let hawk = false;
+    if (P.active && P.y < HZ) {
+      hx = ((P.x - CX) * CZ) / F; hy = (-(P.y - CY) * CZ) / F; hawk = true; wake = 0;
+    } else if ((wake += dt) > 7) {
+      hawkT += dt;
+      if (hawkT > 11) { hawkT = 0; hx = tx - 2.2; hy = ty + 0.9; hvx = 1.9; hvy = -0.75; }
+      hx += hvx * dt; hy += hvy * dt; hawk = hawkT < 2.6;
+    }
+    const RP = mob ? 0.5 : 0.42, RP2 = RP * RP;
+    // the flock behaves like a folding sheet: flatten along a slowly turning normal
+    let fcx = 0, fcy = 0, fcz = 0;
+    for (let i = 0; i < NB; i++) { fcx += px[i]; fcy += py[i]; fcz += pz[i]; }
+    fcx /= NB; fcy /= NB; fcz /= NB;
+    // a twisted ribbon: the sheet normal turns along the long axis, so parts are seen edge-on (dark) and parts face-on (light)
+    const th = 1.3 * Math.sin(t * 0.071) + 0.6 * Math.sin(t * 0.163 + 2), twist = 2.4 * Math.sin(t * 0.083 + 1.3);
+    const tilt = 0.4 * Math.sin(t * 0.052), lax = Math.cos(tilt), lay = Math.sin(tilt);
+    for (let i = 0; i < NB; i++) {
+      const xi = px[i], yi = py[i], zi = pz[i];
+      let n = 0, ax = 0, ay = 0, az = 0, cx = 0, cy = 0, cz = 0, sx = 0, sy = 0, sz = 0, mx = 0, my = 0, mz = 0;
+      const gx = cellOf[i] % NX, gy = ((cellOf[i] / NX) | 0) % NY, gz = (cellOf[i] / (NX * NY)) | 0;
+      search: for (let o = 0; o < 27; o++) {
+        const xx = gx + OFF[o][0], yy = gy + OFF[o][1], zz = gz + OFF[o][2];
+        if (xx < 0 || yy < 0 || zz < 0 || xx >= NX || yy >= NY || zz >= NZ) continue;
+        const c = (zz * NY + yy) * NX + xx;
+        for (let k = start[c], e = start[c + 1]; k < e; k++) {
+          const j = order[k];
+          if (j === i) continue;
+          const ex = px[j] - xi, ey = py[j] - yi, ez = pz[j] - zi, d2 = ex * ex + ey * ey + ez * ez;
+          if (d2 > RN2) continue;
+          n++; mx += vx[j]; my += vy[j]; mz += vz[j]; cx += ex; cy += ey; cz += ez;
+          const d = Math.sqrt(d2) + 1e-4;
+          if (d < RS) { const f = (1 - d / RS) / d; sx -= ex * f; sy -= ey * f; sz -= ez * f; }
+          if (n >= K) break search;
+        }
+      }
+      if (n) {
+        ax += (mx / n - vx[i]) * 3 + (cx / n) * 7 + sx * 4;
+        ay += (my / n - vy[i]) * 3 + (cy / n) * 7 + sy * 4;
+        az += (mz / n - vz[i]) * 3 + (cz / n) * 7 + sz * 4;
+      }
+      const rx = xi - fcx, ry = yi - fcy, rz = zi - fcz, a = th + (rx * lax + ry * lay) * twist, ca = Math.cos(a), sa = Math.sin(a);
+      const nnx = -lay * ca, nny = lax * ca, nnz = sa, wx = lay * sa, wy = -lax * sa, wz = ca;
+      const sd = (rx * nnx + ry * nny + rz * nnz) * 1.4;
+      ax -= nnx * sd; ay -= nny * sd; az -= nnz * sd;
+      const dw = rx * wx + ry * wy + rz * wz, ew = Math.abs(dw) - 0.3;
+      if (ew > 0) { const f = (dw > 0 ? ew : -ew) * 3.2; ax -= wx * f; ay -= wy * f; az -= wz * f; }
+      let ox = tx - xi, oy = ty - yi, oz = tz - zi;
+      const od = Math.hypot(ox, oy, oz) + 1e-4, pull = (Math.min(od, 1.5) * 0.38) / od;
+      ax += ox * pull; ay += oy * pull * 1.4; az += oz * pull;
+      if (yi < 0.18) ay += (0.18 - yi) * 9;
+      if (hawk) {
+        const ex = xi - hx, ey = yi - hy, d2 = ex * ex + ey * ey;
+        if (d2 < RP2) { const d = Math.sqrt(d2) + 1e-3, f = (1 - d / RP) * 9; ax += (ex / d) * f; ay += (ey / d) * f; az += (zi > 0 ? 1 : -1) * f * 0.3; }
+      }
+      let nx = vx[i] + ax * dt, ny = vy[i] + ay * dt, nz = vz[i] + az * dt;
+      const s = Math.hypot(nx, ny, nz) + 1e-5, k = sp[i] / s;
+      vx[i] = nx * k; vy[i] = ny * k; vz[i] = nz * k;
+      px[i] = xi + vx[i] * dt; py[i] = yi + vy[i] * dt; pz[i] = zi + vz[i] * dt;
+    }
+  }
+
+  function render(t) {
+    const { cols, rows, cw, ch, chr, lvl } = g;
+    dens.fill(0);
+    for (let i = 0; i < NB; i++) {
+      const z = pz[i] + CZ;
+      if (z < 0.4) continue;
+      const sx = CX + (px[i] * F) / z, sy = CY - (py[i] * F) / z;
+      if (sx < 0 || sy < 0 || sx >= W || sy >= HZ) continue;
+      dens[((sy / ch) | 0) * cols + ((sx / cw) | 0)] += (CZ / z) * (CZ / z);
+    }
+    // sky: faint drifting cloud streaks, then birds
+    for (let r = 0; r < HZr; r++) {
+      const cl = A.noise2(r * 0.21, 3.3) * 0.5 + 0.5;
+      for (let c = 0, i = r * cols; c < cols; c++, i++) {
+        const d = dens[i];
+        if (d > 0) { const k = Math.min(9, Math.floor(d * 1.2) + 1); chr[i] = k === 1 ? LONE[(i * 7 + c) % 5] : k === 2 ? PAIR[i % 3] : DENS[k]; lvl[i] = Math.min(12, 3 + k); continue; }
+        if (cl > 0.62 && r < HZr - 3) {
+          const v = A.noise2(c * 0.03 - t * 0.025, r * 0.5);
+          if (v > 0.55) { chr[i] = v > 0.75 ? 45 : 95; lvl[i] = 1; }
+        }
+      }
+    }
+    // distant tree line on the horizon
+    for (let c = 0; c < cols; c++) {
+      const h = hills[c], top = Math.floor(h);
+      for (let k = 0; k <= top; k++) g.put(c, HZr - 1 - k, k === top ? (h - top > 0.55 ? 58 : 46) : 58, k === top ? 2 : 3);
+      g.put(c, HZr, 95, 4);
+    }
+    // water: ripples plus a wobbling reflection of whatever is near the horizon
+    for (let r = HZr; r < rows; r++) {
+      const depth = r - HZr;
+      for (let c = 0; c < cols; c++) {
+        const i = r * cols + c;
+        const wob = Math.round(Math.sin(r * 1.7 + t * 2.1 + c * 0.05) * (1 + depth * 0.15));
+        const mr = HZr - 1 - depth, mc = c + wob;
+        if (mr >= 0 && mc >= 0 && mc < cols) {
+          const j = mr * cols + mc;
+          if (lvl[j] > 1 && (r + c) % 2 === 0) { chr[i] = depth < 2 ? 61 : 45; lvl[i] = Math.max(1, (lvl[j] * 0.35) | 0); continue; }
+        }
+        const v = A.noise2(c * 0.09 + t * 0.2, r * 0.8 - t * 0.15);
+        if (v > 0.5) { chr[i] = WATER[(v * 7) % 3 | 0]; lvl[i] = 1; }
+      }
+    }
+    // reeds in the foreground, bending with travelling gusts
+    for (const rd of reeds) {
+      const gust = A.noise2(rd.c * 0.018 - t * 0.35, 1.7) * 0.8 + Math.sin(t * 1.3 + rd.ph) * 0.12;
+      const bend = gust * Math.min(4, rd.h * 0.35);
+      for (let k = 0; k < rd.h; k++) {
+        const f = k / rd.h, q = Math.max(0, (f - 0.6) / 0.4), cc = Math.round(rd.c + bend * q * q);
+        const code = q > 0.35 && Math.abs(bend) > 0.7 ? (bend > 0 ? 47 : 92) : 124;
+        g.put(cc, rd.base - k, code, 8 + Math.round(f * 4));
+      }
+      const tc = Math.round(rd.c + bend), tr = rd.base - rd.h;
+      if (rd.kind === 2) { g.put(tc, tr, 48, 12); g.put(tc, tr - 1, 48, 12); g.put(tc, tr - 2, 39, 9); }
+      else if (rd.kind === 1) { g.put(tc, tr, 42, 10); g.put(tc + (bend > 0 ? 1 : -1), tr, 44, 8); g.put(tc, tr - 1, 39, 7); }
+      else g.put(tc, tr, bend > 0.6 ? 96 : 39, 8);
+    }
+    g.draw();
+  }
+
+  layout();
+  for (let k = 0; k < 90; k++) step(1 / 30, k / 30);
+  A.loop((dt, t) => {
+    const h = Math.min(dt, 1 / 30);
+    step(h, t + 3);
+    render(t);
+  });
+})();
+</script>
+</body>
+</html>

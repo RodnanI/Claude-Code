@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hanami · Some things only bloom slowly</title>
+<meta name="description" content="A journaling app landing hero: an ASCII cherry tree swaying in the wind, shedding pink petals that gather on the ground.">
+<meta name="ascii-hero" content='{"name":"Hanami","brand":"Hanami","kind":"Journal app","tech":"Recursive branching with wind sway, petal physics","accent":"#ff8fb0"}'>
+<style>
+:root{--bg:#0b0a0b;--fg:#ebe7e4;--dim:rgba(235,231,228,.56);--faint:rgba(235,231,228,.15);--accent:#ff8fb0;color-scheme:dark;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"DejaVu Serif",serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#f3eeea;--fg:#1a1517;--dim:rgba(26,21,23,.6);--faint:rgba(26,21,23,.14);--accent:#d9466f;color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:16px/1.5 var(--serif);transition:background-color .7s}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr)}
+.hero a,.hero button{pointer-events:auto}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:26px clamp(16px,3.6vw,52px)}
+.mark{font:italic 400 26px/1 var(--serif);letter-spacing:-.01em}
+.mark i{color:var(--accent);font-style:normal}
+.links{display:flex;gap:30px;font:12px var(--mono);letter-spacing:.12em;text-transform:lowercase;color:var(--dim)}
+.links a:hover{color:var(--fg)}
+.time{font:12px var(--mono);letter-spacing:.12em;display:flex;gap:6px;align-items:center}
+.time b{font-weight:400;opacity:.35;transition:opacity .4s}
+[data-theme=dark] .time .n,[data-theme=light] .time .d{opacity:1;color:var(--accent)}
+.copy{align-self:center;padding:0 clamp(16px,3.6vw,52px);max-width:640px}
+.eyebrow{font:12px var(--mono);letter-spacing:.16em;color:var(--dim);margin-bottom:26px;display:flex;gap:12px;align-items:center}
+.eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent)}
+h1{font:400 clamp(44px,6.4vw,100px)/1.02 var(--serif);letter-spacing:-.025em}
+h1 em{font-style:italic;color:var(--accent)}
+.sub{margin-top:26px;max-width:410px;color:var(--dim);font-size:17px;line-height:1.6}
+.ctas{display:flex;gap:26px;align-items:center;margin-top:34px;flex-wrap:wrap}
+.btn{padding:15px 26px;border-radius:999px;background:var(--fg);color:var(--bg);font:500 14px/1 var(--mono);letter-spacing:.04em;transition:transform .3s}
+.btn:hover{transform:translateY(-2px)}
+.link{font:14px var(--mono);border-bottom:1px solid var(--faint);padding-bottom:3px}
+.foot{display:flex;justify-content:space-between;padding:0 clamp(16px,3.6vw,52px) 22px;font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.foot b{font-weight:400;color:var(--accent)}
+@media (max-width:760px){
+  .nav{padding:18px 16px}.links{display:none}
+  .copy{align-self:start;padding:6px 16px 0}
+  .eyebrow{margin-bottom:14px}.sub{font-size:15px;margin-top:16px}.ctas{margin-top:20px;gap:18px}.btn{padding:13px 20px}
+  .foot{padding:0 16px 14px}.foot .hint{display:none}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="tree" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">hanami<i>.</i></a>
+    <nav class="links" aria-label="Primary"><a href="#">journal</a><a href="#">prompts</a><a href="#">seasons</a><a href="#">pricing</a></nav>
+    <button class="time" data-theme-toggle aria-label="Toggle dark mode"><b class="d">day</b>/<b class="n">night</b></button>
+  </header>
+  <section class="copy">
+    <p class="eyebrow">A journal for the long view</p>
+    <h1>Some things only <em>bloom slowly.</em></h1>
+    <p class="sub">Hanami asks one small question a day and keeps every answer. Give it a year and you will have grown a tree.</p>
+    <div class="ctas"><a class="btn" href="#">Plant your first entry</a><a class="link" href="#">Read a sample year</a></div>
+  </section>
+  <footer class="foot"><span>Fallen petals <b id="fallen">0</b></span><span class="hint">Tap the tree to shake it</span></footer>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('tree'), { levels: 12, inks: ['--fg', '--accent'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => build() });
+  const BLOOM = A.ramp('.:+*o&%@'), FALL = A.ramp(",`'.");
+  let segs = [], tips = [], petals = [], ground = null, W = 0, H = 0, gy = 0, rootX = 0, wind = 0, shake = 0, fallen = 0, moon = null;
+  const MAXD = 8, fallenEl = document.getElementById('fallen');
+
+  function build() {
+    W = g.w; H = g.h;
+    const mob = W < 760;
+    gy = H - (mob ? 50 : 64);
+    rootX = mob ? W * 0.55 : W * 0.7;
+    const L0 = Math.min(H * (mob ? 0.1 : 0.2), W * (mob ? 0.21 : 0.16)), W0 = mob ? 3 : 4;
+    moon = { x: rootX + (mob ? -W * 0.12 : -L0 * 0.9), y: gy - L0 * (mob ? 2.9 : 3.1), r: L0 * (mob ? 0.9 : 1.05) };
+    segs = []; tips = [];
+    const R = A.rng(20260407);
+    (function br(p, rel, len, w, d) {
+      const id = segs.length;
+      segs.push({ p, rel, len, w, d, ph: R() * 6.3, a: 0, x0: 0, y0: 0, x1: 0, y1: 0 });
+      if (d >= MAXD) { tips.push(id); return; }
+      const n = d < 1 ? 2 : R() < 0.28 ? 3 : 2;
+      for (let k = 0; k < n; k++) {
+        const side = n === 2 ? (k ? 1 : -1) : k - 1;
+        const spread = (d < 2 ? A.lerp(0.32, 0.5, R()) : A.lerp(0.26, 0.6, R())) * side + (R() - 0.5) * 0.22;
+        br(id, spread, len * A.lerp(0.7, 0.84, R()), Math.max(0.5, w * 0.66), d + 1);
+      }
+      if (d >= MAXD - 3 && R() < 0.3) tips.push(id);
+    })(-1, -0.06, L0, W0, 0);
+    ground = new Float32Array(g.cols);
+    petals = [];
+    // a season already under way: some petals on the ground, some in the air
+    pose(0);
+    let span = 0;
+    for (const i of tips) span = Math.max(span, Math.abs(segs[i].x1 - rootX));
+    fallen = 0;
+    for (let k = 0; k < 140; k++) {
+      const c = ((rootX + (Math.random() + Math.random() - 1) * span * 1.3) / g.cw) | 0;
+      if (c >= 0 && c < g.cols) { ground[c] = Math.min(6, ground[c] + 1); fallen++; }
+    }
+    spawn(70);
+    for (const p of petals) p.y += Math.random() * (gy - p.y);
+  }
+
+  function pose(t) {
+    const gust = A.noise2(t * 0.22, 3.1) * 0.7 + Math.sin(t * 0.5) * 0.15;
+    for (let i = 0; i < segs.length; i++) {
+      const s = segs[i], k = (s.d + 1) / (MAXD + 1);
+      let a = (s.p < 0 ? 0 : segs[s.p].a) + s.rel;
+      // gravity pulls outer branches toward horizontal, wind leans everything a little
+      if (s.d > 2) a += Math.sign(a || 1) * 0.05 * (s.d - 2);
+      a += (gust * 0.05 + wind * 0.08 + Math.sin(t * 1.3 + s.ph) * 0.016 * (1 + shake * 6)) * k * k;
+      s.a = a;
+      s.x0 = s.p < 0 ? rootX : segs[s.p].x1; s.y0 = s.p < 0 ? gy : segs[s.p].y1;
+      s.x1 = s.x0 + Math.sin(a) * s.len; s.y1 = s.y0 - Math.cos(a) * s.len;
+    }
+  }
+
+  function drawSeg(s) {
+    const { cw, ch } = g, dx = s.x1 - s.x0, dy = s.y1 - s.y0, len = Math.hypot(dx, dy) || 1;
+    const steps = Math.ceil(len / (Math.min(cw, ch) * 0.45)), code = A.lineChar(dx / cw, dy / ch);
+    const nx = -dy / len, ny = dx / len, lines = Math.max(1, Math.round(s.w)), lv = s.d < 2 ? 11 : s.d < 5 ? 10 : 8;
+    for (let k = 0; k < lines; k++) {
+      const o = (k - (lines - 1) / 2) * cw * 0.9;
+      for (let j = 0; j <= steps; j++) {
+        const f = j / steps, x = s.x0 + dx * f + nx * o, y = s.y0 + dy * f + ny * o;
+        g.put((x / cw) | 0, (y / ch) | 0, lines > 2 && k > 0 && k < lines - 1 && (j + k) % 3 === 0 ? 58 : code, lv);
+      }
+    }
+  }
+
+  function bloom(s, t) {
+    const { cw, ch, cols, rows, chr, lvl, ink } = g, R = cw * (s.d >= MAXD ? 2.5 : 1.8);
+    const cx = s.x1, cy = s.y1, c0 = Math.max(0, ((cx - R) / cw) | 0), c1 = Math.min(cols - 1, ((cx + R) / cw) | 0);
+    const r0 = Math.max(0, ((cy - R * 0.8) / ch) | 0), r1 = Math.min(rows - 1, ((cy + R * 0.8) / ch) | 0);
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      const dx = ((c + 0.5) * cw - cx) / R, dy = ((r + 0.5) * ch - cy) / (R * 0.8), d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 1) continue;
+      const h = ((c * 73856093) ^ (r * 19349663) ^ (s.ph * 1e4)) >>> 0;
+      const v = (1 - d) * 0.75 + ((h % 100) / 100) * 0.45;
+      if (v < 0.32) continue;
+      const i = r * cols + c, lv = Math.min(12, 5 + Math.round(v * 7));
+      if (ink[i] === 1 && lvl[i] >= lv) continue;
+      chr[i] = BLOOM[Math.min(7, Math.round(v * 6))]; lvl[i] = lv; ink[i] = 1;
+    }
+  }
+
+  function spawn(n) {
+    for (let k = 0; k < n && petals.length < 260; k++) {
+      const s = segs[tips[(Math.random() * tips.length) | 0]];
+      petals.push({ x: s.x1 + (Math.random() - 0.5) * g.cw * 4, y: s.y1 + (Math.random() - 0.5) * g.ch * 2, vy: A.lerp(24, 52, Math.random()), ph: Math.random() * 6.3, sw: A.lerp(10, 30, Math.random()) });
+    }
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('a,button')) return;
+    const near = segs.some((s) => s.d > 3 && Math.hypot(s.x1 - e.clientX, s.y1 - e.clientY) < 70);
+    if (near) { shake = 1; spawn(40); }
+  });
+
+  build();
+  let spawnT = 0;
+  A.loop((dt, t) => {
+    wind += ((P.active ? A.clamp(P.vx / 900, -1.5, 1.5) : 0) - wind) * Math.min(1, dt * 2);
+    shake *= Math.exp(-dt * 1.6);
+    pose(t);
+    g.clear();
+    const { cw, ch, cols } = g;
+    // a thin moon behind the canopy
+    const steps = Math.ceil((6.283 * moon.r) / (cw * 0.8));
+    for (let j = 0; j < steps; j++) { const a = (j / steps) * 6.283; g.put(((moon.x + Math.cos(a) * moon.r) / cw) | 0, ((moon.y + Math.sin(a) * moon.r) / ch) | 0, 46, 3); }
+    for (const s of segs) drawSeg(s);
+    for (const i of tips) bloom(segs[i], t);
+    if ((spawnT -= dt) < 0) { spawnT = A.lerp(0.08, 0.3, Math.random()); spawn(1); }
+    const gr = (gy / ch) | 0;
+    for (let k = petals.length - 1; k >= 0; k--) {
+      const p = petals[k];
+      p.x += (Math.sin(t * 1.9 + p.ph) * p.sw + wind * 90 + 14) * dt;
+      p.y += p.vy * dt * (0.75 + 0.25 * Math.sin(t * 2.7 + p.ph));
+      if (p.y >= gy - ch * 0.4) {
+        const c = (p.x / cw) | 0;
+        if (c >= 0 && c < cols) { ground[c] = Math.min(6, ground[c] + 1); fallen++; }
+        petals.splice(k, 1); continue;
+      }
+      if (p.x < -20 || p.x > W + 20) { petals.splice(k, 1); continue; }
+      g.put((p.x / cw) | 0, (p.y / ch) | 0, FALL[((t * 3 + p.ph) | 0) & 3], 10, 1);
+    }
+    // ground line and the slowly fading carpet of petals
+    for (let c = 0; c < cols; c++) {
+      ground[c] = Math.max(0, ground[c] - dt * 0.012);
+      const v = ground[c];
+      if (v > 0.6) { g.put(c, gr, v > 3 ? 111 : v > 1.6 ? 44 : 46, Math.min(12, 6 + Math.round(v)), 1); if (v > 4.5) g.put(c, gr - 1, 46, 7, 1); }
+      else g.put(c, gr, 95, 3);
+    }
+    g.draw();
+    fallenEl.textContent = fallen.toLocaleString('en-US');
+  });
+})();
+</script>
+</body>
+</html>

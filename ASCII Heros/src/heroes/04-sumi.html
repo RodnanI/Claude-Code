@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sumi Studio · Slow ink</title>
+<meta name="description" content="A design studio landing hero: ASCII ink sinking and curling through water, driven by a stable-fluids solver.">
+<meta name="ascii-hero" content='{"name":"Sumi","brand":"Sumi Studio","kind":"Design studio","tech":"Stable fluids, buoyancy and vorticity confinement","accent":"#e2412a"}'>
+<style>
+:root{--bg:#0c0b0a;--fg:#ebe6db;--dim:rgba(235,230,219,.56);--faint:rgba(235,230,219,.15);--red:#f0533a;color-scheme:dark;
+  --serif:"Didot","Bodoni 72","Bodoni MT","Iowan Old Style","Palatino Linotype",Georgia,"DejaVu Serif",serif;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","Noto Serif CJK JP","Noto Serif JP","IPAMincho","IPAexMincho",serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#efeae0;--fg:#141210;--dim:rgba(20,18,16,.6);--faint:rgba(20,18,16,.14);--red:#d63a22;color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:13px/1.5 var(--mono);transition:background-color .6s}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E")}
+[data-theme=dark] body::before{mix-blend-mode:screen;opacity:.35}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr)}
+.hero a,.hero button{pointer-events:auto}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:26px clamp(16px,3.6vw,52px)}
+.mark{font:italic 400 24px/1 var(--serif);letter-spacing:-.01em;display:flex;gap:10px;align-items:baseline}
+.mark span{font:400 15px/1 var(--mincho);color:var(--red)}
+.links{display:flex;gap:34px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.links a:hover{color:var(--fg)}
+.drop{width:14px;height:18px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;border:1.4px solid currentColor;position:relative;overflow:hidden}
+.drop::after{content:"";position:absolute;inset:auto 0 0;height:55%;background:currentColor;transition:height .6s}
+[data-theme=light] .drop::after{height:0}
+.copy{align-self:center;padding:0 clamp(16px,3.6vw,52px);max-width:640px}
+.label{display:flex;align-items:center;gap:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:26px}
+.seal{width:48px;height:48px;background:var(--red);color:var(--bg);display:grid;place-items:center;font:600 27px/1 var(--mincho);border-radius:3px;transform:rotate(-4deg);box-shadow:inset 0 0 0 3px var(--red),inset 0 0 0 4.5px var(--bg);flex:none}
+h1{font:400 clamp(64px,9.8vw,156px)/.86 var(--serif);letter-spacing:-.035em;margin-left:-.04em}
+h1 i{font-style:italic}
+.sub{max-width:400px;margin-top:28px;color:var(--dim);font:400 16px/1.6 var(--serif)}
+.ctas{display:flex;gap:28px;align-items:center;margin-top:32px}
+.btn{padding:14px 24px;border:1px solid var(--fg);font-size:11px;letter-spacing:.18em;text-transform:uppercase;transition:background-color .3s,color .3s}
+.btn:hover{background:var(--fg);color:var(--bg)}
+.link{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.link:hover{color:var(--fg)}
+.foot{display:flex;justify-content:space-between;padding:0 clamp(16px,3.6vw,52px) 24px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.vert{position:absolute;right:clamp(16px,3.6vw,52px);top:50%;transform:translateY(-50%);writing-mode:vertical-rl;font:400 15px/1 var(--mincho);letter-spacing:.55em;color:var(--dim);display:flex;gap:18px;align-items:center}
+.vert small{font:400 9.5px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase}
+.vert b{display:block;width:1px;height:46px;background:var(--faint)}
+@media (max-width:760px){
+  .nav{padding:18px 16px}.links{display:none}
+  .copy{align-self:end;padding:0 16px 22px}.label{margin-bottom:18px}.seal{width:40px;height:40px;font-size:22px}
+  .sub{font-size:15px;margin-top:20px}.ctas{margin-top:24px;gap:20px}
+  .vert{top:96px;transform:none;font-size:13px}.vert small,.vert b{display:none}
+  .foot .hint{display:none}.foot{padding-bottom:18px}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="ink" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">Sumi<span>&#22696;</span></a>
+    <nav class="links" aria-label="Primary"><a href="#">Work</a><a href="#">Studio</a><a href="#">Journal</a><a href="#">Contact</a></nav>
+    <button class="drop" data-theme-toggle aria-label="Toggle dark mode"></button>
+  </header>
+  <section class="copy">
+    <p class="label"><span class="seal" aria-hidden="true">&#22696;</span>Design studio / Kyoto &amp; Oslo</p>
+    <h1>Slow <i>ink.</i></h1>
+    <p class="sub">Twelve people making identities, books and quiet software for companies that plan in decades, not quarters.</p>
+    <div class="ctas"><a class="btn" href="#">See the work</a><a class="link" href="#">Commission us</a></div>
+  </section>
+  <p class="vert" aria-hidden="true">&#22696;&#12398;&#27969;&#12428;<b></b><small>sumi no nagare</small></p>
+  <footer class="foot" aria-hidden="true"><span>Est. 2011</span><span class="hint">Move to stir / hold and drag to ink</span></footer>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('ink'), { levels: 12, alpha: (t) => 0.1 + 0.9 * t, size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => setup() });
+  const INK = A.ramp(" .'`,:;~-=+*o%#@"), NI = INK.length - 1;
+  let NX = 0, NY = 0, N = 0, u, v, u0, v0, d, d0, d1, d2, lo, hi, p, dv, cu;
+
+  function setup() {
+    NX = g.cols; NY = g.rows * 2; N = NX * NY;
+    [u, v, u0, v0, d, d0, d1, d2, lo, hi, p, dv, cu] = Array.from({ length: 13 }, () => new Float32Array(N));
+  }
+
+  // semi-Lagrangian advection; with lim set, also records the stencil's min/max for the MacCormack limiter
+  function advect(dst, src, dt, lim) {
+    for (let j = 1; j < NY - 1; j++) {
+      for (let i = 1; i < NX - 1; i++) {
+        const k = j * NX + i;
+        let x = i - dt * u[k], y = j - dt * v[k];
+        x = x < 0.5 ? 0.5 : x > NX - 1.5 ? NX - 1.5 : x;
+        y = y < 0.5 ? 0.5 : y > NY - 1.5 ? NY - 1.5 : y;
+        const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, b = y0 * NX + x0;
+        const s00 = src[b], s10 = src[b + 1], s01 = src[b + NX], s11 = src[b + NX + 1];
+        dst[k] = (s00 * (1 - fx) + s10 * fx) * (1 - fy) + (s01 * (1 - fx) + s11 * fx) * fy;
+        if (lim) { lo[k] = Math.min(s00, s10, s01, s11); hi[k] = Math.max(s00, s10, s01, s11); }
+      }
+    }
+  }
+  function walls() {
+    for (let i = 0; i < NX; i++) { u[i] = u[i + NX]; v[i] = 0; u[N - NX + i] = u[N - 2 * NX + i]; v[N - NX + i] = 0; }
+    for (let j = 0; j < NY; j++) { const a = j * NX, b = a + NX - 1; u[a] = 0; v[a] = v[a + 1]; u[b] = 0; v[b] = v[b - 1]; }
+  }
+  function project() {
+    for (let j = 1; j < NY - 1; j++) for (let i = 1; i < NX - 1; i++) { const k = j * NX + i; dv[k] = -0.5 * (u[k + 1] - u[k - 1] + v[k + NX] - v[k - NX]); }
+    for (let it = 0; it < 16; it++) {
+      for (let j = 1; j < NY - 1; j++) for (let i = 1; i < NX - 1; i++) { const k = j * NX + i; p[k] = (dv[k] + p[k - 1] + p[k + 1] + p[k - NX] + p[k + NX]) * 0.25; }
+      for (let i = 0; i < NX; i++) { p[i] = p[i + NX]; p[N - NX + i] = p[N - 2 * NX + i]; }
+      for (let j = 0; j < NY; j++) { p[j * NX] = p[j * NX + 1]; p[j * NX + NX - 1] = p[j * NX + NX - 2]; }
+    }
+    for (let j = 1; j < NY - 1; j++) for (let i = 1; i < NX - 1; i++) { const k = j * NX + i; u[k] -= 0.5 * (p[k + 1] - p[k - 1]); v[k] -= 0.5 * (p[k + NX] - p[k - NX]); }
+    walls();
+  }
+  function splat(cx, cy, r, fx, fy, ink) {
+    const r2 = r * r, x0 = Math.max(1, (cx - r * 2) | 0), x1 = Math.min(NX - 2, (cx + r * 2) | 0), y0 = Math.max(1, (cy - r * 2) | 0), y1 = Math.min(NY - 2, (cy + r * 2) | 0);
+    for (let j = y0; j <= y1; j++) for (let i = x0; i <= x1; i++) {
+      const dx = i - cx, dy = j - cy, w = Math.exp(-(dx * dx + dy * dy) / r2), k = j * NX + i;
+      u[k] += fx * w; v[k] += fy * w; d[k] = Math.min(2.2, d[k] + ink * w);
+    }
+  }
+
+  function step(dt) {
+    // vorticity confinement keeps the curls alive at this low resolution
+    for (let j = 1; j < NY - 1; j++) for (let i = 1; i < NX - 1; i++) { const k = j * NX + i; cu[k] = 0.5 * (v[k + 1] - v[k - 1] - (u[k + NX] - u[k - NX])); }
+    const eps = 4.2;
+    for (let j = 2; j < NY - 2; j++) for (let i = 2; i < NX - 2; i++) {
+      const k = j * NX + i;
+      const gx = Math.abs(cu[k + 1]) - Math.abs(cu[k - 1]), gy = Math.abs(cu[k + NX]) - Math.abs(cu[k - NX]), l = Math.hypot(gx, gy) + 1e-5;
+      u[k] += dt * eps * (gy / l) * cu[k]; v[k] -= dt * eps * (gx / l) * cu[k];
+      v[k] += dt * 9 * d[k];                                    // ink is heavier than water: it sinks
+      u[k] *= 0.996; v[k] *= 0.996;
+    }
+    walls();
+    u0.set(u); v0.set(v);
+    advect(u, u0, dt); advect(v, v0, dt);
+    walls();
+    project();
+    // MacCormack for the ink: forward, backward, correct, clamp. Keeps edges sharp on a coarse grid
+    d0.set(d);
+    advect(d1, d0, dt, true);
+    advect(d2, d1, -dt, false);
+    const fade = 1 - dt * 0.022;
+    for (let k = 0; k < N; k++) {
+      let x = d1[k] + 0.5 * (d0[k] - d2[k]);
+      x = x < lo[k] ? lo[k] : x > hi[k] ? hi[k] : x;
+      d[k] = x * fade;
+    }
+  }
+
+  let dropT = 0.6, lastX = 0, lastY = 0, hadP = false;
+  function drop() {
+    const mob = g.w < 760;
+    const x = (mob ? A.lerp(0.15, 0.85, Math.random()) : A.lerp(0.48, 0.9, Math.random())) * NX;
+    const y = A.lerp(0.06, 0.2, Math.random()) * NY;
+    splat(x, y, A.lerp(2.4, 3.6, Math.random()), A.lerp(-5, 5, Math.random()), 14, A.lerp(2.2, 3.2, Math.random()));
+  }
+
+  setup();
+  for (let k = 0; k < 3; k++) { drop(); for (let s = 0; s < 28; s++) step(1 / 30); }
+  A.loop((dt) => {
+    dt = Math.min(dt, 1 / 30);
+    if ((dropT -= dt) < 0) { dropT = A.lerp(3, 5.5, Math.random()); drop(); }
+    if (P.active) {
+      const cx = P.x / g.cw, cy = P.y / (g.ch / 2);
+      if (hadP) {
+        const fx = (P.vx / g.cw) * 0.06, fy = (P.vy / (g.ch / 2)) * 0.06;
+        const segs = Math.max(1, Math.ceil(Math.hypot(cx - lastX, cy - lastY) / 2));
+        for (let s = 1; s <= segs; s++) {
+          const t = s / segs;
+          splat(A.lerp(lastX, cx, t), A.lerp(lastY, cy, t), 2.2, fx / segs, fy / segs, P.down ? 0.22 / segs + 0.05 : 0);
+        }
+      }
+      lastX = cx; lastY = cy; hadP = true;
+    } else hadP = false;
+    step(dt);
+
+    g.clear();
+    const { cols, rows, chr, lvl } = g;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const k0 = 2 * r * NX + c, k1 = k0 + NX;
+        const dd = (d[k0] + d[k1]) * 0.5, b = 1 - Math.exp(-dd * 3.4);
+        if (b < 0.035) continue;
+        const i = r * cols + c, uu = (u[k0] + u[k1]) * 0.5, vv = (v[k0] + v[k1]) * 0.25;
+        // thin, fast-moving ink reads as brush strokes along the flow
+        chr[i] = b < 0.3 && uu * uu + vv * vv > 9 ? A.lineChar(uu, vv) : INK[Math.max(1, Math.round(b * NI))];
+        lvl[i] = Math.max(1, Math.round(b * 12));
+      }
+    }
+    g.draw();
+  });
+})();
+</script>
+</body>
+</html>

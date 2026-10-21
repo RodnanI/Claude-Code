@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ASCII Heroes</title>
+<meta name="description" content="Thirteen living landing-page heroes rendered entirely in glyphs. Every one is a single standalone HTML file.">
+<style>
+:root{--bg:#080808;--fg:#eeede8;--dim:rgba(238,237,232,.52);--faint:rgba(238,237,232,.13);--row:rgba(238,237,232,.05);color-scheme:dark;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"DejaVu Serif",serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#ecebe6;--fg:#0c0c0c;--dim:rgba(12,12,12,.56);--faint:rgba(12,12,12,.13);--row:rgba(12,12,12,.04);color-scheme:light}
+html,body{height:auto;min-height:100%}
+body{overflow-x:hidden;overflow-y:auto;background:var(--bg);color:var(--fg);font:13px/1.5 var(--mono);transition:background-color .5s}
+body.viewing{overflow:hidden}
+.top{display:flex;justify-content:space-between;align-items:center;padding:20px clamp(16px,3vw,40px);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.top b{font-weight:400;color:var(--fg)}
+.top button{border:1px solid var(--faint);padding:7px 11px;letter-spacing:.14em;text-transform:uppercase;font-size:10.5px;color:var(--fg)}
+.top button:hover{border-color:var(--fg)}
+#title{display:block;width:100%;height:clamp(150px,30vw,330px)}
+.intro{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px 40px;padding:6px clamp(16px,3vw,40px) 34px;border-bottom:1px solid var(--faint)}
+.intro p{font:400 clamp(20px,2.1vw,30px)/1.3 var(--serif);letter-spacing:-.01em;max-width:760px}
+.intro p i{font-style:italic}
+.intro ul{list-style:none;align-self:end;justify-self:end;display:grid;grid-template-columns:auto auto;gap:6px 28px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.intro li b{color:var(--fg);font-weight:400}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr)}
+.list{border-right:1px solid var(--faint)}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:4px 18px;align-items:center;padding:18px clamp(16px,3vw,40px);border-bottom:1px solid var(--faint);transition:background-color .25s}
+.row:hover,.row.on{background:var(--row)}
+.row .n{font-size:11px;color:var(--dim);letter-spacing:.08em;align-self:start;padding-top:9px}
+.row h2{font:400 clamp(26px,2.9vw,40px)/1.05 var(--serif);letter-spacing:-.02em;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.row h2 small{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.row .tech{grid-column:2;font-size:11.5px;color:var(--dim);letter-spacing:.02em}
+.row .sw{grid-row:1/3;grid-column:3;display:flex;align-items:center;gap:12px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.row .sw i{width:12px;height:12px;border:1px solid var(--dim);display:block}
+.row .sw i.mono{background:linear-gradient(90deg,var(--fg) 50%,var(--bg) 0)}
+.row .go{font-size:16px;color:var(--fg);transition:transform .25s}
+.row:hover .go{transform:translateX(4px)}
+.pane{position:relative}
+.stick{position:sticky;top:0;display:flex;flex-direction:column;padding:28px clamp(16px,2.6vw,36px)}
+.screen{position:relative;width:100%;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--faint);background:var(--bg)}
+.screen iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0}
+.cap{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.cap b{color:var(--fg);font-weight:400}
+.cap button{border:1px solid var(--faint);padding:7px 11px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg)}
+.cap button:hover{border-color:var(--fg)}
+.notes{padding:34px clamp(16px,3vw,40px) 46px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:26px;color:var(--dim);font-size:12px;line-height:1.65}
+.notes h3{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--fg);margin-bottom:8px}
+.viewer{position:fixed;inset:0;z-index:20;display:grid;grid-template-rows:minmax(0,1fr) auto;background:var(--bg)}
+.viewer[hidden]{display:none}
+.viewer iframe{width:100%;height:100%;border:0;display:block}
+.bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px clamp(10px,2vw,20px);border-top:1px solid var(--faint);font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.bar .mid{display:flex;gap:14px;align-items:center;justify-content:center;min-width:0}
+.bar .mid span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .mid b{font-weight:400;color:var(--dim)}
+.bar button,.bar a{border:1px solid var(--faint);padding:8px 12px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.bar button:hover,.bar a:hover{border-color:var(--fg)}
+.bar .grp{display:flex;gap:6px}
+@media (max-width:900px){
+  .intro{grid-template-columns:minmax(0,1fr)}.intro ul{justify-self:start}
+  .wrap{grid-template-columns:minmax(0,1fr)}.pane{display:none}.list{border-right:0}
+  .row{grid-template-columns:30px minmax(0,1fr) auto;padding:16px}
+  .row .sw span{display:none}
+  .notes{grid-template-columns:minmax(0,1fr)}
+  .bar .dl,.bar .nt{display:none}.bar .mid b{display:none}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<header class="top">
+  <span><b>ASCII Heroes</b> / Vol. 1</span>
+  <button data-theme-toggle aria-label="Toggle dark mode">Dark / Light</button>
+</header>
+<canvas id="title" role="img" aria-label="ASCII Heroes"></canvas>
+<section class="intro">
+  <p>Thirteen landing-page heroes drawn entirely in glyphs. Sharks, black holes, starlings and ink, all <i>alive</i>, all a single HTML file you can lift straight into a site.</p>
+  <ul><li><b>13</b> heroes</li><li><b>0</b> dependencies</li><li><b>2</b> themes each</li><li><b>1</b> file each</li></ul>
+</section>
+<main class="wrap">
+  <nav class="list" aria-label="Heroes"></nav>
+  <aside class="pane" aria-label="Live preview">
+    <div class="stick">
+      <div class="screen"><iframe title="Live preview" loading="lazy" tabindex="-1"></iframe></div>
+      <div class="cap"><span id="capt"></span><button type="button" id="openp">Open full screen</button></div>
+    </div>
+  </aside>
+</main>
+<section class="notes">
+  <div><h3>How they work</h3>Every hero renders into a canvas as a grid of characters. Cells are batched by brightness into row strings, so a full screen of glyphs costs a few hundred draw calls a frame.</div>
+  <div><h3>Using one</h3>Open a hero and press Download. You get one HTML file with the engine inlined: no build step, no fonts to load, no images. Swap the copy and ship it.</div>
+  <div><h3>Themes</h3>Each hero has its own dark and light treatment. The toggle here and inside every hero stay in sync, and the choice is remembered.</div>
+</section>
+<div class="viewer" hidden>
+  <iframe title="Hero"></iframe>
+  <div class="bar">
+    <div class="grp"><button type="button" id="prev" aria-label="Previous hero">&larr; Prev</button><button type="button" id="close" aria-label="Back to index">Index</button></div>
+    <div class="mid"><span id="vt"></span></div>
+    <div class="grp"><a class="nt" id="newtab" href="#" target="_blank" rel="noopener">New tab</a><button type="button" class="dl" id="dl">Download</button><button type="button" id="next" aria-label="Next hero">Next &rarr;</button></div>
+  </div>
+</div>
+<script>
+(() => {
+  const A = ASCII;
+  const HEROES = /*HEROES*/[];
+  const pad = (n) => String(n + 1).padStart(2, '0');
+
+  /* ---------- living title ---------- */
+  const tg = A.grid(document.getElementById('title'), { levels: 12, size: (w) => (w < 640 ? 7 : w < 1280 ? 9 : 10), onResize: () => tmask() });
+  const SCR = A.ramp('!/\\|<>{}[]~^*+=#%&$@');
+  let mask = null, MW = 1, MH = 1;
+  function tmask() {
+    const W = tg.w, H = tg.h, two = W < 640;
+    MW = W; MH = H;
+    mask = A.mask(W, H, (x) => {
+      const lines = two ? ['ASCII', 'HEROES'] : ['ASCII HEROES'];
+      let fs = H / (two ? 2.1 : 1.15);
+      x.font = `900 ${fs}px "Helvetica Neue",Helvetica,Inter,Arial,sans-serif`;
+      const wmax = Math.max(...lines.map((l) => x.measureText(l).width));
+      if (wmax > W * 0.94) { fs *= (W * 0.94) / wmax; x.font = `900 ${fs}px "Helvetica Neue",Helvetica,Inter,Arial,sans-serif`; }
+      x.textBaseline = 'middle';
+      lines.forEach((l, k) => x.fillText(l, W * 0.03, H * (two ? 0.27 + k * 0.48 : 0.52)));
+    });
+  }
+  tmask();
+  A.loop((dt, t) => {
+    if (document.body.classList.contains('viewing')) return;
+    const { cols, rows, cw, ch, chr, lvl } = tg, P = A.pointer, tr = document.getElementById('title').getBoundingClientRect();
+    tg.clear();
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x = Math.min(MW - 1, ((c + 0.5) * cw) | 0), y = Math.min(MH - 1, ((r + 0.5) * ch) | 0), i = r * cols + c;
+      if (mask[y * MW + x] < 128) { if ((c * 31 + r * 17) % 97 === 0) { chr[i] = 46; lvl[i] = 1; } continue; }
+      const edge = mask[y * MW + Math.min(MW - 1, (x + cw) | 0)] < 128 || mask[y * MW + Math.max(0, (x - cw) | 0)] < 128;
+      const v = 0.5 + 0.5 * A.noise3(c * 0.045 - t * 0.25, r * 0.09, t * 0.15);
+      const dx = (P.x - tr.left - x) / cw, dy = (P.y - tr.top - y) / ch;
+      if (P.active && dx * dx * 0.25 + dy * dy < 30) { chr[i] = SCR[(Math.random() * SCR.length) | 0]; lvl[i] = 12; continue; }
+      chr[i] = edge || v > 0.64 ? 35 : v > 0.38 ? 43 : 58; lvl[i] = edge ? 12 : 3 + Math.round(v * 9);
+    }
+    tg.draw();
+  });
+
+  /* ---------- index ---------- */
+  const list = document.querySelector('.list'), pframe = document.querySelector('.screen iframe'), screen = document.querySelector('.screen');
+  const capt = document.getElementById('capt');
+  HEROES.forEach((h, i) => {
+    const a = document.createElement('a');
+    a.className = 'row'; a.href = '#' + h.slug;
+    a.innerHTML = `<span class="n">${pad(i)}</span><h2>${h.name}<small>${h.brand} / ${h.kind}</small></h2><span class="tech">${h.tech}</span>` +
+      `<span class="sw"><span>${h.accent ? 'one accent' : 'mono'}</span><i class="${h.accent ? '' : 'mono'}" style="${h.accent ? 'background:' + h.accent : ''}"></i><b class="go" aria-hidden="true">&rarr;</b></span>`;
+    a.addEventListener('mouseenter', () => preview(i));
+    a.addEventListener('focus', () => preview(i));
+    list.appendChild(a);
+  });
+  let cur = -1, pt = 0;
+  function fit() { pframe.style.transform = `scale(${screen.clientWidth / 1440})`; }
+  addEventListener('resize', fit);
+  function preview(i) {
+    if (i === cur) return;
+    cur = i;
+    [...list.children].forEach((el, k) => el.classList.toggle('on', k === i));
+    capt.innerHTML = `<b>${pad(i)} ${HEROES[i].name}</b> / ${HEROES[i].brand}`;
+    clearTimeout(pt);
+    pt = setTimeout(() => { if (matchMedia('(min-width: 901px)').matches && !document.body.classList.contains('viewing')) pframe.srcdoc = HEROES[i].html; }, 140);
+  }
+  document.getElementById('openp').onclick = () => { location.hash = HEROES[Math.max(0, cur)].slug; };
+
+  /* ---------- viewer ---------- */
+  const viewer = document.querySelector('.viewer'), vframe = viewer.querySelector('iframe'), vt = document.getElementById('vt');
+  let vi = -1, blobUrl = null;
+  function show(i) {
+    vi = (i + HEROES.length) % HEROES.length;
+    const h = HEROES[vi];
+    viewer.hidden = false; document.body.classList.add('viewing');
+    pframe.removeAttribute('srcdoc'); pframe.src = 'about:blank';
+    vframe.srcdoc = h.html; vframe.title = `${h.name}, ${h.brand}`;
+    vt.innerHTML = `${pad(vi)} / ${pad(HEROES.length - 1)} &middot; ${h.name} <b>${h.brand}</b>`;
+    if (blobUrl) URL.revokeObjectURL(blobUrl);
+    blobUrl = URL.createObjectURL(new Blob([h.html], { type: 'text/html' }));
+    document.getElementById('newtab').href = blobUrl;
+    document.title = `${h.name} / ASCII Heroes`;
+    setTimeout(() => vframe.focus(), 60);
+  }
+  function hide() {
+    viewer.hidden = true; document.body.classList.remove('viewing'); vframe.removeAttribute('srcdoc'); vframe.src = 'about:blank';
+    document.title = 'ASCII Heroes';
+    const k = cur; cur = -1; preview(Math.max(0, k)); fit();
+  }
+  function route() {
+    const i = HEROES.findIndex((h) => '#' + h.slug === location.hash);
+    if (i >= 0) show(i); else if (!viewer.hidden) hide();
+  }
+  addEventListener('hashchange', route);
+  const go = (d) => { location.hash = HEROES[(vi + d + HEROES.length) % HEROES.length].slug; };
+  document.getElementById('prev').onclick = () => go(-1);
+  document.getElementById('next').onclick = () => go(1);
+  document.getElementById('close').onclick = () => { history.pushState('', '', location.pathname + location.search); hide(); };
+  document.getElementById('dl').onclick = () => {
+    const h = HEROES[vi], a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([h.html], { type: 'text/html' })); a.download = `${h.slug}.html`;
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  const key = (k) => { if (viewer.hidden) return; if (k === 'ArrowRight') go(1); else if (k === 'ArrowLeft') go(-1); else if (k === 'Escape') document.getElementById('close').click(); };
+  addEventListener('keydown', (e) => { if (!e.target.closest('input,textarea')) key(e.key); });
+  addEventListener('message', (e) => { if (e.data && e.data.asciiKey && e.source === vframe.contentWindow) key(e.data.asciiKey); });
+
+  // keep every frame on the same theme as the shell
+  A.theme.on((t) => { for (const f of [pframe, vframe]) f.contentWindow && f.contentWindow.postMessage({ asciiTheme: t }, '*'); });
+
+  fit();
+  preview(0);
+  route();
+})();
+</script>
+</body>
+</html>

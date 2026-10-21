@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Resonant R-1 · Every sound has a shape</title>
+<meta name="description" content="A synthesizer landing hero: ASCII sand migrating to the nodal lines of a vibrating Chladni plate.">
+<meta name="ascii-hero" content='{"name":"Chladni","brand":"Resonant","kind":"Modal synthesizer","tech":"Grains settling on plate-mode nodal lines","accent":""}'>
+<style>
+:root{--bg:#0a0a0a;--fg:#efefea;--dim:rgba(239,239,234,.55);--faint:rgba(239,239,234,.14);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#edede8;--fg:#0b0b0b;--dim:rgba(11,11,11,.58);--faint:rgba(11,11,11,.14);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:15px/1.45 var(--sans);transition:background-color .5s}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);column-gap:clamp(28px,5vw,80px);padding:0 clamp(16px,3.4vw,48px);pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{grid-column:1/-1;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));align-items:center;padding:22px 0;border-bottom:1px solid var(--faint);font-size:13px}
+.mark{grid-column:span 3;font-weight:700;letter-spacing:-.02em;font-size:17px}
+.mark span{font-weight:400;color:var(--dim)}
+.links{grid-column:span 6;display:flex;gap:28px;color:var(--dim)}
+.links a:hover{color:var(--fg)}
+.nr{grid-column:span 3;display:flex;justify-content:flex-end;gap:18px;align-items:center}
+.mode-t{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;border:1px solid var(--faint);padding:6px 10px}
+.mode-t:hover{border-color:var(--fg)}
+.copy{align-self:center;max-width:560px;padding-bottom:4vh}
+.idx{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:flex;gap:18px;margin-bottom:28px}
+h1{font:700 clamp(44px,5.6vw,92px)/.92 var(--sans);letter-spacing:-.045em}
+.sub{margin-top:24px;max-width:430px;color:var(--dim);font-size:16px;line-height:1.55}
+.freq{display:flex;align-items:baseline;gap:14px;margin-top:34px;border-top:1px solid var(--faint);padding-top:18px}
+.freq b{font:300 clamp(48px,5vw,80px)/1 var(--sans);letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.freq span{font:12px var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+.modes{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.modes button{font:11px var(--mono);letter-spacing:.04em;padding:7px 9px;border:1px solid var(--faint);color:var(--dim);transition:all .2s}
+.modes button:hover{color:var(--fg);border-color:var(--dim)}
+.modes button[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{background:var(--fg);color:var(--bg);padding:14px 20px;font-weight:600;font-size:14px;display:flex;gap:18px}
+.btn span{opacity:.6;font-weight:400}
+.tone{border:1px solid var(--fg);padding:13px 18px;font-size:14px;display:flex;gap:10px;align-items:center}
+.tone i{font-style:normal;font-family:var(--mono);font-size:12px}
+.tone[aria-pressed=true]{background:var(--fg);color:var(--bg)}
+.plate{grid-column:2;grid-row:2;align-self:center;width:min(48vw,calc(100svh - 150px),760px);aspect-ratio:1}
+@media (max-width:820px){
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr)}
+  .nav{grid-template-columns:1fr auto;padding:16px 0}.links{display:none}.mark,.nr{grid-column:auto}
+  .plate{grid-column:1;grid-row:2;width:min(100%,46svh);justify-self:center;margin-top:14px}
+  .copy{grid-row:3;align-self:start;padding:22px 0 0}
+  .idx{margin-bottom:12px}.idx span:last-child{display:none}.sub{display:none}.freq{margin-top:14px;padding-top:12px}.freq b{font-size:44px}
+  .modes{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.modes button{flex:none}
+  .ctas{margin-top:16px}.btn,.tone{padding:12px 14px;font-size:13px}
+}
+</style>
+<script>
+/* ASCII Heroes core. Inlined into every hero at build time.
+   Theme state, a batched glyph-grid renderer, pointer tracking, a frame loop, noise. */
+(() => {
+  'use strict';
+  const A = (window.ASCII = {});
+  const root = document.documentElement;
+  const mq = (q) => matchMedia(q);
+
+  A.MONO = 'ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono","Liberation Mono",monospace';
+  A.reduced = mq('(prefers-reduced-motion: reduce)').matches;
+  A.coarse = mq('(pointer: coarse)').matches;
+
+  // reset, prepended so every hero stylesheet wins the cascade
+  const reset = document.createElement('style');
+  reset.textContent =
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}' +
+    'html,body{height:100%}body{overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}' +
+    'button,input,textarea,select{font:inherit;color:inherit;background:none;border:0;border-radius:0;outline:0}button{cursor:pointer}' +
+    'a{color:inherit;text-decoration:none}:focus-visible{outline:1px dashed currentColor;outline-offset:4px}' +
+    'canvas.ascii{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;display:block;touch-action:none}' +
+    '.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}';
+  document.head.prepend(reset);
+
+  /* ---------- theme ---------- */
+  const KEY = 'ascii-heroes:theme';
+  let theme = null;
+  try { theme = localStorage.getItem(KEY); } catch (e) {}
+  if (theme !== 'dark' && theme !== 'light') theme = mq('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  root.dataset.theme = theme;
+  const subs = [];
+  const sync = () => document.querySelectorAll('[data-theme-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(theme === 'dark')));
+  A.theme = {
+    get: () => theme,
+    on: (fn) => subs.push(fn),
+    set(t, quiet) {
+      if ((t !== 'dark' && t !== 'light') || t === theme) return;
+      theme = t;
+      root.dataset.theme = t;
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+      sync();
+      subs.forEach((f) => f(t));
+      if (!quiet && window.parent !== window) window.parent.postMessage({ asciiTheme: t }, '*');
+    },
+    toggle: () => A.theme.set(theme === 'dark' ? 'light' : 'dark'),
+  };
+  addEventListener('message', (e) => { if (e.data && e.data.asciiTheme) A.theme.set(e.data.asciiTheme, true); });
+  // inside the showcase, hand navigation keys up to the shell
+  if (window.parent !== window) addEventListener('keydown', (e) => {
+    if (/^(ArrowLeft|ArrowRight|Escape)$/.test(e.key) && !(e.target.closest && e.target.closest('input,textarea'))) window.parent.postMessage({ asciiKey: e.key }, '*');
+  });
+  document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-theme-toggle]')) A.theme.toggle(); });
+  document.addEventListener('DOMContentLoaded', sync);
+
+  /* ---------- small helpers ---------- */
+  A.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  A.lerp = (a, b, t) => a + (b - a) * t;
+  A.smooth = (e0, e1, x) => { const t = A.clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+  A.ramp = (s) => Array.from(s, (c) => c.charCodeAt(0));
+  A.css = (name, el) => getComputedStyle(el || root).getPropertyValue(name).trim();
+  A.rgb = (s) => {
+    s = (s || '').trim();
+    if (s[0] === '#') {
+      let h = s.slice(1);
+      if (h.length === 3) h = h.replace(/./g, '$&$&');
+      const n = parseInt(h, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const m = s.match(/[\d.]+/g);
+    return m ? [+m[0], +m[1], +m[2]] : [255, 255, 255];
+  };
+  A.rng = (a) => () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  // line glyph for a direction given in cell units (dx right, dy down)
+  const LINES = A.ramp('-\\|/');
+  A.lineChar = (dx, dy) => {
+    let a = Math.atan2(dy, dx);
+    if (a < 0) a += Math.PI;
+    return LINES[Math.round(a / (Math.PI / 4)) & 3];
+  };
+  // white-on-transparent offscreen drawing, returned as an alpha mask
+  A.mask = (w, h, draw) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.fillStyle = x.strokeStyle = '#fff';
+    draw(x, w, h);
+    const d = x.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h);
+    for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3];
+    return m;
+  };
+
+  /* ---------- simplex noise (Gustavson), seedable ---------- */
+  const perm = new Uint8Array(512);
+  const G = [1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0, 1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1, 0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1];
+  A.seed = (s) => {
+    const r = A.rng(s), p = [];
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) { const j = (r() * (i + 1)) | 0; const t = p[i]; p[i] = p[j]; p[j] = t; }
+    for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  };
+  A.seed(1337);
+  const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
+  A.noise2 = (x, y) => {
+    const s = (x + y) * F2, i = Math.floor(x + s), j = Math.floor(y + s), t = (i + j) * G2;
+    const x0 = x - i + t, y0 = y - j + t, i1 = x0 > y0 ? 1 : 0, j1 = 1 - i1;
+    const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2, x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
+    const ii = i & 255, jj = j & 255;
+    let n = 0, q, g;
+    q = 0.5 - x0 * x0 - y0 * y0; if (q > 0) { g = (perm[ii + perm[jj]] % 12) * 3; q *= q; n += q * q * (G[g] * x0 + G[g + 1] * y0); }
+    q = 0.5 - x1 * x1 - y1 * y1; if (q > 0) { g = (perm[ii + i1 + perm[jj + j1]] % 12) * 3; q *= q; n += q * q * (G[g] * x1 + G[g + 1] * y1); }
+    q = 0.5 - x2 * x2 - y2 * y2; if (q > 0) { g = (perm[ii + 1 + perm[jj + 1]] % 12) * 3; q *= q; n += q * q * (G[g] * x2 + G[g + 1] * y2); }
+    return 70 * n;
+  };
+  A.noise3 = (x, y, z) => {
+    const s = (x + y + z) / 3, i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
+    const t = (i + j + k) / 6, x0 = x - i + t, y0 = y - j + t, z0 = z - k + t;
+    let i1, j1, k1, i2, j2, k2;
+    if (x0 >= y0) {
+      if (y0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+      else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
+      else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
+    } else if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
+    else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
+    else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+    const x1 = x0 - i1 + 1 / 6, y1 = y0 - j1 + 1 / 6, z1 = z0 - k1 + 1 / 6;
+    const x2 = x0 - i2 + 1 / 3, y2 = y0 - j2 + 1 / 3, z2 = z0 - k2 + 1 / 3;
+    const x3 = x0 - 0.5, y3 = y0 - 0.5, z3 = z0 - 0.5;
+    const ii = i & 255, jj = j & 255, kk = k & 255;
+    let n = 0, q, g;
+    q = 0.6 - x0 * x0 - y0 * y0 - z0 * z0; if (q > 0) { g = (perm[ii + perm[jj + perm[kk]]] % 12) * 3; q *= q; n += q * q * (G[g] * x0 + G[g + 1] * y0 + G[g + 2] * z0); }
+    q = 0.6 - x1 * x1 - y1 * y1 - z1 * z1; if (q > 0) { g = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12) * 3; q *= q; n += q * q * (G[g] * x1 + G[g + 1] * y1 + G[g + 2] * z1); }
+    q = 0.6 - x2 * x2 - y2 * y2 - z2 * z2; if (q > 0) { g = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12) * 3; q *= q; n += q * q * (G[g] * x2 + G[g + 1] * y2 + G[g + 2] * z2); }
+    q = 0.6 - x3 * x3 - y3 * y3 - z3 * z3; if (q > 0) { g = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]] % 12) * 3; q *= q; n += q * q * (G[g] * x3 + G[g + 1] * y3 + G[g + 2] * z3); }
+    return 32 * n;
+  };
+  A.fbm2 = (x, y, oct = 4) => { let s = 0, a = 0.5, f = 1, n = 0; for (let o = 0; o < oct; o++) { s += a * A.noise2(x * f, y * f); n += a; a *= 0.5; f *= 2.03; } return s / n; };
+
+  /* ---------- pointer ---------- */
+  const P = (A.pointer = { x: -1e5, y: -1e5, vx: 0, vy: 0, down: false, active: false, moved: 0, type: 'mouse' });
+  let lastT = 0;
+  const move = (e) => {
+    const now = performance.now(), dt = Math.max(8, now - lastT);
+    if (P.active && now - lastT < 120) {
+      P.vx = P.vx * 0.5 + ((e.clientX - P.x) / dt) * 500;
+      P.vy = P.vy * 0.5 + ((e.clientY - P.y) / dt) * 500;
+    } else { P.vx = P.vy = 0; }
+    lastT = now;
+    P.x = e.clientX; P.y = e.clientY; P.active = true; P.moved = now; P.type = e.pointerType || 'mouse';
+  };
+  addEventListener('pointermove', move, { passive: true });
+  addEventListener('pointerdown', (e) => { move(e); P.down = true; }, { passive: true });
+  addEventListener('pointerup', (e) => { P.down = false; if (e.pointerType && e.pointerType !== 'mouse') P.active = false; }, { passive: true });
+  addEventListener('pointercancel', () => { P.down = false; P.active = false; });
+  document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) P.active = false; });
+  addEventListener('blur', () => { P.down = false; });
+
+  /* ---------- frame loop ---------- */
+  A.loop = (fn) => {
+    let last = performance.now(), t = 0, id = 0;
+    const step = (now) => {
+      id = requestAnimationFrame(step);
+      let dt = (now - last) / 1000;
+      last = now;
+      if (dt > 0.1) dt = 0.1;
+      else if (dt < 0) dt = 0; // the first rAF stamp can predate the loop's creation
+      if (A.reduced) dt *= 0.3;
+      t += dt;
+      if (now - P.moved > 60) { P.vx *= 0.86; P.vy *= 0.86; }
+      fn(dt, t, now);
+    };
+    id = requestAnimationFrame(step);
+    return { stop: () => cancelAnimationFrame(id) };
+  };
+
+  /* ---------- glyph grid ----------
+     Each frame a hero writes char codes (chr), a level 1..L (lvl, 0 = empty) and an ink index (ink).
+     draw() batches cells by ink+level into row strings: one fillStyle per bucket, one fillText per run. */
+  A.grid = (canvas, o = {}) => {
+    const ctx = canvas.getContext('2d');
+    const L = o.levels || 10, inks = o.inks || ['--fg'], alpha = o.alpha || ((t) => t), lh = o.lh || 1.15;
+    const g = { canvas, ctx, L, cols: 0, rows: 0, n: 0, cw: 8, ch: 14, w: 0, h: 0, dpr: 1, fs: 12, font: '' };
+    const B = inks.length * (L + 1);
+    let styles = [], rb, mn, mx, list = new Int32Array(B), ops = [], singles = [];
+    for (let b = 0; b < B; b++) { ops.push([]); singles.push([]); }
+
+    g.recolor = () => {
+      styles = [];
+      inks.forEach((v) => {
+        const [r, gg, b] = A.rgb(A.css(v));
+        for (let l = 0; l <= L; l++) styles.push(`rgba(${r},${gg},${b},${A.clamp(alpha(l / L), 0, 1).toFixed(3)})`);
+      });
+    };
+
+    g.resize = () => {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return false;
+      const dpr = Math.min(o.maxDpr || 2, window.devicePixelRatio || 1);
+      const fs = typeof o.size === 'function' ? o.size(w, h) : o.size || (w < 640 ? 10 : w < 1280 ? 12 : 13);
+      if (w === g.w && h === g.h && dpr === g.dpr && fs === g.fs) return false;
+      Object.assign(g, { w, h, dpr, fs });
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      g.font = `${o.weight || 400} ${fs}px ${o.family || A.MONO}`;
+      ctx.font = g.font;
+      g.cw = ctx.measureText('MMMMMMMMMMMMMMMMMMMM').width / 20;
+      g.ch = Math.round(fs * lh * 100) / 100;
+      g.cols = Math.ceil(w / g.cw);
+      g.rows = Math.ceil(h / g.ch);
+      g.n = g.cols * g.rows;
+      g.chr = new Uint16Array(g.n).fill(32);
+      g.lvl = new Uint8Array(g.n);
+      g.ink = new Uint8Array(g.n);
+      rb = new Uint16Array(B * g.cols).fill(32);
+      mn = new Int32Array(B).fill(-1);
+      mx = new Int32Array(B);
+      g.recolor();
+      return true;
+    };
+
+    g.clear = () => { g.chr.fill(32); g.lvl.fill(0); g.ink.fill(0); };
+    g.idx = (x, y) => { const c = (x / g.cw) | 0, r = (y / g.ch) | 0; return c < 0 || r < 0 || c >= g.cols || r >= g.rows ? -1 : r * g.cols + c; };
+    g.put = (c, r, code, l, k = 0) => {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return;
+      const i = r * g.cols + c;
+      g.chr[i] = code; g.lvl[i] = l; g.ink[i] = k;
+    };
+    // write only when brighter than what is there
+    g.max = (c, r, code, l, k = 0) => {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return;
+      const i = r * g.cols + c;
+      if (l > g.lvl[i]) { g.chr[i] = code; g.lvl[i] = l; g.ink[i] = k; }
+    };
+    g.text = (c, r, s, l, k = 0) => { for (let j = 0; j < s.length; j++) g.put(c + j, r, s.charCodeAt(j), l, k); };
+    g.rect = (el) => {
+      const b = el.getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+      return { x0: b.left - cr.left, y0: b.top - cr.top, x1: b.right - cr.left, y1: b.bottom - cr.top };
+    };
+
+    g.draw = () => {
+      const { cols, rows, cw, ch, chr, lvl, ink } = g;
+      ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+      ctx.clearRect(0, 0, g.w, g.h);
+      ctx.font = g.font;
+      ctx.textBaseline = 'middle';
+      for (let b = 0; b < B; b++) { ops[b].length = 0; singles[b].length = 0; }
+      for (let r = 0, i = 0; r < rows; r++) {
+        let used = 0;
+        for (let c = 0; c < cols; c++, i++) {
+          const l = lvl[i];
+          if (!l) continue;
+          const code = chr[i];
+          if (code === 32) continue;
+          const b = ink[i] * (L + 1) + l;
+          if (code > 126) { singles[b].push(r, c, code); continue; } // outside ASCII: own cell, no run drift
+          if (mn[b] < 0) { mn[b] = c; list[used++] = b; }
+          mx[b] = c;
+          rb[b * cols + c] = code;
+        }
+        for (let k = 0; k < used; k++) {
+          const b = list[k], base = b * cols, s = mn[b], e = mx[b] + 1;
+          ops[b].push(r, s, String.fromCharCode.apply(null, rb.subarray(base + s, base + e)));
+          rb.fill(32, base + s, base + e);
+          mn[b] = -1;
+        }
+      }
+      const hc = ch * 0.5;
+      for (let b = 0; b < B; b++) {
+        const op = ops[b], sg = singles[b];
+        if (!op.length && !sg.length) continue;
+        ctx.fillStyle = styles[b];
+        ctx.textAlign = 'left';
+        for (let k = 0; k < op.length; k += 3) ctx.fillText(op[k + 2], op[k + 1] * cw, op[k] * ch + hc);
+        if (sg.length) {
+          ctx.textAlign = 'center';
+          for (let k = 0; k < sg.length; k += 3) ctx.fillText(String.fromCharCode(sg[k + 2]), (sg[k + 1] + 0.5) * cw, sg[k] * ch + hc);
+        }
+      }
+    };
+
+    A.theme.on(() => g.recolor());
+    g.resize();
+    let pend = 0;
+    new ResizeObserver(() => {
+      cancelAnimationFrame(pend);
+      pend = requestAnimationFrame(() => { if (g.resize() && o.onResize) o.onResize(g); });
+    }).observe(canvas);
+    return g;
+  };
+})();
+</script>
+</head>
+<body>
+<canvas class="ascii" id="plate" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">Resonant <span>R-1</span></a>
+    <nav class="links" aria-label="Primary"><a href="#">Instruments</a><a href="#">Sound lab</a><a href="#">Manuals</a><a href="#">Store</a></nav>
+    <div class="nr"><button class="mode-t" data-theme-toggle aria-label="Toggle dark mode">Light / Dark</button></div>
+  </header>
+  <section class="copy">
+    <p class="idx"><span>01</span><span>Modal synthesizer</span><span>Steel plate, 4 drivers</span></p>
+    <h1>Every sound<br>has a shape.</h1>
+    <p class="sub">R-1 drives a steel plate with four oscillators and reads the pattern back as timbre. Choose a mode and watch the sand find it.</p>
+    <div class="freq"><b id="hz">0</b><span>Hz</span><span id="nm">n 0 / m 0</span></div>
+    <div class="modes" role="group" aria-label="Plate modes"></div>
+    <div class="ctas"><a class="btn" href="#">Pre-order R-1 <span>&euro;1,890</span></a><button class="tone" aria-pressed="false"><i>~</i>Hear the plate</button></div>
+  </section>
+  <div class="plate" aria-hidden="true"></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer, PI = Math.PI;
+  const g = A.grid(document.getElementById('plate'), { levels: 12, size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const plateEl = document.querySelector('.plate'), modesEl = document.querySelector('.modes');
+  const MODES = [[3, 5, -1], [2, 7, 1], [4, 7, -1], [1, 6, 1], [3, 8, 1], [5, 9, -1], [2, 5, 1], [6, 9, 1], [4, 9, -1], [1, 3, -1]];
+  const DENS = A.ramp(' .:+*o#%@');
+  const NG = Math.round(A.clamp((innerWidth * innerHeight) / 150, 4000, 9000));
+  const gx = new Float32Array(NG), gy = new Float32Array(NG), gvx = new Float32Array(NG), gvy = new Float32Array(NG);
+  for (let i = 0; i < NG; i++) { gx[i] = Math.random(); gy[i] = Math.random(); }
+  let X0 = 0, Y0 = 0, S = 100, cnt = null, mi = 0, prev = MODES[0], blend = 1, auto = 9, userT = 0;
+
+  function layout() {
+    const r = g.rect(plateEl);
+    S = r.x1 - r.x0; X0 = r.x0; Y0 = r.y0;
+    cnt = new Uint16Array(g.n);
+  }
+  const hzOf = (m) => Math.round(31 * (m[0] * m[0] + m[1] * m[1]) + 64);
+  MODES.forEach((m, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = `${m[0]}.${m[1]}`; b.setAttribute('aria-pressed', String(i === 0));
+    b.setAttribute('aria-label', `Mode ${m[0]} ${m[1]}, ${hzOf(m)} hertz`);
+    b.onclick = () => { setMode(i); userT = 25; };
+    modesEl.appendChild(b);
+  });
+  const hzEl = document.getElementById('hz'), nmEl = document.getElementById('nm');
+  let shownHz = 0;
+  function setMode(i) {
+    if (i === mi) return;
+    prev = MODES[mi]; mi = i; blend = 0;
+    [...modesEl.children].forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+    nmEl.textContent = `n ${MODES[i][0]} / m ${MODES[i][1]}`;
+    tone();
+  }
+
+  // plate displacement for a square plate with free edges, and its gradient
+  let ZX = 0, ZY = 0;
+  function z(m, x, y) {
+    const n = m[0], k = m[1], s = m[2];
+    const cnx = Math.cos(n * PI * x), cky = Math.cos(k * PI * y), ckx = Math.cos(k * PI * x), cny = Math.cos(n * PI * y);
+    const snx = Math.sin(n * PI * x), sky = Math.sin(k * PI * y), skx = Math.sin(k * PI * x), sny = Math.sin(n * PI * y);
+    ZX = -n * PI * snx * cky - s * k * PI * skx * cny;
+    ZY = -k * PI * cnx * sky - s * n * PI * ckx * sny;
+    return cnx * cky + s * ckx * cny;
+  }
+
+  function step(dt) {
+    const cur = MODES[mi], b = blend, kk = 1 / (PI * Math.max(cur[1], prev[1]));
+    const px = (P.x - X0) / S, py = (P.y - Y0) / S, hover = P.active && px > -0.05 && px < 1.05 && py > -0.05 && py < 1.05;
+    for (let i = 0; i < NG; i++) {
+      let x = gx[i], y = gy[i];
+      let zz = z(cur, x, y), zx = ZX, zy = ZY;
+      if (b < 1) { const z0 = z(prev, x, y); zz = zz * b + z0 * (1 - b); zx = zx * b + ZX * (1 - b); zy = zy * b + ZY * (1 - b); }
+      const a = Math.abs(zz);
+      // grains drift downhill on z^2 toward the nodes, and get kicked around wherever the plate is moving
+      x += (-zz * zx * kk * kk * 0.9 + (Math.random() - 0.5) * (a * 0.018 + 0.0026)) * dt * 60;
+      y += (-zz * zy * kk * kk * 0.9 + (Math.random() - 0.5) * (a * 0.018 + 0.0026)) * dt * 60;
+      if (hover) {
+        const dx = x - px, dy = y - py, d2 = dx * dx + dy * dy;
+        if (d2 < 0.006) { const f = (0.006 - d2) * 4; gvx[i] += dx * f * (P.down ? 9 : 1); gvy[i] += dy * f * (P.down ? 9 : 1); }
+      }
+      x += gvx[i] * dt * 60; y += gvy[i] * dt * 60;
+      gvx[i] *= 0.86; gvy[i] *= 0.86;
+      if (x < 0) { x = -x; gvx[i] = -gvx[i]; } else if (x > 1) { x = 2 - x; gvx[i] = -gvx[i]; }
+      if (y < 0) { y = -y; gvy[i] = -gvy[i]; } else if (y > 1) { y = 2 - y; gvy[i] = -gvy[i]; }
+      gx[i] = x; gy[i] = y;
+    }
+  }
+
+  function render(t) {
+    g.clear();
+    const { cols, rows, cw, ch, chr, lvl } = g;
+    cnt.fill(0);
+    for (let i = 0; i < NG; i++) {
+      const c = ((X0 + gx[i] * S) / cw) | 0, r = ((Y0 + gy[i] * S) / ch) | 0;
+      if (c >= 0 && r >= 0 && c < cols && r < rows) cnt[r * cols + c]++;
+    }
+    const ca = Math.floor(X0 / cw), cb = Math.ceil((X0 + S) / cw) - 1, ra = Math.floor(Y0 / ch), rb = Math.ceil((Y0 + S) / ch) - 1;
+    for (let r = ra; r <= rb; r++) for (let c = ca; c <= cb; c++) {
+      const i = r * cols + c, n = cnt[i];
+      if (n) { const k = Math.min(8, n); chr[i] = DENS[k]; lvl[i] = Math.min(12, 2 + k + (n > 8 ? 2 : 0)); }
+      else if ((r - ra) % 2 === 0 && (c - ca) % 4 === 0) {
+        // the dot grid faintly maps where the plate is moving hardest
+        const a = Math.abs(z(MODES[mi], ((c + 0.5) * cw - X0) / S, ((r + 0.5) * ch - Y0) / S));
+        chr[i] = a > 1 ? 43 : 46; lvl[i] = a > 0.55 ? 2 : 1;
+      }
+    }
+    // plate frame, ruler ticks and the drive point
+    for (let c = ca - 1; c <= cb + 1; c++) { g.put(c, ra - 1, (c - ca) % 8 === 0 ? 43 : 45, 4); g.put(c, rb + 1, (c - ca) % 8 === 0 ? 43 : 45, 4); }
+    for (let r = ra; r <= rb; r++) { g.put(ca - 1, r, 124, 4); g.put(cb + 1, r, 124, 4); }
+    const labels = ['0', '.25', '.5', '.75', '1'];
+    labels.forEach((s, k) => {
+      const c = Math.round(ca + ((cb - ca) * k) / 4), r = Math.round(ra + ((rb - ra) * k) / 4);
+      g.text(c - (k === 4 ? s.length - 1 : 0), ra - 2, s, 3);
+      g.text(cb + 3, r, s, 3);
+    });
+    if (g.w > 820) g.text(ca, rb + 2, `CHLADNI PLATE / 1.0 MM STEEL / ${NG.toLocaleString('en-US')} GRAINS`, 3);
+    g.draw();
+  }
+
+  // optional tone, gliding between modes
+  const toneBtn = document.querySelector('.tone');
+  let ac = null, osc = null, o2 = null, og = null;
+  function tone() {
+    if (!ac) return;
+    let f = hzOf(MODES[mi]);
+    while (f > 700) f /= 2;
+    osc.frequency.setTargetAtTime(f, ac.currentTime, 0.12);
+    o2.frequency.setTargetAtTime(f * 2.004, ac.currentTime, 0.12);
+  }
+  toneBtn.addEventListener('click', () => {
+    const on = toneBtn.getAttribute('aria-pressed') !== 'true';
+    toneBtn.setAttribute('aria-pressed', String(on));
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      ac = new AC(); osc = ac.createOscillator(); o2 = ac.createOscillator(); og = ac.createGain(); og.gain.value = 0;
+      const g2 = ac.createGain(); g2.gain.value = 0.22; o2.type = 'triangle';
+      osc.connect(og); o2.connect(g2).connect(og); og.connect(ac.destination); osc.start(); o2.start();
+      tone();
+    }
+    ac.resume();
+    og.gain.setTargetAtTime(on ? 0.06 : 0, ac.currentTime, 0.2);
+  });
+
+  layout();
+  nmEl.textContent = `n ${MODES[0][0]} / m ${MODES[0][1]}`;
+  for (let k = 0; k < 140; k++) step(1 / 60);
+  A.loop((dt, t) => {
+    dt = Math.min(dt, 1 / 30);
+    blend = Math.min(1, blend + dt / 0.9);
+    if (userT > 0) userT -= dt;
+    else if ((auto -= dt) < 0) { auto = 9; setMode((mi + 1) % MODES.length); }
+    step(dt);
+    render(t);
+    const target = hzOf(MODES[mi]);
+    shownHz += (target - shownHz) * Math.min(1, dt * 5);
+    hzEl.textContent = Math.round(shownHz).toLocaleString('en-US');
+  });
+})();
+</script>
+</body>
+</html>

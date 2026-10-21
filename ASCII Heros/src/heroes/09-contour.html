@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cairn · The mountain, line by line</title>
+<meta name="description" content="An alpine maps landing hero: a living ASCII topographic sheet with marching-squares contours, hillshade and a route.">
+<meta name="ascii-hero" content='{"name":"Contour","brand":"Cairn","kind":"Offline alpine maps","tech":"Marching-squares isolines, hillshade, terrain sculpting","accent":"#ff5a1f"}'>
+<style>
+:root{--bg:#0b0c0b;--fg:#e8e7e1;--dim:rgba(232,231,225,.55);--faint:rgba(232,231,225,.16);--accent:#ff5a1f;--panel:rgba(11,12,11,.86);color-scheme:dark;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#efede5;--fg:#121210;--dim:rgba(18,18,16,.58);--faint:rgba(18,18,16,.16);--accent:#e8480f;--panel:rgba(239,237,229,.9);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:12px/1.5 var(--mono);transition:background-color .5s}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{position:absolute;inset:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:20px clamp(16px,3vw,40px);letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+.mark{display:flex;gap:10px;align-items:center;font:700 15px/1 var(--sans);letter-spacing:.02em;text-transform:none}
+.mark i{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--accent)}
+.navr{display:flex;gap:26px;align-items:center}
+.navr a{color:var(--dim)}.navr a:hover{color:var(--fg)}
+.navr button{border:1px solid var(--faint);padding:6px 10px;letter-spacing:.12em;text-transform:uppercase;font-size:10.5px;background:var(--panel)}
+.legend{position:absolute;left:clamp(16px,3vw,40px);bottom:clamp(16px,4vh,40px);width:min(470px,calc(100% - 32px));background:var(--panel);border:1px solid var(--faint);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);pointer-events:auto}
+.legend header{display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--faint);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.legend .body{padding:22px 16px 20px}
+h1{font:700 clamp(36px,4.2vw,62px)/.98 var(--sans);letter-spacing:-.035em}
+.sub{margin-top:16px;color:var(--dim);font:14.5px/1.55 var(--sans);max-width:400px}
+.ctas{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.btn{background:var(--accent);color:#fff;padding:12px 16px;font:600 13px/1 var(--sans)}
+.ghost{border:1px solid var(--fg);padding:11px 15px;font:600 13px/1 var(--sans)}
+.keys{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;padding:14px 16px;border-top:1px solid var(--faint);font-size:10.5px;letter-spacing:.06em;color:var(--dim);align-items:center}
+.keys i{display:block;width:30px;height:0;border-top:1px solid var(--dim)}
+.keys i.idx{border-top-width:2px;border-color:var(--fg)}
+.keys i.rt{border-top:2px dotted var(--accent)}
+.scale{display:flex;align-items:center;gap:10px;padding:0 16px 14px;font-size:10px;color:var(--dim)}
+.scale span{display:flex;height:6px;width:160px;border:1px solid var(--dim)}
+.scale span b{flex:1}.scale span b:nth-child(odd){background:var(--dim)}
+.probe{position:fixed;left:0;top:0;pointer-events:none;font-size:10.5px;letter-spacing:.06em;padding:5px 8px;background:var(--panel);border:1px solid var(--faint);white-space:nowrap;opacity:0;transition:opacity .2s;transform:translate(14px,14px)}
+.probe b{color:var(--accent);font-weight:400}
+@media (max-width:760px){
+  .nav{padding:16px}.navr a{display:none}
+  .legend{left:16px;right:16px;bottom:16px;width:auto}
+  .legend .body{padding:16px 14px 14px}.sub{font-size:13.5px;margin-top:10px}.ctas{margin-top:16px}
+  .keys,.scale{display:none}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="map" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#"><i aria-hidden="true"></i>Cairn</a>
+    <div class="navr"><a href="#">Maps</a><a href="#">Routes</a><a href="#">Safety</a><button data-theme-toggle aria-label="Toggle dark mode">Day / Night</button></div>
+  </header>
+  <section class="legend">
+    <header><span>Sheet 14 / Bernese high route</span><span id="sun">Sun 000&deg;</span></header>
+    <div class="body">
+      <h1>The mountain,<br>line by line.</h1>
+      <p class="sub">Cairn turns satellite elevation into maps you can trust at three thousand metres. Offline, true to the metre, drawn for tired eyes.</p>
+      <div class="ctas"><a class="btn" href="#">Download Cairn</a><a class="ghost" href="#">Plan a route</a></div>
+    </div>
+    <div class="keys"><i></i><span>Contour, 200 m</span><i class="idx"></i><span>Index contour, 1,000 m</span><i class="rt"></i><span>Route, 11.4 km, +1,734 m</span></div>
+    <div class="scale"><span><b></b><b></b><b></b><b></b></span>0 / 1 / 2 km</div>
+  </section>
+  <div class="probe" aria-hidden="true"></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('map'), { levels: 12, inks: ['--fg', '--accent'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const probe = document.querySelector('.probe'), sunEl = document.getElementById('sun'), legend = document.querySelector('.legend');
+  const BASE = 900, SPAN = 2400, STEP = 200;
+  let HC = null, NX = 0, NY = 0, peaks = [], route = [], labels = [], box = null, W = 0, H = 0, sculpted = false;
+  const NAMES = ['Kvasshorn', 'Mittaghorn', 'Rotstock', 'Gspaltenhorn'];
+  const elev = (h) => BASE + h * SPAN;
+
+  function terrain(x, y) {
+    // ridged octaves for sharp crests, a soft dome to put the massif off to the right
+    let s = 0, a = 0.6, f = 0.42;
+    for (let o = 0; o < 3; o++) { let r = 1 - Math.abs(A.noise2(x * f + 11, y * f - 7)); r *= r; s += r * a; a *= 0.45; f *= 2.05; }
+    const mob = W < 760, cx = mob ? 0.5 : 0.66, cy = mob ? 0.32 : 0.42;
+    const dx = x - (cx * W) / 340, dy = y - (cy * H) / 340;
+    return s * 0.9 + 0.55 * Math.exp(-(dx * dx + dy * dy) * 0.32) + 0.16 * A.noise2(x * 0.3, y * 0.3);
+  }
+
+  function layout() {
+    W = g.w; H = g.h; NX = g.cols + 1; NY = g.rows + 1;
+    HC = new Float32Array(NX * NY);
+    for (let r = 0; r < NY; r++) for (let c = 0; c < NX; c++) HC[r * NX + c] = terrain((c * g.cw) / 340, (r * g.ch) / 340);
+    let mn = 1e9, mx = -1e9;
+    for (const v of HC) { if (v < mn) mn = v; if (v > mx) mx = v; }
+    for (let i = 0; i < HC.length; i++) HC[i] = (HC[i] - mn) / (mx - mn);
+    analyse();
+  }
+
+  // peaks, the route to the highest one, and contour labels: recomputed when the terrain changes
+  function analyse() {
+    const lr = legend.getBoundingClientRect();
+    box = { c0: Math.floor(lr.left / g.cw) - 1, c1: Math.ceil(lr.right / g.cw) + 1, r0: Math.floor(lr.top / g.ch) - 1, r1: Math.ceil(lr.bottom / g.ch) + 1 };
+    const free = (c, r) => !(c >= box.c0 && c <= box.c1 && r >= box.r0 && r <= box.r1) && r > 4;
+    peaks = [];
+    for (let r = 3; r < NY - 3; r++) for (let c = 3; c < NX - 3; c++) {
+      const v = HC[r * NX + c];
+      if (v < 0.55 || !free(c, r)) continue;
+      let top = true;
+      for (let dr = -3; dr <= 3 && top; dr++) for (let dc = -5; dc <= 5; dc++) if (HC[(r + dr) * NX + c + dc] > v) { top = false; break; }
+      if (top && peaks.every((p) => Math.abs(p.c - c) > 18 || Math.abs(p.r - r) > 8)) peaks.push({ c, r, v });
+    }
+    peaks.sort((a, b) => b.v - a.v);
+    peaks.length = Math.min(peaks.length, 4);
+    route = [];
+    if (peaks.length) {
+      const s = peaks[0];
+      let bc = s.c, br = Math.min(NY - 3, s.r + 22), best = 9;
+      for (let r = s.r + 10; r < NY - 2; r++) for (let c = Math.max(2, s.c - 40); c < Math.min(NX - 2, s.c + 40); c++) {
+        const v = HC[r * NX + c];
+        if (free(c, r) && v < best && v > 0.12) { best = v; bc = c; br = r; }
+      }
+      const n = 260;
+      for (let i = 0; i <= n; i++) {
+        const u = i / n, px = A.lerp(bc, s.c, u), py = A.lerp(br, s.r, u);
+        const ax = s.c - bc, ay = (s.r - br) * 2, al = Math.hypot(ax, ay) || 1;
+        const sw = Math.sin(u * Math.PI * 7) * 5 * Math.sin(u * Math.PI) * (0.4 + u);
+        route.push([px - (ay / al) * sw, py + (ax / al) * sw * 0.5]);
+      }
+    }
+    labels = [];
+    for (let k = 5; k * STEP < SPAN; k += 5) {
+      const L = k * STEP / SPAN;
+      let placed = 0;
+      for (let r = 6; r < NY - 4 && placed < 2; r += 3) for (let c = 6; c < NX - 10 && placed < 2; c += 2) {
+        const a = HC[r * NX + c], b = HC[r * NX + c + 4], d = HC[(r + 1) * NX + c];
+        if ((a - L) * (d - L) < 0 && Math.abs(a - b) < 0.012 && free(c, r) && free(c + 5, r) && labels.every((q) => Math.abs(q.c - c) > 30 || Math.abs(q.r - r) > 6)) {
+          labels.push({ c, r, s: String(BASE + k * STEP) }); placed++;
+        }
+      }
+    }
+  }
+
+  let sun = 0.8, hoverL = -1;
+  A.loop((dt, t) => {
+    const { cols, rows, chr, lvl, ink } = g;
+    sun += dt * 0.05;
+    // sculpting: hold to raise the ground under the pointer
+    if (P.down && P.active && !legend.contains(document.elementFromPoint(P.x, P.y))) {
+      const pc = P.x / g.cw, pr = P.y / g.ch, R = 5;
+      for (let r = Math.max(0, (pr - R * 1.2) | 0); r < Math.min(NY, pr + R * 1.2); r++) for (let c = Math.max(0, (pc - R * 2.4) | 0); c < Math.min(NX, pc + R * 2.4); c++) {
+        const dx = (c - pc) / (R * 2), dy = (r - pr) / R, w = Math.exp(-(dx * dx + dy * dy) * 2);
+        HC[r * NX + c] = Math.min(1.08, HC[r * NX + c] + w * dt * 0.35);
+      }
+      sculpted = true;
+    } else if (sculpted) { sculpted = false; analyse(); }
+    hoverL = -1;
+    if (P.active) {
+      const c = Math.min(NX - 1, Math.max(0, Math.round(P.x / g.cw))), r = Math.min(NY - 1, Math.max(0, Math.round(P.y / g.ch)));
+      const h = HC[r * NX + c], e = elev(h);
+      hoverL = Math.round(e / STEP) * STEP;
+      const over = document.elementFromPoint(P.x, P.y);
+      probe.style.opacity = over && over.closest('.legend,.nav,a,button') ? 0 : 1;
+      probe.style.left = P.x + 'px'; probe.style.top = P.y + 'px';
+      probe.style.transform = P.x > innerWidth - 240 ? 'translate(calc(-100% - 14px), 14px)' : '';
+      probe.innerHTML = `<b>${Math.round(e).toLocaleString('en-US')} m</b>  N46.${String(5300 + r * 3).padStart(4, '0')} E7.${String(9600 + c * 2).padStart(4, '0')}`;
+    } else probe.style.opacity = 0;
+    const sx = Math.cos(sun), sy = Math.sin(sun);
+    sunEl.textContent = `Sun ${String(Math.round(((sun * 180) / Math.PI + 90) % 360)).padStart(3, '0')}°`;
+
+    g.clear();
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const i = r * cols + c, k0 = r * NX + c;
+        const tl = HC[k0], tr = HC[k0 + 1], bl = HC[k0 + NX], br = HC[k0 + NX + 1];
+        const lo = Math.min(tl, tr, bl, br), hi = Math.max(tl, tr, bl, br);
+        const e0 = elev(lo), e1 = elev(hi);
+        let k = Math.ceil(e0 / STEP), kEnd = Math.floor(e1 / STEP);
+        if (k <= kEnd) {
+          let pick = k;
+          for (let q = k; q <= kEnd; q++) if (q % 5 === 0 || q * STEP === hoverL) { pick = q; if (q * STEP === hoverL) break; }
+          const L = (pick * STEP - BASE) / SPAN;
+          // marching squares: find where the level crosses the cell edges
+          let x1 = -1, y1 = 0, x2 = -1, y2 = 0;
+          const add = (x, y) => { if (x1 < 0) { x1 = x; y1 = y; } else if (x2 < 0) { x2 = x; y2 = y; } };
+          if ((tl - L) * (tr - L) < 0) add((L - tl) / (tr - tl), 0);
+          if ((tr - L) * (br - L) < 0) add(1, (L - tr) / (br - tr));
+          if ((bl - L) * (br - L) < 0) add((L - bl) / (br - bl), 1);
+          if ((tl - L) * (bl - L) < 0) add(0, (L - tl) / (bl - tl));
+          if (x2 >= 0) {
+            let code = A.lineChar(x2 - x1, y2 - y1);
+            if (code === 45) { const my = (y1 + y2) / 2; code = my > 0.68 ? 95 : my < 0.3 ? 175 : 45; }
+            const idx = pick % 5 === 0, hot = pick * STEP === hoverL;
+            chr[i] = code; lvl[i] = hot ? 12 : idx ? 10 : 4; ink[i] = hot ? 1 : 0;
+            continue;
+          }
+        }
+        if (hi < 0.07) {
+          // tarns in the hollows
+          if (A.noise2(c * 0.3 + t * 0.4, r * 0.9) > 0.35) { chr[i] = 126; lvl[i] = 3; }
+          continue;
+        }
+        // hillshade stipple on slopes facing away from the sun
+        const nx = (tl + bl - tr - br) * 6, ny = (tl + tr - bl - br) * 3.2;
+        const shade = (nx * sx + ny * sy) / Math.sqrt(nx * nx + ny * ny + 0.02);
+        if (shade < -0.55 && (c + r * 3) % 3 !== 0) { chr[i] = shade < -0.85 ? 58 : 46; lvl[i] = shade < -0.85 ? 3 : 2; }
+      }
+    }
+    // drifting cloud shadows dim whatever they cross
+    for (let r = 0; r < rows; r += 2) for (let c = 0; c < cols; c += 2) {
+      const v = A.noise2(c * 0.025 - t * 0.04, r * 0.05 + t * 0.01);
+      if (v > 0.38) for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) { const i = (r + a) * cols + c + b; if (i < g.n && lvl[i] > 2 && !ink[i]) lvl[i] -= 2; }
+    }
+    for (const l of labels) g.text(l.c - 1, l.r, ` ${l.s} `, 9);
+    // route, hiker and summit markers
+    const hp = (t * 0.018) % 1, hi = Math.floor(hp * (route.length - 1));
+    for (let j = 0; j < route.length; j += 2) { const [x, y] = route[j]; g.put(Math.round(x), Math.round(y), 46, j < hi ? 11 : 6, 1); }
+    if (route.length) { const [x, y] = route[hi]; g.put(Math.round(x), Math.round(y), 64, 12, 1); const [bx, by] = route[0]; g.text(Math.round(bx) - 1, Math.round(by) + 1, 'x BASE 1,180', 8); }
+    peaks.forEach((p, k) => {
+      g.put(p.c, p.r, 94, 12, k === 0 ? 1 : 0);
+      g.text(p.c + 2, p.r, `${NAMES[k]} ${Math.round(elev(p.v)).toLocaleString('en-US')}`, k === 0 ? 12 : 8, k === 0 ? 1 : 0);
+    });
+    g.draw();
+  });
+  layout();
+})();
+</script>
+</body>
+</html>

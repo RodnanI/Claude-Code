@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hush · The quiet inbox</title>
+<meta name="description" content="A focus app landing hero: ASCII snow that settles on the headline letterforms, slides off, melts under the cursor.">
+<meta name="ascii-hero" content='{"name":"Hush","brand":"Hush","kind":"Focus inbox","tech":"Snow cellular automaton on a glyph mask","accent":""}'>
+<style>
+:root{--bg:#0a0b0c;--fg:#f0f1f2;--type:#f0f1f2;--snow:#f4f6f8;--dim:rgba(240,241,242,.55);--faint:rgba(240,241,242,.16);color-scheme:dark;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"DejaVu Serif",serif;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#c9cdd0;--fg:#121416;--type:#121416;--snow:#ffffff;--dim:rgba(18,20,22,.62);--faint:rgba(18,20,22,.18);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);transition:background-color .6s}
+#type{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;pointer-events:none}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr);pointer-events:none}
+.hero a,.hero button,.hero input,.hero h1{pointer-events:auto}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:24px clamp(16px,3.6vw,52px);font-size:14px}
+.mark{font:italic 700 20px/1 var(--serif)}
+.links{display:flex;gap:28px;color:var(--dim)}.links a:hover{color:var(--fg)}
+.toggle{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.toggle i{width:16px;height:16px;border-radius:50%;border:1px solid currentColor;position:relative;overflow:hidden}
+.toggle i::after{content:"";position:absolute;inset:0;background:currentColor;transform:translateY(50%);transition:transform .5s}
+[data-theme=light] .toggle i::after{transform:translateY(100%)}
+.center{align-self:center;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 16px}
+.eyebrow{font:11px var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-bottom:clamp(22px,4vw,56px)}
+h1{font:700 clamp(130px,27vw,400px)/1 var(--serif);letter-spacing:-.045em;color:transparent;cursor:pointer;user-select:text;margin:-.04em 0 0}
+.sub{max-width:440px;color:var(--dim);font-size:16px;line-height:1.55;margin-top:6px}
+.join{display:flex;gap:8px;margin-top:26px;padding:6px;border:1px solid var(--faint);border-radius:999px;width:min(440px,100%);background:color-mix(in srgb,var(--bg) 70%,transparent)}
+.join input{flex:1;min-width:0;padding:0 16px;font-size:15px}
+.join input::placeholder{color:var(--dim)}
+.join button{background:var(--fg);color:var(--bg);border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px;white-space:nowrap}
+.note{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:16px;min-height:16px}
+.note b{font-weight:400;color:var(--fg)}
+@media (max-width:760px){.nav{padding:18px 16px}.links{display:none}.sub{font-size:14.5px}}
+</style>
+<script>
+/* ASCII Heroes core. Inlined into every hero at build time.
+   Theme state, a batched glyph-grid renderer, pointer tracking, a frame loop, noise. */
+(() => {
+  'use strict';
+  const A = (window.ASCII = {});
+  const root = document.documentElement;
+  const mq = (q) => matchMedia(q);
+
+  A.MONO = 'ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono","Liberation Mono",monospace';
+  A.reduced = mq('(prefers-reduced-motion: reduce)').matches;
+  A.coarse = mq('(pointer: coarse)').matches;
+
+  // reset, prepended so every hero stylesheet wins the cascade
+  const reset = document.createElement('style');
+  reset.textContent =
+    '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}' +
+    'html,body{height:100%}body{overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}' +
+    'button,input,textarea,select{font:inherit;color:inherit;background:none;border:0;border-radius:0;outline:0}button{cursor:pointer}' +
+    'a{color:inherit;text-decoration:none}:focus-visible{outline:1px dashed currentColor;outline-offset:4px}' +
+    'canvas.ascii{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;display:block;touch-action:none}' +
+    '.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}';
+  document.head.prepend(reset);
+
+  /* ---------- theme ---------- */
+  const KEY = 'ascii-heroes:theme';
+  let theme = null;
+  try { theme = localStorage.getItem(KEY); } catch (e) {}
+  if (theme !== 'dark' && theme !== 'light') theme = mq('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  root.dataset.theme = theme;
+  const subs = [];
+  const sync = () => document.querySelectorAll('[data-theme-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(theme === 'dark')));
+  A.theme = {
+    get: () => theme,
+    on: (fn) => subs.push(fn),
+    set(t, quiet) {
+      if ((t !== 'dark' && t !== 'light') || t === theme) return;
+      theme = t;
+      root.dataset.theme = t;
+      try { localStorage.setItem(KEY, t); } catch (e) {}
+      sync();
+      subs.forEach((f) => f(t));
+      if (!quiet && window.parent !== window) window.parent.postMessage({ asciiTheme: t }, '*');
+    },
+    toggle: () => A.theme.set(theme === 'dark' ? 'light' : 'dark'),
+  };
+  addEventListener('message', (e) => { if (e.data && e.data.asciiTheme) A.theme.set(e.data.asciiTheme, true); });
+  // inside the showcase, hand navigation keys up to the shell
+  if (window.parent !== window) addEventListener('keydown', (e) => {
+    if (/^(ArrowLeft|ArrowRight|Escape)$/.test(e.key) && !(e.target.closest && e.target.closest('input,textarea'))) window.parent.postMessage({ asciiKey: e.key }, '*');
+  });
+  document.addEventListener('click', (e) => { if (e.target.closest && e.target.closest('[data-theme-toggle]')) A.theme.toggle(); });
+  document.addEventListener('DOMContentLoaded', sync);
+
+  /* ---------- small helpers ---------- */
+  A.clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  A.lerp = (a, b, t) => a + (b - a) * t;
+  A.smooth = (e0, e1, x) => { const t = A.clamp((x - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+  A.ramp = (s) => Array.from(s, (c) => c.charCodeAt(0));
+  A.css = (name, el) => getComputedStyle(el || root).getPropertyValue(name).trim();
+  A.rgb = (s) => {
+    s = (s || '').trim();
+    if (s[0] === '#') {
+      let h = s.slice(1);
+      if (h.length === 3) h = h.replace(/./g, '$&$&');
+      const n = parseInt(h, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const m = s.match(/[\d.]+/g);
+    return m ? [+m[0], +m[1], +m[2]] : [255, 255, 255];
+  };
+  A.rng = (a) => () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  // line glyph for a direction given in cell units (dx right, dy down)
+  const LINES = A.ramp('-\\|/');
+  A.lineChar = (dx, dy) => {
+    let a = Math.atan2(dy, dx);
+    if (a < 0) a += Math.PI;
+    return LINES[Math.round(a / (Math.PI / 4)) & 3];
+  };
+  // white-on-transparent offscreen drawing, returned as an alpha mask
+  A.mask = (w, h, draw) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.fillStyle = x.strokeStyle = '#fff';
+    draw(x, w, h);
+    const d = x.getImageData(0, 0, w, h).data, m = new Uint8Array(w * h);
+    for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3];
+    return m;
+  };
+
+  /* ---------- simplex noise (Gustavson), seedable ---------- */
+  const perm = new Uint8Array(512);
+  const G = [1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0, 1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1, 0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1];
+  A.seed = (s) => {
+    const r = A.rng(s), p = [];
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) { const j = (r() * (i + 1)) | 0; const t = p[i]; p[i] = p[j]; p[j] = t; }
+    for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  };
+  A.seed(1337);
+  const F2 = 0.5 * (Math.sqrt(3) - 1), G2 = (3 - Math.sqrt(3)) / 6;
+  A.noise2 = (x, y) => {
+    const s = (x + y) * F2, i = Math.floor(x + s), j = Math.floor(y + s), t = (i + j) * G2;
+    const x0 = x - i + t, y0 = y - j + t, i1 = x0 > y0 ? 1 : 0, j1 = 1 - i1;
+    const x1 = x0 - i1 + G2, y1 = y0 - j1 + G2, x2 = x0 - 1 + 2 * G2, y2 = y0 - 1 + 2 * G2;
+    const ii = i & 255, jj = j & 255;
+    let n = 0, q, g;
+    q = 0.5 - x0 * x0 - y0 * y0; if (q > 0) { g = (perm[ii + perm[jj]] % 12) * 3; q *= q; n += q * q * (G[g] * x0 + G[g + 1] * y0); }
+    q = 0.5 - x1 * x1 - y1 * y1; if (q > 0) { g = (perm[ii + i1 + perm[jj + j1]] % 12) * 3; q *= q; n += q * q * (G[g] * x1 + G[g + 1] * y1); }
+    q = 0.5 - x2 * x2 - y2 * y2; if (q > 0) { g = (perm[ii + 1 + perm[jj + 1]] % 12) * 3; q *= q; n += q * q * (G[g] * x2 + G[g + 1] * y2); }
+    return 70 * n;
+  };
+  A.noise3 = (x, y, z) => {
+    const s = (x + y + z) / 3, i = Math.floor(x + s), j = Math.floor(y + s), k = Math.floor(z + s);
+    const t = (i + j + k) / 6, x0 = x - i + t, y0 = y - j + t, z0 = z - k + t;
+    let i1, j1, k1, i2, j2, k2;
+    if (x0 >= y0) {
+      if (y0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+      else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
+      else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
+    } else if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
+    else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
+    else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
+    const x1 = x0 - i1 + 1 / 6, y1 = y0 - j1 + 1 / 6, z1 = z0 - k1 + 1 / 6;
+    const x2 = x0 - i2 + 1 / 3, y2 = y0 - j2 + 1 / 3, z2 = z0 - k2 + 1 / 3;
+    const x3 = x0 - 0.5, y3 = y0 - 0.5, z3 = z0 - 0.5;
+    const ii = i & 255, jj = j & 255, kk = k & 255;
+    let n = 0, q, g;
+    q = 0.6 - x0 * x0 - y0 * y0 - z0 * z0; if (q > 0) { g = (perm[ii + perm[jj + perm[kk]]] % 12) * 3; q *= q; n += q * q * (G[g] * x0 + G[g + 1] * y0 + G[g + 2] * z0); }
+    q = 0.6 - x1 * x1 - y1 * y1 - z1 * z1; if (q > 0) { g = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12) * 3; q *= q; n += q * q * (G[g] * x1 + G[g + 1] * y1 + G[g + 2] * z1); }
+    q = 0.6 - x2 * x2 - y2 * y2 - z2 * z2; if (q > 0) { g = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12) * 3; q *= q; n += q * q * (G[g] * x2 + G[g + 1] * y2 + G[g + 2] * z2); }
+    q = 0.6 - x3 * x3 - y3 * y3 - z3 * z3; if (q > 0) { g = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]] % 12) * 3; q *= q; n += q * q * (G[g] * x3 + G[g + 1] * y3 + G[g + 2] * z3); }
+    return 32 * n;
+  };
+  A.fbm2 = (x, y, oct = 4) => { let s = 0, a = 0.5, f = 1, n = 0; for (let o = 0; o < oct; o++) { s += a * A.noise2(x * f, y * f); n += a; a *= 0.5; f *= 2.03; } return s / n; };
+
+  /* ---------- pointer ---------- */
+  const P = (A.pointer = { x: -1e5, y: -1e5, vx: 0, vy: 0, down: false, active: false, moved: 0, type: 'mouse' });
+  let lastT = 0;
+  const move = (e) => {
+    const now = performance.now(), dt = Math.max(8, now - lastT);
+    if (P.active && now - lastT < 120) {
+      P.vx = P.vx * 0.5 + ((e.clientX - P.x) / dt) * 500;
+      P.vy = P.vy * 0.5 + ((e.clientY - P.y) / dt) * 500;
+    } else { P.vx = P.vy = 0; }
+    lastT = now;
+    P.x = e.clientX; P.y = e.clientY; P.active = true; P.moved = now; P.type = e.pointerType || 'mouse';
+  };
+  addEventListener('pointermove', move, { passive: true });
+  addEventListener('pointerdown', (e) => { move(e); P.down = true; }, { passive: true });
+  addEventListener('pointerup', (e) => { P.down = false; if (e.pointerType && e.pointerType !== 'mouse') P.active = false; }, { passive: true });
+  addEventListener('pointercancel', () => { P.down = false; P.active = false; });
+  document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) P.active = false; });
+  addEventListener('blur', () => { P.down = false; });
+
+  /* ---------- frame loop ---------- */
+  A.loop = (fn) => {
+    let last = performance.now(), t = 0, id = 0;
+    const step = (now) => {
+      id = requestAnimationFrame(step);
+      let dt = (now - last) / 1000;
+      last = now;
+      if (dt > 0.1) dt = 0.1;
+      else if (dt < 0) dt = 0; // the first rAF stamp can predate the loop's creation
+      if (A.reduced) dt *= 0.3;
+      t += dt;
+      if (now - P.moved > 60) { P.vx *= 0.86; P.vy *= 0.86; }
+      fn(dt, t, now);
+    };
+    id = requestAnimationFrame(step);
+    return { stop: () => cancelAnimationFrame(id) };
+  };
+
+  /* ---------- glyph grid ----------
+     Each frame a hero writes char codes (chr), a level 1..L (lvl, 0 = empty) and an ink index (ink).
+     draw() batches cells by ink+level into row strings: one fillStyle per bucket, one fillText per run. */
+  A.grid = (canvas, o = {}) => {
+    const ctx = canvas.getContext('2d');
+    const L = o.levels || 10, inks = o.inks || ['--fg'], alpha = o.alpha || ((t) => t), lh = o.lh || 1.15;
+    const g = { canvas, ctx, L, cols: 0, rows: 0, n: 0, cw: 8, ch: 14, w: 0, h: 0, dpr: 1, fs: 12, font: '' };
+    const B = inks.length * (L + 1);
+    let styles = [], rb, mn, mx, list = new Int32Array(B), ops = [], singles = [];
+    for (let b = 0; b < B; b++) { ops.push([]); singles.push([]); }
+
+    g.recolor = () => {
+      styles = [];
+      inks.forEach((v) => {
+        const [r, gg, b] = A.rgb(A.css(v));
+        for (let l = 0; l <= L; l++) styles.push(`rgba(${r},${gg},${b},${A.clamp(alpha(l / L), 0, 1).toFixed(3)})`);
+      });
+    };
+
+    g.resize = () => {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return false;
+      const dpr = Math.min(o.maxDpr || 2, window.devicePixelRatio || 1);
+      const fs = typeof o.size === 'function' ? o.size(w, h) : o.size || (w < 640 ? 10 : w < 1280 ? 12 : 13);
+      if (w === g.w && h === g.h && dpr === g.dpr && fs === g.fs) return false;
+      Object.assign(g, { w, h, dpr, fs });
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      g.font = `${o.weight || 400} ${fs}px ${o.family || A.MONO}`;
+      ctx.font = g.font;
+      g.cw = ctx.measureText('MMMMMMMMMMMMMMMMMMMM').width / 20;
+      g.ch = Math.round(fs * lh * 100) / 100;
+      g.cols = Math.ceil(w / g.cw);
+      g.rows = Math.ceil(h / g.ch);
+      g.n = g.cols * g.rows;
+      g.chr = new Uint16Array(g.n).fill(32);
+      g.lvl = new Uint8Array(g.n);
+      g.ink = new Uint8Array(g.n);
+      rb = new Uint16Array(B * g.cols).fill(32);
+      mn = new Int32Array(B).fill(-1);
+      mx = new Int32Array(B);
+      g.recolor();
+      return true;
+    };
+
+    g.clear = () => { g.chr.fill(32); g.lvl.fill(0); g.ink.fill(0); };
+    g.idx = (x, y) => { const c = (x / g.cw) | 0, r = (y / g.ch) | 0; return c < 0 || r < 0 || c >= g.cols || r >= g.rows ? -1 : r * g.cols + c; };
+    g.put = (c, r, code, l, k = 0) => {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return;
+      const i = r * g.cols + c;
+      g.chr[i] = code; g.lvl[i] = l; g.ink[i] = k;
+    };
+    // write only when brighter than what is there
+    g.max = (c, r, code, l, k = 0) => {
+      if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return;
+      const i = r * g.cols + c;
+      if (l > g.lvl[i]) { g.chr[i] = code; g.lvl[i] = l; g.ink[i] = k; }
+    };
+    g.text = (c, r, s, l, k = 0) => { for (let j = 0; j < s.length; j++) g.put(c + j, r, s.charCodeAt(j), l, k); };
+    g.rect = (el) => {
+      const b = el.getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+      return { x0: b.left - cr.left, y0: b.top - cr.top, x1: b.right - cr.left, y1: b.bottom - cr.top };
+    };
+
+    g.draw = () => {
+      const { cols, rows, cw, ch, chr, lvl, ink } = g;
+      ctx.setTransform(g.dpr, 0, 0, g.dpr, 0, 0);
+      ctx.clearRect(0, 0, g.w, g.h);
+      ctx.font = g.font;
+      ctx.textBaseline = 'middle';
+      for (let b = 0; b < B; b++) { ops[b].length = 0; singles[b].length = 0; }
+      for (let r = 0, i = 0; r < rows; r++) {
+        let used = 0;
+        for (let c = 0; c < cols; c++, i++) {
+          const l = lvl[i];
+          if (!l) continue;
+          const code = chr[i];
+          if (code === 32) continue;
+          const b = ink[i] * (L + 1) + l;
+          if (code > 126) { singles[b].push(r, c, code); continue; } // outside ASCII: own cell, no run drift
+          if (mn[b] < 0) { mn[b] = c; list[used++] = b; }
+          mx[b] = c;
+          rb[b * cols + c] = code;
+        }
+        for (let k = 0; k < used; k++) {
+          const b = list[k], base = b * cols, s = mn[b], e = mx[b] + 1;
+          ops[b].push(r, s, String.fromCharCode.apply(null, rb.subarray(base + s, base + e)));
+          rb.fill(32, base + s, base + e);
+          mn[b] = -1;
+        }
+      }
+      const hc = ch * 0.5;
+      for (let b = 0; b < B; b++) {
+        const op = ops[b], sg = singles[b];
+        if (!op.length && !sg.length) continue;
+        ctx.fillStyle = styles[b];
+        ctx.textAlign = 'left';
+        for (let k = 0; k < op.length; k += 3) ctx.fillText(op[k + 2], op[k + 1] * cw, op[k] * ch + hc);
+        if (sg.length) {
+          ctx.textAlign = 'center';
+          for (let k = 0; k < sg.length; k += 3) ctx.fillText(String.fromCharCode(sg[k + 2]), (sg[k + 1] + 0.5) * cw, sg[k] * ch + hc);
+        }
+      }
+    };
+
+    A.theme.on(() => g.recolor());
+    g.resize();
+    let pend = 0;
+    new ResizeObserver(() => {
+      cancelAnimationFrame(pend);
+      pend = requestAnimationFrame(() => { if (g.resize() && o.onResize) o.onResize(g); });
+    }).observe(canvas);
+    return g;
+  };
+})();
+</script>
+</head>
+<body>
+<canvas id="type" aria-hidden="true"></canvas>
+<canvas class="ascii" id="snow" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">hush</a>
+    <nav class="links" aria-label="Primary"><a href="#">How it works</a><a href="#">Digest</a><a href="#">Manifesto</a></nav>
+    <button class="toggle" data-theme-toggle aria-label="Toggle dark mode"><i aria-hidden="true"></i>Dusk</button>
+  </header>
+  <section class="center">
+    <p class="eyebrow">The quiet inbox / early access</p>
+    <h1 title="Click a letter to shake the snow off">hush.</h1>
+    <p class="sub">Hush holds every notification until you are ready, then delivers them as one calm digest. Nothing is lost. Everything waits.</p>
+    <form class="join"><input type="email" required placeholder="you@company.com" aria-label="Email address"><button type="submit">Join the waitlist</button></form>
+    <p class="note" aria-live="polite">Snow on the ground <b id="depth">0.0</b> cm / hover to melt / click a letter</p>
+  </section>
+  <div></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('snow'), { levels: 12, inks: ['--snow'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const typeCv = document.getElementById('type'), tx = typeCv.getContext('2d'), h1 = document.querySelector('h1');
+  const TEXT = 'hush.', FLK = A.ramp(".'*+");
+  let depthEl = document.getElementById('depth');
+  let st = null, flakes = [], letters = [], W = 0, H = 0, frame = 0, groundR = 0;
+
+  // draw the headline as vector type and derive a solid mask from the same pixels
+  function drawType() {
+    const dpr = Math.min(2, devicePixelRatio || 1), cs = getComputedStyle(h1), r = h1.getBoundingClientRect();
+    typeCv.width = Math.round(W * dpr); typeCv.height = Math.round(H * dpr);
+    const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`, ls = parseFloat(cs.letterSpacing) || 0;
+    const m = A.mask(W, H, (x) => {
+      x.font = font;
+      const mm = x.measureText(TEXT), asc = mm.fontBoundingBoxAscent || mm.actualBoundingBoxAscent, desc = mm.fontBoundingBoxDescent || mm.actualBoundingBoxDescent;
+      let total = 0;
+      for (const ch of TEXT) total += x.measureText(ch).width + ls;
+      total -= ls;
+      let cx = r.left + (r.width - total) / 2;
+      const base = r.top + (r.height - (asc + desc)) / 2 + asc;
+      letters = [];
+      tx.setTransform(dpr, 0, 0, dpr, 0, 0); tx.clearRect(0, 0, W, H); tx.font = font; tx.fillStyle = A.css('--type');
+      for (const ch of TEXT) {
+        const w = x.measureText(ch).width;
+        x.fillText(ch, cx, base); tx.fillText(ch, cx, base);
+        letters.push({ x0: cx, x1: cx + w, top: base - asc, base });
+        cx += w + ls;
+      }
+    });
+    return m;
+  }
+
+  function layout() {
+    W = g.w; H = g.h;
+    const m = drawType(), { cols, rows, cw, ch } = g;
+    st = new Uint8Array(g.n);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x = Math.min(W - 1, ((c + 0.5) * cw) | 0), y1 = Math.min(H - 1, ((r + 0.5) * ch) | 0), y2 = Math.min(H - 1, ((r + 0.8) * ch) | 0);
+      if (m[y1 * W + x] > 120 || m[y2 * W + Math.min(W - 1, (x + cw * 0.3) | 0)] > 120 && m[y2 * W + Math.max(0, (x - cw * 0.3) | 0)] > 120) st[r * cols + c] = 1;
+    }
+    groundR = rows - 1;
+    for (let c = 0; c < cols; c++) st[groundR * cols + c] = 1;
+    flakes = [];
+    const n = Math.round(A.clamp((W * H) / 3200, 160, 460));
+    for (let i = 0; i < n; i++) flakes.push(newFlake(true));
+  }
+  function newFlake(anywhere) {
+    const z = Math.random();
+    return { x: Math.random() * W, y: anywhere ? Math.random() * H : -10 - Math.random() * 60, z, vx: 0, vy: A.lerp(70, 26, z), ph: Math.random() * 6.3, near: z < 0.55 };
+  }
+
+  function settle(x, y) {
+    const { cols, rows, cw, ch } = g;
+    let c = (x / cw) | 0, r = (y / ch) | 0;
+    if (c < 0 || c >= cols || r < 0 || r >= rows) return false;
+    let i = r * cols + c;
+    if (st[i]) { while (r > 0 && st[i]) { r--; i -= cols; } if (st[i]) return false; st[i] = 2; return true; }
+    if (r + 1 >= rows || st[i + cols]) { st[i] = 2; return true; }
+    return false;
+  }
+
+  h1.addEventListener('pointerdown', (e) => {
+    const L = letters.find((l) => e.clientX >= l.x0 && e.clientX <= l.x1);
+    if (!L) return;
+    const { cols, cw, ch } = g, c0 = Math.floor(L.x0 / cw), c1 = Math.ceil(L.x1 / cw), r1 = Math.ceil(L.base / ch);
+    for (let r = 0; r < r1; r++) for (let c = c0; c <= c1; c++) {
+      const i = r * cols + c;
+      if (st[i] === 2) { st[i] = 0; flakes.push({ x: (c + 0.5) * cw, y: (r + 0.5) * ch, z: 0.1, vx: (Math.random() - 0.5) * 140, vy: -A.lerp(40, 160, Math.random()), ph: Math.random() * 6.3, near: true, shaken: true }); }
+    }
+  });
+
+  function step(dt, t) {
+    frame++;
+    const { cols, rows, cw, ch } = g;
+    const wind = A.noise2(t * 0.13, 2) * 38 + (P.active ? A.clamp(P.vx * 0.04, -60, 60) : 0);
+    // falling flakes
+    for (let k = flakes.length - 1; k >= 0; k--) {
+      const f = flakes[k];
+      const term = A.lerp(70, 26, f.z);
+      f.vy += (term - f.vy) * Math.min(1, dt * (f.shaken ? 2.2 : 1));
+      f.vx += (wind * (1 - f.z * 0.6) - f.vx) * Math.min(1, dt * 1.5);
+      f.x += (f.vx + Math.sin(t * 1.3 + f.ph) * 12 * (1 - f.z * 0.5)) * dt;
+      f.y += f.vy * dt;
+      if (P.active && Math.hypot(f.x - P.x, f.y - P.y) < 42) { if (f.shaken) flakes.splice(k, 1); else Object.assign(f, newFlake(false)); continue; }
+      if (f.near && f.vy > 0 && settle(f.x, f.y)) { if (f.shaken) flakes.splice(k, 1); else Object.assign(f, newFlake(false)); continue; }
+      if (f.y > H + 10) { Object.assign(f, newFlake(false)); continue; }
+      if (f.x < -10) f.x += W + 20; else if (f.x > W + 10) f.x -= W + 20;
+    }
+    // settled snow: falls into gaps and slides off steep edges, scanning alternately to avoid a bias
+    for (let r = rows - 2; r >= 0; r--) {
+      const dir = (r + frame) & 1 ? 1 : -1;
+      for (let k = 0; k < cols; k++) {
+        const c = dir > 0 ? k : cols - 1 - k, i = r * cols + c;
+        if (st[i] !== 2) continue;
+        const b = i + cols;
+        if (!st[b]) { st[b] = 2; st[i] = 0; continue; }
+        const s = Math.random() < 0.5 ? 1 : -1;
+        for (const d of [s, -s]) {
+          const cc = c + d;
+          if (cc < 0 || cc >= cols) continue;
+          if (!st[i + d] && !st[b + d] && Math.random() < 0.7) { st[b + d] = 2; st[i] = 0; break; }
+        }
+      }
+    }
+    // warm hand melts, and the bank at the bottom never grows past a few rows
+    if (P.active) {
+      const pc = P.x / cw, pr = P.y / ch;
+      for (let r = Math.max(0, (pr - 4) | 0); r <= Math.min(rows - 2, pr + 4); r++) for (let c = Math.max(0, (pc - 7) | 0); c <= Math.min(cols - 1, pc + 7); c++) {
+        const i = r * cols + c;
+        if (st[i] === 2 && Math.hypot((c - pc) * cw, (r - pr) * ch) < 46 && Math.random() < 0.18) st[i] = 0;
+      }
+    }
+    let total = 0;
+    for (let c = 0; c < cols; c++) {
+      let h = 0;
+      for (let r = groundR - 1; r > 0 && st[r * cols + c] === 2; r--) h++;
+      total += h;
+      if (h > 4 && Math.random() < dt * 0.4) st[(groundR - h) * cols + c] = 0;
+    }
+    return total;
+  }
+
+  layout();
+  // start mid-storm: fast-forward a little so the letters already wear some snow
+  for (let k = 0; k < 420; k++) step(1 / 30, k / 30);
+  A.loop((dt, t) => {
+    const total = step(dt, t + 14);
+    const { cols, rows, cw, ch, chr, lvl } = g;
+    g.clear();
+    for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      if (st[i] !== 2) continue;
+      const up = r > 0 ? st[i - cols] : 0, lf = c > 0 ? st[i - 1] : 0, rt = c < cols - 1 ? st[i + 1] : 0;
+      // pillows, not tents: rounded shoulders, a soft flat top, packed snow underneath
+      let code;
+      const lf2 = c > 1 ? st[i - 2] === 2 : false, rt2 = c < cols - 2 ? st[i + 2] === 2 : false;
+      if (up === 2) code = (c + r) % 4 ? 35 : 37;
+      else if (lf !== 2 && rt !== 2) code = 46;
+      else if (lf !== 2) code = rt2 ? 40 : 46;
+      else if (rt !== 2) code = lf2 ? 41 : 46;
+      else code = (c * 7 + r) % 6 ? 61 : 42;
+      chr[i] = code; lvl[i] = up === 2 ? 10 : 12;
+    }
+    for (const f of flakes) {
+      const c = (f.x / cw) | 0, r = (f.y / ch) | 0;
+      if (c < 0 || r < 0 || c >= cols || r >= rows || st[r * cols + c] === 1) continue;
+      const i = r * cols + c;
+      if (lvl[i] > 9) continue;
+      chr[i] = FLK[f.z < 0.2 ? 2 : f.z < 0.45 ? 3 : f.z < 0.7 ? 1 : 0]; lvl[i] = Math.round(A.lerp(12, 3, f.z));
+    }
+    g.draw();
+    if ((frame & 15) === 0) depthEl.textContent = ((total / cols) * 1.4).toFixed(1);
+  });
+
+  A.theme.on(() => drawType());
+  const form = document.querySelector('.join'), note = document.querySelector('.note');
+  form.addEventListener('submit', (e) => { e.preventDefault(); form.reset(); note.textContent = 'You are on the list. We will stay quiet until then.'; setTimeout(() => { note.innerHTML = 'Snow on the ground <b id="depth">0.0</b> cm / hover to melt / click a letter'; depthEl = document.getElementById('depth'); }, 5000); });
+})();
+</script>
+</body>
+</html>

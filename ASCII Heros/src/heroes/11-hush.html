@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hush · The quiet inbox</title>
+<meta name="description" content="A focus app landing hero: ASCII snow that settles on the headline letterforms, slides off, melts under the cursor.">
+<meta name="ascii-hero" content='{"name":"Hush","brand":"Hush","kind":"Focus inbox","tech":"Snow cellular automaton on a glyph mask","accent":""}'>
+<style>
+:root{--bg:#0a0b0c;--fg:#f0f1f2;--type:#f0f1f2;--snow:#f4f6f8;--dim:rgba(240,241,242,.55);--faint:rgba(240,241,242,.16);color-scheme:dark;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"DejaVu Serif",serif;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#c9cdd0;--fg:#121416;--type:#121416;--snow:#ffffff;--dim:rgba(18,20,22,.62);--faint:rgba(18,20,22,.18);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);transition:background-color .6s}
+#type{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;pointer-events:none}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:minmax(0,1fr);pointer-events:none}
+.hero a,.hero button,.hero input,.hero h1{pointer-events:auto}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:24px clamp(16px,3.6vw,52px);font-size:14px}
+.mark{font:italic 700 20px/1 var(--serif)}
+.links{display:flex;gap:28px;color:var(--dim)}.links a:hover{color:var(--fg)}
+.toggle{font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.toggle i{width:16px;height:16px;border-radius:50%;border:1px solid currentColor;position:relative;overflow:hidden}
+.toggle i::after{content:"";position:absolute;inset:0;background:currentColor;transform:translateY(50%);transition:transform .5s}
+[data-theme=light] .toggle i::after{transform:translateY(100%)}
+.center{align-self:center;display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 16px}
+.eyebrow{font:11px var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin-bottom:clamp(22px,4vw,56px)}
+h1{font:700 clamp(130px,27vw,400px)/1 var(--serif);letter-spacing:-.045em;color:transparent;cursor:pointer;user-select:text;margin:-.04em 0 0}
+.sub{max-width:440px;color:var(--dim);font-size:16px;line-height:1.55;margin-top:6px}
+.join{display:flex;gap:8px;margin-top:26px;padding:6px;border:1px solid var(--faint);border-radius:999px;width:min(440px,100%);background:color-mix(in srgb,var(--bg) 70%,transparent)}
+.join input{flex:1;min-width:0;padding:0 16px;font-size:15px}
+.join input::placeholder{color:var(--dim)}
+.join button{background:var(--fg);color:var(--bg);border-radius:999px;padding:12px 18px;font-weight:600;font-size:14px;white-space:nowrap}
+.note{font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:16px;min-height:16px}
+.note b{font-weight:400;color:var(--fg)}
+@media (max-width:760px){.nav{padding:18px 16px}.links{display:none}.sub{font-size:14.5px}}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas id="type" aria-hidden="true"></canvas>
+<canvas class="ascii" id="snow" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">hush</a>
+    <nav class="links" aria-label="Primary"><a href="#">How it works</a><a href="#">Digest</a><a href="#">Manifesto</a></nav>
+    <button class="toggle" data-theme-toggle aria-label="Toggle dark mode"><i aria-hidden="true"></i>Dusk</button>
+  </header>
+  <section class="center">
+    <p class="eyebrow">The quiet inbox / early access</p>
+    <h1 title="Click a letter to shake the snow off">hush.</h1>
+    <p class="sub">Hush holds every notification until you are ready, then delivers them as one calm digest. Nothing is lost. Everything waits.</p>
+    <form class="join"><input type="email" required placeholder="you@company.com" aria-label="Email address"><button type="submit">Join the waitlist</button></form>
+    <p class="note" aria-live="polite">Snow on the ground <b id="depth">0.0</b> cm / hover to melt / click a letter</p>
+  </section>
+  <div></div>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('snow'), { levels: 12, inks: ['--snow'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const typeCv = document.getElementById('type'), tx = typeCv.getContext('2d'), h1 = document.querySelector('h1');
+  const TEXT = 'hush.', FLK = A.ramp(".'*+");
+  let depthEl = document.getElementById('depth');
+  let st = null, flakes = [], letters = [], W = 0, H = 0, frame = 0, groundR = 0;
+
+  // draw the headline as vector type and derive a solid mask from the same pixels
+  function drawType() {
+    const dpr = Math.min(2, devicePixelRatio || 1), cs = getComputedStyle(h1), r = h1.getBoundingClientRect();
+    typeCv.width = Math.round(W * dpr); typeCv.height = Math.round(H * dpr);
+    const font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`, ls = parseFloat(cs.letterSpacing) || 0;
+    const m = A.mask(W, H, (x) => {
+      x.font = font;
+      const mm = x.measureText(TEXT), asc = mm.fontBoundingBoxAscent || mm.actualBoundingBoxAscent, desc = mm.fontBoundingBoxDescent || mm.actualBoundingBoxDescent;
+      let total = 0;
+      for (const ch of TEXT) total += x.measureText(ch).width + ls;
+      total -= ls;
+      let cx = r.left + (r.width - total) / 2;
+      const base = r.top + (r.height - (asc + desc)) / 2 + asc;
+      letters = [];
+      tx.setTransform(dpr, 0, 0, dpr, 0, 0); tx.clearRect(0, 0, W, H); tx.font = font; tx.fillStyle = A.css('--type');
+      for (const ch of TEXT) {
+        const w = x.measureText(ch).width;
+        x.fillText(ch, cx, base); tx.fillText(ch, cx, base);
+        letters.push({ x0: cx, x1: cx + w, top: base - asc, base });
+        cx += w + ls;
+      }
+    });
+    return m;
+  }
+
+  function layout() {
+    W = g.w; H = g.h;
+    const m = drawType(), { cols, rows, cw, ch } = g;
+    st = new Uint8Array(g.n);
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const x = Math.min(W - 1, ((c + 0.5) * cw) | 0), y1 = Math.min(H - 1, ((r + 0.5) * ch) | 0), y2 = Math.min(H - 1, ((r + 0.8) * ch) | 0);
+      if (m[y1 * W + x] > 120 || m[y2 * W + Math.min(W - 1, (x + cw * 0.3) | 0)] > 120 && m[y2 * W + Math.max(0, (x - cw * 0.3) | 0)] > 120) st[r * cols + c] = 1;
+    }
+    groundR = rows - 1;
+    for (let c = 0; c < cols; c++) st[groundR * cols + c] = 1;
+    flakes = [];
+    const n = Math.round(A.clamp((W * H) / 3200, 160, 460));
+    for (let i = 0; i < n; i++) flakes.push(newFlake(true));
+  }
+  function newFlake(anywhere) {
+    const z = Math.random();
+    return { x: Math.random() * W, y: anywhere ? Math.random() * H : -10 - Math.random() * 60, z, vx: 0, vy: A.lerp(70, 26, z), ph: Math.random() * 6.3, near: z < 0.55 };
+  }
+
+  function settle(x, y) {
+    const { cols, rows, cw, ch } = g;
+    let c = (x / cw) | 0, r = (y / ch) | 0;
+    if (c < 0 || c >= cols || r < 0 || r >= rows) return false;
+    let i = r * cols + c;
+    if (st[i]) { while (r > 0 && st[i]) { r--; i -= cols; } if (st[i]) return false; st[i] = 2; return true; }
+    if (r + 1 >= rows || st[i + cols]) { st[i] = 2; return true; }
+    return false;
+  }
+
+  h1.addEventListener('pointerdown', (e) => {
+    const L = letters.find((l) => e.clientX >= l.x0 && e.clientX <= l.x1);
+    if (!L) return;
+    const { cols, cw, ch } = g, c0 = Math.floor(L.x0 / cw), c1 = Math.ceil(L.x1 / cw), r1 = Math.ceil(L.base / ch);
+    for (let r = 0; r < r1; r++) for (let c = c0; c <= c1; c++) {
+      const i = r * cols + c;
+      if (st[i] === 2) { st[i] = 0; flakes.push({ x: (c + 0.5) * cw, y: (r + 0.5) * ch, z: 0.1, vx: (Math.random() - 0.5) * 140, vy: -A.lerp(40, 160, Math.random()), ph: Math.random() * 6.3, near: true, shaken: true }); }
+    }
+  });
+
+  function step(dt, t) {
+    frame++;
+    const { cols, rows, cw, ch } = g;
+    const wind = A.noise2(t * 0.13, 2) * 38 + (P.active ? A.clamp(P.vx * 0.04, -60, 60) : 0);
+    // falling flakes
+    for (let k = flakes.length - 1; k >= 0; k--) {
+      const f = flakes[k];
+      const term = A.lerp(70, 26, f.z);
+      f.vy += (term - f.vy) * Math.min(1, dt * (f.shaken ? 2.2 : 1));
+      f.vx += (wind * (1 - f.z * 0.6) - f.vx) * Math.min(1, dt * 1.5);
+      f.x += (f.vx + Math.sin(t * 1.3 + f.ph) * 12 * (1 - f.z * 0.5)) * dt;
+      f.y += f.vy * dt;
+      if (P.active && Math.hypot(f.x - P.x, f.y - P.y) < 42) { if (f.shaken) flakes.splice(k, 1); else Object.assign(f, newFlake(false)); continue; }
+      if (f.near && f.vy > 0 && settle(f.x, f.y)) { if (f.shaken) flakes.splice(k, 1); else Object.assign(f, newFlake(false)); continue; }
+      if (f.y > H + 10) { Object.assign(f, newFlake(false)); continue; }
+      if (f.x < -10) f.x += W + 20; else if (f.x > W + 10) f.x -= W + 20;
+    }
+    // settled snow: falls into gaps and slides off steep edges, scanning alternately to avoid a bias
+    for (let r = rows - 2; r >= 0; r--) {
+      const dir = (r + frame) & 1 ? 1 : -1;
+      for (let k = 0; k < cols; k++) {
+        const c = dir > 0 ? k : cols - 1 - k, i = r * cols + c;
+        if (st[i] !== 2) continue;
+        const b = i + cols;
+        if (!st[b]) { st[b] = 2; st[i] = 0; continue; }
+        const s = Math.random() < 0.5 ? 1 : -1;
+        for (const d of [s, -s]) {
+          const cc = c + d;
+          if (cc < 0 || cc >= cols) continue;
+          if (!st[i + d] && !st[b + d] && Math.random() < 0.7) { st[b + d] = 2; st[i] = 0; break; }
+        }
+      }
+    }
+    // warm hand melts, and the bank at the bottom never grows past a few rows
+    if (P.active) {
+      const pc = P.x / cw, pr = P.y / ch;
+      for (let r = Math.max(0, (pr - 4) | 0); r <= Math.min(rows - 2, pr + 4); r++) for (let c = Math.max(0, (pc - 7) | 0); c <= Math.min(cols - 1, pc + 7); c++) {
+        const i = r * cols + c;
+        if (st[i] === 2 && Math.hypot((c - pc) * cw, (r - pr) * ch) < 46 && Math.random() < 0.18) st[i] = 0;
+      }
+    }
+    let total = 0;
+    for (let c = 0; c < cols; c++) {
+      let h = 0;
+      for (let r = groundR - 1; r > 0 && st[r * cols + c] === 2; r--) h++;
+      total += h;
+      if (h > 4 && Math.random() < dt * 0.4) st[(groundR - h) * cols + c] = 0;
+    }
+    return total;
+  }
+
+  layout();
+  // start mid-storm: fast-forward a little so the letters already wear some snow
+  for (let k = 0; k < 420; k++) step(1 / 30, k / 30);
+  A.loop((dt, t) => {
+    const total = step(dt, t + 14);
+    const { cols, rows, cw, ch, chr, lvl } = g;
+    g.clear();
+    for (let r = 0; r < rows - 1; r++) for (let c = 0; c < cols; c++) {
+      const i = r * cols + c;
+      if (st[i] !== 2) continue;
+      const up = r > 0 ? st[i - cols] : 0, lf = c > 0 ? st[i - 1] : 0, rt = c < cols - 1 ? st[i + 1] : 0;
+      // pillows, not tents: rounded shoulders, a soft flat top, packed snow underneath
+      let code;
+      const lf2 = c > 1 ? st[i - 2] === 2 : false, rt2 = c < cols - 2 ? st[i + 2] === 2 : false;
+      if (up === 2) code = (c + r) % 4 ? 35 : 37;
+      else if (lf !== 2 && rt !== 2) code = 46;
+      else if (lf !== 2) code = rt2 ? 40 : 46;
+      else if (rt !== 2) code = lf2 ? 41 : 46;
+      else code = (c * 7 + r) % 6 ? 61 : 42;
+      chr[i] = code; lvl[i] = up === 2 ? 10 : 12;
+    }
+    for (const f of flakes) {
+      const c = (f.x / cw) | 0, r = (f.y / ch) | 0;
+      if (c < 0 || r < 0 || c >= cols || r >= rows || st[r * cols + c] === 1) continue;
+      const i = r * cols + c;
+      if (lvl[i] > 9) continue;
+      chr[i] = FLK[f.z < 0.2 ? 2 : f.z < 0.45 ? 3 : f.z < 0.7 ? 1 : 0]; lvl[i] = Math.round(A.lerp(12, 3, f.z));
+    }
+    g.draw();
+    if ((frame & 15) === 0) depthEl.textContent = ((total / cols) * 1.4).toFixed(1);
+  });
+
+  A.theme.on(() => drawType());
+  const form = document.querySelector('.join'), note = document.querySelector('.note');
+  form.addEventListener('submit', (e) => { e.preventDefault(); form.reset(); note.textContent = 'You are on the list. We will stay quiet until then.'; setTimeout(() => { note.innerHTML = 'Snow on the ground <b id="depth">0.0</b> cm / hover to melt / click a letter'; depthEl = document.getElementById('depth'); }, 5000); });
+})();
+</script>
+</body>
+</html>

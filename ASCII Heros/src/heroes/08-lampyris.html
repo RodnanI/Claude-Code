@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Lampyris · Find the rhythm no one planned</title>
+<meta name="description" content="A team scheduling landing hero: ASCII fireflies over a night meadow that gradually synchronize their flashes.">
+<meta name="ascii-hero" content='{"name":"Lampyris","brand":"Lampyris","kind":"Team scheduling","tech":"Pulse-coupled oscillators that self-synchronize","accent":"#d4ff3a"}'>
+<style>
+:root{--bg:#070806;--fg:#e6e8e0;--dim:rgba(230,232,224,.55);--faint:rgba(230,232,224,.14);--accent:#d4ff3a;color-scheme:dark;
+  --sans:system-ui,-apple-system,"Segoe UI",Inter,Roboto,Arial,sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"DejaVu Serif",serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#efeee6;--fg:#141511;--dim:rgba(20,21,17,.6);--faint:rgba(20,21,17,.14);--accent:#6f8c00;color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans);transition:background-color .7s}
+.hero{position:relative;height:100vh;height:100svh;pointer-events:none;display:grid;grid-template-rows:auto 1fr;grid-template-columns:minmax(0,1fr)}
+.hero a,.hero button{pointer-events:auto}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:24px clamp(16px,3.6vw,52px)}
+.mark{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.01em}
+.mark i{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent);animation:blink 1.8s infinite}
+@keyframes blink{0%,100%{opacity:.25}8%{opacity:1}30%{opacity:.25}}
+.links{display:flex;gap:28px;font-size:14px;color:var(--dim)}
+.links a:hover{color:var(--fg)}
+.toggle{width:30px;height:30px;border-radius:50%;border:1px solid var(--faint);display:grid;place-items:center}
+.toggle::after{content:"";width:10px;height:10px;border-radius:50%;box-shadow:inset -4px -2px 0 0 var(--fg);transition:box-shadow .5s}
+[data-theme=light] .toggle::after{box-shadow:inset 0 0 0 5px var(--fg)}
+.copy{padding:clamp(20px,8vh,96px) clamp(16px,3.6vw,52px) 0;max-width:660px}
+.sync{display:inline-flex;gap:12px;align-items:center;font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);border:1px solid var(--faint);padding:8px 12px;border-radius:999px;margin-bottom:28px}
+.sync b{font-weight:400;color:var(--accent);letter-spacing:.02em}
+.sync span.bar{letter-spacing:0;color:var(--fg)}
+h1{font:400 clamp(44px,6.2vw,96px)/1 var(--serif);letter-spacing:-.03em}
+h1 em{font-style:italic;color:var(--accent)}
+.sub{margin-top:24px;max-width:440px;color:var(--dim);font-size:16.5px;line-height:1.6}
+.ctas{display:flex;gap:14px;margin-top:32px;align-items:center;flex-wrap:wrap}
+.btn{padding:14px 22px;border-radius:12px;background:var(--fg);color:var(--bg);font-weight:600;font-size:14px}
+.ghost{padding:13px 20px;border-radius:12px;border:1px solid var(--faint);font-size:14px}
+.ghost:hover{border-color:var(--dim)}
+.hint{position:absolute;right:clamp(16px,3.6vw,52px);bottom:22px;font:11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+@media (max-width:760px){
+  .nav{padding:18px 16px}.links{display:none}
+  .copy{padding:10px 16px 0}.sync{margin-bottom:18px}.sub{font-size:15px;margin-top:16px}.ctas{margin-top:20px}
+  .hint{display:none}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="meadow" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#"><i aria-hidden="true"></i>Lampyris</a>
+    <nav class="links" aria-label="Primary"><a href="#">How it works</a><a href="#">Teams</a><a href="#">Integrations</a><a href="#">Pricing</a></nav>
+    <button class="toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+  </header>
+  <section class="copy">
+    <p class="sync" aria-live="off">Meadow sync <span class="bar" id="bar">..........</span><b id="r">0.00</b></p>
+    <h1>Find the rhythm no one <em>planned.</em></h1>
+    <p class="sub">Lampyris aligns calendars the way fireflies align their light. Each one nudges its neighbours, until the whole team pulses at once.</p>
+    <div class="ctas"><a class="btn" href="#">Join the meadow</a><a class="ghost" href="#">How sync works</a></div>
+  </section>
+  <p class="hint">Click to flash. Wave to scatter.</p>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('meadow'), { levels: 12, inks: ['--fg', '--accent'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const HALO = A.ramp('.:;+o');
+  const B = 3, EB = Math.exp(B) - 1, f = (p) => Math.log(1 + EB * p) / B, finv = (x) => (Math.exp(B * x) - 1) / EB;
+  let W = 0, H = 0, flies = [], grass = [], stars = [], trees = null, mob = false, calm = 0, R = 160;
+  const rEl = document.getElementById('r'), barEl = document.getElementById('bar');
+
+  function layout() {
+    W = g.w; H = g.h; mob = W < 760; R = mob ? 120 : 170;
+    const n = Math.round(A.clamp((W * H) / 13000, 36, 96));
+    flies = [];
+    for (let i = 0; i < n; i++) {
+      flies.push({ x: A.lerp(mob ? 0.05 : 0.4, 0.97, Math.random()) * W, y: A.lerp(mob ? 0.52 : 0.38, 0.93, Math.random()) * H,
+        vx: 0, vy: 0, ph: Math.random(), T: 1.9 * A.lerp(0.92, 1.08, Math.random()), fl: -9, s: Math.random() * 100,
+        hx: 0, hy: 0 });
+      flies[i].hx = flies[i].x; flies[i].hy = flies[i].y;
+    }
+    grass = [];
+    const base = g.rows - 1, gh = Math.round(g.rows * (mob ? 0.2 : 0.26));
+    for (let c = -2; c < g.cols + 2; c++) {
+      if (Math.random() < 0.38) continue;
+      grass.push({ c, h: Math.max(2, Math.round(gh * A.lerp(0.18, 1, Math.random() ** 1.7))), ph: Math.random() * 6.3, lean: (Math.random() - 0.5) * 1.8, base, skip: (Math.random() * 3) | 0 });
+    }
+    stars = [];
+    for (let i = 0; i < (g.cols * g.rows) / 90; i++) stars.push({ c: (Math.random() * g.cols) | 0, r: (Math.random() * g.rows * 0.45) | 0, p: Math.random() * 6.3 });
+    trees = new Float32Array(g.cols);
+    for (let c = 0; c < g.cols; c++) trees[c] = Math.max(0, A.fbm2(c * 0.05, 1.3, 3) * 5 + 3.2 + A.noise2(c * 0.3, 8) * 0.8);
+  }
+
+  function fire(i, t, q) {
+    const a = flies[i];
+    a.ph = 0; a.fl = t;
+    for (let j = 0; j < flies.length; j++) {
+      if (j === i) continue;
+      const b = flies[j];
+      if (t - b.fl < 0.05) continue;
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d > R) continue;
+      const x = f(b.ph) + 0.032 * (1 - d / R);
+      if (x >= 1) q.push(j); else b.ph = finv(x);
+    }
+  }
+
+  layout();
+  let order = 0, high = 0;
+  A.loop((dt, t) => {
+    // oscillators: integrate, fire, and let each flash pull the neighbours forward
+    const q = [];
+    for (let i = 0; i < flies.length; i++) {
+      const a = flies[i];
+      a.ph += dt / a.T;
+      if (a.ph >= 1) q.push(i);
+    }
+    while (q.length) { const i = q.pop(); if (t - flies[i].fl > 0.05) fire(i, t, q); }
+    // order parameter of the meadow
+    let sx = 0, sy = 0;
+    for (const a of flies) { sx += Math.cos(a.ph * 6.283); sy += Math.sin(a.ph * 6.283); }
+    order += (Math.hypot(sx, sy) / flies.length - order) * Math.min(1, dt * 3);
+    // once fully in step for a while, a breeze scatters them so the story can start again
+    high = order > 0.94 ? high + dt : 0;
+    if (high > 16) { for (const a of flies) a.ph = Math.random(); high = 0; }
+    for (const a of flies) {
+      a.vx += (A.noise2(a.s, t * 0.25) * 22 - a.vx) * dt; a.vy += (A.noise2(a.s + 50, t * 0.25) * 14 - a.vy) * dt;
+      a.vx += (a.hx - a.x) * 0.01 * dt; a.vy += (a.hy - a.y) * 0.01 * dt;
+      if (P.active) {
+        const dx = a.x - P.x, dy = a.y - P.y, d = Math.hypot(dx, dy);
+        if (d < 90 && Math.hypot(P.vx, P.vy) > 300) { a.ph = (a.ph + (Math.random() - 0.5) * 0.4 + 1) % 1; a.vx += (dx / (d + 1)) * 40; a.vy += (dy / (d + 1)) * 40; }
+      }
+      a.x += a.vx * dt; a.y += a.vy * dt;
+    }
+
+    g.clear();
+    const { cols, rows, cw, ch, chr, lvl, ink } = g;
+    for (const s of stars) { const v = 0.5 + 0.5 * Math.sin(t * 0.8 + s.p * 3); if (v > 0.3) g.put(s.c, s.r, v > 0.92 ? 43 : 46, 1 + Math.round(v * 2)); }
+    const tl = Math.round(g.rows * (mob ? 0.66 : 0.6));
+    // distant tree line as a halftone silhouette
+    for (let c = 0; c < cols; c++) { const h = trees[c] | 0; for (let k = 0; k < h; k++) if (k === h - 1 || (c + k) % 2 === 0) g.put(c, tl - k, k === h - 1 ? 46 : 58, 1); }
+    const wind = A.noise2(t * 0.3, 4) * 1.1;
+    for (const b of grass) {
+      const sway = wind + Math.sin(t * 1.4 + b.ph + b.c * 0.08) * 0.35 + b.lean;
+      for (let k = b.skip; k < b.h; k++) {
+        const fr = k / b.h, off = sway * fr * fr * b.h * 0.22, c = Math.round(b.c + off), r = b.base - k;
+        const slope = sway * fr * 0.44;
+        const code = k === b.h - 1 ? (sway > 0.4 ? 96 : sway < -0.4 ? 44 : 39) : Math.abs(slope) < 0.25 ? 124 : slope > 0 ? 47 : 92;
+        g.put(c, r, code, 2 + Math.round((0.4 + fr * 0.6) * 4));
+      }
+    }
+    // fireflies: a bright core and a halo that spills light onto the grass
+    for (const a of flies) {
+      const age = t - a.fl, b = age < 0 ? 0 : Math.exp(-age * 2.4) * (age < 0.09 ? age / 0.09 : 1);
+      const c = (a.x / cw) | 0, r = (a.y / ch) | 0;
+      if (b < 0.06) { g.max(c, r, 46, 4, 1); continue; }
+      g.put(c, r, b > 0.5 ? 64 : 42, 12, 1);
+      const rad = Math.round(1 + b * (A.theme.get() === 'dark' ? 3 : 1.6));
+      for (let dr = -rad; dr <= rad; dr++) for (let dc = -rad * 2; dc <= rad * 2; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
+        const d = Math.hypot(dc / 2, dr) / (rad + 0.5);
+        if (d >= 1) continue;
+        const v = b * (1 - d) * (1 - d), i = rr * cols + cc;
+        if (lvl[i] && !ink[i]) { if (v > 0.12) { ink[i] = 1; lvl[i] = Math.min(12, lvl[i] + Math.round(v * 8)); } continue; }
+        const lv = Math.round(v * 13);
+        if (lv < 1 || (dr === 0 && dc === 0)) continue;
+        if (lv > lvl[i] || !ink[i]) { chr[i] = HALO[Math.min(4, (v * 5) | 0)]; lvl[i] = lv; ink[i] = 1; }
+      }
+    }
+    g.draw();
+    rEl.textContent = order.toFixed(2);
+    const k = Math.round(order * 10);
+    barEl.textContent = '#'.repeat(k) + '.'.repeat(10 - k);
+  });
+
+  // click anywhere empty: flash a lantern and pull nearby fireflies into your beat
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('a,button')) return;
+    for (const a of flies) if (Math.hypot(a.x - e.clientX, a.y - e.clientY) < R * 1.4) { a.ph = 0.97 + Math.random() * 0.02; }
+  });
+})();
+</script>
+</body>
+</html>

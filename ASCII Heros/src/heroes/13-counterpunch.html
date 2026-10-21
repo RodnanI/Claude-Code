@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Counterpunch · Typefaces for people who look twice</title>
+<meta name="description" content="A type foundry landing hero: giant ASCII glyphs built from signed distance fields, morphing, with a live weight axis.">
+<meta name="ascii-hero" content='{"name":"Counterpunch","brand":"Counterpunch","kind":"Type foundry","tech":"Exact distance transforms, SDF morphing, live weight axis","accent":""}'>
+<style>
+:root{--bg:#0b0b0a;--fg:#efeee9;--dim:rgba(239,238,233,.55);--faint:rgba(239,238,233,.15);color-scheme:dark;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"DejaVu Serif",serif;
+  --sans:"Helvetica Neue",Helvetica,Inter,Arial,system-ui,sans-serif;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#ecebe5;--fg:#0d0d0c;--dim:rgba(13,13,12,.58);--faint:rgba(13,13,12,.15);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--sans);transition:background-color .5s}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);grid-template-rows:auto minmax(0,1fr) auto;padding:0 clamp(16px,3.4vw,48px);pointer-events:none}
+.hero a,.hero button{pointer-events:auto}
+.nav{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:22px 0;font-size:13px;border-bottom:1px solid var(--faint)}
+.mark{font:italic 600 21px/1 var(--serif);letter-spacing:-.01em}
+.links{display:flex;gap:28px;color:var(--dim)}.links a:hover{color:var(--fg)}
+.toggle{display:flex;align-items:center;gap:8px;font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.toggle i{font:italic 600 18px/1 var(--serif);letter-spacing:0;text-transform:none;width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--faint);border-radius:50%;transition:transform .6s}
+[data-theme=light] .toggle i{transform:rotate(180deg)}
+.copy{grid-column:1;align-self:center;max-width:470px}
+.no{font:11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:24px}
+h1{font:400 clamp(40px,4.6vw,74px)/1 var(--serif);letter-spacing:-.025em}
+h1 i{font-style:italic}
+.sub{margin-top:22px;color:var(--dim);font-size:15.5px;line-height:1.6;max-width:400px}
+.ctas{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn{background:var(--fg);color:var(--bg);padding:13px 20px;border-radius:999px;font-weight:500}
+.ghost{border:1px solid var(--fg);padding:12px 19px;border-radius:999px;font-weight:500}
+.foot{grid-column:1/-1;display:flex;justify-content:space-between;gap:20px;padding:14px 0 18px;border-top:1px solid var(--faint);font:11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.foot b{font-weight:400;color:var(--fg)}
+.axis{display:flex;align-items:center;gap:12px}
+.axis span.track{position:relative;width:180px;height:1px;background:var(--faint)}
+.axis span.track i{position:absolute;top:-4px;width:9px;height:9px;border-radius:50%;background:var(--fg);transform:translateX(-50%)}
+@media (max-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto auto}
+  .nav{padding:16px 0}.links{display:none}
+  .copy{grid-row:3;align-self:end;padding:0 0 16px}.no{margin-bottom:12px}.sub{display:none}.ctas{margin-top:18px}
+  .foot{grid-row:4}.foot .gl{display:none}.axis span.track{width:110px}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas class="ascii" id="proof" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#">Counterpunch</a>
+    <nav class="links" aria-label="Primary"><a href="#">Families</a><a href="#">Custom</a><a href="#">Licensing</a><a href="#">Journal</a></nav>
+    <button class="toggle" data-theme-toggle aria-label="Toggle dark mode"><i aria-hidden="true">a</i>Proof</button>
+  </header>
+  <section class="copy">
+    <p class="no">Independent foundry / est. 2009</p>
+    <h1>Typefaces for people who <i>look twice.</i></h1>
+    <p class="sub">Eleven variable families, each one drawn rather than generated, cut with a punchcutter's patience and spaced by eye.</p>
+    <div class="ctas"><a class="btn" href="#">Browse families</a><a class="ghost" href="#">Trial fonts</a></div>
+  </section>
+  <footer class="foot" aria-hidden="true">
+    <span class="gl">Specimen <b id="cp">U+0041</b> <b id="nm">LATIN CAPITAL LETTER A</b></span>
+    <span class="axis">wght <span class="track"><i id="knob"></i></span><b id="wg">400</b></span>
+  </footer>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const g = A.grid(document.getElementById('proof'), { levels: 12, size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => layout() });
+  const GLYPHS = [['A', 'LATIN CAPITAL LETTER A'], ['g', 'LATIN SMALL LETTER G'], ['&', 'AMPERSAND'], ['R', 'LATIN CAPITAL LETTER R'], ['a', 'LATIN SMALL LETTER A'], ['Q', 'LATIN CAPITAL LETTER Q'], ['?', 'QUESTION MARK'], ['8', 'DIGIT EIGHT'], ['f', 'LATIN SMALL LETTER F']];
+  const cpEl = document.getElementById('cp'), nmEl = document.getElementById('nm'), wgEl = document.getElementById('wg'), knob = document.getElementById('knob');
+  let GW = 0, GH = 0, fields = [], gi = 0, morph = 0, hold = 0, weight = 0, ratio = 2;
+  const INF = 1e20;
+
+  // exact squared Euclidean distance transform (Felzenszwalb and Huttenlocher), separable in x and y
+  function edt(f, w, h) {
+    const n = Math.max(w, h), d = new Float64Array(n), v = new Int32Array(n), z = new Float64Array(n + 1), col = new Float64Array(n);
+    const pass = (get, set, len) => {
+      let k = 0; v[0] = 0; z[0] = -INF; z[1] = INF;
+      for (let q = 1; q < len; q++) {
+        let s;
+        while (true) { s = (get(q) + q * q - (get(v[k]) + v[k] * v[k])) / (2 * q - 2 * v[k]); if (s <= z[k]) k--; else break; }
+        k++; v[k] = q; z[k] = s; z[k + 1] = INF;
+      }
+      k = 0;
+      for (let q = 0; q < len; q++) { while (z[k + 1] < q) k++; d[q] = (q - v[k]) * (q - v[k]) + get(v[k]); }
+      for (let q = 0; q < len; q++) set(q, d[q]);
+    };
+    for (let x = 0; x < w; x++) { for (let y = 0; y < h; y++) col[y] = f[y * w + x]; pass((q) => col[q], (q, val) => (f[q * w + x] = val), h); }
+    for (let y = 0; y < h; y++) { const row = f.slice(y * w, y * w + w); pass((q) => row[q], (q, val) => (f[y * w + q] = val), w); }
+    return f;
+  }
+  function field(ch, cx, cy, size) {
+    const m = A.mask(GW, GH, (x) => {
+      x.font = `700 ${size}px ${A.css('--serif')}`;
+      const mm = x.measureText(ch);
+      const bw = mm.actualBoundingBoxLeft + mm.actualBoundingBoxRight, bh = mm.actualBoundingBoxAscent + mm.actualBoundingBoxDescent;
+      x.fillText(ch, cx - bw / 2 + mm.actualBoundingBoxLeft, cy - bh / 2 + mm.actualBoundingBoxAscent);
+    });
+    const fin = new Float64Array(GW * GH), fout = new Float64Array(GW * GH);
+    for (let i = 0; i < m.length; i++) { const ins = m[i] > 127; fin[i] = ins ? 0 : INF; fout[i] = ins ? INF : 0; }
+    edt(fin, GW, GH); edt(fout, GW, GH);
+    const sd = new Float32Array(GW * GH);
+    for (let i = 0; i < sd.length; i++) sd[i] = Math.sqrt(fin[i]) - Math.sqrt(fout[i]);
+    return sd;
+  }
+
+  function layout() {
+    ratio = g.ch / g.cw;
+    GW = g.cols; GH = Math.ceil(g.rows * ratio);
+    const mob = g.w < 860;
+    const cx = (mob ? 0.5 : 0.7) * GW, cy = (mob ? 0.36 : 0.5) * GH, size = Math.min(GW * (mob ? 0.95 : 0.5), GH * (mob ? 0.5 : 0.78));
+    fields = GLYPHS.map(([c]) => field(c, cx, cy, size));
+  }
+  function sample(f, x, y) {
+    x = A.clamp(x, 0, GW - 1.001); y = A.clamp(y, 0, GH - 1.001);
+    const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = y0 * GW + x0;
+    return (f[i] * (1 - fx) + f[i + 1] * fx) * (1 - fy) + (f[i + GW] * (1 - fx) + f[i + GW + 1] * fx) * fy;
+  }
+
+  layout();
+  const HATCH = A.ramp('/');
+  A.loop((dt, t) => {
+    // morph schedule: hold a glyph, then blend its field into the next one
+    if (morph <= 0) { if ((hold += dt) > 3.2) { hold = 0; morph = 1e-4; } }
+    else {
+      morph = Math.min(1, morph + dt / 1.3);
+      if (morph >= 1) {
+        morph = 0; gi = (gi + 1) % GLYPHS.length;
+        cpEl.textContent = 'U+' + GLYPHS[gi][0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0'); nmEl.textContent = GLYPHS[gi][1];
+      }
+    }
+    const target = P.active ? A.clamp(P.x / g.w, 0, 1) : 0.5 + 0.38 * Math.sin(t * 0.5);
+    weight += (target - weight) * Math.min(1, dt * 4);
+    const wg = Math.round((100 + weight * 800) / 10) * 10;
+    wgEl.textContent = String(wg); knob.style.left = weight * 100 + '%';
+    const off = (weight - 0.5) * 4.2;   // the weight axis is just an offset on the distance field
+    const fa = fields[gi], fb = fields[(gi + 1) % GLYPHS.length], e = morph * morph * (3 - 2 * morph);
+    g.clear();
+    const { cols, rows, chr, lvl } = g;
+    for (let r = 0; r < rows; r++) {
+      const y = (r + 0.5) * ratio;
+      for (let c = 0; c < cols; c++) {
+        const x = c + 0.5, i = r * cols + c;
+        let d = sample(fa, x, y);
+        if (e > 0) d = d * (1 - e) + sample(fb, x, y) * e;
+        d -= off;
+        if (d < -0.55) {
+          // counters stay clean: a dense rim, then an engraved hatch further in
+          if (d > -2.2) { chr[i] = 35; lvl[i] = 11; }
+          else if ((c + r * 2) % 4 === 0) { chr[i] = HATCH[0]; lvl[i] = 7; }
+          else if ((c + r) % 2 === 0) { chr[i] = 46; lvl[i] = 3; }
+        } else if (d < 0.55) {
+          const gx = sample(fa, x + 0.8, y) - sample(fa, x - 0.8, y), gy = sample(fa, x, y + 0.8) - sample(fa, x, y - 0.8);
+          chr[i] = A.lineChar(-gy, gx / ratio); lvl[i] = 12;
+        } else {
+          // isolines radiating out from the outline, drifting outward over time
+          const ph = d / 4.4 - t * 0.5, f = ph - Math.floor(ph);
+          if (f < 0.24 && d < 40) {
+            const gx = sample(fa, x + 1, y) - sample(fa, x - 1, y), gy = sample(fa, x, y + 1) - sample(fa, x, y - 1);
+            chr[i] = A.lineChar(-gy, gx / ratio); lvl[i] = Math.max(1, Math.round(5 - d * 0.1));
+          }
+        }
+      }
+    }
+    g.draw();
+  });
+})();
+</script>
+</body>
+</html>

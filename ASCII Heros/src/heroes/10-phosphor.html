@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Phosphor · Ship from the shell</title>
+<meta name="description" content="A developer tool landing hero: an amber CRT with a shaded ASCII torus knot and a working demo terminal.">
+<meta name="ascii-hero" content='{"name":"Phosphor","brand":"Phosphor","kind":"Developer CLI","tech":"Z-buffered shaded torus knot, interactive terminal","accent":"#ffb000"}'>
+<style>
+:root{--bg:#060504;--fg:#f1ece2;--dim:rgba(241,236,226,.55);--faint:rgba(241,236,226,.14);--accent:#ffb000;--term:rgba(10,8,5,.86);color-scheme:dark;
+  --mono:ui-monospace,"SFMono-Regular","SF Mono",Menlo,Consolas,"JetBrains Mono","DejaVu Sans Mono",monospace}
+[data-theme=light]{--bg:#f1eee6;--fg:#15120d;--dim:rgba(21,18,13,.6);--faint:rgba(21,18,13,.15);--accent:#c97c00;--term:rgba(246,243,236,.82);color-scheme:light}
+body{background:var(--bg);color:var(--fg);font:14px/1.55 var(--mono);transition:background-color .5s}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:5;background:repeating-linear-gradient(180deg,transparent 0 2px,rgba(0,0,0,.16) 2px 3px)}
+[data-theme=light] body::after{opacity:.35}
+body::before{content:"";position:fixed;left:0;right:0;height:22vh;top:-22vh;pointer-events:none;z-index:5;background:linear-gradient(180deg,transparent,rgba(255,176,0,.035),transparent);animation:roll 7s linear infinite}
+@keyframes roll{to{transform:translateY(130vh)}}
+#glow{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;opacity:.75;pointer-events:none}
+[data-theme=light] #glow{opacity:0}
+.hero{position:relative;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:clamp(24px,4vw,64px);padding:0 clamp(16px,3.4vw,48px);pointer-events:none}
+.hero a,.hero button,.hero input{pointer-events:auto}
+.nav{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:22px 0;font-size:12.5px}
+.mark{display:flex;gap:10px;align-items:center;font-weight:700;letter-spacing:.02em}
+.mark i{width:9px;height:16px;background:var(--accent);animation:cur 1.1s steps(1) infinite}
+@keyframes cur{50%{opacity:0}}
+.links{display:flex;gap:26px;color:var(--dim)}
+.links a:hover{color:var(--accent)}
+.toggle{border:1px solid var(--faint);padding:5px 10px;font-size:11px}
+.toggle:hover{border-color:var(--accent);color:var(--accent)}
+.copy{align-self:center;padding-bottom:6vh}
+.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.06em;margin-bottom:22px}
+h1{font:700 clamp(46px,6.4vw,104px)/.95 var(--mono);letter-spacing:-.06em}
+h1 span{color:var(--accent)}
+.sub{margin-top:24px;max-width:470px;color:var(--dim);font-size:14.5px}
+.install{display:flex;align-items:center;gap:14px;margin-top:30px;border:1px solid var(--faint);padding:6px 6px 6px 16px;width:max-content;max-width:100%;background:var(--term)}
+.install code{font:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.install code b{color:var(--accent);font-weight:400}
+.install button{background:var(--fg);color:var(--bg);padding:8px 12px;font-size:12px;font-weight:700;min-width:64px}
+.more{display:flex;gap:22px;margin-top:20px;font-size:13px;color:var(--dim)}
+.more a:hover{color:var(--accent)}
+.term{grid-column:2;align-self:end;margin-bottom:6vh;border:1px solid var(--faint);background:var(--term);font-size:13px;box-shadow:0 30px 80px -40px rgba(0,0,0,.8)}
+.term .bar{display:flex;gap:7px;align-items:center;padding:9px 12px;border-bottom:1px solid var(--faint);font-size:11px;color:var(--dim)}
+.term .bar i{width:9px;height:9px;border-radius:50%;border:1px solid var(--dim)}
+.term .bar span{margin-left:10px}
+.out{padding:14px 16px 4px;height:clamp(150px,24vh,260px);overflow:hidden;white-space:pre-wrap;display:flex;flex-direction:column;justify-content:flex-end}
+.out .a{color:var(--accent)}.out .d{color:var(--dim)}
+.line{display:flex;gap:10px;padding:2px 16px 14px;align-items:center}
+.line .ps{color:var(--accent);white-space:nowrap}
+.line input{flex:1;min-width:0;caret-color:var(--accent);font-size:13px}
+@media (max-width:860px){
+  .hero{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr)}
+  .nav{padding:16px 0}.links{display:none}
+  .copy{padding:6px 0 0;align-self:start}.eyebrow{margin-bottom:12px}.sub{margin-top:14px;font-size:13px}
+  .install{margin-top:18px}.more{display:none}
+  .term{grid-column:1;grid-row:3;align-self:end;margin-bottom:16px}.out{height:132px;font-size:12px}
+  .line input{font-size:16px}
+}
+</style>
+<script src="../core.js"></script>
+</head>
+<body>
+<canvas id="glow" aria-hidden="true"></canvas>
+<canvas class="ascii" id="knot" aria-hidden="true"></canvas>
+<main class="hero">
+  <header class="nav">
+    <a class="mark" href="#"><i aria-hidden="true"></i>phosphor</a>
+    <nav class="links" aria-label="Primary"><a href="#">docs</a><a href="#">changelog</a><a href="#">pricing</a><a href="#">github</a></nav>
+    <button class="toggle" data-theme-toggle aria-label="Toggle dark mode">[ theme ]</button>
+  </header>
+  <section class="copy">
+    <p class="eyebrow">phosphor 4.2 / terminal-native deploys</p>
+    <h1>Ship from<br>the shell<span>.</span></h1>
+    <p class="sub">Build, deploy, tail logs and roll back without leaving your terminal. Every command is scriptable, every deploy reversible.</p>
+    <div class="install"><code><b>$</b> npm i -g phosphor</code><button type="button" class="cp">copy</button></div>
+    <p class="more"><a href="#">read the manual</a><a href="#">18.2k stars on github</a></p>
+  </section>
+  <section class="term" aria-label="Interactive demo terminal">
+    <div class="bar" aria-hidden="true"><i></i><i></i><i></i><span>phosphor &middot; zsh &middot; 80x24</span></div>
+    <div class="out" aria-live="polite"></div>
+    <form class="line" autocomplete="off"><span class="ps">~/orbit $</span><input aria-label="Type a command, try help" spellcheck="false" autocapitalize="off"></form>
+  </section>
+</main>
+<script>
+(() => {
+  const A = ASCII, P = A.pointer;
+  const cv = document.getElementById('knot'), glow = document.getElementById('glow'), gx = glow.getContext('2d');
+  const g = A.grid(cv, { levels: 12, inks: ['--accent'], size: (w) => (w < 640 ? 9 : w < 1280 ? 11 : 12), onResize: () => setup() });
+  const LUM = A.ramp('.,-~:;=!*#$@'), NL = LUM.length - 1;
+  // torus knot (2,3) sampled as a tube; frames come from the underlying torus so the tube closes cleanly
+  const NU = 520, NV = 30, KP = 2, KQ = 3, TUBE = 0.42;
+  const px = new Float32Array(NU * NV), py = new Float32Array(NU * NV), pz = new Float32Array(NU * NV);
+  const nx = new Float32Array(NU * NV), ny = new Float32Array(NU * NV), nz = new Float32Array(NU * NV);
+  for (let i = 0; i < NU; i++) {
+    const u = (i / NU) * Math.PI * 2, cq = Math.cos(KQ * u), sq = Math.sin(KQ * u), cp = Math.cos(KP * u), sp = Math.sin(KP * u);
+    const cx = (2 + cq) * cp, cy = (2 + cq) * sp, cz = -sq;
+    const tx = -KQ * sq * cp - KP * (2 + cq) * sp, ty = -KQ * sq * sp + KP * (2 + cq) * cp, tz = -KQ * cq;
+    const tl = Math.hypot(tx, ty, tz);
+    let ax = cq * cp, ay = cq * sp, az = -sq;
+    const d = (ax * tx + ay * ty + az * tz) / tl;
+    ax -= (d * tx) / tl; ay -= (d * ty) / tl; az -= (d * tz) / tl;
+    const al = Math.hypot(ax, ay, az); ax /= al; ay /= al; az /= al;
+    const bx = (ty * az - tz * ay) / tl, by = (tz * ax - tx * az) / tl, bz = (tx * ay - ty * ax) / tl;
+    for (let j = 0; j < NV; j++) {
+      const v = (j / NV) * Math.PI * 2, c = Math.cos(v), s = Math.sin(v), k = i * NV + j;
+      nx[k] = c * ax + s * bx; ny[k] = c * ay + s * by; nz[k] = c * az + s * bz;
+      px[k] = cx + nx[k] * TUBE; py[k] = cy + ny[k] * TUBE; pz[k] = cz + nz[k] * TUBE;
+    }
+  }
+  let zb = null, CX = 0, CY = 0, SC = 1;
+  function setup() {
+    zb = new Float32Array(g.n);
+    glow.width = Math.round(g.w / 5); glow.height = Math.round(g.h / 5);
+    const mob = g.w < 860;
+    CX = mob ? g.w * 0.5 : g.w * 0.74; CY = mob ? g.h * 0.55 : g.h * 0.33;
+    SC = Math.min(g.w, g.h) * (mob ? 0.3 : 0.31);
+  }
+  setup();
+
+  let ra = 0.4, rb = 0.2, spin = 1, dragX = 0, dragY = 0, lastPX = null, lastPY = null;
+  A.loop((dt, t) => {
+    if (P.down && P.active && !document.activeElement.matches('input')) {
+      if (lastPX !== null) { dragX += (P.x - lastPX) * 0.008; dragY += (P.y - lastPY) * 0.008; }
+      lastPX = P.x; lastPY = P.y;
+    } else { lastPX = lastPY = null; }
+    spin += (1 - spin) * Math.min(1, dt * 0.8);
+    ra += dt * 0.45 * spin + dragY * 0.2; rb += dt * 0.31 * spin + dragX * 0.2;
+    dragX *= 0.8; dragY *= 0.8;
+    const ca = Math.cos(ra), sa = Math.sin(ra), cb = Math.cos(rb), sb = Math.sin(rb);
+    g.clear(); zb.fill(0);
+    const { cols, rows, cw, ch, chr, lvl } = g;
+    const lx = -0.45, ly = -0.62, lz = -0.64, K2 = 7.5, K1 = SC * K2 / 3.6;
+    for (let k = 0; k < NU * NV; k++) {
+      // rotate about x then z
+      let y = py[k] * ca - pz[k] * sa, z = py[k] * sa + pz[k] * ca, x = px[k];
+      const x2 = x * cb - y * sb, y2 = x * sb + y * cb;
+      const ooz = 1 / (z + K2), sx = CX + K1 * x2 * ooz, sy = CY - K1 * y2 * ooz;
+      const c = (sx / cw) | 0, r = (sy / ch) | 0;
+      if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
+      const i = r * cols + c;
+      if (ooz <= zb[i]) continue;
+      zb[i] = ooz;
+      let ny2 = ny[k] * ca - nz[k] * sa, nz2 = ny[k] * sa + nz[k] * ca;
+      const nx2 = nx[k] * cb - ny2 * sb; ny2 = nx[k] * sb + ny2 * cb;
+      const L = Math.max(0, nx2 * lx + ny2 * ly + nz2 * lz);
+      const spec = Math.pow(Math.max(0, L), 12) * 0.5, v = Math.min(1, L * 0.88 + spec + 0.06);
+      chr[i] = LUM[Math.round(v * NL)]; lvl[i] = Math.max(2, Math.round(v * 12));
+    }
+    g.draw();
+    // glow: the frame shrunk to a fifth and stretched back by the browser, which blurs it for free
+    if (A.theme.get() === 'dark') { gx.clearRect(0, 0, glow.width, glow.height); gx.filter = 'blur(1.5px)'; gx.drawImage(cv, 0, 0, glow.width, glow.height); }
+  });
+
+  // ------- terminal -------
+  const out = document.querySelector('.out'), form = document.querySelector('.line'), input = form.querySelector('input');
+  const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const print = (html) => { const d = document.createElement('div'); d.innerHTML = html; out.appendChild(d); while (out.children.length > 14) out.firstChild.remove(); };
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  let busy = false;
+  const CMDS = {
+    async help() { print('<span class="d">deploy  logs  rollback  status  theme  clear</span>'); },
+    async deploy() {
+      spin = 4;
+      print('<span class="d">building orbit (3 services)</span>');
+      const row = document.createElement('div'); out.appendChild(row);
+      for (let p = 0; p <= 20; p++) { row.innerHTML = `<span class="a">[${'#'.repeat(p)}${'.'.repeat(20 - p)}]</span> ${String(p * 5).padStart(3)}%`; await wait(55); }
+      print('<span class="a">[ ok ]</span> live at https://orbit.phosphor.run <span class="d">(1.6 s, v42)</span>');
+    },
+    async logs() {
+      const l = ['GET /api/orbit 200 12ms', 'GET /assets/app.js 304 2ms', 'POST /api/telemetry 202 8ms', 'GET / 200 31ms'];
+      for (const s of l) { print(`<span class="d">${new Date().toISOString().slice(11, 19)}</span> ${s}`); await wait(160); }
+    },
+    async rollback() { spin = 3; await wait(300); print('<span class="a">[ ok ]</span> rolled back to v41 in 0.4 s'); },
+    async status() { print('orbit  <span class="a">healthy</span>  3/3 regions  p95 41ms'); },
+    async theme() { A.theme.toggle(); print(`theme set to ${A.theme.get()}`); },
+    async clear() { out.innerHTML = ''; },
+  };
+  async function run(cmd) {
+    busy = true;
+    print(`<span class="a">~/orbit $</span> ${esc(cmd)}`);
+    const name = cmd.trim().split(/\s+/)[0].replace(/^phosphor$/, cmd.trim().split(/\s+/)[1] || 'help');
+    if (!name) {} else if (name === 'sudo') print('nice try.');
+    else if (CMDS[name]) await CMDS[name]();
+    else print(`command not found: ${esc(name)}. try <span class="a">help</span>`);
+    busy = false;
+  }
+  form.addEventListener('submit', (e) => { e.preventDefault(); if (busy) return; const v = input.value; input.value = ''; demo = false; run(v); });
+  document.querySelector('.cp').addEventListener('click', (e) => {
+    const b = e.currentTarget;
+    navigator.clipboard?.writeText('npm i -g phosphor').catch(() => {});
+    b.textContent = 'copied'; setTimeout(() => (b.textContent = 'copy'), 1400);
+  });
+  // a short scripted session until someone types
+  let demo = true;
+  input.addEventListener('focus', () => { demo = false; });
+  (async () => {
+    print('<span class="d">phosphor 4.2.0, logged in as you@orbit</span>');
+    await wait(900);
+    for (const cmd of ['phosphor status', 'phosphor deploy --edge']) {
+      for (let i = 0; i <= cmd.length && demo; i++) { input.value = cmd.slice(0, i); await wait(45); }
+      if (!demo) return;
+      await wait(250); input.value = ''; await run(cmd); await wait(900);
+    }
+    if (demo) print('<span class="d">your turn. type</span> <span class="a">help</span>');
+  })();
+})();
+</script>
+</body>
+</html>
