@@ -60,7 +60,7 @@ HEROES.push({
     const az = root.querySelector('.az');
     const maskEls = [...root.querySelectorAll('[data-mask], .cta a, .logo, .links a, .tt')];
     const G = (c) => A.glyph(c);
-    const HATCH = { top: G('='), xp: G('/'), zp: G('\\'), xn: G('|'), zn: G('|') }, DOT = G('.'), WIN = G('#'), LIT = G('@');
+    const HATCH = { top: G('-'), xp: G('/'), zp: G('\\'), xn: G('/'), zn: G('\\') }, DOT = G('.');
     // massing: boxes in metres-ish units [x0,x1, y0,y1, z0,z1]
     const B = [
       [-3.2, 3.0, 0, 4.0, -1.6, 1.6],      // main slab
@@ -141,28 +141,31 @@ HEROES.push({
           const nd = nrm[0] * Lu[0] + nrm[1] * Lu[1] + nrm[2] * Lu[2];
           let lit = Math.max(0, nd);
           if (lit > 0 && !dark) { const sh = hit([p[0] + nrm[0] * 1e-3, p[1] + nrm[1] * 1e-3, p[2] + nrm[2] * 1e-3], Ls); if (sh) lit = 0; }
-          // windows on the walls, a paving grid on the ground
+          // ribbon windows on the walls (two strips per floor), a paving grid on the ground
           let win = false, lamp = false;
           if (face !== 9 && h && h.axis !== 1 && b !== 4 && b !== 5) {
-            const u = h.axis === 0 ? p[2] : p[0], v = p[1];
-            win = ((u % 1.1) + 1.1) % 1.1 > 0.35 && ((u % 1.1) + 1.1) % 1.1 < 0.8 && ((v % 1.35) + 1.35) % 1.35 > 0.45 && ((v % 1.35) + 1.35) % 1.35 < 1.05 && v > 0.3;
-            if (win) lamp = L.hash(Math.floor(u / 1.1) + b * 31, Math.floor(v / 1.35) + h.axis * 7) < 0.42;
+            const u = h.axis === 0 ? p[2] : p[0], v = p[1], fv = ((v % 1.35) + 1.35) % 1.35;
+            win = fv > 0.62 && fv < 0.9 && v > 0.4;
+            if (win) lamp = L.hash(Math.floor(u / 1.6) + b * 31, Math.floor(v / 1.35) + h.axis * 7) < 0.45;
           }
+          // hatching is drawn as spaced parallel lines, like a pen drawing, never as a solid fill
+          const hx = h ? (h.axis === 1 ? (y % 2 === 0) : h.axis === 0 ? ((x + y * 2) % 4 === 0) : ((x - y * 2) % 4 === 0 || (x - y * 2) % 4 === -4)) : false;
           if (dark) {
-            if (win && lamp) { g[i] = LIT; al[i] = 0.75 + 0.25 * Math.sin(t * 0.5 + i); }
-            else if (win) { g[i] = DOT; al[i] = 0.15; }
-            else if (face === 9) { g[i] = L.hash(x, y) < 0.06 ? DOT : 0; al[i] = 0.12 * fade; }
-            else { g[i] = lit > 0.3 ? DOT : 0; al[i] = 0.1 + lit * 0.12; }
+            if (win && lamp) { g[i] = G('='); al[i] = 0.8 + 0.2 * Math.sin(t * 0.5 + i); }
+            else if (win) { g[i] = G('-'); al[i] = 0.18; }
+            else if (face === 9) { g[i] = L.hash(x, y) < 0.05 ? DOT : 0; al[i] = 0.12 * fade; }
+            else if (lit > 0.3 && hx) { g[i] = DOT; al[i] = 0.14 + lit * 0.12; }
           } else {
             const shade = 1 - (0.2 + 0.8 * lit);
-            if (win) { g[i] = WIN; al[i] = 0.55 + shade * 0.4; }
+            if (win) { g[i] = G('='); al[i] = 0.45 + shade * 0.35; }
             else if (face === 9) {
               const grid = Math.abs(p[0] - Math.round(p[0])) < 0.06 || Math.abs(p[2] - Math.round(p[2])) < 0.06;
-              if (shade > 0.5) { g[i] = G('/'); al[i] = 0.55 * fade; } else if (grid) { g[i] = DOT; al[i] = 0.25 * fade; }
+              if (shade > 0.5) { if ((x + y) % 2 === 0) { g[i] = G('/'); al[i] = 0.42 * fade; } }
+              else if (grid) { g[i] = DOT; al[i] = 0.2 * fade; }
             } else {
               const hg = h.axis === 1 ? HATCH.top : h.axis === 0 ? (h.sgn > 0 ? HATCH.xp : HATCH.xn) : h.sgn > 0 ? HATCH.zp : HATCH.zn;
-              if (shade > 0.15) { g[i] = shade > 0.55 ? hg : L.hash(x, y) < shade * 1.4 ? hg : DOT; al[i] = 0.2 + shade * 0.7; }
-              else if (L.hash(x, y, 2) < 0.12) { g[i] = DOT; al[i] = 0.25; }
+              if (shade > 0.55 && hx) { g[i] = hg; al[i] = 0.3 + shade * 0.4; }
+              else if (shade > 0.3 && hx && (x + y) % 2 === 0) { g[i] = hg; al[i] = 0.3; }
             }
           }
         }
@@ -172,7 +175,7 @@ HEROES.push({
         const i = y * cols + x;
         if (!F[i] && !F[i + 1] && !F[i + cols]) continue;
         const e = L.edge(A, F, x, y, 0.08);
-        if (e >= 0) { g[i] = e; al[i] = dark ? 0.5 : 0.95; }
+        if (e >= 0) { g[i] = e; al[i] = dark ? 0.55 : 1; }
       }
       if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
       A.render();

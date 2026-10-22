@@ -3,7 +3,7 @@ HEROES.push({
   name: 'Orsola',
   title: 'Orsola · Weightless, Spring Summer 2027',
   kind: 'Fashion house',
-  tech: 'Verlet cloth hung from curtain rings: structural, shear and bend constraints, gusting wind, Lambert plus a tight silk specular, back faces darker. The sheet occludes a giant headline behind it. Drag the silk, or push it with the cursor.',
+  tech: 'A silk banner as Verlet cloth: structural, shear and bend constraints, gusting turbulent wind, Lambert plus a tight silk specular with darker back faces. It flies in front of a giant headline and hides it as it moves. Grab the silk, or push it with the cursor.',
   accent: null,
   fonts: 'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Jost:wght@400;500',
   css: `
@@ -71,15 +71,15 @@ HEROES.push({
     const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 22, floor: 0.08 }); };
     const setup = () => {
       const W = A.w, H = A.h, wide = W > 760;
-      NX = wide ? 30 : 20; NY = wide ? 24 : 18;
-      const x0 = wide ? W * 0.36 : W * 0.08, x1 = wide ? W * 0.9 : W * 0.92, top = H * (wide ? 0.1 : 0.08), height = H * (wide ? 0.66 : 0.5);
-      rodY = top - 10; rodX0 = x0 - 30; rodX1 = x1 + 30;
-      const n = NX * NY, sx = (x1 - x0) / (NX - 1), sy = height / (NY - 1);
+      NX = wide ? 34 : 22; NY = wide ? 20 : 15;
+      const x0 = wide ? W * 0.3 : W * 0.1, len = wide ? W * 0.6 : W * 0.86, top = H * (wide ? 0.16 : 0.12), height = H * (wide ? 0.42 : 0.3);
+      rodX0 = x0; rodY = top - 14; rodX1 = top + height + 40;
+      const n = NX * NY, sx = len / (NX - 1), sy = height / (NY - 1);
       px = new Float32Array(n); py = new Float32Array(n); pz = new Float32Array(n); ox = new Float32Array(n); oy = new Float32Array(n); oz = new Float32Array(n); pin = new Uint8Array(n);
       for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
         const k = j * NX + i;
-        px[k] = ox[k] = x0 + i * sx; py[k] = oy[k] = top + j * sy * 0.9; pz[k] = oz[k] = Math.sin(i * 1.7) * 14 + Math.sin(j * 0.7 + i) * 4;
-        if (j === 0 && (i % 3 === 0 || i === NX - 1)) pin[k] = 1;
+        px[k] = ox[k] = x0 + i * sx; py[k] = oy[k] = top + j * sy; pz[k] = oz[k] = Math.sin(i * 0.5) * 20;
+        if (i === 0) pin[k] = 1;
       }
       links = [];
       const add = (a, b, w) => links.push(a, b, Math.hypot(px[a] - px[b], py[a] - py[b], pz[a] - pz[b]), w);
@@ -88,13 +88,9 @@ HEROES.push({
         if (i < NX - 1) add(k, k + 1, 1);
         if (j < NY - 1) add(k, k + NX, 1);
         if (i < NX - 1 && j < NY - 1) { add(k, k + NX + 1, 0.6); add(k + 1, k + NX, 0.6); }
-        if (i < NX - 2) add(k, k + 2, 0.25);
-        if (j < NY - 2) add(k, k + NX * 2, 0.25);
+        if (i < NX - 2) add(k, k + 2, 0.2);
+        if (j < NY - 2) add(k, k + NX * 2, 0.2);
       }
-      // gather the rings together: the sheet now has slack, so it falls into folds and swags
-      const mid = (x0 + x1) / 2;
-      for (let k = 0; k < n; k++) { const f = 0.66; px[k] = ox[k] = mid + (px[k] - mid) * (pin[k] ? f : 0.8 + 0.2 * (k / NX / NY)); }
-      rodX0 = mid - (mid - x0) * 0.66 - 30; rodX1 = mid + (x1 - mid) * 0.66 + 30;
       readBg();
       remask();
     };
@@ -117,16 +113,16 @@ HEROES.push({
     };
 
     const simulate = (t, dt) => {
-      const n = NX * NY, g = 1400, d2 = dt * dt;
-      const gust = 0.5 + 0.5 * L.noise2(t * 0.25, 7), dir = L.noise2(t * 0.1, 3);
+      const n = NX * NY, g = 380, d2 = dt * dt;
+      const gust = 0.55 + 0.45 * L.noise2(t * 0.3, 7);
       for (let k = 0; k < n; k++) {
         if (pin[k] || k === grab) continue;
         const vx = (px[k] - ox[k]) * 0.985, vy = (py[k] - oy[k]) * 0.985, vz = (pz[k] - oz[k]) * 0.985;
         ox[k] = px[k]; oy[k] = py[k]; oz[k] = pz[k];
-        const j = (k / NX) | 0, i = k % NX, w = L.noise3(i * 0.18 - t * 0.6, j * 0.14, t * 0.3);
-        px[k] += vx + (dir * 180 * gust + w * 90) * d2;
-        py[k] += vy + g * d2;
-        pz[k] += vz + (w * 2200 + 250) * gust * d2;
+        const j = (k / NX) | 0, i = k % NX, w = L.noise3(i * 0.16 - t * 1.4, j * 0.12, t * 0.45);
+        px[k] += vx + (1500 + w * 500) * gust * d2;
+        py[k] += vy + (g + w * 160) * d2;
+        pz[k] += vz + w * 2600 * gust * d2;
       }
       if (P.active && !P.ui && grab < 0) {
         const r = A.w > 760 ? 90 : 60;
@@ -160,7 +156,7 @@ HEROES.push({
       let back = false;
       if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; back = true; }
       const dif = Math.max(0, nx * lx + ny * ly + nz * lz), spec = Math.pow(Math.max(0, nx * hx + ny * hy + nz * hz), 36);
-      const v = clamp((back ? 0.04 + 0.36 * dif : 0.06 + 0.72 * Math.pow(dif, 1.4)) + spec * (back ? 0.2 : 0.95), 0, 1);
+      const v = clamp((back ? 0.03 + 0.34 * dif : 0.04 + 0.7 * Math.pow(dif, 1.7)) + spec * (back ? 0.25 : 1.0), 0, 1);
       const col = 'rgb(' + ((v * 255) | 0) + ',255,0)';
       ctx.fillStyle = col; ctx.strokeStyle = col;
       ctx.beginPath(); ctx.moveTo(px[a], py[a]); ctx.lineTo(px[b], py[b]); ctx.lineTo(px[c], py[c]); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -192,10 +188,10 @@ HEROES.push({
         if (gi < 0 || c > 0.95) { gi = L.edge(A, lum, x, y, 1.15); if (gi < 0 || v > 0.75) gi = RAMP[Math.min(9, Math.max(1, (v * 10) | 0))]; }
         g[i] = gi; al[i] = (0.3 + 0.7 * Math.min(1, c * 1.2)) * (0.35 + 0.65 * v);
       }
-      // the rod and its rings
-      const ry = Math.floor(rodY / A.cellH);
-      for (let x = Math.floor(rodX0 / A.cellW); x <= Math.floor(rodX1 / A.cellW); x++) A.put(x, ry, A.glyph('='), 0.85);
-      for (let k = 0; k < NX; k++) if (pin[k]) A.put(px[k] / A.cellW, ry + 0.6, A.glyph('o'), 1);
+      // the pole
+      const pxc = Math.floor(rodX0 / A.cellW);
+      for (let y = Math.floor(rodY / A.cellH); y <= Math.floor(rodX1 / A.cellH); y++) A.put(pxc - 1, y, A.glyph('|'), 0.9);
+      A.put(pxc - 1, Math.floor(rodY / A.cellH) - 1, A.glyph('o'), 1);
       if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
       A.render();
     });

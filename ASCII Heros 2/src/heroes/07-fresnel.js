@@ -53,7 +53,7 @@ HEROES.push({
     <p class="sub" data-mask="text">Fresnel encrypts every file before it leaves your device, keeps three copies in three countries and checks on all of them every night. If the worst happens, there is always a light on.</p>
     <div class="cta"><a class="btn" href="#">Start free <small>50 GB</small></a><a class="ghost" href="#">How the encryption works</a></div>
   </div>
-  <footer class="foot"><span data-mask="text">Last check <b class="chk">02:14</b> &middot; 3 of 3 copies verified</span><span class="hide" data-mask="text">Beam rotation 10 s &middot; visible 18 nautical miles</span></footer>
+  <footer class="foot"><span data-mask="text">Last check <b class="chk">02:14</b> &middot; 3 of 3 copies verified</span><span class="hide" data-mask="text">Beam rotation 12 s &middot; visible 18 nautical miles</span></footer>
 </div>`,
   init: function (root, L, S) {
     const { TAU, clamp, lerp } = L;
@@ -118,7 +118,7 @@ HEROES.push({
       P.decay(dt);
       const dark = L.theme() === 'dark', cols = A.cols, rows = A.rows, g = A.g, al = A.a, cw = A.cellW, ch = A.cellH;
       // beam azimuth: free rotation, or swing to the pointer
-      const spin = t * (TAU / 12);
+      const spin = t * (TAU / 12) + 2.2;
       const hunting = P.active && !P.ui && !P.idle(2500);
       aim = lerp(aim, hunting ? 1 : 0, Math.min(1, dt * 2));
       const free = Math.cos(spin) >= 0 ? 0.04 : Math.PI - 0.04, toward = Math.atan2(P.y - Ly, P.x - Lx);

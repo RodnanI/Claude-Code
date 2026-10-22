@@ -559,6 +559,10 @@ HEROES.push({
       if (mantas.length !== n) {
         mantas.length = 0;
         for (let i = 0; i < n; i++) mantas.push(makeManta(0.12 + 0.88 * Math.pow(i / (n - 1), 1.1)));
+        // an opening composition: the largest glides in low on the right, the next one high on the left
+        const big = mantas[n - 1], second = mantas[n - 2];
+        if (W > 760) { big.x = W * 0.8; big.y = H * 0.62; big.a = -2.3; second.x = W * 0.16; second.y = H * 0.3; second.a = -0.5; }
+        else { big.x = W * 0.62; big.y = H * 0.16; big.a = 2.6; second.x = W * 0.25; second.y = H * 0.86; second.a = -1.2; }
       }
       const ns = Math.round((W * H) / 5200);
       while (snow.length < ns) snow.push(newSnow(true));
@@ -1328,8 +1332,9 @@ HEROES.push({
 .h-tancho .btn::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--acc)}
 .h-tancho .lnk{height:48px;display:inline-flex;align-items:center;padding:0 6px;font-size:14px;letter-spacing:.12em;border-bottom:1px solid var(--line)}
 .h-tancho .side{grid-column:2;grid-row:2/4;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-top:20px}
-.h-tancho .vert{writing-mode:vertical-rl;font:500 clamp(22px,2.3vw,34px)/1.5 "Shippori Mincho",serif;letter-spacing:.4em;margin:0}
-.h-tancho .vert span{color:var(--acc)}
+.h-tancho .vert{display:flex;flex-direction:column;align-items:center;gap:.32em;font:500 clamp(22px,2.3vw,34px)/1 "Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;margin:0}
+.h-tancho .vert i{font-style:normal;display:block}
+.h-tancho .vert .w{color:var(--acc)}
 .h-tancho .hours{writing-mode:vertical-rl;font-size:11.5px;letter-spacing:.3em;color:var(--mut);margin:0}
 .h-tancho .hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-size:11px;letter-spacing:.3em;color:var(--mut);white-space:nowrap}
 @media (max-width:980px){.h-tancho .links{display:none}.h-tancho .hint{display:none}}
@@ -1352,7 +1357,7 @@ HEROES.push({
     <nav class="links" aria-label="Primary"><a href="#">Teas</a><a href="#">Ceremony</a><a href="#">Visit</a><a href="#">Journal</a></nav>
     <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i><span class="lbl"><span class="dk">EVENING</span><span class="lt">AFTERNOON</span></span></button>
   </header>
-  <div class="side" aria-hidden="true"><p class="vert">&#38745;&#12363;&#12394;<span>&#27700;</span>&#12398;&#20621;&#12391;</p><p class="hours">Thu to Mon &middot; 11 to 17</p></div>
+  <div class="side" aria-hidden="true"><p class="vert"><i>&#38745;</i><i>&#12363;</i><i>&#12394;</i><i class="w">&#27700;</i><i>&#12398;</i><i>&#20621;</i><i>&#12391;</i></p><p class="hours">Thu to Mon &middot; 11 to 17</p></div>
   <div class="copy">
     <p class="kick" data-mask="text">Higashiyama, Kyoto &middot; twelve seats</p>
     <h1 data-mask="text">Sit by the water.<br><em>Stay for the</em><br>second steeping.</h1>
@@ -1368,7 +1373,7 @@ HEROES.push({
     const P = S.pointer(root);
     const maskEls = [...root.querySelectorAll('[data-mask], .btn, .lnk, .logo, .links a, .tt, .vert, .hours')];
     const rnd = L.rng(31);
-    const BODY = A.ramp('.:-=+*##'), SPOT = A.ramp('o0O@'), RIP = { h: A.glyph('-'), v: A.glyph('|'), f: A.glyph('/'), b: A.glyph('\\') }, TIL = A.glyph('~'), DOT = A.glyph('.'), LEAF = A.glyph('*'), FOOD = A.glyph('°'), PADG = A.ramp('.:=%');
+    const BODY = A.ramp('.:-=+*'), SPOT = A.ramp('o0O@'), RIP = { h: A.glyph('-'), v: A.glyph('|'), f: A.glyph('/'), b: A.glyph('\\') }, TIL = A.glyph('~'), DOT = A.glyph('.'), LEAF = A.glyph('*'), FOOD = A.glyph('°'), PADG = A.ramp('.:=%');
     let W = 1, H = 1, Rw = 0, Rh = 0, h0 = null, h1 = null, mask = null, base = 150;
     const koi = [], food = [], leaves = [], pads = [];
 
@@ -1502,7 +1507,7 @@ HEROES.push({
           if (R.b[si] / c > 0.5) { g[i] = SPOT[Math.min(3, ((R.b[si] / c) * 3.4) | 0)]; al[i] = 0.95; kk[i] = 1; continue; }
           let gi = L.edge(A, R.g, sx, sy, 1.1);
           if (gi < 0 || c > 0.94) gi = BODY[Math.min(BODY.length - 1, (b * BODY.length) | 0)];
-          g[i] = gi; al[i] = (0.35 + 0.65 * Math.min(1, c * 1.3)) * (0.35 + 0.65 * b) * 0.92; kk[i] = 0;
+          g[i] = gi; al[i] = gi === BODY[0] || gi === BODY[1] ? 0.4 : (0.45 + 0.55 * Math.min(1, c * 1.3)) * (0.4 + 0.6 * b); kk[i] = 0;
           continue;
         }
         const m = Math.hypot(hx, hy * 0.5);
@@ -1999,7 +2004,7 @@ HEROES.push({
     <p class="sub" data-mask="text">Fresnel encrypts every file before it leaves your device, keeps three copies in three countries and checks on all of them every night. If the worst happens, there is always a light on.</p>
     <div class="cta"><a class="btn" href="#">Start free <small>50 GB</small></a><a class="ghost" href="#">How the encryption works</a></div>
   </div>
-  <footer class="foot"><span data-mask="text">Last check <b class="chk">02:14</b> &middot; 3 of 3 copies verified</span><span class="hide" data-mask="text">Beam rotation 10 s &middot; visible 18 nautical miles</span></footer>
+  <footer class="foot"><span data-mask="text">Last check <b class="chk">02:14</b> &middot; 3 of 3 copies verified</span><span class="hide" data-mask="text">Beam rotation 12 s &middot; visible 18 nautical miles</span></footer>
 </div>`,
   init: function (root, L, S) {
     const { TAU, clamp, lerp } = L;
@@ -2064,7 +2069,7 @@ HEROES.push({
       P.decay(dt);
       const dark = L.theme() === 'dark', cols = A.cols, rows = A.rows, g = A.g, al = A.a, cw = A.cellW, ch = A.cellH;
       // beam azimuth: free rotation, or swing to the pointer
-      const spin = t * (TAU / 12);
+      const spin = t * (TAU / 12) + 2.2;
       const hunting = P.active && !P.ui && !P.idle(2500);
       aim = lerp(aim, hunting ? 1 : 0, Math.min(1, dt * 2));
       const free = Math.cos(spin) >= 0 ? 0.04 : Math.PI - 0.04, toward = Math.atan2(P.y - Ly, P.x - Lx);
@@ -2644,7 +2649,7 @@ HEROES.push({
   name: 'Orsola',
   title: 'Orsola · Weightless, Spring Summer 2027',
   kind: 'Fashion house',
-  tech: 'Verlet cloth hung from curtain rings: structural, shear and bend constraints, gusting wind, Lambert plus a tight silk specular, back faces darker. The sheet occludes a giant headline behind it. Drag the silk, or push it with the cursor.',
+  tech: 'A silk banner as Verlet cloth: structural, shear and bend constraints, gusting turbulent wind, Lambert plus a tight silk specular with darker back faces. It flies in front of a giant headline and hides it as it moves. Grab the silk, or push it with the cursor.',
   accent: null,
   fonts: 'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Jost:wght@400;500',
   css: `
@@ -2712,15 +2717,15 @@ HEROES.push({
     const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 22, floor: 0.08 }); };
     const setup = () => {
       const W = A.w, H = A.h, wide = W > 760;
-      NX = wide ? 30 : 20; NY = wide ? 24 : 18;
-      const x0 = wide ? W * 0.36 : W * 0.08, x1 = wide ? W * 0.9 : W * 0.92, top = H * (wide ? 0.1 : 0.08), height = H * (wide ? 0.66 : 0.5);
-      rodY = top - 10; rodX0 = x0 - 30; rodX1 = x1 + 30;
-      const n = NX * NY, sx = (x1 - x0) / (NX - 1), sy = height / (NY - 1);
+      NX = wide ? 34 : 22; NY = wide ? 20 : 15;
+      const x0 = wide ? W * 0.3 : W * 0.1, len = wide ? W * 0.6 : W * 0.86, top = H * (wide ? 0.16 : 0.12), height = H * (wide ? 0.42 : 0.3);
+      rodX0 = x0; rodY = top - 14; rodX1 = top + height + 40;
+      const n = NX * NY, sx = len / (NX - 1), sy = height / (NY - 1);
       px = new Float32Array(n); py = new Float32Array(n); pz = new Float32Array(n); ox = new Float32Array(n); oy = new Float32Array(n); oz = new Float32Array(n); pin = new Uint8Array(n);
       for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
         const k = j * NX + i;
-        px[k] = ox[k] = x0 + i * sx; py[k] = oy[k] = top + j * sy * 0.9; pz[k] = oz[k] = Math.sin(i * 1.7) * 14 + Math.sin(j * 0.7 + i) * 4;
-        if (j === 0 && (i % 3 === 0 || i === NX - 1)) pin[k] = 1;
+        px[k] = ox[k] = x0 + i * sx; py[k] = oy[k] = top + j * sy; pz[k] = oz[k] = Math.sin(i * 0.5) * 20;
+        if (i === 0) pin[k] = 1;
       }
       links = [];
       const add = (a, b, w) => links.push(a, b, Math.hypot(px[a] - px[b], py[a] - py[b], pz[a] - pz[b]), w);
@@ -2729,13 +2734,9 @@ HEROES.push({
         if (i < NX - 1) add(k, k + 1, 1);
         if (j < NY - 1) add(k, k + NX, 1);
         if (i < NX - 1 && j < NY - 1) { add(k, k + NX + 1, 0.6); add(k + 1, k + NX, 0.6); }
-        if (i < NX - 2) add(k, k + 2, 0.25);
-        if (j < NY - 2) add(k, k + NX * 2, 0.25);
+        if (i < NX - 2) add(k, k + 2, 0.2);
+        if (j < NY - 2) add(k, k + NX * 2, 0.2);
       }
-      // gather the rings together: the sheet now has slack, so it falls into folds and swags
-      const mid = (x0 + x1) / 2;
-      for (let k = 0; k < n; k++) { const f = 0.66; px[k] = ox[k] = mid + (px[k] - mid) * (pin[k] ? f : 0.8 + 0.2 * (k / NX / NY)); }
-      rodX0 = mid - (mid - x0) * 0.66 - 30; rodX1 = mid + (x1 - mid) * 0.66 + 30;
       readBg();
       remask();
     };
@@ -2758,16 +2759,16 @@ HEROES.push({
     };
 
     const simulate = (t, dt) => {
-      const n = NX * NY, g = 1400, d2 = dt * dt;
-      const gust = 0.5 + 0.5 * L.noise2(t * 0.25, 7), dir = L.noise2(t * 0.1, 3);
+      const n = NX * NY, g = 380, d2 = dt * dt;
+      const gust = 0.55 + 0.45 * L.noise2(t * 0.3, 7);
       for (let k = 0; k < n; k++) {
         if (pin[k] || k === grab) continue;
         const vx = (px[k] - ox[k]) * 0.985, vy = (py[k] - oy[k]) * 0.985, vz = (pz[k] - oz[k]) * 0.985;
         ox[k] = px[k]; oy[k] = py[k]; oz[k] = pz[k];
-        const j = (k / NX) | 0, i = k % NX, w = L.noise3(i * 0.18 - t * 0.6, j * 0.14, t * 0.3);
-        px[k] += vx + (dir * 180 * gust + w * 90) * d2;
-        py[k] += vy + g * d2;
-        pz[k] += vz + (w * 2200 + 250) * gust * d2;
+        const j = (k / NX) | 0, i = k % NX, w = L.noise3(i * 0.16 - t * 1.4, j * 0.12, t * 0.45);
+        px[k] += vx + (1500 + w * 500) * gust * d2;
+        py[k] += vy + (g + w * 160) * d2;
+        pz[k] += vz + w * 2600 * gust * d2;
       }
       if (P.active && !P.ui && grab < 0) {
         const r = A.w > 760 ? 90 : 60;
@@ -2801,7 +2802,7 @@ HEROES.push({
       let back = false;
       if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; back = true; }
       const dif = Math.max(0, nx * lx + ny * ly + nz * lz), spec = Math.pow(Math.max(0, nx * hx + ny * hy + nz * hz), 36);
-      const v = clamp((back ? 0.04 + 0.36 * dif : 0.06 + 0.72 * Math.pow(dif, 1.4)) + spec * (back ? 0.2 : 0.95), 0, 1);
+      const v = clamp((back ? 0.03 + 0.34 * dif : 0.04 + 0.7 * Math.pow(dif, 1.7)) + spec * (back ? 0.25 : 1.0), 0, 1);
       const col = 'rgb(' + ((v * 255) | 0) + ',255,0)';
       ctx.fillStyle = col; ctx.strokeStyle = col;
       ctx.beginPath(); ctx.moveTo(px[a], py[a]); ctx.lineTo(px[b], py[b]); ctx.lineTo(px[c], py[c]); ctx.closePath(); ctx.fill(); ctx.stroke();
@@ -2833,10 +2834,10 @@ HEROES.push({
         if (gi < 0 || c > 0.95) { gi = L.edge(A, lum, x, y, 1.15); if (gi < 0 || v > 0.75) gi = RAMP[Math.min(9, Math.max(1, (v * 10) | 0))]; }
         g[i] = gi; al[i] = (0.3 + 0.7 * Math.min(1, c * 1.2)) * (0.35 + 0.65 * v);
       }
-      // the rod and its rings
-      const ry = Math.floor(rodY / A.cellH);
-      for (let x = Math.floor(rodX0 / A.cellW); x <= Math.floor(rodX1 / A.cellW); x++) A.put(x, ry, A.glyph('='), 0.85);
-      for (let k = 0; k < NX; k++) if (pin[k]) A.put(px[k] / A.cellW, ry + 0.6, A.glyph('o'), 1);
+      // the pole
+      const pxc = Math.floor(rodX0 / A.cellW);
+      for (let y = Math.floor(rodY / A.cellH); y <= Math.floor(rodX1 / A.cellH); y++) A.put(pxc - 1, y, A.glyph('|'), 0.9);
+      A.put(pxc - 1, Math.floor(rodY / A.cellH) - 1, A.glyph('o'), 1);
       if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
       A.render();
     });
@@ -3407,7 +3408,7 @@ HEROES.push({
     const az = root.querySelector('.az');
     const maskEls = [...root.querySelectorAll('[data-mask], .cta a, .logo, .links a, .tt')];
     const G = (c) => A.glyph(c);
-    const HATCH = { top: G('='), xp: G('/'), zp: G('\\'), xn: G('|'), zn: G('|') }, DOT = G('.'), WIN = G('#'), LIT = G('@');
+    const HATCH = { top: G('-'), xp: G('/'), zp: G('\\'), xn: G('/'), zn: G('\\') }, DOT = G('.');
     // massing: boxes in metres-ish units [x0,x1, y0,y1, z0,z1]
     const B = [
       [-3.2, 3.0, 0, 4.0, -1.6, 1.6],      // main slab
@@ -3488,28 +3489,31 @@ HEROES.push({
           const nd = nrm[0] * Lu[0] + nrm[1] * Lu[1] + nrm[2] * Lu[2];
           let lit = Math.max(0, nd);
           if (lit > 0 && !dark) { const sh = hit([p[0] + nrm[0] * 1e-3, p[1] + nrm[1] * 1e-3, p[2] + nrm[2] * 1e-3], Ls); if (sh) lit = 0; }
-          // windows on the walls, a paving grid on the ground
+          // ribbon windows on the walls (two strips per floor), a paving grid on the ground
           let win = false, lamp = false;
           if (face !== 9 && h && h.axis !== 1 && b !== 4 && b !== 5) {
-            const u = h.axis === 0 ? p[2] : p[0], v = p[1];
-            win = ((u % 1.1) + 1.1) % 1.1 > 0.35 && ((u % 1.1) + 1.1) % 1.1 < 0.8 && ((v % 1.35) + 1.35) % 1.35 > 0.45 && ((v % 1.35) + 1.35) % 1.35 < 1.05 && v > 0.3;
-            if (win) lamp = L.hash(Math.floor(u / 1.1) + b * 31, Math.floor(v / 1.35) + h.axis * 7) < 0.42;
+            const u = h.axis === 0 ? p[2] : p[0], v = p[1], fv = ((v % 1.35) + 1.35) % 1.35;
+            win = fv > 0.62 && fv < 0.9 && v > 0.4;
+            if (win) lamp = L.hash(Math.floor(u / 1.6) + b * 31, Math.floor(v / 1.35) + h.axis * 7) < 0.45;
           }
+          // hatching is drawn as spaced parallel lines, like a pen drawing, never as a solid fill
+          const hx = h ? (h.axis === 1 ? (y % 2 === 0) : h.axis === 0 ? ((x + y * 2) % 4 === 0) : ((x - y * 2) % 4 === 0 || (x - y * 2) % 4 === -4)) : false;
           if (dark) {
-            if (win && lamp) { g[i] = LIT; al[i] = 0.75 + 0.25 * Math.sin(t * 0.5 + i); }
-            else if (win) { g[i] = DOT; al[i] = 0.15; }
-            else if (face === 9) { g[i] = L.hash(x, y) < 0.06 ? DOT : 0; al[i] = 0.12 * fade; }
-            else { g[i] = lit > 0.3 ? DOT : 0; al[i] = 0.1 + lit * 0.12; }
+            if (win && lamp) { g[i] = G('='); al[i] = 0.8 + 0.2 * Math.sin(t * 0.5 + i); }
+            else if (win) { g[i] = G('-'); al[i] = 0.18; }
+            else if (face === 9) { g[i] = L.hash(x, y) < 0.05 ? DOT : 0; al[i] = 0.12 * fade; }
+            else if (lit > 0.3 && hx) { g[i] = DOT; al[i] = 0.14 + lit * 0.12; }
           } else {
             const shade = 1 - (0.2 + 0.8 * lit);
-            if (win) { g[i] = WIN; al[i] = 0.55 + shade * 0.4; }
+            if (win) { g[i] = G('='); al[i] = 0.45 + shade * 0.35; }
             else if (face === 9) {
               const grid = Math.abs(p[0] - Math.round(p[0])) < 0.06 || Math.abs(p[2] - Math.round(p[2])) < 0.06;
-              if (shade > 0.5) { g[i] = G('/'); al[i] = 0.55 * fade; } else if (grid) { g[i] = DOT; al[i] = 0.25 * fade; }
+              if (shade > 0.5) { if ((x + y) % 2 === 0) { g[i] = G('/'); al[i] = 0.42 * fade; } }
+              else if (grid) { g[i] = DOT; al[i] = 0.2 * fade; }
             } else {
               const hg = h.axis === 1 ? HATCH.top : h.axis === 0 ? (h.sgn > 0 ? HATCH.xp : HATCH.xn) : h.sgn > 0 ? HATCH.zp : HATCH.zn;
-              if (shade > 0.15) { g[i] = shade > 0.55 ? hg : L.hash(x, y) < shade * 1.4 ? hg : DOT; al[i] = 0.2 + shade * 0.7; }
-              else if (L.hash(x, y, 2) < 0.12) { g[i] = DOT; al[i] = 0.25; }
+              if (shade > 0.55 && hx) { g[i] = hg; al[i] = 0.3 + shade * 0.4; }
+              else if (shade > 0.3 && hx && (x + y) % 2 === 0) { g[i] = hg; al[i] = 0.3; }
             }
           }
         }
@@ -3519,7 +3523,7 @@ HEROES.push({
         const i = y * cols + x;
         if (!F[i] && !F[i + 1] && !F[i + cols]) continue;
         const e = L.edge(A, F, x, y, 0.08);
-        if (e >= 0) { g[i] = e; al[i] = dark ? 0.5 : 0.95; }
+        if (e >= 0) { g[i] = e; al[i] = dark ? 0.55 : 1; }
       }
       if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
       A.render();

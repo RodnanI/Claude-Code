@@ -109,6 +109,10 @@ HEROES.push({
       if (mantas.length !== n) {
         mantas.length = 0;
         for (let i = 0; i < n; i++) mantas.push(makeManta(0.12 + 0.88 * Math.pow(i / (n - 1), 1.1)));
+        // an opening composition: the largest glides in low on the right, the next one high on the left
+        const big = mantas[n - 1], second = mantas[n - 2];
+        if (W > 760) { big.x = W * 0.8; big.y = H * 0.62; big.a = -2.3; second.x = W * 0.16; second.y = H * 0.3; second.a = -0.5; }
+        else { big.x = W * 0.62; big.y = H * 0.16; big.a = 2.6; second.x = W * 0.25; second.y = H * 0.86; second.a = -1.2; }
       }
       const ns = Math.round((W * H) / 5200);
       while (snow.length < ns) snow.push(newSnow(true));

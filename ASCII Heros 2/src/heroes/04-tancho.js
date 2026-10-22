@@ -31,8 +31,9 @@ HEROES.push({
 .h-tancho .btn::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--acc)}
 .h-tancho .lnk{height:48px;display:inline-flex;align-items:center;padding:0 6px;font-size:14px;letter-spacing:.12em;border-bottom:1px solid var(--line)}
 .h-tancho .side{grid-column:2;grid-row:2/4;align-self:stretch;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-top:20px}
-.h-tancho .vert{writing-mode:vertical-rl;font:500 clamp(22px,2.3vw,34px)/1.5 "Shippori Mincho",serif;letter-spacing:.4em;margin:0}
-.h-tancho .vert span{color:var(--acc)}
+.h-tancho .vert{display:flex;flex-direction:column;align-items:center;gap:.32em;font:500 clamp(22px,2.3vw,34px)/1 "Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;margin:0}
+.h-tancho .vert i{font-style:normal;display:block}
+.h-tancho .vert .w{color:var(--acc)}
 .h-tancho .hours{writing-mode:vertical-rl;font-size:11.5px;letter-spacing:.3em;color:var(--mut);margin:0}
 .h-tancho .hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-size:11px;letter-spacing:.3em;color:var(--mut);white-space:nowrap}
 @media (max-width:980px){.h-tancho .links{display:none}.h-tancho .hint{display:none}}
@@ -55,7 +56,7 @@ HEROES.push({
     <nav class="links" aria-label="Primary"><a href="#">Teas</a><a href="#">Ceremony</a><a href="#">Visit</a><a href="#">Journal</a></nav>
     <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i><span class="lbl"><span class="dk">EVENING</span><span class="lt">AFTERNOON</span></span></button>
   </header>
-  <div class="side" aria-hidden="true"><p class="vert">&#38745;&#12363;&#12394;<span>&#27700;</span>&#12398;&#20621;&#12391;</p><p class="hours">Thu to Mon &middot; 11 to 17</p></div>
+  <div class="side" aria-hidden="true"><p class="vert"><i>&#38745;</i><i>&#12363;</i><i>&#12394;</i><i class="w">&#27700;</i><i>&#12398;</i><i>&#20621;</i><i>&#12391;</i></p><p class="hours">Thu to Mon &middot; 11 to 17</p></div>
   <div class="copy">
     <p class="kick" data-mask="text">Higashiyama, Kyoto &middot; twelve seats</p>
     <h1 data-mask="text">Sit by the water.<br><em>Stay for the</em><br>second steeping.</h1>
@@ -71,7 +72,7 @@ HEROES.push({
     const P = S.pointer(root);
     const maskEls = [...root.querySelectorAll('[data-mask], .btn, .lnk, .logo, .links a, .tt, .vert, .hours')];
     const rnd = L.rng(31);
-    const BODY = A.ramp('.:-=+*##'), SPOT = A.ramp('o0O@'), RIP = { h: A.glyph('-'), v: A.glyph('|'), f: A.glyph('/'), b: A.glyph('\\') }, TIL = A.glyph('~'), DOT = A.glyph('.'), LEAF = A.glyph('*'), FOOD = A.glyph('°'), PADG = A.ramp('.:=%');
+    const BODY = A.ramp('.:-=+*'), SPOT = A.ramp('o0O@'), RIP = { h: A.glyph('-'), v: A.glyph('|'), f: A.glyph('/'), b: A.glyph('\\') }, TIL = A.glyph('~'), DOT = A.glyph('.'), LEAF = A.glyph('*'), FOOD = A.glyph('°'), PADG = A.ramp('.:=%');
     let W = 1, H = 1, Rw = 0, Rh = 0, h0 = null, h1 = null, mask = null, base = 150;
     const koi = [], food = [], leaves = [], pads = [];
 
@@ -205,7 +206,7 @@ HEROES.push({
           if (R.b[si] / c > 0.5) { g[i] = SPOT[Math.min(3, ((R.b[si] / c) * 3.4) | 0)]; al[i] = 0.95; kk[i] = 1; continue; }
           let gi = L.edge(A, R.g, sx, sy, 1.1);
           if (gi < 0 || c > 0.94) gi = BODY[Math.min(BODY.length - 1, (b * BODY.length) | 0)];
-          g[i] = gi; al[i] = (0.35 + 0.65 * Math.min(1, c * 1.3)) * (0.35 + 0.65 * b) * 0.92; kk[i] = 0;
+          g[i] = gi; al[i] = gi === BODY[0] || gi === BODY[1] ? 0.4 : (0.45 + 0.55 * Math.min(1, c * 1.3)) * (0.4 + 0.6 * b); kk[i] = 0;
           continue;
         }
         const m = Math.hypot(hx, hy * 0.5);
