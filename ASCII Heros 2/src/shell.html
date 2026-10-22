@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ASCII Heroes, Vol. 2</title>
+<meta name="description" content="Sixteen living landing-page heroes drawn entirely with text characters. Dark and light themes, phone layouts, one standalone file per hero.">
+<meta name="theme-color" content="#070707">
+<script>try{var t=localStorage.getItem('ascii-heroes-theme');document.documentElement.dataset.theme=t==='light'||t==='dark'?t:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark')}catch(e){document.documentElement.dataset.theme='dark'}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>/*@css*/</style>
+</head>
+<body>
+<div id="app">
+  <main id="stage" aria-live="polite">
+    <div id="index" aria-hidden="true"></div>
+    <canvas id="wipe" aria-hidden="true"></canvas>
+  </main>
+  <nav id="bar" aria-label="Showcase">
+    <span class="bar-brand"><b>ASCII HEROES</b> VOL.2</span>
+    <button class="bar-ix" data-act="index" aria-label="Open the index"><span class="ico">&#9638;</span><span class="lbl">Index</span></button>
+    <div class="bar-mid">
+      <button data-act="prev" aria-label="Previous hero">&larr;</button>
+      <div class="bar-title"><span class="bar-num">01 / 16</span><span class="bar-sw" aria-hidden="true"></span><span class="bar-name"></span><span class="bar-kind"></span></div>
+      <button data-act="next" aria-label="Next hero">&rarr;</button>
+    </div>
+    <button class="bar-get" data-act="get" aria-label="Download this hero as a standalone HTML file"><span class="ico">&darr;</span><span class="lbl">Get HTML</span></button>
+  </nav>
+</div>
+<script>
+/*@lib*/
+const HEROES = [];
+/*@heroes*/
+/*@shell*/
+</script>
+</body>
+</html>
