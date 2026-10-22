@@ -2138,6 +2138,1088 @@ HEROES.push({
   },
 });
 
+HEROES.push({
+  id: 'lastset',
+  name: 'Last Set',
+  title: 'Last Set · Come in out of the rain',
+  kind: 'Jazz bar and listening room',
+  tech: 'Rain on a window at night: drops bead, grow, slide when heavy enough, swallow the beads in their path and leave clear trails in the condensation. Each drop refracts the street behind it upside down. Drag to wipe the glass; it fogs back over.',
+  accent: '#ff3d8b',
+  fonts: 'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Jost:wght@400;500',
+  css: `
+.h-lastset{--bg:#050506;--fg:#f0ece6;--mut:rgba(240,236,230,.58);--line:rgba(240,236,230,.18);--ink:#f0ece6;--acc:#ff3d8b;font-family:"Jost",system-ui,sans-serif}
+:root[data-theme=light] .h-lastset{--bg:#e9e8e5;--fg:#121214;--mut:rgba(18,18,20,.62);--line:rgba(18,18,20,.18);--ink:#121214;--acc:#e8126b}
+.h-lastset .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:20px clamp(18px,3.4vw,52px) 20px;pointer-events:none}
+.h-lastset .ui a,.h-lastset .ui button{pointer-events:auto}
+.h-lastset .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:12px;letter-spacing:.2em;text-transform:uppercase}
+.h-lastset .logo{font:italic 400 30px/1 "Bodoni Moda",Didot,Georgia,serif;letter-spacing:-.01em;text-transform:none}
+.h-lastset .logo b{font-weight:400;color:var(--acc)}
+.h-lastset .links{display:flex;gap:32px}
+.h-lastset .links a{opacity:.66;transition:opacity .2s}.h-lastset .links a:hover{opacity:1}
+.h-lastset .tt{display:flex;align-items:center;gap:10px;border:0;background:none;font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:6px 0}
+.h-lastset .tt i{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc)}
+:root[data-theme=light] .h-lastset .tt i{box-shadow:none}
+.h-lastset .tt .lt,:root[data-theme=light] .h-lastset .tt .dk{display:none}
+:root[data-theme=light] .h-lastset .tt .lt{display:inline}
+.h-lastset .copy{grid-row:3;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:28px 56px;align-items:end}
+.h-lastset h1{margin:0 0 18px;font:400 clamp(50px,7.6vw,124px)/.9 "Bodoni Moda",Didot,Georgia,serif;letter-spacing:-.035em}
+.h-lastset h1 em{font-style:italic}
+.h-lastset .sub{margin:0;max-width:42ch;font-size:clamp(14px,1.15vw,16.5px);line-height:1.65;color:var(--mut)}
+.h-lastset .card{border-top:1px solid var(--fg);padding-top:16px;font-size:13px;letter-spacing:.04em}
+.h-lastset .card .row{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid var(--line)}
+.h-lastset .card .row span:first-child{color:var(--mut);text-transform:uppercase;letter-spacing:.18em;font-size:11px}
+.h-lastset .card .who{font:italic 400 24px/1.15 "Bodoni Moda",Georgia,serif;letter-spacing:-.01em;margin:4px 0 12px}
+.h-lastset .btn{display:flex;align-items:center;justify-content:space-between;height:52px;margin-top:16px;padding:0 20px;background:var(--acc);color:#fff;font-size:12px;letter-spacing:.22em;text-transform:uppercase;transition:filter .2s}
+.h-lastset .btn:hover{filter:brightness(1.1)}
+.h-lastset .spin{margin-top:12px;font-size:11px;letter-spacing:.12em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.h-lastset .wipe{position:absolute;right:clamp(18px,3.4vw,52px);top:50%;transform:translateY(-50%) rotate(90deg);transform-origin:right center;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+@media (max-width:980px){.h-lastset .links{display:none}.h-lastset .wipe{display:none}}
+@media (max-width:760px){
+  .h-lastset .ui{padding:14px 16px 14px}
+  .h-lastset .logo{font-size:26px}
+  .h-lastset .tt .lbl{display:none}
+  .h-lastset .copy{grid-template-columns:1fr;gap:14px}
+  .h-lastset h1{font-size:clamp(44px,14vw,60px);margin-bottom:10px}
+  .h-lastset .sub{font-size:14px}
+  .h-lastset .card .who{font-size:20px;margin-bottom:6px}
+  .h-lastset .card .row:nth-of-type(2){display:none}
+  .h-lastset .btn{height:48px;margin-top:10px}
+  .h-lastset .spin{display:none}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">Last <b>Set</b></a>
+    <nav class="links" aria-label="Primary"><a href="#">Tonight</a><a href="#">Drinks</a><a href="#">Records</a><a href="#">Private hire</a></nav>
+    <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i><span class="lbl"><span class="dk">After dark</span><span class="lt">Matinee</span></span></button>
+  </header>
+  <span class="wipe">Drag to wipe the window</span>
+  <div class="copy">
+    <div>
+      <h1 data-mask="text">Come in<br><em>out of the rain.</em></h1>
+      <p class="sub" data-mask="text">A forty-seat listening bar on Rue de Lappe. Two sets a night, a wall of records, and cocktails that take their time.</p>
+    </div>
+    <div class="card" data-ui>
+      <div class="who">Margaux Bellini Trio</div>
+      <div class="row"><span>Sets</span><span>21:00 &middot; 23:30</span></div>
+      <div class="row"><span>Cover</span><span>EUR 18</span></div>
+      <a class="btn" href="#">Reserve a table <span>&rarr;</span></a>
+      <div class="spin">Now spinning: Ahmad Jamal, Poinciana, 1958</div>
+    </div>
+  </div>
+</div>`,
+  init: function (root, L, S) {
+    const { TAU, clamp, lerp } = L;
+    const A = S.ascii(root, { size: 13, mobile: 11, inks: ['--ink', '--acc'] });
+    const P = S.pointer(root);
+    const NR = new L.Raster(A, 2);
+    const maskEls = [...root.querySelectorAll('[data-mask], .card, .logo, .links a, .tt, .wipe')];
+    const BOK = A.ramp(' .:-oO0@'), HAZE = A.glyph('.'), LP = A.glyph('('), RP = A.glyph(')'), TOPG = A.glyph('-'), BOTG = A.glyph('_'), SPEC = A.glyph("'"), SM = A.ramp(".,'"), GLOW = A.ramp('.:');
+    let W = 1, H = 1, cols = 0, rows = 0, field = null, ink = null, fog = null, neonV = null, neonE = null, neonG = null, mask = null, lights = [], cars = [], drops = [], beads = [], spawnT = 0, beadT = 0, flick = 1, flickT = 0;
+    const rnd = L.rng(77);
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 8, feather: 30, floor: 0.06 }); };
+
+    /* neon: the word is stroked as glass tubing, then read back as tube cells and a soft halo */
+    const buildNeon = () => {
+      const wide = W > 760, size = wide ? Math.min(H * 0.32, W * 0.16) : Math.min(H * 0.17, W * 0.36);
+      const nx = wide ? W * 0.72 : W * 0.62, ny = wide ? H * 0.27 : H * 0.17;
+      const ctx = NR.begin();
+      ctx.font = `italic 400 ${size}px "Bodoni Moda", Didot, Georgia, serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgb(0,90,0)'; ctx.lineWidth = size * 0.16; ctx.strokeText('Jazz', nx, ny);
+      ctx.strokeStyle = 'rgb(255,255,0)'; ctx.lineWidth = Math.max(2.5, size * 0.035); ctx.strokeText('Jazz', nx, ny);
+      ctx.fillStyle = 'rgb(0,0,255)'; ctx.fillRect(nx - size * 1.1, ny + size * 0.55, size * 2.2, 2);
+      NR.sample();
+      neonV = Float32Array.from(NR.r); neonG = Float32Array.from(NR.g); neonE = new Int16Array(A.n).fill(-1);
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) { const i = y * cols + x; if (neonV[i] > 0.12) neonE[i] = L.edge(A, neonV, x, y, 0.5); }
+    };
+    const setup = () => {
+      W = A.w; H = A.h; cols = A.cols; rows = A.rows;
+      field = new Float32Array(cols * rows); ink = new Uint8Array(cols * rows); fog = new Float32Array(cols * rows).fill(0.6);
+      const wide = W > 760, n = wide ? 15 : 8;
+      lights = Array.from({ length: n }, () => ({ x: rnd() * W, y: H * (0.05 + rnd() * 0.62), r: (wide ? 30 : 20) + rnd() * (wide ? 60 : 34), v: 0.5 + rnd() * 0.5, ph: rnd() * TAU, pink: rnd() < 0.28 }));
+      cars = []; drops = []; beads = [];
+      for (let k = 0; k < (wide ? 260 : 110); k++) beads.push({ x: rnd() * W, y: rnd() * H, r: 0.8 + rnd() * 2.2 });
+      for (let k = 0; k < (wide ? 18 : 9); k++) drops.push({ x: rnd() * W, y: rnd() * H, r: 13 + rnd() * 12, vy: 0, wob: rnd() * TAU });
+      buildNeon();
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(() => { remask(); if (cols) buildNeon(); });
+
+    const clearFog = (px, py, r, k) => {
+      const cx = px / A.cellW, cy = py / A.cellH, rx = r / A.cellW, ry = r / A.cellH;
+      for (let y = Math.max(0, Math.floor(cy - ry)); y <= Math.min(rows - 1, Math.ceil(cy + ry)); y++) for (let x = Math.max(0, Math.floor(cx - rx)); x <= Math.min(cols - 1, Math.ceil(cx + rx)); x++) {
+        const d = Math.hypot((x + 0.5 - cx) / rx, (y + 0.5 - cy) / ry);
+        if (d < 1) { const i = y * cols + x; fog[i] = Math.min(fog[i], fog[i] * (1 - k * (1 - d * d))); }
+      }
+    };
+    const disc = (lx, ly, r, v, pink) => {
+      const cw = A.cellW, ch = A.cellH;
+      const x0 = Math.max(0, Math.floor((lx - r) / cw)), x1 = Math.min(cols - 1, Math.ceil((lx + r) / cw)), y0 = Math.max(0, Math.floor((ly - r) / ch)), y1 = Math.min(rows - 1, Math.ceil((ly + r) / ch));
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const d = Math.hypot((x + 0.5) * cw - lx, (y + 0.5) * ch - ly) / r;
+        if (d >= 1) continue;
+        const i = y * cols + x, add = v * (d > 0.8 ? 1 : 0.8) * (1 - Math.pow(d, 8) * 0.4);
+        if (add > field[i]) { field[i] = Math.min(1, field[i] * 0.4 + add); ink[i] = pink ? 1 : 0; } else field[i] = Math.min(1, field[i] + add * 0.3);
+      }
+    };
+
+    S.loop((t, dt) => {
+      if (!field) return;
+      P.decay(dt);
+      const dark = L.theme() === 'dark', g = A.g, al = A.a, kk = A.k, cw = A.cellW, ch = A.cellH;
+      // the street: soft discs of out-of-focus light, cars sliding through them
+      field.fill(0); ink.fill(0);
+      for (const l of lights) disc(l.x + Math.sin(t * 0.1 + l.ph) * 8, l.y, l.r, l.v * (0.85 + 0.15 * Math.sin(t * 1.3 + l.ph)), l.pink);
+      if (Math.random() < dt * 0.45) { const left = Math.random() < 0.5; cars.push({ x: left ? -90 : W + 90, dir: left ? 1 : -1, y: H * (left ? 0.74 : 0.69), r: (W > 760 ? 30 : 20) + Math.random() * 12 }); }
+      for (let k = cars.length - 1; k >= 0; k--) {
+        const c = cars[k]; c.x += c.dir * 160 * dt;
+        if (c.x < -160 || c.x > W + 160) { cars.splice(k, 1); continue; }
+        disc(c.x, c.y, c.r, 0.9, c.dir < 0); disc(c.x + c.r * 1.9, c.y, c.r, 0.9, c.dir < 0);
+      }
+      // the glass: condensation creeps back, beads gather, heavy drops run
+      for (let i = 0; i < fog.length; i++) fog[i] = Math.min(0.6, fog[i] + dt * 0.03);
+      if ((beadT -= dt) <= 0) { beadT = 0.04; if (beads.length < (W > 760 ? 380 : 160)) beads.push({ x: Math.random() * W, y: Math.random() * H, r: 0.8 + Math.random() * 2.2 }); }
+      if ((spawnT -= dt) <= 0) { spawnT = 0.5 + Math.random() * 0.7; if (drops.length < (W > 760 ? 34 : 16)) drops.push({ x: Math.random() * W, y: Math.random() * H * 0.6, r: 11 + Math.random() * 9, vy: 0, wob: Math.random() * TAU }); }
+      if (P.down && !P.ui) clearFog(P.x, P.y, 40, 1);
+      else if (P.active && !P.ui && !L.coarse && Math.hypot(P.vx, P.vy) > 30) clearFog(P.x, P.y, 26, 0.5);
+      for (let j = drops.length - 1; j >= 0; j--) {
+        const d = drops[j];
+        if (d.r > 21) {
+          d.vy = Math.min(240, d.vy + (d.r - 20) * 14 * dt);
+          d.y += d.vy * dt; d.wob += dt * 2.6;
+          d.x += Math.sin(d.wob + d.y * 0.015) * 10 * dt;
+          if (Math.random() < dt * 5) { beads.push({ x: d.x + (Math.random() - 0.5) * d.r * 0.6, y: d.y - d.r * 1.4, r: 0.8 + Math.random() * 1.5 }); d.r -= 0.1; }
+          clearFog(d.x, d.y - d.r * 0.4, d.r * 1.2, 1);
+        } else d.r += dt * 0.5;
+        for (let k = beads.length - 1; k >= 0; k--) { const b = beads[k]; if (Math.abs(b.x - d.x) < d.r && Math.abs(b.y - d.y) < d.r * 1.1 && Math.hypot(b.x - d.x, b.y - d.y) < d.r + b.r) { d.r = Math.sqrt(d.r * d.r + b.r * b.r * 2); beads.splice(k, 1); } }
+        for (let k = j - 1; k >= 0; k--) { const o = drops[k]; if (Math.hypot(o.x - d.x, o.y - d.y) < (o.r + d.r) * 0.75) { d.r = Math.sqrt(d.r * d.r + o.r * o.r); d.x = (d.x + o.x) / 2; drops.splice(k, 1); j--; } }
+        if (d.y - d.r > H) drops.splice(j, 1);
+      }
+      if ((flickT -= dt) <= 0) { flickT = 0.06; flick = Math.random() < 0.05 ? 0.15 : Math.random() < 0.1 ? 0.7 : 1; }
+      // compose
+      A.clear();
+      for (let y = 0, i = 0; y < rows; y++) for (let x = 0; x < cols; x++, i++) {
+        const f = fog[i], v = field[i] * (1 - f * 0.4);
+        if (neonV[i] > 0.12) {
+          const tube = neonE[i] >= 0 ? neonE[i] : BOK[7];
+          g[i] = tube; al[i] = (0.55 + 0.45 * (1 - f * 0.4)) * flick; kk[i] = 1; continue;
+        }
+        if (neonG[i] > 0.06 && v < 0.2) { g[i] = GLOW[neonG[i] > 0.3 ? 1 : 0]; al[i] = (0.15 + neonG[i] * 0.5) * flick * (1 - f * 0.4); kk[i] = 1; continue; }
+        if (v > 0.06) { g[i] = BOK[Math.max(1, Math.min(7, (v * 8) | 0))]; al[i] = 0.1 + 0.9 * v; kk[i] = ink[i]; }
+        else if (f > 0.4 && L.hash(x, y) < 0.1) { g[i] = HAZE; al[i] = dark ? 0.07 * f : 0.12 * f; kk[i] = 0; }
+      }
+      for (const b of beads) { const x = Math.floor(b.x / cw), y = Math.floor(b.y / ch); if (x < 0 || y < 0 || x >= cols || y >= rows) continue; const i = y * cols + x; if (al[i] < 0.5) { g[i] = SM[Math.min(2, (b.r * 0.9) | 0)]; al[i] = 0.35 + b.r * 0.12; kk[i] = 0; } }
+      for (const d of drops) {
+        const rx = (d.r * 1.05) / cw, ry = (d.r * 1.2) / ch, cx = d.x / cw, cy = d.y / ch;
+        for (let y = Math.max(0, Math.floor(cy - ry)); y <= Math.min(rows - 1, Math.floor(cy + ry)); y++) for (let x = Math.max(0, Math.floor(cx - rx)); x <= Math.min(cols - 1, Math.floor(cx + rx)); x++) {
+          const ux = (x + 0.5 - cx) / rx, uy = (y + 0.5 - cy) / ry, q = Math.hypot(ux, uy);
+          if (q > 1.08) continue;
+          const i = y * cols + x;
+          if (q > 0.7) { g[i] = Math.abs(ux) > Math.abs(uy) * 0.8 ? (ux < 0 ? LP : RP) : uy < 0 ? TOPG : BOTG; al[i] = 0.9; kk[i] = 0; continue; }
+          // a lens: the street behind appears upside down and pulled in from far around the drop
+          const sx = clamp(Math.round(cx - ux * rx * 4), 0, cols - 1), sy = clamp(Math.round(cy - uy * ry * 4), 0, rows - 1), si = sy * cols + sx;
+          if (neonV[si] > 0.12) { g[i] = BOK[6]; al[i] = flick; kk[i] = 1; continue; }
+          const v = field[si];
+          if (ux < -0.25 && uy < -0.1) { g[i] = SPEC; al[i] = 0.9; kk[i] = 0; }
+          else { g[i] = BOK[Math.max(1, Math.min(7, (v * 9) | 0))]; al[i] = 0.35 + 0.65 * v; kk[i] = ink[si]; }
+        }
+      }
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+    });
+  },
+});
+
+HEROES.push({
+  id: 'babel',
+  name: 'Babel',
+  title: 'Babel · Every page has already been written',
+  kind: 'Digital archive and search',
+  tech: 'A wall of random letters from an alphabet of twenty-nine symbols, slowly mutating. A candle-flickered lantern resolves them into sentences wherever it falls, with a decoherence band at the edge. Search files your sentence on a shelf and walks the lantern to it.',
+  accent: null,
+  fonts: 'family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Courier+Prime:wght@400;700',
+  css: `
+.h-babel{--bg:#0a0908;--fg:#ece5d8;--mut:rgba(236,229,216,.58);--line:rgba(236,229,216,.2);--panel:#0e0d0b;--ink:#ece5d8;font-family:"EB Garamond",Garamond,Georgia,serif}
+:root[data-theme=light] .h-babel{--bg:#f2ede2;--fg:#17140f;--mut:rgba(23,20,15,.62);--line:rgba(23,20,15,.2);--panel:#f7f3ea;--ink:#17140f}
+.h-babel .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:22px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-babel .ui a,.h-babel .ui button,.h-babel .ui form{pointer-events:auto}
+.h-babel .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:16px}
+.h-babel .logo{font:500 15px/1 "Courier Prime",monospace;letter-spacing:.42em;text-transform:uppercase}
+.h-babel .links{display:flex;gap:30px;font-style:italic}
+.h-babel .links a{opacity:.7;transition:opacity .2s}.h-babel .links a:hover{opacity:1}
+.h-babel .tt{border:0;background:none;padding:6px 0;font:italic 400 16px/1 "EB Garamond",serif;display:flex;gap:8px;align-items:center}
+.h-babel .tt b{font:700 12px/1 "Courier Prime",monospace;border:1px solid var(--line);padding:4px 6px}
+.h-babel .tt .lt,:root[data-theme=light] .h-babel .tt .dk{display:none}
+:root[data-theme=light] .h-babel .tt .lt{display:inline}
+.h-babel .copy{align-self:center;max-width:min(600px,48vw)}
+.h-babel .kick{margin:0 0 20px;font:400 12px/1.5 "Courier Prime",monospace;letter-spacing:.3em;text-transform:uppercase;color:var(--mut)}
+.h-babel h1{margin:0 0 22px;font:400 clamp(48px,6.4vw,104px)/.95 "EB Garamond",Garamond,serif;letter-spacing:-.02em}
+.h-babel h1 em{font-style:italic}
+.h-babel .sub{margin:0 0 30px;max-width:40ch;font-size:clamp(17px,1.4vw,20px);line-height:1.5;color:var(--mut)}
+.h-babel form{display:flex;align-items:center;width:min(100%,520px);height:58px;border:1px solid var(--fg);background:var(--panel)}
+.h-babel form input{flex:1;min-width:0;height:100%;padding:0 18px;border:0;background:none;outline:none;font:400 15px/1 "Courier Prime",monospace;color:var(--fg)}
+.h-babel form input::placeholder{color:var(--mut);opacity:1}
+.h-babel form button{height:100%;padding:0 20px;border:0;border-left:1px solid var(--fg);background:var(--fg);color:var(--bg);font:400 13px/1 "Courier Prime",monospace;letter-spacing:.16em;text-transform:uppercase}
+.h-babel .rand{display:inline-block;margin-top:14px;font-style:italic;font-size:17px;border-bottom:1px solid var(--line)}
+.h-babel .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font:400 11px/1.5 "Courier Prime",monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.h-babel .loc b{color:var(--fg);font-weight:400}
+@media (max-width:980px){.h-babel .links{display:none}}
+@media (max-width:760px){
+  .h-babel .ui{padding:14px 16px 12px}
+  .h-babel .logo{letter-spacing:.3em;font-size:13px}
+  .h-babel .copy{align-self:end;max-width:none;margin-bottom:12px}
+  .h-babel .kick{font-size:10px;margin-bottom:12px}
+  .h-babel h1{font-size:clamp(42px,12.5vw,54px);margin-bottom:12px}
+  .h-babel .sub{font-size:16.5px;margin-bottom:18px}
+  .h-babel form{height:52px}
+  .h-babel form button{padding:0 14px}
+  .h-babel .foot .hide{display:none}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">Babel</a>
+    <nav class="links" aria-label="Primary"><a href="#">The galleries</a><a href="#">Catalogue</a><a href="#">Librarians</a></nav>
+    <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><b>A/a</b><span class="dk">By lamplight</span><span class="lt">By daylight</span></button>
+  </header>
+  <div class="copy">
+    <p class="kick" data-mask="text">An archive of every possible book</p>
+    <h1 data-mask="text">Every page<br>has already<br><em>been written.</em></h1>
+    <p class="sub" data-mask="text">Four hundred and ten pages per volume, every combination of letters. Almost all of it is noise. Somewhere on these shelves is the sentence you have been trying to write.</p>
+    <form autocomplete="off"><label class="sr" for="babel-q">Search the shelves</label><input id="babel-q" maxlength="54" spellcheck="false" placeholder="Search the shelves for a sentence"><button type="submit">Find</button></form>
+    <a class="rand" href="#" data-ui>or open a volume at random</a>
+  </div>
+  <footer class="foot"><span class="loc" data-mask="text">hexagon <b>-</b></span><span class="hide" data-mask="text">The lamp follows your hand</span></footer>
+</div>`,
+  init: function (root, L, S) {
+    const { clamp, lerp } = L;
+    const A = S.ascii(root, { size: 14, mobile: 12, lh: 1.3, font: '"Courier Prime", "Courier New", Courier, monospace' });
+    const P = S.pointer(root);
+    const form = root.querySelector('form'), input = form.querySelector('input'), loc = root.querySelector('.loc b'), rand = root.querySelector('.rand');
+    const maskEls = [...root.querySelectorAll('[data-mask], form, .rand, .logo, .links a, .tt')];
+    const ALPHA = 'abcdefghijlmnopqrstuvxyz,. ';
+    const AG = A.ramp(ALPHA);
+    const TEXT = ('call me ishmael. it was the best of times, it was the worst of times. of making many books there is no end, and much study is a weariness of the flesh. ' +
+      'happy families are all alike; every unhappy family is unhappy in its own way. we are such stuff as dreams are made on, and our little life is rounded with a sleep. ' +
+      'it is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. there is no frigate like a book to take us lands away. ' +
+      'in the beginning was the word. two roads diverged in a yellow wood, and sorry i could not travel both. once upon a midnight dreary, while i pondered, weak and weary. ' +
+      'sing, o goddess, the anger of achilles son of peleus. stately, plump buck mulligan came from the stairhead. because i could not stop for death, he kindly stopped for me. ' +
+      'mrs dalloway said she would buy the flowers herself. i celebrate myself, and sing myself. whan that aprille with his shoures soote. somewhere on these shelves is the sentence you have been trying to write. ');
+    let noise = null, hidden = null, hot = null, mask = null, lamp = { x: 0, y: 0, r: 160, tx: 0, ty: 0 }, found = null, locT = 0, wander = 0;
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 30, floor: 0.05 }); };
+    const setup = () => {
+      noise = new Uint8Array(A.n); hidden = new Uint8Array(A.n); hot = new Uint8Array(A.n);
+      for (let i = 0; i < A.n; i++) noise[i] = AG[(L.hash(i, 3) * AG.length) | 0];
+      let p = (L.hash(A.cols, A.rows) * TEXT.length) | 0;
+      for (let i = 0; i < A.n; i++) { hidden[i] = A.glyph(TEXT[p]); p = (p + 1) % TEXT.length; }
+      lamp.r = A.w > 760 ? Math.min(190, A.w * 0.13) : Math.min(130, A.w * 0.32);
+      if (!lamp.x) { lamp.x = lamp.tx = A.w * (A.w > 760 ? 0.72 : 0.5); lamp.y = lamp.ty = A.h * (A.w > 760 ? 0.5 : 0.32); }
+      found = null;
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+
+    const shelve = (q) => {
+      const s = q.toLowerCase().replace(/[^a-z,. ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 54);
+      if (!s) return;
+      const h = L.hashStr(s), wide = A.w > 760;
+      const x0 = wide ? Math.round(A.cols * 0.56 + (h % Math.max(1, Math.round(A.cols * 0.4 - s.length)))) : Math.max(1, Math.round((A.cols - s.length) / 2));
+      const y0 = wide ? 4 + ((h >>> 8) % Math.max(1, A.rows - 10)) : 4 + ((h >>> 8) % Math.max(1, Math.round(A.rows * 0.4)));
+      const xs = clamp(x0, 0, Math.max(0, A.cols - s.length));
+      hot.fill(0);
+      for (let k = 0; k < s.length; k++) { const i = y0 * A.cols + xs + k; hidden[i] = A.glyph(s[k]); hot[i] = 1; }
+      lamp.tx = (xs + s.length / 2) * A.cellW; lamp.ty = (y0 + 0.5) * A.cellH;
+      found = { t: 7, addr: h };
+    };
+    S.on(form, 'submit', (e) => { e.preventDefault(); shelve(input.value); input.blur(); });
+    S.on(rand, 'click', (e) => { e.preventDefault(); lamp.tx = A.w * (0.55 + Math.random() * 0.4); lamp.ty = A.h * (0.1 + Math.random() * 0.8); found = { t: 3, addr: (Math.random() * 1e9) | 0 }; hot.fill(0); });
+    L.typePlaceholder(input, ['we are such stuff as dreams are made on', 'call me ishmael', 'the sentence i never finished', 'somewhere on these shelves'], S, 'Search the shelves for a sentence');
+
+    S.loop((t, dt) => {
+      if (!noise) return;
+      P.decay(dt);
+      const cols = A.cols, rows = A.rows, g = A.g, al = A.a, cw = A.cellW, ch = A.cellH, wide = A.w > 760;
+      // the shelves are never still: a few letters change every frame
+      for (let k = 0; k < A.n * 0.004; k++) { const i = (Math.random() * A.n) | 0; noise[i] = AG[(Math.random() * AG.length) | 0]; }
+      if (found) { found.t -= dt; if (found.t <= 0) { found = null; hot.fill(0); } }
+      if (found) { /* stay on the shelved sentence */ }
+      else if (P.active && !P.ui && !P.idle(3000)) { lamp.tx = P.x; lamp.ty = P.y; }
+      else { wander += dt * 0.08; lamp.tx = A.w * (wide ? 0.72 : 0.5) + Math.sin(wander * 1.3) * A.w * (wide ? 0.18 : 0.3); lamp.ty = A.h * (wide ? 0.5 : 0.3) + Math.sin(wander * 2.1 + 1) * A.h * (wide ? 0.3 : 0.18); }
+      const k = Math.min(1, dt * (found ? 2.5 : 5));
+      lamp.x = lerp(lamp.x, lamp.tx, k); lamp.y = lerp(lamp.y, lamp.ty, k);
+      const flame = 1 + 0.04 * Math.sin(t * 11) + 0.03 * L.noise2(t * 3, 1), R = lamp.r * flame, tick = (t * 14) | 0;
+      for (let y = 0, i = 0; y < rows; y++) {
+        const dy = (y + 0.5) * ch - lamp.y;
+        for (let x = 0; x < cols; x++, i++) {
+          const d = Math.hypot((x + 0.5) * cw - lamp.x, dy), r = 1 - clamp((d - R * 0.55) / (R * 0.45), 0, 1);
+          const meaning = r >= 1 || (r > 0.02 && L.hash(i, tick) < r * r);
+          if (hot[i] && found) { g[i] = hidden[i]; al[i] = 1; continue; }
+          g[i] = meaning ? hidden[i] : noise[i];
+          al[i] = meaning ? 0.35 + 0.65 * r * flame * (1 - (d / (R * 1.4)) * 0.4) : 0.1 + 0.08 * Math.max(0, 1 - d / (R * 3.2));
+        }
+      }
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+      if ((locT -= dt) <= 0) {
+        locT = 0.25;
+        const cx = Math.floor(lamp.x / cw), cy = Math.floor(lamp.y / ch), h = found ? found.addr : L.hashStr(cx + ':' + cy + ':' + Math.floor(t / 4));
+        loc.textContent = `${(h >>> 4).toString(16).slice(0, 4)} · wall ${1 + (h % 4)} · shelf ${1 + ((h >>> 3) % 5)} · vol ${1 + ((h >>> 6) % 32)} · page ${1 + ((h >>> 11) % 410)}`;
+      }
+    });
+  },
+});
+
+HEROES.push({
+  id: 'intaglio',
+  name: 'Intaglio',
+  title: 'Intaglio · Money, with a signature',
+  kind: 'Private bank',
+  tech: 'A banknote guilloche drawn as engraved line work: interleaved families of modulated rosettes, a wave border and micro-lettering, every stroke stamped glyph by glyph. Type a name and its hash becomes the pattern; the old one dissolves into the new.',
+  accent: '#1fbf7a',
+  fonts: 'family=Libre+Caslon+Display&family=Libre+Caslon+Text:ital@0;1&family=JetBrains+Mono:wght@400;500',
+  css: `
+.h-intaglio{--bg:#060706;--fg:#ebeae4;--mut:rgba(235,234,228,.56);--line:rgba(235,234,228,.18);--ink:#ebeae4;--acc:#2bcf88;font-family:"Libre Caslon Text",Georgia,serif}
+:root[data-theme=light] .h-intaglio{--bg:#f0eee4;--fg:#121410;--mut:rgba(18,20,16,.6);--line:rgba(18,20,16,.18);--ink:#121410;--acc:#0c7a49}
+.h-intaglio .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:22px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-intaglio .ui a,.h-intaglio .ui button,.h-intaglio .ui input{pointer-events:auto}
+.h-intaglio .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font:400 11px/1 "JetBrains Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+.h-intaglio .logo{font:400 22px/1 "Libre Caslon Display",Georgia,serif;letter-spacing:.42em;text-transform:uppercase}
+.h-intaglio .links{display:flex;gap:30px}
+.h-intaglio .links a{opacity:.62;transition:opacity .2s}.h-intaglio .links a:hover{opacity:1}
+.h-intaglio .tt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:2px;background:none;height:30px;padding:0 12px;font:inherit;letter-spacing:.2em}
+.h-intaglio .tt i{width:8px;height:8px;background:var(--acc);transform:rotate(45deg)}
+.h-intaglio .copy{align-self:center;max-width:min(540px,44vw)}
+.h-intaglio .kick{margin:0 0 24px;font:400 11px/1 "JetBrains Mono",monospace;letter-spacing:.26em;text-transform:uppercase;color:var(--acc)}
+.h-intaglio h1{margin:0 0 24px;font:400 clamp(46px,6.2vw,100px)/.98 "Libre Caslon Display",Georgia,serif;letter-spacing:-.015em}
+.h-intaglio h1 em{font-family:"Libre Caslon Text",Georgia,serif;font-style:italic;font-size:.82em}
+.h-intaglio .sub{margin:0 0 30px;max-width:40ch;font-size:clamp(15px,1.2vw,17px);line-height:1.62;color:var(--mut)}
+.h-intaglio .name{display:flex;align-items:stretch;width:min(100%,470px);border-bottom:1px solid var(--fg)}
+.h-intaglio .name label{display:flex;flex-direction:column;justify-content:center;gap:6px;flex:1;padding:10px 0}
+.h-intaglio .name span{font:400 10px/1 "JetBrains Mono",monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--mut)}
+.h-intaglio .name input{border:0;background:none;outline:none;padding:0;font:italic 400 26px/1.1 "Libre Caslon Text",Georgia,serif;color:var(--fg);width:100%}
+.h-intaglio .btn{display:inline-flex;align-items:center;gap:12px;margin-top:22px;height:50px;padding:0 24px;background:var(--acc);color:#04130b;font:500 11.5px/1 "JetBrains Mono",monospace;letter-spacing:.2em;text-transform:uppercase}
+:root[data-theme=light] .h-intaglio .btn{color:#f4f2ea}
+.h-intaglio .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font:400 10.5px/1.5 "JetBrains Mono",monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--mut)}
+.h-intaglio .foot b{color:var(--acc);font-weight:500}
+@media (max-width:980px){.h-intaglio .links{display:none}}
+@media (max-width:760px){
+  .h-intaglio .ui{padding:14px 16px 12px}
+  .h-intaglio .logo{font-size:18px;letter-spacing:.3em}
+  .h-intaglio .tt span{display:none}
+  .h-intaglio .copy{align-self:end;max-width:none;margin-bottom:10px}
+  .h-intaglio .kick{margin-bottom:12px;font-size:10px}
+  .h-intaglio h1{font-size:clamp(40px,12vw,52px);margin-bottom:12px}
+  .h-intaglio .sub{font-size:14.5px;margin-bottom:14px}
+  .h-intaglio .name input{font-size:22px}
+  .h-intaglio .btn{margin-top:14px;height:46px}
+  .h-intaglio .foot .hide{display:none}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">Intaglio</a>
+    <nav class="links" aria-label="Primary"><a href="#">Accounts</a><a href="#">The card</a><a href="#">Advisors</a><a href="#">Members</a></nav>
+    <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i><span>Plate</span></button>
+  </header>
+  <div class="copy">
+    <p class="kick" data-mask="text">Private banking &middot; by invitation</p>
+    <h1 data-mask="text">Money,<br><em>with a signature.</em></h1>
+    <p class="sub" data-mask="text">A private account and a solid-steel card, engraved with a guilloche generated from your name. No two cards are alike, because no two people are.</p>
+    <div class="name"><label><span>Engrave a name</span><input maxlength="28" spellcheck="false" value="Alexandra Moreau" aria-label="Your name"></label></div>
+    <a class="btn" href="#">Request an invitation &rarr;</a>
+  </div>
+  <footer class="foot"><span data-mask="text">Plate <b class="serial">A 000000 B</b></span><span class="hide" data-mask="text">Steel &middot; 18 g &middot; laser-engraved in Geneva</span></footer>
+</div>`,
+  init: function (root, L, S) {
+    const { TAU, clamp, lerp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10, inks: ['--ink', '--acc'] });
+    const P = S.pointer(root);
+    const input = root.querySelector('input'), serial = root.querySelector('.serial');
+    const maskEls = [...root.querySelectorAll('[data-mask], .name, .btn, .logo, .links a, .tt')];
+    const GH = A.glyph('-'), GV = A.glyph('|'), GF = A.glyph('/'), GB = A.glyph('\\');
+    let cx = 0, cy = 0, R = 100, mask = null, cur = null, prev = null, mix = 1, rot = 0, fw = 0, fh = 0;
+    const params = (name) => {
+      const h = L.hashStr(name.trim().toLowerCase() || 'intaglio');
+      return { n: 5 + (h % 7), m: 11 + ((h >>> 3) % 13), a: 0.12 + ((h >>> 7) % 9) / 100, b: 0.04 + ((h >>> 11) % 7) / 100, N: 16 + ((h >>> 15) % 10), tw: ((h >>> 19) % 5) - 2, h };
+    };
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 26, floor: 0.05 }); };
+    const setup = () => {
+      const wide = A.w > 760;
+      R = wide ? Math.min(A.h * 0.4, A.w * 0.24) : Math.min(A.w * 0.46, A.h * 0.26);
+      cx = wide ? A.w * 0.71 : A.w * 0.5; cy = wide ? A.h * 0.5 : A.h * 0.29;
+      fw = Math.min(R * 1.3, A.w - cx - 12); fh = Math.min(R * 1.16, cy - (wide ? 76 : 52), A.h - cy - (wide ? 48 : 20));
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+    const setName = () => {
+      const p = params(input.value);
+      if (cur && p.h === cur.h) return;
+      prev = cur; cur = p; mix = prev ? 0 : 1;
+      serial.textContent = `${String.fromCharCode(65 + (p.h % 26))} ${String(p.h % 1000000).padStart(6, '0')} ${String.fromCharCode(65 + ((p.h >>> 5) % 26))}`;
+    };
+    setName();
+    S.on(input, 'input', setName);
+
+    const stamp = (px, py, gi, a, ink) => {
+      const x = Math.floor(px / A.cellW), y = Math.floor(py / A.cellH);
+      if (x < 0 || y < 0 || x >= A.cols || y >= A.rows) return;
+      const i = y * A.cols + x;
+      if (A.a[i] < a) { A.g[i] = gi; A.a[i] = a; A.k[i] = ink; }
+    };
+    const seg = (x0, y0, x1, y1, a, ink) => {
+      const dx = x1 - x0, dy = y1 - y0, ang = Math.atan2(Math.abs(dy), Math.abs(dx));
+      const gi = ang < 0.47 ? GH : ang > 1.1 ? GV : dx * dy > 0 ? GB : GF;
+      const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx) / A.cellW, Math.abs(dy) / A.cellH) * 1.3));
+      for (let k = 0; k <= n; k++) stamp(x0 + (dx * k) / n, y0 + (dy * k) / n, gi, a, ink);
+    };
+    // one family of interleaved modulated rosettes between radii r0 and r1
+    const rosette = (p, r0, r1, a, phase) => {
+      const steps = 220;
+      for (let k = 0; k < p.N; k++) {
+        const ph = (k / p.N) * (TAU / p.n) + phase;
+        let lx = 0, ly = 0;
+        for (let s = 0; s <= steps; s++) {
+          const th = (s / steps) * TAU;
+          const u = 0.5 + 0.5 * Math.sin(p.n * th + ph * p.n) * (1 - p.b * 2) + p.b * Math.sin(p.m * th - ph * 3 + p.tw * th);
+          const rr = (r0 + (r1 - r0) * clamp(u, 0, 1)) * R, x = cx + Math.cos(th + rot) * rr, y = cy + Math.sin(th + rot) * rr;
+          if (s) seg(lx, ly, x, y, a, 1);
+          lx = x; ly = y;
+        }
+      }
+    };
+    const pattern = (p, a, t) => {
+      rosette(p, 0.08, 0.42, a * 0.9, t * 0.05);
+      rosette({ ...p, n: p.n * 2 + 1, N: Math.round(p.N * 0.8) }, 0.5, 0.82, a, -t * 0.04);
+      // outer border wave, like the edge of a banknote
+      const steps = 360;
+      for (let w = 0; w < 3; w++) {
+        let lx = 0, ly = 0;
+        for (let s = 0; s <= steps; s++) {
+          const th = (s / steps) * TAU, rr = R * (0.9 + 0.035 * Math.sin(th * (p.m * 3) + w * 2.1 + t * 0.3));
+          const x = cx + Math.cos(th) * rr, y = cy + Math.sin(th) * rr;
+          if (s) seg(lx, ly, x, y, a * 0.8, 1);
+          lx = x; ly = y;
+        }
+      }
+    };
+
+    S.loop((t, dt) => {
+      P.decay(dt);
+      A.clear();
+      mix = Math.min(1, mix + dt * 0.9);
+      if (P.active && !P.ui && !P.idle(3000)) { const want = Math.atan2(P.y - cy, P.x - cx) * 0.15; rot = lerp(rot, want, Math.min(1, dt * 2)); }
+      else rot = lerp(rot, 0, Math.min(1, dt * 0.5));
+      if (prev && mix < 1) pattern(prev, 0.95 * (1 - mix), t);
+      pattern(cur, 0.95 * Math.min(1, mix * 1.2), t);
+      // micro-lettering ring
+      const name = (input.value.trim() || 'Intaglio').toUpperCase(), ring = ` INTAGLIO PRIVATE . ENGRAVED FOR ${name} . NO TWO ALIKE .`;
+      const rr = R * 1.0, n = Math.round((TAU * rr) / (A.cellW * 1.15));
+      for (let k = 0; k < n; k++) {
+        const th = (k / n) * TAU - t * 0.03, x = cx + Math.cos(th) * rr, y = cy + Math.sin(th) * rr * 1.0;
+        const c = ring[k % ring.length];
+        if (c !== ' ') stamp(x, y, A.glyph(c), 0.75, 0);
+      }
+      // engraved frame with corner guards
+      const x0 = cx - fw, x1 = cx + fw, y0 = cy - fh, y1 = cy + fh;
+      for (const [a, b, c, d] of [[x0, y0, x1, y0], [x0, y1, x1, y1], [x0, y0, x0, y1], [x1, y0, x1, y1]]) seg(a, b, c, d, 0.5, 0);
+      for (const [a, b, c, d] of [[x0 + 8, y0 + 8, x1 - 8, y0 + 8], [x0 + 8, y1 - 8, x1 - 8, y1 - 8]]) seg(a, b, c, d, 0.25, 0);
+      const lab = cur ? serial.textContent : '';
+      A.text(Math.round(x0 / A.cellW) + 2, Math.round(y0 / A.cellH) + 1, lab, 0.9, 1);
+      A.text(Math.round(x1 / A.cellW) - 2 - lab.length, Math.round(y1 / A.cellH) - 2, lab, 0.9, 1);
+      if (mask) for (let i = 0; i < A.n; i++) A.a[i] *= mask[i];
+      A.render();
+    });
+  },
+});
+
+HEROES.push({
+  id: 'orsola',
+  name: 'Orsola',
+  title: 'Orsola · Weightless, Spring Summer 2027',
+  kind: 'Fashion house',
+  tech: 'Verlet cloth hung from curtain rings: structural, shear and bend constraints, gusting wind, Lambert plus a tight silk specular, back faces darker. The sheet occludes a giant headline behind it. Drag the silk, or push it with the cursor.',
+  accent: null,
+  fonts: 'family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;1,6..96,400&family=Jost:wght@400;500',
+  css: `
+.h-orsola{--bg:#0b0a09;--fg:#efe9df;--mut:rgba(239,233,223,.56);--line:rgba(239,233,223,.18);--ink:#efe9df;font-family:"Jost",system-ui,sans-serif}
+:root[data-theme=light] .h-orsola{--bg:#f1ece3;--fg:#141210;--mut:rgba(20,18,16,.6);--line:rgba(20,18,16,.18);--ink:#141210}
+.h-orsola .giant{position:absolute;left:0;right:0;top:50%;z-index:-1;transform:translateY(-46%);margin:0;text-align:center;font:italic 400 clamp(90px,19vw,330px)/.8 "Bodoni Moda",Didot,Georgia,serif;letter-spacing:-.05em;white-space:nowrap;color:var(--fg);opacity:.92;pointer-events:none}
+.h-orsola .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:22px clamp(18px,3.4vw,52px) 20px;pointer-events:none}
+.h-orsola .ui a,.h-orsola .ui button{pointer-events:auto}
+.h-orsola .nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase}
+.h-orsola .links{display:flex;gap:28px}
+.h-orsola .links a{opacity:.7;transition:opacity .2s}.h-orsola .links a:hover{opacity:1}
+.h-orsola .logo{font:400 28px/1 "Bodoni Moda",Didot,serif;letter-spacing:.38em;padding-left:.38em}
+.h-orsola .r{display:flex;justify-content:flex-end;align-items:center;gap:22px}
+.h-orsola .tt{border:0;background:none;padding:6px 0;font:inherit;letter-spacing:inherit;display:flex;align-items:center;gap:8px}
+.h-orsola .tt i{width:22px;height:1px;background:currentColor;position:relative}
+.h-orsola .tt i::after{content:"";position:absolute;top:-3px;left:0;width:7px;height:7px;border-radius:50%;background:currentColor;transition:transform .4s cubic-bezier(.6,0,.2,1)}
+:root[data-theme=light] .h-orsola .tt i::after{transform:translateX(15px)}
+.h-orsola .bottom{grid-row:3;display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+.h-orsola .copy{max-width:380px}
+.h-orsola .season{margin:0 0 14px;font-size:11px;letter-spacing:.3em;text-transform:uppercase}
+.h-orsola .sub{margin:0 0 22px;font:italic 400 clamp(18px,1.5vw,22px)/1.38 "Bodoni Moda",Georgia,serif;color:var(--fg)}
+.h-orsola .cta{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.h-orsola .btn{display:inline-flex;align-items:center;height:48px;padding:0 26px;background:var(--fg);color:var(--bg);font-size:11px;letter-spacing:.26em;text-transform:uppercase}
+.h-orsola .lnk{font-size:11px;letter-spacing:.26em;text-transform:uppercase;border-bottom:1px solid var(--fg);padding-bottom:3px}
+.h-orsola .look{text-align:right;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);line-height:1.8}
+.h-orsola .look b{color:var(--fg);font-weight:500}
+@media (max-width:980px){.h-orsola .links{display:none}.h-orsola .nav{grid-template-columns:auto 1fr;}.h-orsola .logo{justify-self:start}}
+@media (max-width:760px){
+  .h-orsola .ui{padding:14px 16px 14px}
+  .h-orsola .logo{font-size:22px;letter-spacing:.3em}
+  .h-orsola .r .bag{display:none}
+  .h-orsola .giant{top:33%;font-size:28vw}
+  .h-orsola .bottom{flex-direction:column;align-items:flex-start;gap:14px}
+  .h-orsola .look{text-align:left;font-size:10px}
+  .h-orsola .sub{font-size:17px;margin-bottom:16px}
+  .h-orsola .btn{height:46px;padding:0 20px}
+}`,
+  html: `
+<p class="giant" aria-hidden="true">Weightless</p>
+<div class="ui">
+  <header class="nav">
+    <nav class="links" aria-label="Primary"><a href="#">Collections</a><a href="#">Atelier</a><a href="#">Journal</a></nav>
+    <a class="logo" href="#">ORSOLA</a>
+    <div class="r"><a class="bag" href="#">Bag (0)</a><button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i></button></div>
+  </header>
+  <div class="bottom">
+    <div class="copy">
+      <h1 class="sr">Orsola, Weightless, Spring Summer 2027</h1>
+      <p class="season" data-mask="text">Spring / Summer 2027</p>
+      <p class="sub" data-mask="text">Seventeen looks cut from a single bolt of washed silk, draped rather than sewn.</p>
+      <div class="cta"><a class="btn" href="#">Shop the collection</a><a class="lnk" href="#">Watch the show</a></div>
+    </div>
+    <p class="look" data-mask="text">Look <b>04</b> / 17<br>Washed silk charmeuse, ivory<br>Drag the silk</p>
+  </div>
+</div>`,
+  init: function (root, L, S) {
+    const { clamp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10 });
+    const R = new L.Raster(A, 2);
+    const P = S.pointer(root);
+    const maskEls = [...root.querySelectorAll('[data-mask], .btn, .lnk, .logo, .links a, .r > *')];
+    const RAMP = A.ramp(' .:-=+*#%@');
+    let NX = 0, NY = 0, px, py, pz, ox, oy, oz, pin, links = [], mask = null, grab = -1, bg = '#000', cov = null, rodY = 0, rodX0 = 0, rodX1 = 0;
+    const readBg = () => { bg = getComputedStyle(root).getPropertyValue('--bg').trim() || '#000'; };
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 22, floor: 0.08 }); };
+    const setup = () => {
+      const W = A.w, H = A.h, wide = W > 760;
+      NX = wide ? 30 : 20; NY = wide ? 24 : 18;
+      const x0 = wide ? W * 0.36 : W * 0.08, x1 = wide ? W * 0.9 : W * 0.92, top = H * (wide ? 0.1 : 0.08), height = H * (wide ? 0.66 : 0.5);
+      rodY = top - 10; rodX0 = x0 - 30; rodX1 = x1 + 30;
+      const n = NX * NY, sx = (x1 - x0) / (NX - 1), sy = height / (NY - 1);
+      px = new Float32Array(n); py = new Float32Array(n); pz = new Float32Array(n); ox = new Float32Array(n); oy = new Float32Array(n); oz = new Float32Array(n); pin = new Uint8Array(n);
+      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+        const k = j * NX + i;
+        px[k] = ox[k] = x0 + i * sx; py[k] = oy[k] = top + j * sy * 0.9; pz[k] = oz[k] = Math.sin(i * 1.7) * 14 + Math.sin(j * 0.7 + i) * 4;
+        if (j === 0 && (i % 3 === 0 || i === NX - 1)) pin[k] = 1;
+      }
+      links = [];
+      const add = (a, b, w) => links.push(a, b, Math.hypot(px[a] - px[b], py[a] - py[b], pz[a] - pz[b]), w);
+      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+        const k = j * NX + i;
+        if (i < NX - 1) add(k, k + 1, 1);
+        if (j < NY - 1) add(k, k + NX, 1);
+        if (i < NX - 1 && j < NY - 1) { add(k, k + NX + 1, 0.6); add(k + 1, k + NX, 0.6); }
+        if (i < NX - 2) add(k, k + 2, 0.25);
+        if (j < NY - 2) add(k, k + NX * 2, 0.25);
+      }
+      // gather the rings together: the sheet now has slack, so it falls into folds and swags
+      const mid = (x0 + x1) / 2;
+      for (let k = 0; k < n; k++) { const f = 0.66; px[k] = ox[k] = mid + (px[k] - mid) * (pin[k] ? f : 0.8 + 0.2 * (k / NX / NY)); }
+      rodX0 = mid - (mid - x0) * 0.66 - 30; rodX1 = mid + (x1 - mid) * 0.66 + 30;
+      readBg();
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+    S.on(window, 'ascii:theme', () => { readBg(); });
+    // occlusion: cloth cells are painted with the page colour so the giant type sits behind the silk
+    A.under = (ctx, a) => {
+      if (!cov) return;
+      ctx.fillStyle = bg;
+      for (let y = 0; y < a.rows; y++) {
+        let run = -1;
+        for (let x = 0; x <= a.cols; x++) {
+          const on = x < a.cols && cov[y * a.cols + x] > 0.4;
+          if (on && run < 0) run = x;
+          if (!on && run >= 0) { ctx.fillRect(run * a.cw, y * a.ch, (x - run) * a.cw, a.ch); run = -1; }
+        }
+      }
+    };
+
+    const simulate = (t, dt) => {
+      const n = NX * NY, g = 1400, d2 = dt * dt;
+      const gust = 0.5 + 0.5 * L.noise2(t * 0.25, 7), dir = L.noise2(t * 0.1, 3);
+      for (let k = 0; k < n; k++) {
+        if (pin[k] || k === grab) continue;
+        const vx = (px[k] - ox[k]) * 0.985, vy = (py[k] - oy[k]) * 0.985, vz = (pz[k] - oz[k]) * 0.985;
+        ox[k] = px[k]; oy[k] = py[k]; oz[k] = pz[k];
+        const j = (k / NX) | 0, i = k % NX, w = L.noise3(i * 0.18 - t * 0.6, j * 0.14, t * 0.3);
+        px[k] += vx + (dir * 180 * gust + w * 90) * d2;
+        py[k] += vy + g * d2;
+        pz[k] += vz + (w * 2200 + 250) * gust * d2;
+      }
+      if (P.active && !P.ui && grab < 0) {
+        const r = A.w > 760 ? 90 : 60;
+        for (let k = 0; k < n; k++) {
+          if (pin[k]) continue;
+          const dx = px[k] - P.x, dy = py[k] - P.y, d = Math.hypot(dx, dy);
+          if (d < r && d > 0.01) { const f = (r - d) / r; px[k] += (dx / d) * f * 6; py[k] += (dy / d) * f * 6; pz[k] -= f * 14; }
+        }
+      }
+      if (grab >= 0) { px[grab] = P.x; py[grab] = P.y; pz[grab] = 30; }
+      for (let it = 0; it < 6; it++) {
+        for (let q = 0; q < links.length; q += 4) {
+          const a = links[q], b = links[q + 1], rest = links[q + 2], w = links[q + 3];
+          const dx = px[b] - px[a], dy = py[b] - py[a], dz = pz[b] - pz[a], d = Math.hypot(dx, dy, dz) || 1;
+          const diff = ((d - rest) / d) * 0.5 * w;
+          const fa = pin[a] || a === grab ? 0 : 1, fb = pin[b] || b === grab ? 0 : 1, s = fa + fb;
+          if (!s) continue;
+          const ka = (fa / s) * 2 * diff, kb = (fb / s) * 2 * diff;
+          px[a] += dx * ka; py[a] += dy * ka; pz[a] += dz * ka;
+          px[b] -= dx * kb; py[b] -= dy * kb; pz[b] -= dz * kb;
+        }
+      }
+    };
+
+    const Lx = -0.75, Ly = -0.35, Lz = 0.55, Ln = Math.hypot(Lx, Ly, Lz), lx = Lx / Ln, ly = Ly / Ln, lz = Lz / Ln;
+    const hx0 = lx, hy0 = ly, hz0 = lz + 1, hn = Math.hypot(hx0, hy0, hz0), hx = hx0 / hn, hy = hy0 / hn, hz = hz0 / hn;
+    const shadeTri = (ctx, a, b, c) => {
+      const ux = px[b] - px[a], uy = py[b] - py[a], uz = pz[b] - pz[a], vx = px[c] - px[a], vy = py[c] - py[a], vz = pz[c] - pz[a];
+      let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+      let back = false;
+      if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; back = true; }
+      const dif = Math.max(0, nx * lx + ny * ly + nz * lz), spec = Math.pow(Math.max(0, nx * hx + ny * hy + nz * hz), 36);
+      const v = clamp((back ? 0.04 + 0.36 * dif : 0.06 + 0.72 * Math.pow(dif, 1.4)) + spec * (back ? 0.2 : 0.95), 0, 1);
+      const col = 'rgb(' + ((v * 255) | 0) + ',255,0)';
+      ctx.fillStyle = col; ctx.strokeStyle = col;
+      ctx.beginPath(); ctx.moveTo(px[a], py[a]); ctx.lineTo(px[b], py[b]); ctx.lineTo(px[c], py[c]); ctx.closePath(); ctx.fill(); ctx.stroke();
+    };
+
+    S.loop((t, dt) => {
+      if (!px) return;
+      P.decay(dt);
+      for (const tp of P.taps.splice(0)) {
+        let best = -1, bd = 70;
+        for (let k = 0; k < NX * NY; k++) { const d = Math.hypot(px[k] - tp.x, py[k] - tp.y); if (d < bd && !pin[k]) { bd = d; best = k; } }
+        grab = best;
+      }
+      if (!P.down) grab = -1;
+      const h = Math.min(dt, 1 / 30);
+      simulate(t, h / 2); simulate(t, h / 2);
+      const ctx = R.begin();
+      ctx.lineWidth = 0.8;
+      for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) { const k = j * NX + i; shadeTri(ctx, k, k + 1, k + NX); shadeTri(ctx, k + 1, k + NX + 1, k + NX); }
+      R.sample();
+      cov = R.g;
+      A.clear();
+      const cols = A.cols, rows = A.rows, g = A.g, al = A.a, lum = R.r;
+      for (let y = 0, i = 0; y < rows; y++) for (let x = 0; x < cols; x++, i++) {
+        const c = cov[i];
+        if (c < 0.12) continue;
+        const v = lum[i] / c;
+        let gi = L.edge(A, cov, x, y, 1.4);
+        if (gi < 0 || c > 0.95) { gi = L.edge(A, lum, x, y, 1.15); if (gi < 0 || v > 0.75) gi = RAMP[Math.min(9, Math.max(1, (v * 10) | 0))]; }
+        g[i] = gi; al[i] = (0.3 + 0.7 * Math.min(1, c * 1.2)) * (0.35 + 0.65 * v);
+      }
+      // the rod and its rings
+      const ry = Math.floor(rodY / A.cellH);
+      for (let x = Math.floor(rodX0 / A.cellW); x <= Math.floor(rodX1 / A.cellW); x++) A.put(x, ry, A.glyph('='), 0.85);
+      for (let k = 0; k < NX; k++) if (pin[k]) A.put(px[k] / A.cellW, ry + 0.6, A.glyph('o'), 1);
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+    });
+  },
+});
+
+HEROES.push({
+  id: 'hava',
+  name: 'Hava',
+  title: 'Hava · Lift off before the sun does',
+  kind: 'Balloon flights, travel',
+  tech: 'Sunrise over Cappadocia: three parallax layers of fairy chimneys, a fleet of balloons at different depths drifting on the morning wind. Near balloons have striped gores, rigging and baskets, and climb when their burners fire. Orange is only ever fire and sun.',
+  accent: '#ff6b1a',
+  fonts: 'family=Bricolage+Grotesque:opsz,wght@12..96,300..700',
+  css: `
+.h-hava{--bg:#070605;--fg:#f1ebe2;--mut:rgba(241,235,226,.6);--line:rgba(241,235,226,.2);--ink:#f1ebe2;--acc:#ff6b1a;font-family:"Bricolage Grotesque",system-ui,sans-serif}
+:root[data-theme=light] .h-hava{--bg:#f3eee6;--fg:#1a1612;--mut:rgba(26,22,18,.62);--line:rgba(26,22,18,.2);--ink:#1a1612;--acc:#f0560a}
+.h-hava .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:20px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-hava .ui a,.h-hava .ui button{pointer-events:auto}
+.h-hava .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:14px}
+.h-hava .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:24px;letter-spacing:-.04em}
+.h-hava .logo i{width:16px;height:20px;border-radius:50% 50% 45% 45%/60% 60% 40% 40%;background:var(--acc)}
+.h-hava .links{display:flex;gap:26px}
+.h-hava .links a{opacity:.7;transition:opacity .2s}.h-hava .links a:hover{opacity:1}
+.h-hava .tt{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;border:1px solid var(--line);border-radius:17px;background:none;font-size:13px}
+.h-hava .tt .lt,:root[data-theme=light] .h-hava .tt .dk{display:none}
+:root[data-theme=light] .h-hava .tt .lt{display:inline}
+.h-hava .copy{align-self:start;margin-top:clamp(24px,8vh,96px);max-width:min(640px,54vw)}
+.h-hava h1{margin:0 0 18px;font-size:clamp(50px,7.4vw,124px);line-height:.88;font-weight:600;letter-spacing:-.055em;font-variation-settings:"opsz" 96}
+.h-hava h1 span{font-weight:300;font-style:normal}
+.h-hava .sub{margin:0 0 26px;max-width:40ch;font-size:clamp(15px,1.3vw,18px);line-height:1.5;color:var(--mut)}
+.h-hava .book{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:30px;background:var(--bg);overflow:hidden}
+.h-hava .book .when{display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 20px;font-size:12.5px}
+.h-hava .book .when b{font-weight:600;font-size:14px}
+.h-hava .book .when span{color:var(--mut)}
+.h-hava .book a{display:flex;align-items:center;gap:10px;height:58px;padding:0 24px;background:var(--acc);color:#1b0b02;font-weight:600;font-size:15px;border-radius:30px;margin:4px}
+.h-hava .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font-size:12px;color:var(--mut)}
+.h-hava .foot b{color:var(--fg);font-weight:600}
+@media (max-width:980px){.h-hava .links{display:none}}
+@media (max-width:760px){
+  .h-hava .ui{padding:14px 16px 12px}
+  .h-hava .copy{margin-top:2vh;max-width:none}
+  .h-hava h1{font-size:clamp(44px,13.5vw,58px);margin-bottom:12px}
+  .h-hava .sub{font-size:14.5px;margin-bottom:16px}
+  .h-hava .book .when{padding:0 14px;font-size:11.5px}
+  .h-hava .book a{height:50px;padding:0 18px;font-size:14px}
+  .h-hava .foot .hide{display:none}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#"><i aria-hidden="true"></i>hava</a>
+    <nav class="links" aria-label="Primary"><a href="#">Flights</a><a href="#">Sunrise times</a><a href="#">Safety</a><a href="#">Questions</a></nav>
+    <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><span class="dk">Dawn</span><span class="lt">Morning</span></button>
+  </header>
+  <div class="copy">
+    <h1 data-mask="text">Lift off<br><span>before the sun does.</span></h1>
+    <p class="sub" data-mask="text">Sunrise balloon flights over the valleys of Cappadocia. Pickup at 4:40, an hour in the air, breakfast on the ground when it lands.</p>
+    <div class="book"><div class="when"><b>Tomorrow, 05:52</b><span>sunrise &middot; 6 seats left</span></div><a href="#">Book a basket &rarr;</a></div>
+  </div>
+  <footer class="foot"><span data-mask="text">Wind <b>4 km/h NE</b> &middot; visibility <b>30 km</b> &middot; <b class="up">0</b> balloons up</span><span class="hide" data-mask="text">G&ouml;reme, 38.64&deg; N 34.83&deg; E</span></footer>
+</div>`,
+  init: function (root, L, S) {
+    const { TAU, clamp, lerp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10, inks: ['--ink', '--acc'] });
+    const R = new L.Raster(A, 2);
+    const P = S.pointer(root);
+    const up = root.querySelector('.up');
+    const maskEls = [...root.querySelectorAll('[data-mask], .book, .logo, .links a, .tt')];
+    const SKY = A.ramp(' .-:=+*'), BAL = A.ramp('.:-=+*#%@'), ROCK = A.ramp('.:;%#@'), FIRE = A.ramp("'^*\"");
+    let W = 1, H = 1, hz = 0, sunX = 0, sunR = 0, mask = null, layers = [], fleet = [], upT = 0, par = 0;
+    const rnd = L.rng(9);
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 24, floor: 0.07 }); };
+    const chimneys = (n, base, hmin, hmax, wmin, wmax, seed) => {
+      const r = L.rng(seed), list = [];
+      for (let k = 0; k < n; k++) list.push({ x: r() * 1.2 - 0.1, h: hmin + r() * (hmax - hmin), w: wmin + r() * (wmax - wmin), cap: r() < 0.6 });
+      return { list, base };
+    };
+    const setup = () => {
+      W = A.w; H = A.h;
+      const wide = W > 760;
+      hz = H * (wide ? 0.66 : 0.6); sunX = W * (wide ? 0.68 : 0.62); sunR = Math.min(W, H) * (wide ? 0.13 : 0.2);
+      layers = [chimneys(26, hz + H * 0.02, 0.03, 0.08, 0.012, 0.03, 3), chimneys(16, hz + H * 0.12, 0.06, 0.16, 0.02, 0.05, 5), chimneys(9, H * 1.0, 0.1, 0.24, 0.035, 0.08, 8)];
+      fleet = [];
+      const n = wide ? 24 : 13;
+      for (let k = 0; k < n; k++) {
+        const z = k < n * 0.62 ? 0.08 + rnd() * 0.25 : k < n - 2 ? 0.4 + rnd() * 0.3 : 0.82 + rnd() * 0.18;
+        fleet.push({ x: rnd() * W, y: H * (0.12 + rnd() * 0.45) + (1 - z) * H * 0.1, z, vy: 0, fire: 0, next: rnd() * 4, gores: 6 + ((rnd() * 4) | 0) * 2, pat: (rnd() * 3) | 0, ph: rnd() * TAU });
+      }
+      fleet.sort((a, b) => a.z - b.z);
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+
+    const heightAt = (ly, x) => {
+      // highest silhouette point of a chimney layer at screen x
+      let h = 0;
+      for (const c of ly.list) {
+        const cx = (c.x + par * (ly === layers[2] ? 0.04 : ly === layers[1] ? 0.02 : 0.008)) * W, half = c.w * W, d = Math.abs(x - cx) / half;
+        if (d < 1.6) { const cone = c.h * H * (d < 1 ? (c.cap ? 1 - d * d * 0.6 : 1 - d * 0.75) : Math.max(0, 0.25 - (d - 1) * 0.4)); if (cone > h) h = cone; }
+      }
+      return ly.base - h - (ly === layers[0] ? L.noise2(x * 0.004, 1) * H * 0.02 : ly === layers[1] ? H * 0.04 + L.noise2(x * 0.006, 2) * H * 0.03 : H * 0.07 + L.noise2(x * 0.005, 9) * H * 0.04);
+    };
+    const balloon = (ctx, b, s, lit) => {
+      // envelope: sphere plus cone to the throat, gores shaded around the curve
+      const Rr = s, top = b.y - Rr, cx = b.x;
+      const shade = (u, v) => clamp(0.35 + 0.55 * Math.cos(u * 1.35) * (1 - v * 0.25) + lit * (1 - v) * 0.15, 0, 1);
+      const rows = 18;
+      for (let r = 0; r < rows; r++) {
+        const v0 = r / rows, v1 = (r + 1) / rows;
+        const w = (v) => { const y = v * 2.35 - 1; return y < 0.25 ? Math.sqrt(Math.max(0, 1 - y * y)) : lerp(Math.sqrt(1 - 0.0625), 0.26, (y - 0.25) / 1.1); };
+        const y0 = top + v0 * Rr * 2.35, y1 = top + v1 * Rr * 2.35, w0 = w(v0) * Rr, w1 = w(v1) * Rr;
+        for (let g = 0; g < b.gores; g++) {
+          const u0 = (g / b.gores) * 2 - 1, u1 = ((g + 1) / b.gores) * 2 - 1, band = (g + b.pat) % 2;
+          const v = shade((u0 + u1) / 2, v0) * (band ? 1 : 0.7);
+          ctx.fillStyle = `rgb(${(v * 255) | 0},255,0)`;
+          ctx.beginPath(); ctx.moveTo(cx + Math.sin(u0 * 1.4) / Math.sin(1.4) * w0, y0); ctx.lineTo(cx + Math.sin(u1 * 1.4) / Math.sin(1.4) * w0, y0); ctx.lineTo(cx + Math.sin(u1 * 1.4) / Math.sin(1.4) * w1, y1); ctx.lineTo(cx + Math.sin(u0 * 1.4) / Math.sin(1.4) * w1, y1); ctx.closePath(); ctx.fill();
+        }
+      }
+      const throat = top + Rr * 2.35, bw = Rr * 0.26, basketY = throat + Rr * 0.42;
+      ctx.strokeStyle = 'rgb(120,255,0)'; ctx.lineWidth = Math.max(1, Rr * 0.03);
+      ctx.beginPath(); ctx.moveTo(cx - bw, throat); ctx.lineTo(cx - Rr * 0.17, basketY); ctx.moveTo(cx + bw, throat); ctx.lineTo(cx + Rr * 0.17, basketY); ctx.stroke();
+      ctx.fillStyle = 'rgb(150,255,0)'; ctx.fillRect(cx - Rr * 0.19, basketY, Rr * 0.38, Rr * 0.26);
+      return [cx, throat + Rr * 0.18];
+    };
+
+    S.loop((t, dt) => {
+      P.decay(dt);
+      const dark = L.theme() === 'dark', cols = A.cols, rows = A.rows, g = A.g, al = A.a, kk = A.k, cw = A.cellW, ch = A.cellH;
+      par = lerp(par, P.active && !P.ui ? (P.x / W - 0.5) * -1 : 0, Math.min(1, dt * 1.5));
+      // fleet drift, burners
+      const flames = [];
+      for (const b of fleet) {
+        b.x += (6 + b.z * 14) * dt; b.ph += dt;
+        if (b.x > W + 120) { b.x = -120; b.y = H * (0.12 + Math.random() * 0.45); }
+        if ((b.next -= dt) <= 0) { b.fire = 0.5 + Math.random() * 0.9; b.next = 3 + Math.random() * 5; }
+        if (b.fire > 0) { b.fire -= dt; b.vy -= 22 * dt; } else b.vy += 6 * dt;
+        b.vy = clamp(b.vy * 0.99, -14, 9); b.y += b.vy * dt * (0.4 + b.z);
+        b.y = clamp(b.y, H * 0.06, hz - 20);
+      }
+      const ctx = R.begin();
+      for (const b of fleet) {
+        const s = lerp(5, W > 760 ? 70 : 46, Math.pow(b.z, 1.6));
+        const bx = b.x + par * b.z * 40;
+        const save = b.x; b.x = bx;
+        const [fx, fy] = balloon(ctx, b, s, b.fire > 0 ? 1 : 0);
+        b.x = save;
+        if (b.fire > 0 && s > 14) flames.push([fx, fy, s]);
+      }
+      R.sample();
+      A.clear();
+      // sky glow and sun
+      const sunY = hz - sunR * 0.35 + Math.sin(t * 0.02) * 2;
+      for (let y = 0, i = 0; y < rows; y++) {
+        const py = (y + 0.5) * ch;
+        for (let x = 0; x < cols; x++, i++) {
+          const px = (x + 0.5) * cw;
+          const ds = Math.hypot((px - sunX) * 0.9, py - sunY);
+          if (ds < sunR && py < hz + 4) {
+            const e = ds / sunR;
+            if (dark) { g[i] = e > 0.9 ? A.glyph('o') : SKY[6]; al[i] = e > 0.9 ? 0.9 : 0.75; } else { if (e > 0.88) { g[i] = A.glyph('o'); al[i] = 0.9; } else if (L.hash(x, y) < 0.25) { g[i] = A.glyph('.'); al[i] = 0.5; } }
+            kk[i] = 1; continue;
+          }
+          const glow = Math.exp(-Math.max(0, hz - py) / (H * 0.32)) * (0.55 + 0.45 * Math.exp(-ds / (W * 0.35)));
+          const v = dark ? glow : glow * 0.35;
+          if (v > 0.08 && L.hash(x, y, 1) < 0.35 + v) { g[i] = SKY[Math.min(6, (v * 7) | 0)]; al[i] = 0.06 + v * (dark ? 0.45 : 0.35); kk[i] = 0; }
+        }
+      }
+      // balloons
+      for (let i = 0; i < A.n; i++) {
+        const c = R.g[i];
+        if (c < 0.15) continue;
+        const v = R.r[i] / c, x = i % cols, y = (i / cols) | 0;
+        let gi = L.edge(A, R.g, x, y, 1.3);
+        if (gi < 0 || c > 0.95) gi = BAL[Math.min(8, Math.max(1, (v * 9) | 0))];
+        g[i] = gi; al[i] = (0.35 + 0.65 * Math.min(1, c * 1.3)) * (0.45 + 0.55 * v); kk[i] = 0;
+      }
+      // fairy chimneys: one pass, front-most layer wins, outlines follow the walls
+      const tops = layers.map((ly) => { const a = new Int16Array(cols); for (let x = 0; x < cols; x++) a[x] = Math.floor(heightAt(ly, (x + 0.5) * cw) / ch); return a; });
+      const GT = A.glyph('_'), GL = A.glyph('/'), GR = A.glyph('\\'), GI = A.glyph('|'), GD = A.glyph('.'), GC = A.glyph(':');
+      for (let x = 0; x < cols; x++) {
+        const y0 = Math.max(0, Math.min(tops[0][x], tops[1][x], tops[2][x]));
+        for (let y = y0; y < rows; y++) {
+          const li = y >= tops[2][x] ? 2 : y >= tops[1][x] ? 1 : y >= tops[0][x] ? 0 : -1;
+          if (li < 0) continue;
+          const T = tops[li], i = y * cols + x;
+          const openL = x > 0 && y < T[x - 1] && (li === 2 || y < tops[2][x - 1]), openR = x < cols - 1 && y < T[x + 1] && (li === 2 || y < tops[2][x + 1]);
+          const isTop = y === T[x];
+          kk[i] = 0;
+          if (isTop || openL || openR) {
+            g[i] = openL && openR ? (isTop ? A.glyph('^') : GI) : openL ? GL : openR ? GR : GT;
+            al[i] = dark ? 0.42 + li * 0.2 : 0.55 + li * 0.15;
+          } else {
+            const h = L.hash(x, y, li);
+            if (dark) { g[i] = h < 0.1 ? GD : 0; al[i] = 0.08 + li * 0.05; }
+            else { g[i] = h < 0.18 + li * 0.18 ? (li === 2 && h < 0.2 ? GC : GD) : 0; al[i] = 0.25 + li * 0.15; }
+          }
+        }
+      }
+      for (const [fx, fy, s] of flames) for (let k = 0; k < 3 + s * 0.05; k++) A.put((fx + (Math.random() - 0.5) * s * 0.18) / cw, (fy - Math.random() * s * 0.35) / ch, FIRE[(Math.random() * 4) | 0], 1, 1);
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+      if ((upT -= dt) <= 0) { upT = 1.2; up.textContent = 80 + fleet.length + ((t * 0.1) | 0) % 7; }
+    });
+  },
+});
+
+HEROES.push({
+  id: 'static',
+  name: 'Static',
+  title: 'Static One · Store the storm',
+  kind: 'Home battery',
+  tech: 'A plasma globe: filaments are fractal random walks from the electrode to points wandering on a 3D sphere, with forks where they meet the glass and glow drawn under a crisp stroked core. Touch the glass and the discharge finds your finger.',
+  accent: null,
+  fonts: 'family=Unbounded:wght@300;500;700&family=Instrument+Sans:wght@400;500',
+  css: `
+.h-static{--bg:#030303;--fg:#ececec;--mut:rgba(236,236,236,.56);--line:rgba(236,236,236,.16);--ink:#ececec;font-family:"Instrument Sans",system-ui,sans-serif}
+:root[data-theme=light] .h-static{--bg:#ededeb;--fg:#0c0c0c;--mut:rgba(12,12,12,.6);--line:rgba(12,12,12,.16);--ink:#0c0c0c}
+.h-static .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:20px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-static .ui a,.h-static .ui button{pointer-events:auto}
+.h-static .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:13.5px}
+.h-static .logo{font:700 19px/1 "Unbounded",system-ui,sans-serif;letter-spacing:.06em}
+.h-static .links{display:flex;gap:28px}
+.h-static .links a{opacity:.62;transition:opacity .2s}.h-static .links a:hover{opacity:1}
+.h-static .r{display:flex;gap:10px;align-items:center}
+.h-static .res{height:36px;display:inline-flex;align-items:center;padding:0 16px;border-radius:18px;background:var(--fg);color:var(--bg);font-weight:500}
+.h-static .tt{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:none;display:grid;place-items:center}
+.h-static .tt i{width:14px;height:14px;border-radius:50%;border:1.5px solid currentColor;position:relative;overflow:hidden}
+.h-static .tt i::after{content:"";position:absolute;inset:0;background:currentColor;transform:translateX(50%)}
+.h-static .copy{align-self:center;max-width:min(560px,46vw)}
+.h-static .kick{display:inline-flex;align-items:center;gap:10px;margin:0 0 22px;font-size:13px;color:var(--mut)}
+.h-static .kick b{font:500 10.5px/1 "Unbounded",sans-serif;letter-spacing:.08em;padding:6px 9px;border:1px solid var(--line);border-radius:12px;color:var(--fg)}
+.h-static h1{margin:0 0 24px;font:500 clamp(44px,6vw,98px)/.95 "Unbounded",system-ui,sans-serif;letter-spacing:-.05em}
+.h-static h1 span{font-weight:300}
+.h-static .sub{margin:0 0 30px;max-width:42ch;font-size:clamp(15px,1.25vw,18px);line-height:1.55;color:var(--mut)}
+.h-static .cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.h-static .btn{display:inline-flex;align-items:center;gap:12px;height:52px;padding:0 24px;border-radius:26px;background:var(--fg);color:var(--bg);font-weight:500;font-size:15px}
+.h-static .btn small{opacity:.6;font-size:13px}
+.h-static .ghost{display:inline-flex;align-items:center;height:52px;padding:0 22px;border-radius:26px;border:1px solid var(--line);font-size:15px;background:var(--bg)}
+.h-static .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font-size:12px;color:var(--mut)}
+.h-static .specs{display:flex;gap:clamp(18px,2.6vw,40px)}
+.h-static .specs span{display:flex;flex-direction:column;gap:6px}
+.h-static .specs b{font:500 clamp(15px,1.4vw,20px)/1 "Unbounded",sans-serif;color:var(--fg);letter-spacing:-.03em}
+@media (max-width:980px){.h-static .links{display:none}}
+@media (max-width:760px){
+  .h-static .ui{padding:14px 16px 12px}
+  .h-static .res{display:none}
+  .h-static .copy{align-self:end;max-width:none;margin-bottom:16px}
+  .h-static .kick{margin-bottom:12px}
+  .h-static h1{font-size:clamp(38px,11.5vw,50px);margin-bottom:12px}
+  .h-static .sub{font-size:14.5px;margin-bottom:18px}
+  .h-static .btn,.h-static .ghost{height:46px;padding:0 18px;font-size:14px}
+  .h-static .specs span:nth-child(n+3),.h-static .hint{display:none}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">STATIC</a>
+    <nav class="links" aria-label="Primary"><a href="#">Static One</a><a href="#">How it works</a><a href="#">Installers</a><a href="#">Support</a></nav>
+    <div class="r"><a class="res" href="#">Reserve</a><button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i></button></div>
+  </header>
+  <div class="copy">
+    <p class="kick" data-mask="text"><b>NEW</b>Static One home battery</p>
+    <h1 data-mask="text">Store<br><span>the storm.</span></h1>
+    <p class="sub" data-mask="text">A 14 kWh battery that charges from your roof, keeps the lights on when the grid goes down, and sells the surplus back when it pays.</p>
+    <div class="cta"><a class="btn" href="#">Reserve <small>EUR 190 deposit</small></a><a class="ghost" href="#">How it works</a></div>
+  </div>
+  <footer class="foot"><div class="specs" data-mask="text"><span>Capacity<b>14 kWh</b></span><span>Peak<b>10 kW</b></span><span>Switchover<b>0 ms</b></span><span>Warranty<b>15 yr</b></span></div><span class="hint" data-mask="text">Put your hand on the glass</span></footer>
+</div>`,
+  init: function (root, L, S) {
+    const { TAU, clamp, lerp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10 });
+    const R = new L.Raster(A, 2);
+    const P = S.pointer(root);
+    const maskEls = [...root.querySelectorAll('[data-mask], .btn, .ghost, .logo, .links a, .r > *')];
+    const GLOW = A.ramp(' .:-=+*'), GH = A.glyph('-'), GV = A.glyph('|'), GF = A.glyph('/'), GB = A.glyph('\\'), CORE = A.ramp('o0@');
+    let cx = 0, cy = 0, Rg = 100, mask = null, fils = [], touch = 0, tx = 0, ty = 0;
+    const rnd = L.rng(4);
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 26, floor: 0.06 }); };
+    const setup = () => {
+      const W = A.w, H = A.h, wide = W > 760;
+      Rg = wide ? Math.min(H * 0.34, W * 0.22) : Math.min(W * 0.4, H * 0.22);
+      cx = wide ? W * 0.72 : W * 0.5; cy = wide ? H * 0.45 : H * 0.27;
+      fils = Array.from({ length: wide ? 13 : 10 }, (_, k) => ({ th: rnd() * TAU, ph: (rnd() - 0.5) * 2.4, seed: rnd() * 100, w: 0.6 + rnd() * 0.4, vt: (rnd() - 0.5) * 0.4, vp: (rnd() - 0.5) * 0.3 }));
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+
+    const stamp = (px, py, gi, a) => {
+      const x = Math.floor(px / A.cellW), y = Math.floor(py / A.cellH);
+      if (x < 0 || y < 0 || x >= A.cols || y >= A.rows) return;
+      const i = y * A.cols + x;
+      if (A.a[i] < a) { A.g[i] = gi; A.a[i] = a; }
+    };
+    const strokeGlyphs = (pts, a) => {
+      for (let k = 1; k < pts.length; k++) {
+        const [x0, y0] = pts[k - 1], [x1, y1] = pts[k], dx = x1 - x0, dy = y1 - y0, an = Math.atan2(Math.abs(dy), Math.abs(dx));
+        const gi = an < 0.47 ? GH : an > 1.1 ? GV : dx * dy > 0 ? GB : GF, n = Math.max(1, Math.ceil(Math.max(Math.abs(dx) / A.cellW, Math.abs(dy) / A.cellH) * 1.3));
+        for (let j = 0; j <= n; j++) stamp(x0 + (dx * j) / n, y0 + (dy * j) / n, gi, a);
+      }
+    };
+    // a discharge from (x0,y0) to (x1,y1): midpoint-noise displacement that keeps its shape between frames
+    const bolt = (x0, y0, x1, y1, seed, t, jag) => {
+      const pts = [], n = 26, dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len;
+      for (let k = 0; k <= n; k++) {
+        const s = k / n, env = Math.sin(Math.PI * s) * (0.35 + 0.65 * s);
+        const off = (L.noise2(seed + s * 3.2, t * 1.6) * 0.65 + L.noise2(seed * 2 + s * 9, t * 3.1) * 0.35) * len * jag * env;
+        pts.push([x0 + dx * s + nx * off, y0 + dy * s + ny * off]);
+      }
+      return pts;
+    };
+
+    S.loop((t, dt) => {
+      P.decay(dt);
+      const dark = L.theme() === 'dark';
+      // is the pointer on (or just outside) the glass?
+      const dxp = P.x - cx, dyp = P.y - cy, dp = Math.hypot(dxp, dyp);
+      const on = P.active && !P.ui && dp < Rg * 1.35;
+      touch = lerp(touch, on ? 1 : 0, Math.min(1, dt * (on ? 6 : 2)));
+      if (on) { const k = Math.min(dp, Rg * 0.97) / (dp || 1); tx = cx + dxp * k; ty = cy + dyp * k; }
+      const ctx = R.begin();
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      const cores = [];
+      for (let f = 0; f < fils.length; f++) {
+        const fl = fils[f];
+        fl.th += (fl.vt + L.noise2(fl.seed, t * 0.2) * 0.5) * dt; fl.ph = clamp(fl.ph + (fl.vp + L.noise2(fl.seed + 5, t * 0.17) * 0.4) * dt, -1.35, 1.35);
+        if (Math.abs(fl.ph) >= 1.34) fl.vp = -fl.vp;
+        // point on the sphere: x,y projected, z gives depth (back filaments are dimmer)
+        let ex = cx + Math.cos(fl.th) * Math.cos(fl.ph) * Rg * 0.97, ey = cy + Math.sin(fl.ph) * Rg * 0.97, z = Math.sin(fl.th) * Math.cos(fl.ph);
+        const grab = touch > 0.05 && f % 5 !== 4 ? touch : 0;
+        if (grab) { ex = lerp(ex, tx, grab); ey = lerp(ey, ty, grab); z = lerp(z, 1, grab); }
+        const flick = 0.7 + 0.3 * L.noise2(fl.seed * 3, t * 7), bright = (0.45 + 0.4 * (z * 0.5 + 0.5)) * flick * (1 + grab * 0.4);
+        const pts = bolt(cx, cy, ex, ey, fl.seed, t, 0.16 - grab * 0.06);
+        ctx.strokeStyle = `rgb(${Math.min(255, bright * 230) | 0},0,0)`; ctx.lineWidth = Rg * 0.1;
+        ctx.beginPath(); pts.forEach(([x, y], k) => (k ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke();
+        cores.push([pts, Math.min(1, bright)]);
+        // forks where the filament spreads on the glass
+        for (let b = 0; b < 3; b++) {
+          const a0 = Math.atan2(ey - cy, ex - cx) + (b - 1) * 0.7 + L.noise2(fl.seed + b, t * 2) * 0.5, r = Rg * (0.1 + 0.08 * L.noise2(fl.seed + b * 7, t * 3));
+          const p0 = pts[pts.length - 4], fork = bolt(p0[0], p0[1], ex + Math.cos(a0 + Math.PI / 2) * r, ey + Math.sin(a0 + Math.PI / 2) * r, fl.seed + b * 13, t * 1.3, 0.2);
+          cores.push([fork, Math.min(1, bright * 0.7)]);
+        }
+      }
+      // electrode glow
+      const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, Rg * 0.42);
+      gr.addColorStop(0, 'rgb(255,0,0)'); gr.addColorStop(1, 'rgb(0,0,0)');
+      ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, Rg * 0.42, 0, TAU); ctx.fill();
+      if (touch > 0.05) { const tg = ctx.createRadialGradient(tx, ty, 0, tx, ty, Rg * 0.3); tg.addColorStop(0, `rgb(${(touch * 200) | 0},0,0)`); tg.addColorStop(1, 'rgb(0,0,0)'); ctx.fillStyle = tg; ctx.beginPath(); ctx.arc(tx, ty, Rg * 0.3, 0, TAU); ctx.fill(); }
+      ctx.globalCompositeOperation = 'source-over';
+      R.sample();
+      A.clear();
+      const g = A.g, al = A.a;
+      for (let i = 0; i < A.n; i++) { const v = R.r[i]; if (v < 0.05) continue; g[i] = GLOW[Math.min(6, (v * 7.5) | 0)]; al[i] = 0.12 + 0.7 * v; }
+      for (const [pts, b] of cores) strokeGlyphs(pts, 0.55 + 0.45 * b);
+      // electrode
+      for (let k = -1; k <= 1; k++) stamp(cx + k * A.cellW, cy, CORE[k ? 1 : 2], 1);
+      stamp(cx, cy - A.cellH, CORE[0], 0.8); stamp(cx, cy + A.cellH, CORE[0], 0.8);
+      // the glass: outline, a reflection, and a base
+      const n = Math.round((TAU * Rg) / (A.cellW * 0.9));
+      for (let k = 0; k < n; k++) {
+        const a = (k / n) * TAU, x = cx + Math.cos(a) * Rg, y = cy + Math.sin(a) * Rg, s = Math.sin(a), c = Math.cos(a);
+        stamp(x, y, Math.abs(s) > 0.92 ? GH : Math.abs(c) > 0.92 ? GV : s * c > 0 ? GB : GF, dark ? 0.55 : 0.75);
+      }
+      for (let k = 0; k < 14; k++) { const a = 3.55 + k * 0.045; stamp(cx + Math.cos(a) * Rg * 0.86, cy + Math.sin(a) * Rg * 0.86, A.glyph('`'), 0.6); }
+      const by = cy + Rg * 0.98, bw = Rg * 0.42;
+      const baseRows = Math.round((Rg * 0.42) / A.cellH);
+      for (let r = 0; r <= baseRows; r++) {
+        const w = bw + r * A.cellH * 0.6, y = by + r * A.cellH;
+        stamp(cx - w, y, GF, 0.85); stamp(cx + w, y, GB, 0.85);
+        if (r === baseRows) for (let x = cx - w; x <= cx + w; x += A.cellW) stamp(x, y, A.glyph('_'), 0.85);
+        else for (let x = cx - w + A.cellW; x < cx + w - A.cellW * 0.5; x += A.cellW) stamp(x, y, A.glyph(r === 1 ? '=' : ' '), r === 1 ? 0.5 : 0);
+      }
+      A.text(Math.round(cx / A.cellW) - 5, Math.round((by + baseRows * 0.5 * A.cellH) / A.cellH), 'STATIC ONE', 0.75);
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+    });
+  },
+});
+
 /* Showcase shell: mounts one hero at a time, glyph-wipe transitions, index, export. */
 (() => {
   const L = createLib();
