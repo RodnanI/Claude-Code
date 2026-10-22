@@ -3220,6 +3220,497 @@ HEROES.push({
   },
 });
 
+HEROES.push({
+  id: 'phyllo',
+  name: 'Phyllo',
+  title: 'Phyllo · A library of seeds',
+  kind: 'Seed bank, non-profit',
+  tech: 'Vogel\'s phyllotaxis: each floret is placed 137.508 degrees after the last and grows outward, so the Fibonacci spirals appear by themselves. Drag sideways to detune the divergence angle and watch the head collapse into spokes and come back.',
+  accent: null,
+  fonts: 'family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..600,0..100;1,9..144,300..600,0..100&family=Azeret+Mono:wght@400;500',
+  css: `
+.h-phyllo{--bg:#070806;--fg:#eef0e6;--mut:rgba(238,240,230,.58);--line:rgba(238,240,230,.18);--ink:#eef0e6;font-family:"Azeret Mono",ui-monospace,monospace}
+:root[data-theme=light] .h-phyllo{--bg:#f2f1e8;--fg:#13150f;--mut:rgba(19,21,15,.6);--line:rgba(19,21,15,.18);--ink:#13150f}
+.h-phyllo .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:20px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-phyllo .ui a,.h-phyllo .ui button{pointer-events:auto}
+.h-phyllo .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:11.5px;letter-spacing:.06em}
+.h-phyllo .logo{font:italic 400 26px/1 "Fraunces",Georgia,serif;font-variation-settings:"SOFT" 100,"opsz" 72;letter-spacing:-.02em}
+.h-phyllo .links{display:flex;gap:26px}
+.h-phyllo .links a{opacity:.62;transition:opacity .2s}.h-phyllo .links a:hover{opacity:1}
+.h-phyllo .tt{display:flex;align-items:center;gap:10px;border:0;background:none;padding:6px 0;font-size:11.5px;letter-spacing:.06em}
+.h-phyllo .tt i{width:18px;height:18px;border-radius:50%;border:1px solid currentColor;background:radial-gradient(circle,currentColor 0 2px,transparent 2.5px)}
+.h-phyllo .tt .lt,:root[data-theme=light] .h-phyllo .tt .dk{display:none}
+:root[data-theme=light] .h-phyllo .tt .lt{display:inline}
+.h-phyllo .copy{align-self:center;max-width:min(560px,44vw)}
+.h-phyllo .kick{margin:0 0 22px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.h-phyllo h1{margin:0 0 22px;font:340 clamp(48px,6.4vw,104px)/.94 "Fraunces",Georgia,serif;font-variation-settings:"SOFT" 100,"opsz" 144;letter-spacing:-.035em}
+.h-phyllo h1 em{font-style:italic;font-weight:300}
+.h-phyllo .sub{margin:0 0 28px;max-width:44ch;font-size:clamp(12.5px,1vw,14px);line-height:1.75;color:var(--mut)}
+.h-phyllo .cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.h-phyllo .btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 22px;border-radius:24px;background:var(--fg);color:var(--bg);font-size:12.5px;letter-spacing:.04em}
+.h-phyllo .ghost{display:inline-flex;align-items:center;height:48px;padding:0 20px;border-radius:24px;border:1px solid var(--line);font-size:12.5px;background:var(--bg)}
+.h-phyllo .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;font-size:11px;letter-spacing:.06em;color:var(--mut)}
+.h-phyllo .ang b{font:500 clamp(18px,1.7vw,24px)/1 "Azeret Mono",monospace;color:var(--fg);display:block;margin-top:6px;font-variant-numeric:tabular-nums}
+.h-phyllo .count{text-align:right}
+.h-phyllo .count b{color:var(--fg);font-weight:500}
+@media (max-width:980px){.h-phyllo .links{display:none}}
+@media (max-width:760px){
+  .h-phyllo .ui{padding:14px 16px 12px}
+  .h-phyllo .tt .lbl{display:none}
+  .h-phyllo .copy{align-self:end;max-width:none;margin-bottom:14px}
+  .h-phyllo .kick{margin-bottom:12px;font-size:10px}
+  .h-phyllo h1{font-size:clamp(40px,12vw,52px);margin-bottom:12px}
+  .h-phyllo .sub{font-size:12.5px;line-height:1.65;margin-bottom:16px}
+  .h-phyllo .btn,.h-phyllo .ghost{height:44px;padding:0 18px}
+  .h-phyllo .count{display:none}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">phyllo</a>
+    <nav class="links" aria-label="Primary"><a href="#">The vault</a><a href="#">Adopt a variety</a><a href="#">Growers</a><a href="#">Research</a></nav>
+    <button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><i></i><span class="lbl"><span class="dk">Night garden</span><span class="lt">Day garden</span></span></button>
+  </header>
+  <div class="copy">
+    <p class="kick" data-mask="text">Seed bank &middot; 41,286 varieties &middot; since 1994</p>
+    <h1 data-mask="text">Every seed<br>knows the<br><em>golden angle.</em></h1>
+    <p class="sub" data-mask="text">Phyllo keeps living copies of the world's crops in a vault, in growers' gardens and in the ground. Adopt a variety and we will send you its seeds, its story, and a reminder when it is time to sow.</p>
+    <div class="cta"><a class="btn" href="#">Adopt a variety &rarr;</a><a class="ghost" href="#">Visit the vault</a></div>
+  </div>
+  <footer class="foot"><span class="ang" data-mask="text">Divergence<b class="deg">137.508&deg;</b></span><span class="count" data-mask="text"><b class="n">0</b> florets &middot; drag sideways to detune</span></footer>
+</div>`,
+  init: function (root, L, S) {
+    const { TAU, clamp, lerp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10 });
+    const P = S.pointer(root);
+    const deg = root.querySelector('.deg'), cnt = root.querySelector('.n');
+    const maskEls = [...root.querySelectorAll('[data-mask], .btn, .ghost, .logo, .links a, .tt')];
+    const GOLD = Math.PI * (3 - Math.sqrt(5));
+    const SEED = A.ramp('.:o0@'), PET = A.ramp(".'-~=+"), RAY = { h: A.glyph('-'), v: A.glyph('|'), f: A.glyph('/'), b: A.glyph('\\') };
+    let cx = 0, cy = 0, Rh = 100, mask = null, N = 0, grown = 0, ang = GOLD, target = GOLD, statT = 0, drag = null;
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 26, floor: 0.06 }); };
+    const setup = () => {
+      const W = A.w, H = A.h, wide = W > 760;
+      Rh = wide ? Math.min(H * 0.33, W * 0.2) : Math.min(W * 0.36, H * 0.2);
+      cx = wide ? W * 0.71 : W * 0.5; cy = wide ? H * 0.47 : H * 0.28;
+      N = Math.round(((Rh * Rh) / (A.cellW * A.cellH)) * 0.62);
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+
+    const put = (px, py, gi, a) => { const x = Math.floor(px / A.cellW), y = Math.floor(py / A.cellH); if (x < 0 || y < 0 || x >= A.cols || y >= A.rows) return; const i = y * A.cols + x; if (A.a[i] < a) { A.g[i] = gi; A.a[i] = a; } };
+    S.loop((t, dt) => {
+      P.decay(dt);
+      // detuning: drag (or move) sideways; otherwise the angle springs back to the golden one
+      for (const tp of P.taps.splice(0)) drag = { x: tp.x, a: ang };
+      if (!P.down) drag = null;
+      if (drag) target = drag.a + (P.x - drag.x) * 0.00012;
+      else if (P.active && !P.ui && !P.idle(1500) && !L.coarse) target = GOLD + ((P.x - cx) / A.w) * 0.0045;
+      else target = GOLD;
+      ang = lerp(ang, target, Math.min(1, dt * (drag ? 10 : 2.2)));
+      grown = Math.min(N, grown + dt * N * 0.35);
+      A.clear();
+      const breathe = 1 + 0.015 * Math.sin(t * 0.8), spin = t * 0.02, n = Math.floor(grown);
+      // petals: a ring of rays around the head, swaying
+      const petals = 34, pr0 = Rh * 1.02, pr1 = Rh * 1.55;
+      for (let k = 0; k < petals; k++) {
+        const a = (k / petals) * TAU + spin * 0.5 + Math.sin(t * 0.7 + k) * 0.02, len = pr1 + Math.sin(k * 2.7) * Rh * 0.12;
+        const steps = Math.ceil((len - pr0) / (A.cellW * 0.6));
+        for (let s = 0; s <= steps; s++) {
+          const u = s / steps, r = lerp(pr0, len, u), w = Math.sin(Math.PI * Math.min(1, u * 1.1)) * 0.1;
+          for (const side of [-1, 0, 1]) {
+            const aa = a + side * w * (1 - u * 0.4), x = cx + Math.cos(aa) * r, y = cy + Math.sin(aa) * r * 0.98;
+            const dx = Math.cos(aa), dy = Math.sin(aa), adx = Math.abs(dx) / A.cellW, ady = Math.abs(dy) / A.cellH;
+            const gi = side ? (ady < adx * 0.45 ? RAY.h : adx < ady * 0.45 ? RAY.v : dx * dy > 0 ? RAY.b : RAY.f) : PET[Math.min(5, ((1 - u) * 6) | 0)];
+            put(x, y, gi, side ? 0.75 : 0.35 * (1 - u * 0.5));
+          }
+        }
+      }
+      // the head: florets placed at the divergence angle, older ones further out and riper
+      const c = Rh * breathe / Math.sqrt(Math.max(1, N));
+      for (let k = 0; k < n; k++) {
+        const r = c * Math.sqrt(k), th = k * ang + spin;
+        const x = cx + Math.cos(th) * r, y = cy + Math.sin(th) * r;
+        const age = k / N, fresh = clamp((grown - k) / (N * 0.05), 0, 1);
+        // alternate the 34 parastichies so the spiral arms read, then ripen outward
+        const arm = (k % 34) < 17, gi = arm ? SEED[Math.min(4, 2 + ((age * 3) | 0))] : SEED[Math.min(1, (age * 2) | 0)];
+        put(x, y, gi, (arm ? 0.55 + 0.45 * (1 - age * 0.4) : 0.3 + 0.25 * age) * fresh);
+      }
+      if (mask) for (let i = 0; i < A.n; i++) A.a[i] *= mask[i];
+      A.render();
+      if ((statT -= dt) <= 0) { statT = 0.08; deg.textContent = ((ang * 180) / Math.PI).toFixed(3) + '°'; cnt.textContent = L.fmt(n); }
+    });
+  },
+});
+
+HEROES.push({
+  id: 'halde',
+  name: 'Halde',
+  title: 'Halde · We draw with light first',
+  kind: 'Architecture studio',
+  tech: 'A brutalist building ray-cast glyph by glyph in orthographic projection: analytic box hits, shadow rays toward a moving sun, hatching chosen by face orientation like an architect\'s poche. Night swaps the sun for lit windows. Drag to move the sun.',
+  accent: null,
+  fonts: 'family=Familjen+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono:wght@400',
+  css: `
+.h-halde{--bg:#080808;--fg:#eceae6;--mut:rgba(236,234,230,.56);--line:rgba(236,234,230,.16);--ink:#eceae6;font-family:"Familjen Grotesk",system-ui,sans-serif}
+:root[data-theme=light] .h-halde{--bg:#efedea;--fg:#111;--mut:rgba(17,17,17,.6);--line:rgba(17,17,17,.16);--ink:#111}
+.h-halde .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:20px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-halde .ui a,.h-halde .ui button{pointer-events:auto}
+.h-halde .nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:16px;font-size:14px}
+.h-halde .logo{font-weight:600;font-size:15px;letter-spacing:.02em;line-height:1.2}
+.h-halde .logo span{display:block;font-weight:400;color:var(--mut)}
+.h-halde .links{display:flex;gap:24px}
+.h-halde .links a{opacity:.62;transition:opacity .2s}.h-halde .links a:hover{opacity:1}
+.h-halde .tt{justify-self:end;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:2px;background:none;height:32px;padding:0 4px;font:400 11px/1 "Space Mono",monospace;text-transform:uppercase}
+.h-halde .tt span{padding:5px 7px;border-radius:1px}
+.h-halde .tt .lt{background:var(--fg);color:var(--bg)}
+:root[data-theme=dark] .h-halde .tt .dk{background:var(--fg);color:var(--bg)}
+:root[data-theme=dark] .h-halde .tt .lt{background:none;color:inherit}
+.h-halde .copy{grid-row:3;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:24px 48px;align-items:end}
+.h-halde h1{margin:0;font-weight:500;font-size:clamp(46px,6.6vw,108px);line-height:.92;letter-spacing:-.045em}
+.h-halde h1 em{font-weight:400}
+.h-halde .side{display:flex;flex-direction:column;gap:18px;padding-bottom:6px}
+.h-halde .sub{margin:0;max-width:40ch;font-size:clamp(14px,1.1vw,16px);line-height:1.55;color:var(--mut)}
+.h-halde .cta{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}
+.h-halde .cta a{border-bottom:1px solid var(--fg);padding-bottom:3px}
+.h-halde .sun{font:400 10.5px/1.6 "Space Mono",monospace;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+.h-halde .sun b{color:var(--fg);font-weight:400}
+@media (max-width:980px){.h-halde .links{display:none}.h-halde .nav{grid-template-columns:1fr auto}}
+@media (max-width:760px){
+  .h-halde .ui{padding:14px 16px 12px}
+  .h-halde .copy{grid-template-columns:1fr;gap:14px}
+  .h-halde h1{font-size:clamp(40px,12.4vw,54px)}
+  .h-halde .sub{font-size:14px}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">Halde<span>Arkitekter, Oslo</span></a>
+    <nav class="links" aria-label="Primary"><a href="#">Work</a><a href="#">Studio</a><a href="#">Texts</a><a href="#">Contact</a></nav>
+    <button class="tt" type="button" data-theme-toggle aria-label="Toggle day and night"><span class="lt">Day</span><span class="dk">Night</span></button>
+  </header>
+  <div class="copy">
+    <h1 data-mask="text">We draw<br>with light <em>first.</em></h1>
+    <div class="side">
+      <p class="sub" data-mask="text">A twelve-person practice in Oslo. Before we draw a single wall we follow the sun across the site for a year, then build what the light asks for.</p>
+      <div class="cta"><a href="#">Selected work</a><a href="#">Write to us</a></div>
+      <p class="sun" data-mask="text">Sun <b class="az">-</b> &middot; drag to move it</p>
+    </div>
+  </div>
+</div>`,
+  init: function (root, L, S) {
+    const { clamp, lerp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10 });
+    const P = S.pointer(root);
+    const az = root.querySelector('.az');
+    const maskEls = [...root.querySelectorAll('[data-mask], .cta a, .logo, .links a, .tt')];
+    const G = (c) => A.glyph(c);
+    const HATCH = { top: G('='), xp: G('/'), zp: G('\\'), xn: G('|'), zn: G('|') }, DOT = G('.'), WIN = G('#'), LIT = G('@');
+    // massing: boxes in metres-ish units [x0,x1, y0,y1, z0,z1]
+    const B = [
+      [-3.2, 3.0, 0, 4.0, -1.6, 1.6],      // main slab
+      [-5.4, 1.2, 4.0, 5.5, -2.1, 2.1],    // cantilevered top
+      [2.2, 3.9, 0, 7.4, -1.0, 3.4],       // stair tower
+      [-7.2, -3.2, 0, 1.5, -0.2, 3.4],     // low wing
+      [-5.2, -4.8, 0, 4.0, -1.9, -1.5],    // pilotis
+      [-5.2, -4.8, 0, 4.0, 1.5, 1.9],
+      [-1.0, 1.0, 5.5, 6.3, -0.6, 0.6],    // roof lantern
+    ];
+    let cx = 0, cy = 0, scale = 20, mask = null, sunT = 0.35, drag = null, azT = 0, F = null;
+    const C = [1, 0.82, 1.25], Cl = Math.hypot(...C); C[0] /= Cl; C[1] /= Cl; C[2] /= Cl;
+    const Rv = [C[2], 0, -C[0]], Rl = Math.hypot(...Rv); Rv[0] /= Rl; Rv[2] /= Rl;
+    const Uv = [C[1] * Rv[2] - C[2] * Rv[1], C[2] * Rv[0] - C[0] * Rv[2], C[0] * Rv[1] - C[1] * Rv[0]];
+    const D = [-C[0], -C[1], -C[2]];
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 24, floor: 0.08 }); };
+    const setup = () => {
+      const W = A.w, H = A.h, wide = W > 760;
+      scale = wide ? Math.min(W / 27, H / 16) : Math.min(W / 17, H / 26);
+      cx = wide ? W * 0.63 : W * 0.52; cy = wide ? H * 0.47 : H * 0.35;
+      F = new Float32Array(A.n);
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+
+    const hit = (o, d) => {
+      let best = 1e9, bi = -1, axis = 0, sgn = 0;
+      for (let b = 0; b < B.length; b++) {
+        const bx = B[b];
+        let t0 = -1e9, t1 = 1e9, ax = 0, sg = 0;
+        for (let k = 0; k < 3; k++) {
+          const lo = bx[k * 2], hi = bx[k * 2 + 1], dk = d[k], ok = o[k];
+          if (Math.abs(dk) < 1e-9) { if (ok < lo || ok > hi) { t0 = 1e9; break; } continue; }
+          let ta = (lo - ok) / dk, tb = (hi - ok) / dk, s = -1;
+          if (ta > tb) { const q = ta; ta = tb; tb = q; s = 1; }
+          if (ta > t0) { t0 = ta; ax = k; sg = s; }
+          if (tb < t1) t1 = tb;
+          if (t0 > t1) break;
+        }
+        if (t0 <= t1 && t0 > 1e-4 && t0 < best) { best = t0; bi = b; axis = ax; sgn = sg; }
+      }
+      return bi < 0 ? null : { t: best, b: bi, axis, sgn };
+    };
+
+    S.loop((t, dt) => {
+      P.decay(dt);
+      const dark = L.theme() === 'dark', cols = A.cols, rows = A.rows, g = A.g, al = A.a, cw = A.cellW, ch = A.cellH;
+      for (const tp of P.taps.splice(0)) drag = { x: tp.x, s: sunT };
+      if (!P.down) drag = null;
+      if (drag) sunT = clamp(drag.s + (P.x - drag.x) / (A.w * 0.8), 0.02, 0.98);
+      else sunT += dt * 0.012;
+      if (sunT > 0.98) sunT = 0.02;
+      // sun path: rises in the east, highest at noon, sets in the west
+      const azm = lerp(1.9, 4.6, sunT), el = 0.12 + Math.sin(Math.PI * sunT) * 0.85;
+      const Ls = [Math.cos(azm) * Math.cos(el), Math.sin(el), Math.sin(azm) * Math.cos(el)];
+      const Lm = [0.4, 0.75, -0.5], lmn = Math.hypot(...Lm); Lm[0] /= lmn; Lm[1] /= lmn; Lm[2] /= lmn;
+      const Lu = dark ? Lm : Ls;
+      A.clear();
+      F.fill(0);
+      for (let y = 0, i = 0; y < rows; y++) {
+        const sy = -((y + 0.5) * ch - cy) / scale;
+        for (let x = 0; x < cols; x++, i++) {
+          const sx = ((x + 0.5) * cw - cx) / scale;
+          const o = [C[0] * 40 + Rv[0] * sx + Uv[0] * sy, C[1] * 40 + Rv[1] * sx + Uv[1] * sy, C[2] * 40 + Rv[2] * sx + Uv[2] * sy];
+          const h = hit(o, D);
+          let p, nrm, face, b = -1;
+          if (h) { p = [o[0] + D[0] * h.t, o[1] + D[1] * h.t, o[2] + D[2] * h.t]; nrm = [0, 0, 0]; nrm[h.axis] = h.sgn; face = h.axis * 2 + (h.sgn > 0 ? 1 : 0); b = h.b; }
+          else {
+            if (D[1] >= 0) continue;
+            const tg = -o[1] / D[1];
+            p = [o[0] + D[0] * tg, 0, o[2] + D[2] * tg]; nrm = [0, 1, 0]; face = 9;
+            if (Math.hypot(p[0] + 1.5, p[2] - 0.5) > 12) continue;
+          }
+          F[i] = face === 9 ? 0 : face * 0.11 + (b + 1) * 0.07;
+          const fade = face === 9 ? clamp(1.25 - Math.hypot(p[0] + 1.5, p[2] - 0.5) / 10, 0, 1) : 1;
+          const nd = nrm[0] * Lu[0] + nrm[1] * Lu[1] + nrm[2] * Lu[2];
+          let lit = Math.max(0, nd);
+          if (lit > 0 && !dark) { const sh = hit([p[0] + nrm[0] * 1e-3, p[1] + nrm[1] * 1e-3, p[2] + nrm[2] * 1e-3], Ls); if (sh) lit = 0; }
+          // windows on the walls, a paving grid on the ground
+          let win = false, lamp = false;
+          if (face !== 9 && h && h.axis !== 1 && b !== 4 && b !== 5) {
+            const u = h.axis === 0 ? p[2] : p[0], v = p[1];
+            win = ((u % 1.1) + 1.1) % 1.1 > 0.35 && ((u % 1.1) + 1.1) % 1.1 < 0.8 && ((v % 1.35) + 1.35) % 1.35 > 0.45 && ((v % 1.35) + 1.35) % 1.35 < 1.05 && v > 0.3;
+            if (win) lamp = L.hash(Math.floor(u / 1.1) + b * 31, Math.floor(v / 1.35) + h.axis * 7) < 0.42;
+          }
+          if (dark) {
+            if (win && lamp) { g[i] = LIT; al[i] = 0.75 + 0.25 * Math.sin(t * 0.5 + i); }
+            else if (win) { g[i] = DOT; al[i] = 0.15; }
+            else if (face === 9) { g[i] = L.hash(x, y) < 0.06 ? DOT : 0; al[i] = 0.12 * fade; }
+            else { g[i] = lit > 0.3 ? DOT : 0; al[i] = 0.1 + lit * 0.12; }
+          } else {
+            const shade = 1 - (0.2 + 0.8 * lit);
+            if (win) { g[i] = WIN; al[i] = 0.55 + shade * 0.4; }
+            else if (face === 9) {
+              const grid = Math.abs(p[0] - Math.round(p[0])) < 0.06 || Math.abs(p[2] - Math.round(p[2])) < 0.06;
+              if (shade > 0.5) { g[i] = G('/'); al[i] = 0.55 * fade; } else if (grid) { g[i] = DOT; al[i] = 0.25 * fade; }
+            } else {
+              const hg = h.axis === 1 ? HATCH.top : h.axis === 0 ? (h.sgn > 0 ? HATCH.xp : HATCH.xn) : h.sgn > 0 ? HATCH.zp : HATCH.zn;
+              if (shade > 0.15) { g[i] = shade > 0.55 ? hg : L.hash(x, y) < shade * 1.4 ? hg : DOT; al[i] = 0.2 + shade * 0.7; }
+              else if (L.hash(x, y, 2) < 0.12) { g[i] = DOT; al[i] = 0.25; }
+            }
+          }
+        }
+      }
+      // outlines wherever face or mass changes
+      for (let y = 1; y < rows - 1; y++) for (let x = 1; x < cols - 1; x++) {
+        const i = y * cols + x;
+        if (!F[i] && !F[i + 1] && !F[i + cols]) continue;
+        const e = L.edge(A, F, x, y, 0.08);
+        if (e >= 0) { g[i] = e; al[i] = dark ? 0.5 : 0.95; }
+      }
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+      if ((azT -= dt) <= 0) {
+        azT = 0.15;
+        const hh = 5 + sunT * 16, mm = Math.floor((hh % 1) * 60);
+        az.textContent = dark ? 'down · 31 windows lit' : `${String(Math.floor(hh)).padStart(2, '0')}:${String(mm).padStart(2, '0')} · azimuth ${Math.round((azm * 180) / Math.PI) % 360}° · elevation ${Math.round((el * 180) / Math.PI)}°`;
+      }
+    });
+  },
+});
+
+HEROES.push({
+  id: 'pyra',
+  name: 'Pyra',
+  title: 'Pyra 27 · Art that happens once',
+  kind: 'Art biennale',
+  tech: 'A fireworks engine: rockets with spark trails burst into peonies, willows, rings and strobing crossettes under gravity and drag, mirrored in a rippling harbour. In daylight the same shells become black smoke that blooms and drifts, a nod to daytime fireworks. Click the sky to fire.',
+  accent: null,
+  fonts: 'family=Syne:wght@500;700;800&family=Syne+Mono',
+  css: `
+.h-pyra{--bg:#040405;--fg:#f0eeea;--mut:rgba(240,238,234,.58);--line:rgba(240,238,234,.18);--ink:#f0eeea;font-family:"Syne",system-ui,sans-serif}
+:root[data-theme=light] .h-pyra{--bg:#efeee9;--fg:#0e0e10;--mut:rgba(14,14,16,.6);--line:rgba(14,14,16,.18);--ink:#0e0e10}
+.h-pyra .ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:20px clamp(18px,3.4vw,52px) 18px;pointer-events:none}
+.h-pyra .ui a,.h-pyra .ui button{pointer-events:auto}
+.h-pyra .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;font-weight:500;font-size:14px}
+.h-pyra .logo{font-weight:800;font-size:22px;letter-spacing:-.02em}
+.h-pyra .logo sup{font:400 11px/1 "Syne Mono",monospace;margin-left:4px}
+.h-pyra .links{display:flex;gap:26px}
+.h-pyra .links a{opacity:.66;transition:opacity .2s}.h-pyra .links a:hover{opacity:1}
+.h-pyra .r{display:flex;align-items:center;gap:12px}
+.h-pyra .pass{height:36px;display:inline-flex;align-items:center;padding:0 16px;border:1px solid var(--fg);border-radius:18px}
+.h-pyra .tt{height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:none;font:400 12px/1 "Syne Mono",monospace;text-transform:uppercase}
+.h-pyra .tt .lt,:root[data-theme=light] .h-pyra .tt .dk{display:none}
+:root[data-theme=light] .h-pyra .tt .lt{display:inline}
+.h-pyra .copy{grid-row:3;display:flex;justify-content:space-between;align-items:flex-end;gap:32px}
+.h-pyra h1{margin:0;font-weight:800;font-size:clamp(54px,9vw,156px);line-height:.84;letter-spacing:-.06em}
+.h-pyra .side{max-width:340px;display:flex;flex-direction:column;gap:16px;padding-bottom:8px}
+.h-pyra .sub{margin:0;font-size:clamp(14px,1.15vw,16px);line-height:1.5;color:var(--mut);font-weight:500}
+.h-pyra .cta{display:flex;flex-wrap:wrap;gap:10px}
+.h-pyra .btn{display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 22px;border-radius:24px;background:var(--fg);color:var(--bg);font-weight:700;font-size:14px}
+.h-pyra .btn small{font:400 11px/1 "Syne Mono",monospace;opacity:.7}
+.h-pyra .ghost{display:inline-flex;align-items:center;height:48px;padding:0 20px;border-radius:24px;border:1px solid var(--line);font-weight:700;font-size:14px;background:var(--bg)}
+.h-pyra .tonight{font:400 11px/1.6 "Syne Mono",monospace;text-transform:uppercase;color:var(--mut)}
+.h-pyra .tonight b{color:var(--fg);font-weight:400}
+@media (max-width:980px){.h-pyra .links{display:none}}
+@media (max-width:760px){
+  .h-pyra .ui{padding:14px 16px 12px}
+  .h-pyra .pass{display:none}
+  .h-pyra .copy{flex-direction:column;align-items:flex-start;gap:14px}
+  .h-pyra h1{font-size:clamp(50px,16vw,72px)}
+  .h-pyra .side{max-width:none;padding-bottom:0;gap:12px}
+  .h-pyra .btn,.h-pyra .ghost{height:44px;padding:0 18px}
+}`,
+  html: `
+<div class="ui">
+  <header class="nav">
+    <a class="logo" href="#">PYRA<sup>27</sup></a>
+    <nav class="links" aria-label="Primary"><a href="#">Programme</a><a href="#">Artists</a><a href="#">Venues</a><a href="#">Visit</a></nav>
+    <div class="r"><a class="pass" href="#">Passes</a><button class="tt" type="button" data-theme-toggle aria-label="Toggle light and dark"><span class="dk">Night works</span><span class="lt">Day works</span></button></div>
+  </header>
+  <div class="copy">
+    <h1 data-mask="text">Art that<br>happens<br>once.</h1>
+    <div class="side">
+      <p class="sub" data-mask="text">A biennale of ephemeral works: fire, smoke, sound and light. Twelve nights on the old harbour of Marseille, 4 to 15 July 2027.</p>
+      <div class="cta"><a class="btn" href="#">Get a pass <small>from EUR 24</small></a><a class="ghost" href="#">Programme</a></div>
+      <p class="tonight" data-mask="text">Tonight <b>22:40</b> &middot; harbour stage &middot; click the sky to fire</p>
+    </div>
+  </div>
+</div>`,
+  init: function (root, L, S) {
+    const { TAU, clamp } = L;
+    const A = S.ascii(root, { size: 12, mobile: 10 });
+    const P = S.pointer(root);
+    const maskEls = [...root.querySelectorAll('[data-mask], .btn, .ghost, .logo, .links a, .r > *')];
+    const HEAD = A.ramp('.+*o@'), TRAIL = A.ramp(".`':"), SMOKE = A.ramp(' .:-=+*#%'), WAVE = A.ramp('~-');
+    let W = 1, H = 1, wl = 0, smoke = null, mask = null, rockets = [], sparks = [], next = 0.4, sky = [];
+    const remask = () => { if (A.n) mask = L.mask(A, maskEls, { pad: 6, feather: 24, floor: 0.06 }); };
+    const setup = () => {
+      W = A.w; H = A.h;
+      wl = Math.round(A.rows * (W > 760 ? 0.74 : 0.62));
+      smoke = new Float32Array(A.n);
+      // harbour skyline: quays, warehouses, two cranes, a church on the hill
+      sky = new Int16Array(A.cols);
+      const r = L.rng(17);
+      let x = 0;
+      while (x < A.cols) { const w = 3 + ((r() * 9) | 0), h = 1 + ((r() * 4) | 0); for (let k = 0; k < w && x + k < A.cols; k++) sky[x + k] = h; x += w; }
+      const hill = Math.round(A.cols * 0.18); for (let k = -12; k <= 12; k++) if (hill + k >= 0 && hill + k < A.cols) sky[hill + k] = Math.max(sky[hill + k], Math.round(6 - Math.abs(k) * 0.35));
+      sky[hill] = 10; if (hill + 1 < A.cols) sky[hill + 1] = 10;
+      remask();
+    };
+    A.onResize = setup; setup();
+    S.timeout(remask, 500); S.timeout(remask, 1600);
+    if (document.fonts) document.fonts.ready.then(remask);
+
+    const TYPES = ['peony', 'willow', 'ring', 'crossette', 'palm'];
+    const launch = (tx, ty, type) => {
+      const x0 = tx + (Math.random() - 0.5) * 60, y0 = wl * A.cellH;
+      const t = Math.sqrt((2 * Math.max(40, y0 - ty)) / 300);
+      rockets.push({ x: x0, y: y0, vx: (tx - x0) / t, vy: -300 * t, type: type || TYPES[(Math.random() * TYPES.length) | 0], trail: [] });
+    };
+    const burst = (r) => {
+      const n = r.type === 'willow' ? 90 : r.type === 'ring' ? 56 : r.type === 'palm' ? 11 : 88, sp = r.type === 'willow' ? 130 : r.type === 'palm' ? 210 : 190;
+      const tilt = Math.random() * TAU;
+      for (let k = 0; k < n; k++) {
+        let a = (k / n) * TAU + Math.random() * 0.08, s = sp * (0.75 + Math.random() * 0.35), vz = 1;
+        if (r.type === 'peony' || r.type === 'crossette' || r.type === 'willow') { const u = Math.random() * 2 - 1; vz = Math.sqrt(1 - u * u); s *= vz * 0.9 + 0.1; }
+        let vx = Math.cos(a) * s, vy = Math.sin(a) * s;
+        if (r.type === 'ring') { vy *= 0.45; const c = Math.cos(tilt), sn = Math.sin(tilt); const q = vx * c - vy * sn; vy = vx * sn + vy * c; vx = q; }
+        sparks.push({ x: r.x, y: r.y, vx: vx + r.vx * 0.2, vy: vy + r.vy * 0.1, life: r.type === 'willow' ? 3.2 + Math.random() : 1.6 + Math.random() * 0.8, max: 0, type: r.type, trail: [], strobe: Math.random() * TAU, drag: r.type === 'willow' ? 1.6 : r.type === 'palm' ? 0.6 : 1.1 });
+        sparks[sparks.length - 1].max = sparks[sparks.length - 1].life;
+      }
+      const cx = Math.floor(r.x / A.cellW), cy = Math.floor(r.y / A.cellH);
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -4; dx <= 4; dx++) { const x = cx + dx, y = cy + dy; if (x >= 0 && y >= 0 && x < A.cols && y < wl) smoke[y * A.cols + x] += 0.25; }
+    };
+
+    S.loop((t, dt) => {
+      if (!smoke) return;
+      P.decay(dt);
+      const dark = L.theme() === 'dark', cols = A.cols, rows = A.rows, g = A.g, al = A.a, cw = A.cellW, ch = A.cellH;
+      for (const tp of P.taps.splice(0)) if (tp.y < wl * ch - 30) launch(tp.x, tp.y);
+      if ((next -= dt) <= 0) {
+        next = 0.35 + Math.random() * 0.8;
+        const k = Math.random() < 0.08 ? 4 : 1;
+        for (let j = 0; j < k; j++) launch(W * (W > 760 ? 0.3 + Math.random() * 0.65 : 0.1 + Math.random() * 0.8), H * (0.12 + Math.random() * 0.3));
+      }
+      for (let j = rockets.length - 1; j >= 0; j--) {
+        const r = rockets[j];
+        r.vy += 300 * dt; r.x += r.vx * dt; r.y += r.vy * dt;
+        r.trail.push([r.x, r.y]); if (r.trail.length > 10) r.trail.shift();
+        if (r.vy > -20) { burst(r); rockets.splice(j, 1); }
+      }
+      for (let j = sparks.length - 1; j >= 0; j--) {
+        const s = sparks[j];
+        s.life -= dt;
+        if (s.life <= 0) {
+          if (s.type === 'crossette' && !s.split) { for (let q = 0; q < 4; q++) { const a = (q / 4) * TAU + 0.4; sparks.push({ x: s.x, y: s.y, vx: Math.cos(a) * 90, vy: Math.sin(a) * 90, life: 0.7, max: 0.7, type: 'cross2', trail: [], strobe: 0, drag: 1.2, split: true }); } }
+          sparks.splice(j, 1); continue;
+        }
+        const k = Math.exp(-s.drag * dt);
+        s.vx *= k; s.vy = s.vy * k + (s.type === 'willow' ? 70 : 110) * dt;
+        s.x += s.vx * dt; s.y += s.vy * dt;
+        s.trail.push([s.x, s.y]); if (s.trail.length > (s.type === 'willow' ? 22 : s.type === 'palm' ? 16 : 9)) s.trail.shift();
+        const cx = Math.floor(s.x / cw), cy = Math.floor(s.y / ch);
+        if (cx >= 0 && cy >= 0 && cx < cols && cy < wl) smoke[cy * cols + cx] += dt * (dark ? 0.25 : 1.6);
+      }
+      // smoke drifts with the wind, spreads and thins
+      const sm = smoke, wind = Math.round(t * 3) % 2;
+      for (let y = 0; y < wl; y++) for (let x = cols - 1; x > 0; x--) { const i = y * cols + x; sm[i] = sm[i] * 0.985 + (wind ? (sm[i - 1] - sm[i]) * 0.04 : 0); }
+      for (let y = 1; y < wl; y++) for (let x = 0; x < cols; x++) { const i = y * cols + x; sm[i - cols] += sm[i] * 0.01; sm[i] *= 0.99; }
+      A.clear();
+      // smoke field
+      for (let y = 0; y < wl; y++) for (let x = 0; x < cols; x++) {
+        const i = y * cols + x, v = Math.min(1, sm[i]);
+        if (v < 0.04) continue;
+        g[i] = SMOKE[Math.min(8, Math.max(1, (v * (dark ? 5 : 9)) | 0))]; al[i] = dark ? 0.05 + v * 0.18 : 0.15 + v * 0.75;
+      }
+      const put = (px, py, gi, a) => { const x = Math.floor(px / cw), y = Math.floor(py / ch); if (x < 0 || y < 0 || x >= cols || y >= wl) return; const i = y * cols + x; if (al[i] < a) { g[i] = gi; al[i] = a; } };
+      // rockets and sparks: heads bright, trails fading; in daylight they are dark embers
+      for (const r of rockets) { r.trail.forEach(([x, y], k) => put(x, y, TRAIL[k % 4], (k / r.trail.length) * 0.8)); put(r.x, r.y, HEAD[2], 1); }
+      for (const s of sparks) {
+        const f = s.life / s.max, tw = s.type === 'crossette' || s.type === 'cross2' ? (Math.sin(t * 40 + s.strobe) > 0 ? 1 : 0.25) : 1;
+        const n = s.trail.length;
+        for (let k = 0; k < n; k++) put(s.trail[k][0], s.trail[k][1], TRAIL[Math.min(3, ((k / n) * 4) | 0)], Math.pow(k / n, 0.7) * f * (dark ? 0.9 : 0.6));
+        put(s.x, s.y, HEAD[Math.min(4, 1 + ((f * 4) | 0))], (dark ? 0.55 + 0.45 * f : 0.5 + 0.5 * f) * tw * (f < 0.25 && Math.random() < 0.3 ? 0.2 : 1));
+      }
+      // skyline at the waterline
+      for (let x = 0; x < cols; x++) {
+        const h = sky[x];
+        for (let k = 0; k < h; k++) {
+          const y = wl - 1 - k, i = y * cols + x, top = k === h - 1, wall = sky[x - 1] < k + 1 || sky[x + 1] < k + 1;
+          g[i] = top ? A.glyph(h >= 10 ? '+' : '_') : wall ? A.glyph('|') : L.hash(x, y) < 0.18 ? A.glyph(dark ? "'" : '.') : 0;
+          al[i] = top || wall ? (dark ? 0.55 : 0.85) : dark ? 0.7 : 0.3;
+        }
+      }
+      // the harbour mirrors the sky, broken up by ripples
+      for (let y = wl; y < rows; y++) {
+        const d = y - wl, my = wl - 1 - d;
+        for (let x = 0; x < cols; x++) {
+          const i = y * cols + x, off = Math.round(L.noise2(x * 0.08, y * 0.6 + t * 0.8) * (1 + d * 0.25));
+          const sx = clamp(x + off, 0, cols - 1);
+          if (my >= 0) { const j = my * cols + sx; if (al[j] > 0.05 && L.hash(x, y, (t * 8) | 0) < 0.78) { g[i] = d > 1 && L.hash(x, y) < 0.3 ? WAVE[0] : g[j]; al[i] = al[j] * (0.5 - Math.min(0.35, d * 0.02)); continue; } }
+          if (L.hash(x, y, 3) < 0.05 + 0.04 * Math.sin(t + x * 0.2)) { g[i] = WAVE[(x + y) % 2]; al[i] = 0.1; }
+        }
+      }
+      if (mask) for (let i = 0; i < A.n; i++) al[i] *= mask[i];
+      A.render();
+    });
+  },
+});
+
 /* Showcase shell: mounts one hero at a time, glyph-wipe transitions, index, export. */
 (() => {
   const L = createLib();
